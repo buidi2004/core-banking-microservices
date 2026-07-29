@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  wallet-service:
+    build: .
+    container_name: wallet-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - wallet-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: wallet-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: walletdb
+      POSTGRES_USER: walletuser
+      POSTGRES_PASSWORD: walletpassword
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U walletuser -d walletdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wallet-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: wallet-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - wallet-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  wallet-network:
+    driver: bridge
