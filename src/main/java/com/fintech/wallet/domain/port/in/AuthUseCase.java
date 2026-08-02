@@ -10,4 +10,7 @@ public interface AuthUseCase {
     String refreshToken(String refreshToken);
     boolean sendPasswordResetOtp(String phoneNumber);
     boolean resetPassword(String phoneNumber, String otp, String newPassword);
+
+    /** Invalidate the supplied access (or refresh) token immediately. */
+    void logout(String token);
 }

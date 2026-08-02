@@ -132,6 +132,23 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     }
 
     @Override
+    public Wallet getWalletByUserIdAndCurrency(String userId, String currency) {
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
+        if (currency == null || currency.isBlank()) {
+            throw new IllegalArgumentException("Currency cannot be null or empty");
+        }
+        Wallet wallet = walletPersistencePort.findWalletByOwnerId(userId)
+                .orElseThrow(() -> new WalletNotFoundException("No wallet found for user: " + userId));
+        if (!wallet.getBalance().getCurrency().equalsIgnoreCase(currency)) {
+            throw new WalletNotFoundException(
+                    "No " + currency + " wallet found for user: " + userId);
+        }
+        return wallet;
+    }
+
+    @Override
     public Transaction deposit(String requestId, String walletId, Money amount) {
         if (walletId == null || walletId.isBlank()) {
             throw new IllegalArgumentException("Wallet ID cannot be null or empty");
@@ -343,7 +360,27 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 try {
                     bankGatewayPort.transferToBank(bankAccountId, amount, savedTx.getId());
                 } catch (Exception bankEx) {
-                    log.error("Bank transfer failed for txId={}, bankAccountId={}", savedTx.getId(), bankAccountId, bankEx);
+                    log.error("Bank transfer failed for txId={}, bankAccountId={}. Initiating auto-reverse.",
+                            savedTx.getId(), bankAccountId, bankEx);
+                    // Auto-reverse: credit the amount back to the user's wallet
+                    try {
+                        wallet.deposit(amount);
+                        transactionalOperationPort.executeInTransaction(() -> {
+                            walletPersistencePort.saveWallet(wallet);
+                            savedTx.markReversed();
+                            transactionPersistencePort.saveTransaction(savedTx);
+                            Transaction reversalTx = Transaction.createReversal(
+                                    savedTx.getId(), walletId, amount);
+                            reversalTx.markSuccess();
+                            return transactionPersistencePort.saveTransaction(reversalTx);
+                        });
+                        log.info("Auto-reverse completed for txId={}", savedTx.getId());
+                        recordAuditLog(userId, "AUTO_REVERSE",
+                                "originalTxId:" + savedTx.getId() + ",reason:bank_transfer_failed");
+                    } catch (Exception reverseEx) {
+                        log.error("CRITICAL: Auto-reverse failed for txId={}. Manual intervention required.",
+                                savedTx.getId(), reverseEx);
+                    }
                 }
             }
 
@@ -538,6 +575,3 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         }
     }
 }
-
-}
-

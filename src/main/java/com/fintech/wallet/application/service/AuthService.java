@@ -3,6 +3,7 @@ package com.fintech.wallet.application.service;
 import com.fintech.wallet.domain.model.User;
 import com.fintech.wallet.domain.port.in.AuthUseCase;
 import com.fintech.wallet.domain.port.in.GetWalletUseCase;
+import com.fintech.wallet.domain.port.out.TokenBlacklistPort;
 import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import com.fintech.wallet.infrastructure.security.JwtTokenProvider;
 import com.fintech.wallet.infrastructure.security.RedisRateLimiter;
@@ -19,6 +20,23 @@ public class AuthService implements AuthUseCase {
     private final JwtTokenProvider tokenProvider;
     private final RedisRateLimiter rateLimiter;
     private final SessionService sessionService;
+    private final TokenBlacklistPort tokenBlacklistPort;
+
+    public AuthService(UserPersistencePort userPersistencePort,
+                       GetWalletUseCase getWalletUseCase,
+                       PasswordEncoder passwordEncoder,
+                       JwtTokenProvider tokenProvider,
+                       RedisRateLimiter rateLimiter,
+                       SessionService sessionService,
+                       TokenBlacklistPort tokenBlacklistPort) {
+        this.userPersistencePort = userPersistencePort;
+        this.getWalletUseCase = getWalletUseCase;
+        this.passwordEncoder = passwordEncoder;
+        this.tokenProvider = tokenProvider;
+        this.rateLimiter = rateLimiter;
+        this.sessionService = sessionService;
+        this.tokenBlacklistPort = tokenBlacklistPort;
+    }
 
     public AuthService(UserPersistencePort userPersistencePort,
                        GetWalletUseCase getWalletUseCase,
@@ -26,12 +44,7 @@ public class AuthService implements AuthUseCase {
                        JwtTokenProvider tokenProvider,
                        RedisRateLimiter rateLimiter,
                        SessionService sessionService) {
-        this.userPersistencePort = userPersistencePort;
-        this.getWalletUseCase = getWalletUseCase;
-        this.passwordEncoder = passwordEncoder;
-        this.tokenProvider = tokenProvider;
-        this.rateLimiter = rateLimiter;
-        this.sessionService = sessionService;
+        this(userPersistencePort, getWalletUseCase, passwordEncoder, tokenProvider, rateLimiter, sessionService, null);
     }
 
     public AuthService(UserPersistencePort userPersistencePort,
@@ -39,7 +52,7 @@ public class AuthService implements AuthUseCase {
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
                        RedisRateLimiter rateLimiter) {
-        this(userPersistencePort, getWalletUseCase, passwordEncoder, tokenProvider, rateLimiter, null);
+        this(userPersistencePort, getWalletUseCase, passwordEncoder, tokenProvider, rateLimiter, null, null);
     }
 
     @Override
@@ -144,9 +157,32 @@ public class AuthService implements AuthUseCase {
         }
         User user = userPersistencePort.findUserByPhoneNumber(phoneNumber)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with phone number: " + phoneNumber));
-        
+
         user.updatePassword(passwordEncoder.encode(newPassword));
         userPersistencePort.saveUser(user);
         return true;
+    }
+
+    /**
+     * Logout: immediately revoke the supplied token by adding it to the blacklist.
+     * Access tokens live 15 min — we blacklist for that window so the token
+     * cannot be reused even if the client keeps it.
+     * Refresh tokens live 7 days — same logic applies.
+     */
+    @Override
+    public void logout(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Token must not be empty");
+        }
+        if (!tokenProvider.validateToken(token)) {
+            // Already expired — nothing to blacklist
+            return;
+        }
+        // Blacklist for the token's full remaining lifetime (access=900s, refresh=604800s)
+        String type = tokenProvider.getTokenType(token);
+        long ttl = "REFRESH".equals(type) ? 7 * 24 * 3600L : 15 * 60L;
+        if (tokenBlacklistPort != null) {
+            tokenBlacklistPort.blacklist(token, ttl);
+        }
     }
 }

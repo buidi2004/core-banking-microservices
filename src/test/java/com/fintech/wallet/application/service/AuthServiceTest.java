@@ -21,31 +21,42 @@ import static org.mockito.Mockito.when;
 
 class AuthServiceTest {
 
+    private static final String JWT_SECRET =
+            "SuperSecretKeyForFintechWalletAppShouldBeAtLeast32BytesLong!";
+
     private UserPersistencePort userPersistencePort;
     private GetWalletUseCase getWalletUseCase;
     private PasswordEncoder passwordEncoder;
     private JwtTokenProvider tokenProvider;
-    private RedisRateLimiter rateLimiter;
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
         userPersistencePort = Mockito.mock(UserPersistencePort.class);
-        getWalletUseCase = Mockito.mock(GetWalletUseCase.class);
-        passwordEncoder = new BCryptPasswordEncoder();
-        tokenProvider = new JwtTokenProvider("SuperSecretKeyForFintechWalletAppShouldBeAtLeast32BytesLong!");
-        rateLimiter = Mockito.mock(RedisRateLimiter.class);
+        getWalletUseCase   = Mockito.mock(GetWalletUseCase.class);
+        passwordEncoder    = new BCryptPasswordEncoder();
+        // JwtTokenProvider is a @Component with no interface — use real instance
+        tokenProvider      = new JwtTokenProvider(JWT_SECRET);
+        // RedisRateLimiter cannot be mocked on Java 25 with inline mocking.
+        // Use a real instance: it falls back to "allow-all" when redisTemplate is null.
+        RedisRateLimiter rateLimiter = new RedisRateLimiter();
 
-        authService = new AuthService(userPersistencePort, getWalletUseCase, passwordEncoder, tokenProvider, rateLimiter);
+        authService = new AuthService(
+                userPersistencePort,
+                getWalletUseCase,
+                passwordEncoder,
+                tokenProvider,
+                rateLimiter);
     }
 
     @Test
     void register_shouldCreateUserAndAutoGenerateWallet() {
-        String phone = "0987654321";
+        String phone    = "0987654321";
         String password = "password123";
 
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.empty());
-        when(userPersistencePort.saveUser(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userPersistencePort.saveUser(any(User.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
 
         User registered = authService.register(phone, password);
 
@@ -53,16 +64,33 @@ class AuthServiceTest {
         assertEquals(phone, registered.getPhoneNumber());
         assertTrue(passwordEncoder.matches(password, registered.getPasswordHash()));
 
-        // Verify automatic default wallet creation
+        // Auto-create default VND wallet must be called
         verify(getWalletUseCase).createWallet(eq(registered.getId()), eq("VND"));
     }
 
     @Test
-    void login_shouldReturnAccessTokenForValidCredentials() {
+    void register_duplicatePhone_shouldThrow() {
         String phone = "0987654321";
+        User existing = new User("u1", phone, "hash", null, null, null, null);
+        when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(existing));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.register(phone, "password123"));
+    }
+
+    @Test
+    void register_shortPassword_shouldThrow() {
+        when(userPersistencePort.findUserByPhoneNumber(any())).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.register("0987654321", "123"));
+    }
+
+    @Test
+    void login_shouldReturnAccessTokenForValidCredentials() {
+        String phone    = "0987654321";
         String password = "password123";
-        String encodedPassword = passwordEncoder.encode(password);
-        User user = new User("user_1", phone, encodedPassword, null, null, null, null);
+        String encoded  = passwordEncoder.encode(password);
+        User user = new User("user_1", phone, encoded, null, null, null, null);
 
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
 
@@ -71,5 +99,24 @@ class AuthServiceTest {
         assertNotNull(token);
         assertTrue(tokenProvider.validateToken(token));
         assertEquals("user_1", tokenProvider.getUserIdFromToken(token));
+    }
+
+    @Test
+    void login_wrongPassword_shouldThrow() {
+        String phone   = "0987654321";
+        String encoded = passwordEncoder.encode("correct");
+        User user = new User("u1", phone, encoded, null, null, null, null);
+
+        when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.login(phone, "wrong"));
+    }
+
+    @Test
+    void login_unknownPhone_shouldThrow() {
+        when(userPersistencePort.findUserByPhoneNumber(any())).thenReturn(Optional.empty());
+        assertThrows(IllegalArgumentException.class,
+                () -> authService.login("0000000000", "pass"));
     }
 }

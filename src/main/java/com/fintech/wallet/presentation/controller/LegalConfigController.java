@@ -1,6 +1,7 @@
 package com.fintech.wallet.presentation.controller;
 
 import com.fintech.wallet.domain.model.LegalConsent;
+import com.fintech.wallet.domain.model.UserLimitStatus;
 import com.fintech.wallet.domain.port.in.LegalConfigUseCase;
 import com.fintech.wallet.presentation.response.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,6 +32,19 @@ public class LegalConfigController {
         return ResponseEntity.ok(ApiResponse.success("User transaction limits retrieved", limits));
     }
 
+    /**
+     * Get user's dynamic limit status including spent and remaining amounts.
+     * Unlike /config/limits which returns static config, this calculates actual usage.
+     *
+     * GET /api/v1/config/limits/status
+     */
+    @GetMapping("/api/v1/config/limits/status")
+    public ResponseEntity<ApiResponse<UserLimitStatus>> getUserLimitStatus(Authentication auth) {
+        String userId = auth.getName();
+        UserLimitStatus status = legalConfigUseCase.getUserLimitStatus(userId);
+        return ResponseEntity.ok(ApiResponse.success("User limit status retrieved", status));
+    }
+
     @GetMapping("/api/v1/legal/terms")
     public ResponseEntity<ApiResponse<String>> getTermsOfService() {
         String terms = legalConfigUseCase.getTermsOfService();
@@ -49,3 +63,4 @@ public class LegalConfigController {
         return ResponseEntity.ok(ApiResponse.success("Legal consent recorded successfully", consent));
     }
 }
+

@@ -18,12 +18,15 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 class WalletServiceTest {
 
@@ -56,7 +59,12 @@ class WalletServiceTest {
         );
 
         when(distributedLockPort.executeWithLock(anyString(), any(Long.class), any())).thenAnswer(invocation -> {
-            org.springframework.integration.support.Supplier<Object> supplier = invocation.getArgument(2);
+            java.util.function.Supplier<Object> supplier = invocation.getArgument(2);
+            return supplier.get();
+        });
+
+        when(transactionalOperationPort.executeInTransaction(any())).thenAnswer(invocation -> {
+            java.util.function.Supplier<Object> supplier = invocation.getArgument(0);
             return supplier.get();
         });
     }
@@ -67,17 +75,57 @@ class WalletServiceTest {
         User user = new User(userId, "0987654321", "hash", "123456", KycStatus.UNVERIFIED, Instant.now(), Instant.now());
         when(userPersistencePort.findUserById(userId)).thenReturn(Optional.of(user));
 
-        Wallet sourceWallet = new Wallet("wallet-1", userId, Money.of(new BigDecimal("10000000"), "VND"), "VND", Instant.now(), Instant.now());
-        Wallet targetWallet = new Wallet("wallet-2", "user-456", Money.of(new BigDecimal("1000000"), "VND"), "VND", Instant.now(), Instant.now());
+        Wallet sourceWallet = new Wallet("wallet-1", userId, Money.of(new BigDecimal("10000000"), "VND"), Instant.now(), Instant.now(), 0L);
+        Wallet targetWallet = new Wallet("wallet-2", "user-456", Money.of(new BigDecimal("1000000"), "VND"), Instant.now(), Instant.now(), 0L);
 
         when(walletPersistencePort.findWalletById("wallet-1")).thenReturn(Optional.of(sourceWallet));
         when(walletPersistencePort.findWalletById("wallet-2")).thenReturn(Optional.of(targetWallet));
 
-        // Spent 4,000,000 today already. Trying to transfer 2,000,000 (total = 6,000,000 > 5,000,000 limit)
         when(transactionPersistencePort.calculateDailySpentByWalletId(eq("wallet-1"), any())).thenReturn(new BigDecimal("4000000"));
 
         assertThrows(TransactionLimitExceededException.class, () -> {
             walletService.transfer("req-1", "wallet-1", "wallet-2", Money.of(new BigDecimal("2000000"), "VND"));
         });
+    }
+
+    @Test
+    void getWalletById_shouldReturnWallet() {
+        Wallet wallet = new Wallet("w1", "u1", Money.zero("VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
+        Wallet result = walletService.getWalletById("w1");
+        assertEquals("w1", result.getId());
+    }
+
+    @Test
+    void createWallet_shouldCreateNewWallet() {
+        when(walletPersistencePort.findWalletByOwnerId("u1")).thenReturn(Optional.empty());
+        Wallet wallet = new Wallet("w1", "u1", Money.zero("VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.saveWallet(any())).thenReturn(wallet);
+
+        Wallet result = walletService.createWallet("u1", "VND");
+        assertEquals("w1", result.getId());
+        verify(walletPersistencePort).saveWallet(any());
+    }
+
+    @Test
+    void createWallet_duplicateOwner_shouldThrow() {
+        Wallet wallet = new Wallet("w1", "u1", Money.zero("VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletByOwnerId("u1")).thenReturn(Optional.of(wallet));
+        assertThrows(IllegalArgumentException.class, () -> walletService.createWallet("u1", "VND"));
+    }
+
+    @Test
+    void withdraw_success_shouldReturnTransaction() {
+        Wallet wallet = new Wallet("w1", "u1", Money.of(new BigDecimal("1000"), "VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
+        
+        com.fintech.wallet.domain.model.Transaction tx = com.fintech.wallet.domain.model.Transaction.createWithdrawal("req1", "w1", Money.of(new BigDecimal("100"), "VND"));
+        when(transactionPersistencePort.saveTransaction(any())).thenReturn(tx);
+        when(transactionPersistencePort.calculateDailySpentByWalletId(any(), any())).thenReturn(BigDecimal.ZERO);
+        when(transactionPersistencePort.calculateMonthlySpentByWalletId(any(), any())).thenReturn(BigDecimal.ZERO);
+
+        com.fintech.wallet.domain.model.Transaction result = walletService.withdraw("req1", "u1", "w1", "bank1", Money.of(new BigDecimal("100"), "VND"));
+        assertNotNull(result.getId());
+        assertEquals("req1", result.getRequestId());
     }
 }

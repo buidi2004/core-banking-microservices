@@ -1,3 +1,5 @@
+package com.fintech.wallet.domain.port.in;
+
 import com.fintech.wallet.domain.model.Transaction;
 import com.fintech.wallet.domain.model.TransactionType;
 

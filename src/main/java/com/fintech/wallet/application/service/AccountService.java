@@ -1,5 +1,6 @@
 package com.fintech.wallet.application.service;
 
+import com.fintech.wallet.domain.model.PublicUserProfile;
 import com.fintech.wallet.domain.model.User;
 import com.fintech.wallet.domain.port.in.AccountUseCase;
 import com.fintech.wallet.domain.port.in.AuthUseCase;
@@ -7,6 +8,8 @@ import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 public class AccountService implements AccountUseCase {
@@ -66,5 +69,20 @@ public class AccountService implements AccountUseCase {
                 java.time.Instant.now()
         );
         userPersistencePort.saveUser(updatedUser);
+    }
+
+    /**
+     * P2P recipient lookup: returns a masked public profile when found,
+     * empty when no account exists for that phone number.
+     * Validates phone format to prevent enumeration via malformed input.
+     */
+    @Override
+    public Optional<PublicUserProfile> searchByPhone(String phoneNumber) {
+        if (phoneNumber == null || !phoneNumber.matches("^0\\d{9}$")) {
+            throw new IllegalArgumentException(
+                    "Phone number must be a valid 10-digit Vietnamese mobile number starting with 0");
+        }
+        return userPersistencePort.searchByPhoneNumber(phoneNumber)
+                .map(PublicUserProfile::from);
     }
 }

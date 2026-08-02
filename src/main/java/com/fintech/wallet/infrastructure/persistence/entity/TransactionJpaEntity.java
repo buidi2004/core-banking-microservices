@@ -5,10 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -17,10 +13,6 @@ import java.time.Instant;
 @Table(name = "transactions", indexes = {
         @Index(name = "idx_transaction_request_id", columnList = "request_id", unique = true)
 })
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class TransactionJpaEntity {
 
     @Id
@@ -49,4 +41,81 @@ public class TransactionJpaEntity {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    public String getId() {
+        return id;
+    }
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    public String getSourceWalletId() {
+        return sourceWalletId;
+    }
+    public void setSourceWalletId(String sourceWalletId) {
+        this.sourceWalletId = sourceWalletId;
+    }
+
+    public String getTargetWalletId() {
+        return targetWalletId;
+    }
+    public void setTargetWalletId(String targetWalletId) {
+        this.targetWalletId = targetWalletId;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public String getType() {
+        return type;
+    }
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public TransactionJpaEntity() {}
+
+    public TransactionJpaEntity(String id, String requestId, String sourceWalletId, String targetWalletId, BigDecimal amount, String currency, String type, String status, Instant createdAt) {
+        this.id = id;
+        this.requestId = requestId;
+        this.sourceWalletId = sourceWalletId;
+        this.targetWalletId = targetWalletId;
+        this.amount = amount;
+        this.currency = currency;
+        this.type = type;
+        this.status = status;
+        this.createdAt = createdAt;
+    }
 }

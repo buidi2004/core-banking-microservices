@@ -1,11 +1,15 @@
 package com.fintech.wallet.presentation.controller;
 
+import com.fintech.wallet.domain.model.FeeEstimate;
 import com.fintech.wallet.domain.model.Money;
 import com.fintech.wallet.domain.model.Transaction;
+import com.fintech.wallet.domain.model.TransactionType;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.port.in.DepositMoneyUseCase;
+import com.fintech.wallet.domain.port.in.FeeEstimationUseCase;
 import com.fintech.wallet.domain.port.in.GetWalletUseCase;
 import com.fintech.wallet.domain.port.in.TransferMoneyUseCase;
+import com.fintech.wallet.domain.port.in.TransactionReversalUseCase;
 import com.fintech.wallet.domain.exception.InvalidPinException;
 import com.fintech.wallet.domain.port.in.PinUseCase;
 import com.fintech.wallet.domain.port.in.WithdrawMoneyUseCase;
@@ -14,6 +18,7 @@ import com.fintech.wallet.presentation.request.DepositRequest;
 import com.fintech.wallet.presentation.request.TransferRequest;
 import com.fintech.wallet.presentation.request.WithdrawRequest;
 import com.fintech.wallet.presentation.response.ApiResponse;
+import com.fintech.wallet.presentation.response.FeeEstimateResponse;
 import com.fintech.wallet.presentation.response.TransferResponse;
 import com.fintech.wallet.presentation.response.WalletResponse;
 import jakarta.validation.Valid;
@@ -25,7 +30,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.math.BigDecimal;
 
 /**
  * Controller REST API: WalletController
@@ -41,17 +49,23 @@ public class WalletController {
     private final TransferMoneyUseCase transferMoneyUseCase;
     private final WithdrawMoneyUseCase withdrawMoneyUseCase;
     private final PinUseCase pinUseCase;
+    private final FeeEstimationUseCase feeEstimationUseCase;
+    private final TransactionReversalUseCase transactionReversalUseCase;
 
     public WalletController(GetWalletUseCase getWalletUseCase,
                             DepositMoneyUseCase depositMoneyUseCase,
                             TransferMoneyUseCase transferMoneyUseCase,
                             WithdrawMoneyUseCase withdrawMoneyUseCase,
-                            PinUseCase pinUseCase) {
+                            PinUseCase pinUseCase,
+                            FeeEstimationUseCase feeEstimationUseCase,
+                            TransactionReversalUseCase transactionReversalUseCase) {
         this.getWalletUseCase = getWalletUseCase;
         this.depositMoneyUseCase = depositMoneyUseCase;
         this.transferMoneyUseCase = transferMoneyUseCase;
         this.withdrawMoneyUseCase = withdrawMoneyUseCase;
         this.pinUseCase = pinUseCase;
+        this.feeEstimationUseCase = feeEstimationUseCase;
+        this.transactionReversalUseCase = transactionReversalUseCase;
     }
 
     @PostMapping
@@ -101,6 +115,40 @@ public class WalletController {
         );
         TransferResponse response = TransferResponse.fromDomain(transaction);
         return ResponseEntity.ok(ApiResponse.success("Withdrawal successful", response));
+    }
+
+    // ─── Fee Estimation ──────────────────────────────────────────────────────
+
+    /**
+     * Estimate transaction fee before the user confirms.
+     * GET /api/v1/wallets/fees/estimate?type=WITHDRAWAL&amount=500000&currency=VND
+     */
+    @GetMapping("/fees/estimate")
+    public ResponseEntity<ApiResponse<FeeEstimateResponse>> estimateFee(
+            Authentication auth,
+            @RequestParam TransactionType type,
+            @RequestParam BigDecimal amount,
+            @RequestParam(defaultValue = "VND") String currency) {
+        String userId = auth.getName();
+        Money money = Money.of(amount, currency);
+        FeeEstimate estimate = feeEstimationUseCase.estimateFee(userId, type, money);
+        FeeEstimateResponse response = FeeEstimateResponse.fromDomain(estimate);
+        return ResponseEntity.ok(ApiResponse.success("Fee estimated successfully", response));
+    }
+
+    // ─── Transaction Reversal ────────────────────────────────────────────────
+
+    /**
+     * Reverse a completed transaction (manual reversal by support/admin).
+     * POST /api/v1/wallets/transactions/{transactionId}/reverse
+     */
+    @PostMapping("/transactions/{transactionId}/reverse")
+    public ResponseEntity<ApiResponse<TransferResponse>> reverseTransaction(
+            @PathVariable String transactionId,
+            @RequestParam(required = false, defaultValue = "Manual reversal") String reason) {
+        Transaction reversalTx = transactionReversalUseCase.reverseTransaction(transactionId, reason);
+        TransferResponse response = TransferResponse.fromDomain(reversalTx);
+        return ResponseEntity.ok(ApiResponse.success("Transaction reversed successfully", response));
     }
 }
 

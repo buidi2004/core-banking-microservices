@@ -1,23 +1,29 @@
 package com.fintech.wallet.application.service;
 
 import com.fintech.wallet.domain.model.UserSession;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import com.fintech.wallet.domain.port.in.SessionUseCase;
+import com.fintech.wallet.domain.port.out.SessionStorePort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Application Service: manages user sessions via a pluggable SessionStorePort.
+ * Depends on the domain port — not on Spring Redis classes directly.
+ */
 @Service
-public class SessionService {
+public class SessionService implements SessionUseCase {
 
-    private final StringRedisTemplate redisTemplate;
+    private final SessionStorePort sessionStore;
 
-    public SessionService(StringRedisTemplate redisTemplate) {
-        this.redisTemplate = redisTemplate;
+    public SessionService(SessionStorePort sessionStore) {
+        this.sessionStore = sessionStore;
     }
 
     public UserSession createSession(String userId, String deviceInfo, String ipAddress) {
@@ -28,27 +34,29 @@ public class SessionService {
         String key = "session:" + userId + ":" + sessionId;
         String val = String.format("%s|%s|%s|%s|%s",
                 sessionId, userId,
-                deviceInfo != null ? deviceInfo : "Unknown Device",
-                ipAddress != null ? ipAddress : "127.0.0.1",
+                deviceInfo  != null ? deviceInfo  : "Unknown Device",
+                ipAddress   != null ? ipAddress   : "127.0.0.1",
                 now.toString());
 
-        redisTemplate.opsForValue().set(key, val, 7, TimeUnit.DAYS);
+        sessionStore.set(key, val, 7, TimeUnit.DAYS);
         return session;
     }
 
     public List<UserSession> getActiveSessions(String userId) {
         String pattern = "session:" + userId + ":*";
-        Set<String> keys = redisTemplate.keys(pattern);
+        Set<String> keys = sessionStore.keys(pattern);
         List<UserSession> sessions = new ArrayList<>();
 
         if (keys != null) {
             for (String key : keys) {
-                String val = redisTemplate.opsForValue().get(key);
+                String val = sessionStore.get(key);
                 if (val != null) {
                     String[] parts = val.split("\\|", -1);
                     if (parts.length >= 5) {
                         Instant createdAt = Instant.parse(parts[4]);
-                        sessions.add(new UserSession(parts[0], parts[1], parts[2], parts[3], createdAt, createdAt));
+                        sessions.add(new UserSession(
+                                parts[0], parts[1], parts[2], parts[3],
+                                createdAt, createdAt));
                     }
                 }
             }
@@ -57,15 +65,13 @@ public class SessionService {
     }
 
     public void revokeSession(String userId, String sessionId) {
-        String key = "session:" + userId + ":" + sessionId;
-        redisTemplate.delete(key);
+        sessionStore.delete("session:" + userId + ":" + sessionId);
     }
 
     public void revokeAllSessions(String userId) {
-        String pattern = "session:" + userId + ":*";
-        Set<String> keys = redisTemplate.keys(pattern);
+        Set<String> keys = sessionStore.keys("session:" + userId + ":*");
         if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
+            sessionStore.deleteAll(keys);
         }
     }
 }

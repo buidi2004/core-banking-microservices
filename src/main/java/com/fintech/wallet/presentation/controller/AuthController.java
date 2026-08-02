@@ -9,8 +9,10 @@ import com.fintech.wallet.presentation.response.AuthResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,5 +73,48 @@ public class AuthController {
                                                             @RequestParam String newPassword) {
         authUseCase.resetPassword(phoneNumber, otp, newPassword);
         return ResponseEntity.ok(ApiResponse.success("Password reset successfully", null));
+    }
+
+    /**
+     * Logout the current device: blacklists the supplied Bearer token so it
+     * cannot be reused even before its natural expiry.
+     * The client must also discard both access and refresh tokens locally.
+     * 
+     * POST /api/v1/auth/logout
+     * Header: Authorization: Bearer {access_token}
+     * 
+     * This API invalidates the current access token by adding it to a blacklist.
+     * The token cannot be used for any subsequent requests even if not yet expired.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            authUseCase.logout(token);
+        }
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
+    }
+
+    /**
+     * Logout current device (alternative endpoint with explicit naming).
+     * This endpoint provides the same functionality as POST /logout but with
+     * a more explicit name to distinguish from session-based logout endpoints.
+     * 
+     * POST /api/v1/auth/logout/current
+     * Header: Authorization: Bearer {access_token}
+     * 
+     * Invalidates the current access token immediately by blacklisting it.
+     * Client must discard both access and refresh tokens after calling this.
+     */
+    @PostMapping("/logout/current")
+    public ResponseEntity<ApiResponse<Void>> logoutCurrentDevice(
+            Authentication authentication,
+            @RequestHeader(value = "Authorization") String authHeader) {
+        String token = authHeader.substring(7); // Remove "Bearer " prefix
+        authUseCase.logout(token);
+        return ResponseEntity.ok(ApiResponse.success(
+                "Current device logged out successfully. Please discard your access and refresh tokens.", 
+                null));
     }
 }

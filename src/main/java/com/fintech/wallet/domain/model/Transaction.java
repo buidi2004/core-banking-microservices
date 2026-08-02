@@ -17,8 +17,13 @@ public class Transaction {
     private final TransactionType type;
     private TransactionStatus status;
     private final Instant createdAt;
+    private final String originalTransactionId;
 
     public Transaction(String id, String requestId, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt) {
+        this(id, requestId, sourceWalletId, targetWalletId, amount, type, status, createdAt, null);
+    }
+
+    public Transaction(String id, String requestId, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt, String originalTransactionId) {
         this.id = id != null ? id : UUID.randomUUID().toString();
         this.requestId = requestId;
         this.sourceWalletId = sourceWalletId;
@@ -27,6 +32,7 @@ public class Transaction {
         this.type = type;
         this.status = status != null ? status : TransactionStatus.PENDING;
         this.createdAt = createdAt != null ? createdAt : Instant.now();
+        this.originalTransactionId = originalTransactionId;
     }
 
     public Transaction(String id, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt) {
@@ -88,6 +94,27 @@ public class Transaction {
         this.status = TransactionStatus.FAILED;
     }
 
+    public void markReversed() {
+        if (this.status != TransactionStatus.SUCCESS) {
+            throw new IllegalStateException("Only SUCCESS transactions can be reversed");
+        }
+        this.status = TransactionStatus.REVERSED;
+    }
+
+    public static Transaction createReversal(String originalTransactionId, String walletId, Money amount) {
+        return new Transaction(
+            UUID.randomUUID().toString(),
+            null,
+            null,
+            walletId,
+            amount,
+            TransactionType.REVERSAL,
+            TransactionStatus.PENDING,
+            Instant.now(),
+            originalTransactionId
+        );
+    }
+
     public String getId() {
         return id;
     }
@@ -120,6 +147,10 @@ public class Transaction {
         return createdAt;
     }
 
+    public String getOriginalTransactionId() {
+        return originalTransactionId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -135,6 +166,6 @@ public class Transaction {
 
     @Override
     public String toString() {
-        return "Transaction{id='" + id + "', requestId='" + requestId + "', type=" + type + ", status=" + status + ", amount=" + amount + "}";
+        return "Transaction{id='" + id + "', requestId='" + requestId + "', type=" + type + ", status=" + status + ", amount=" + amount + ", originalTransactionId='" + originalTransactionId + "'}";
     }
 }

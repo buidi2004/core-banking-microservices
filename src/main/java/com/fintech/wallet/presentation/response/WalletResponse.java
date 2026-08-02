@@ -1,18 +1,10 @@
 package com.fintech.wallet.presentation.response;
 
 import com.fintech.wallet.domain.model.Wallet;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class WalletResponse {
 
     private String id;
@@ -32,5 +24,58 @@ public class WalletResponse {
                 wallet.getCreatedAt(),
                 wallet.getUpdatedAt()
         );
+    }
+
+    public String getId() {
+        return id;
+    }
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
+    }
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public BigDecimal getBalance() {
+        return balance;
+    }
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public WalletResponse() {}
+
+    public WalletResponse(String id, String ownerId, BigDecimal balance, String currency, Instant createdAt, Instant updatedAt) {
+        this.id = id;
+        this.ownerId = ownerId;
+        this.balance = balance;
+        this.currency = currency;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 }

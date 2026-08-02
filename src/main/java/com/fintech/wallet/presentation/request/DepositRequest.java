@@ -3,17 +3,9 @@ package com.fintech.wallet.presentation.request;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class DepositRequest {
 
     private String requestId;
@@ -27,4 +19,41 @@ public class DepositRequest {
 
     @NotBlank(message = "Currency is required")
     private String currency;
+
+    public String getRequestId() {
+        return requestId;
+    }
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    public String getWalletId() {
+        return walletId;
+    }
+    public void setWalletId(String walletId) {
+        this.walletId = walletId;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public DepositRequest() {}
+
+    public DepositRequest(String requestId, String walletId, BigDecimal amount, String currency) {
+        this.requestId = requestId;
+        this.walletId = walletId;
+        this.amount = amount;
+        this.currency = currency;
+    }
 }

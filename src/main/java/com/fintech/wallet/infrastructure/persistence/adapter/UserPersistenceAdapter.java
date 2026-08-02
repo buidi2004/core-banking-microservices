@@ -36,4 +36,9 @@ public class UserPersistenceAdapter implements UserPersistencePort {
     public Optional<User> findUserByPhoneNumber(String phoneNumber) {
         return userRepository.findByPhoneNumber(phoneNumber).map(mapper::toDomain);
     }
+
+    @Override
+    public Optional<User> searchByPhoneNumber(String phoneNumber) {
+        return userRepository.findByPhoneNumber(phoneNumber).map(mapper::toDomain);
+    }
 }

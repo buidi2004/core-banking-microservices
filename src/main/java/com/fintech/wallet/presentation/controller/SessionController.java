@@ -1,7 +1,7 @@
 package com.fintech.wallet.presentation.controller;
 
-import com.fintech.wallet.application.service.SessionService;
 import com.fintech.wallet.domain.model.UserSession;
+import com.fintech.wallet.domain.port.in.SessionUseCase;
 import com.fintech.wallet.presentation.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -17,30 +17,31 @@ import java.util.List;
 @RequestMapping("/api/v1/account/sessions")
 public class SessionController {
 
-    private final SessionService sessionService;
+    private final SessionUseCase sessionUseCase;
 
-    public SessionController(SessionService sessionService) {
-        this.sessionService = sessionService;
+    public SessionController(SessionUseCase sessionUseCase) {
+        this.sessionUseCase = sessionUseCase;
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<UserSession>>> getActiveSessions(Authentication auth) {
         String userId = auth.getName();
-        List<UserSession> sessions = sessionService.getActiveSessions(userId);
+        List<UserSession> sessions = sessionUseCase.getActiveSessions(userId);
         return ResponseEntity.ok(ApiResponse.success("Active sessions retrieved", sessions));
     }
 
     @DeleteMapping("/{sessionId}")
-    public ResponseEntity<ApiResponse<Void>> revokeSession(Authentication auth, @PathVariable String sessionId) {
+    public ResponseEntity<ApiResponse<Void>> revokeSession(
+            Authentication auth, @PathVariable String sessionId) {
         String userId = auth.getName();
-        sessionService.revokeSession(userId, sessionId);
+        sessionUseCase.revokeSession(userId, sessionId);
         return ResponseEntity.ok(ApiResponse.success("Session revoked successfully", null));
     }
 
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> revokeAllSessions(Authentication auth) {
         String userId = auth.getName();
-        sessionService.revokeAllSessions(userId);
+        sessionUseCase.revokeAllSessions(userId);
         return ResponseEntity.ok(ApiResponse.success("All active sessions revoked successfully", null));
     }
 }
