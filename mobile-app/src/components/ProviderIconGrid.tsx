@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { AppIcon } from './icons/AppIcon';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface ProviderIconGridProps {
   providers: Array<{
@@ -24,7 +25,7 @@ export const ProviderIconGrid: React.FC<ProviderIconGridProps> = ({ providers })
         <View style={styles.iconWrapper}>
           <AppIcon name={provider.icon as any} size="md" color={Colors.primary} />
         </View>
-        <Text style={styles.providerLabel}>{provider.label}</Text>
+        <AppText variant="caption" style={styles.providerLabel}>{provider.label}</AppText>
       </TouchableOpacity>
     ))}
   </ScrollView>
@@ -50,9 +51,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   providerLabel: {
-    fontSize: Typography.caption.fontSize,
     color: Colors.textPrimary,
-    fontWeight: '500',
     textAlign: 'center',
   },
 });

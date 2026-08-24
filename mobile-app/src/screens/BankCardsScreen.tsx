@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
 import { BankCardRow } from '../components/BankCardRow';
 import { SecondaryButton } from '../components/SecondaryButton';
 import { EmptyState } from '../components/EmptyState';
+import { AppText } from '../components/typography/AppText';
 
 interface BankCardsScreenProps {
   navigation: any;
@@ -26,7 +27,7 @@ export default function BankCardsScreen({ navigation }: BankCardsScreenProps) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ngân hàng & thẻ liên kết</Text>
+        <AppText style={styles.headerTitle}>Ngân hàng & thẻ liên kết</AppText>
         <View style={styles.spacer} />
       </View>
 
@@ -79,7 +80,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {

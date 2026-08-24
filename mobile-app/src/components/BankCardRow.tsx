@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppIcon } from './icons/AppIcon';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface BankCardRowProps {
   bankName: string;
@@ -23,14 +24,14 @@ export const BankCardRow: React.FC<BankCardRowProps> = ({
         <AppIcon name="bank" size="sm" color={Colors.primary} />
       </View>
       <View style={styles.info}>
-        <Text style={styles.bankName}>{bankName}</Text>
-        <Text style={styles.accountNumber}>{accountNumber}</Text>
+        <AppText variant="body" style={styles.bankName}>{bankName}</AppText>
+        <AppText variant="bodySm" style={styles.accountNumber}>{accountNumber}</AppText>
       </View>
     </View>
     <View style={styles.rightSection}>
       {isDefault && (
         <View style={styles.defaultBadge}>
-          <Text style={styles.defaultBadgeText}>Mặc định</Text>
+          <AppText variant="captionSm" style={styles.defaultBadgeText}>Mặc định</AppText>
         </View>
       )}
       <AppIcon name="chevronRight" size="sm" color={Colors.textSecondary} />
@@ -65,12 +66,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   bankName: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   accountNumber: {
-    fontSize: Typography.bodySm.fontSize,
     color: Colors.textSecondary,
   },
   rightSection: {
@@ -85,8 +83,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
   },
   defaultBadgeText: {
-    fontSize: Typography.captionSm.fontSize,
-    fontWeight: '600',
     color: Colors.primary,
   },
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
@@ -7,6 +7,7 @@ import { Typography } from '../theme';
 import { StatusChip } from '../components/StatusChip';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface TransferConfirmScreenProps {
   navigation: any;
@@ -37,27 +38,27 @@ export default function TransferConfirmScreen({ navigation }: TransferConfirmScr
               <AppIcon name="close" size="md" color={Colors.textSecondary} />
           </TouchableOpacity>
 
-          <Text style={styles.title}>Xác nhận chuyển tiền</Text>
-          <Text style={styles.subtitle}>Vui lòng kiểm tra thông tin trước khi xác nhận</Text>
+          <AppText variant="headingSm" style={styles.title}>Xác nhận chuyển tiền</AppText>
+          <AppText style={styles.subtitle}>Vui lòng kiểm tra thông tin trước khi xác nhận</AppText>
 
           {/* Summary */}
           <View style={styles.summaryCard}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Người nhận</Text>
-              <Text style={styles.summaryValue}>Nguyễn Văn A</Text>
+              <AppText style={styles.summaryLabel}>Người nhận</AppText>
+              <AppText style={styles.summaryValue}>Nguyễn Văn A</AppText>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Số điện thoại</Text>
-              <Text style={styles.summaryValue}>0901 234 567</Text>
+              <AppText style={styles.summaryLabel}>Số điện thoại</AppText>
+              <AppText style={styles.summaryValue}>0901 234 567</AppText>
             </View>
             <View style={styles.divider} />
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Số tiền</Text>
-              <Text style={styles.amountValue}>500.000 VNĐ</Text>
+              <AppText style={styles.summaryLabel}>Số tiền</AppText>
+              <AppText style={styles.amountValue}>500.000 VNĐ</AppText>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Phí giao dịch</Text>
-              <Text style={styles.feeValue}>Miễn phí</Text>
+              <AppText style={styles.summaryLabel}>Phí giao dịch</AppText>
+              <AppText style={styles.feeValue}>Miễn phí</AppText>
             </View>
           </View>
 
@@ -114,8 +115,6 @@ const styles = StyleSheet.create({
     padding: Spacing.xs,
   },
   title: {
-    fontSize: Typography.headingSm.fontSize,
-    fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.xs,
@@ -143,17 +142,14 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   amountValue: {
     
-    fontWeight: '800',
     color: Colors.primary,
   },
   feeValue: {
     
-    fontWeight: '600',
     color: Colors.success,
   },
   divider: {

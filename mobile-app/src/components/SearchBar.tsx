@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppIcon } from './icons/AppIcon';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface SearchBarProps {
   value?: string;
@@ -21,8 +22,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => (
   <View style={styles.container}>
     <AppIcon name="search" size="sm" color={Colors.textSecondary} />
-    <TextInput
-      style={styles.input}
+    <TextInput style={styles.input}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
@@ -30,7 +30,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     />
     {showCancel && (
       <TouchableOpacity onPress={onCancel} style={styles.cancelBtn}>
-        <Text style={styles.cancelText}>Huỷ</Text>
+        <AppText variant="body" style={styles.cancelText}>Huỷ</AppText>
       </TouchableOpacity>
     )}
   </View>
@@ -49,7 +49,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: Typography.body.fontSize,
     color: Colors.textPrimary,
     marginLeft: Spacing.sm,
   },
@@ -57,8 +56,6 @@ const styles = StyleSheet.create({
     marginLeft: Spacing.sm,
   },
   cancelText: {
-    fontSize: Typography.body.fontSize,
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
 });

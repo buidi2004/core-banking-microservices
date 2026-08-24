@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppIcon } from './icons/AppIcon';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface FAQAccordionItemProps {
   question: string;
@@ -15,10 +16,10 @@ export const FAQAccordionItem: React.FC<FAQAccordionItemProps> = ({ question, an
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.header} onPress={() => setIsOpen(!isOpen)}>
-        <Text style={styles.question}>{question}</Text>
+        <AppText variant="body" style={styles.question}>{question}</AppText>
         <AppIcon name={isOpen ? "chevronRight" : "chevronRight"} size="sm" color={Colors.primary} />
       </TouchableOpacity>
-      {isOpen && <Text style={styles.answer}>{answer}</Text>}
+      {isOpen && <AppText variant="caption" style={styles.answer}>{answer}</AppText>}
     </View>
   );
 };
@@ -38,13 +39,10 @@ const styles = StyleSheet.create({
   },
   question: {
     flex: 1,
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
     color: Colors.textPrimary,
     marginRight: Spacing.sm,
   },
   answer: {
-    fontSize: Typography.caption.fontSize,
     color: Colors.textSecondary,
     lineHeight: 20,
     paddingBottom: Spacing.md,

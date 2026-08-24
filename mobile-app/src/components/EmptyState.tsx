@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppIcon } from './icons/AppIcon';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface EmptyStateProps {
   icon?: string;
@@ -23,11 +24,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     <View style={styles.iconWrapper}>
       <AppIcon name={icon as any} size="lg" color={Colors.primarySoft} />
     </View>
-    <Text style={styles.title}>{title}</Text>
-    {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+    <AppText variant="heading" style={styles.title}>{title}</AppText>
+    {subtitle && <AppText variant="caption" style={styles.subtitle}>{subtitle}</AppText>}
     {actionLabel && onAction && (
       <TouchableOpacity style={styles.actionBtn} onPress={onAction}>
-        <Text style={styles.actionText}>{actionLabel}</Text>
+        <AppText variant="body" style={styles.actionText}>{actionLabel}</AppText>
       </TouchableOpacity>
     )}
   </View>
@@ -50,14 +51,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   title: {
-    fontSize: Typography.heading.fontSize,
-    fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
   subtitle: {
-    fontSize: Typography.caption.fontSize,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
@@ -70,8 +68,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
   },
   actionText: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
     color: Colors.primary,
   },
 });

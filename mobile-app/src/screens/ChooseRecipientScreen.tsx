@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { EmptyState } from '../components/EmptyState';
+import { AppText } from '../components/typography/AppText';
 
 interface ChooseRecipientScreenProps {
   navigation: any;
@@ -20,7 +21,7 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
           <TouchableOpacity onPress={() => navigation.goBack()}>
               <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chọn người nhận</Text>
+          <AppText style={styles.headerTitle}>Chọn người nhận</AppText>
           <TouchableOpacity style={styles.headerIconBtn}>
               <AppIcon name="notifications-outline" size="sm" color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -29,7 +30,7 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         {/* Title */}
-        <Text style={styles.pageTitle}>Chuyển tiền</Text>
+        <AppText variant="headingXl" style={styles.pageTitle}>Chuyển tiền</AppText>
 
         {/* Quick input methods */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.methodScroll}>
@@ -43,7 +44,7 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
               <View style={styles.methodIcon}>
                   <AppIcon name={method.icon as any} size="md" color={Colors.primary} />
               </View>
-              <Text style={styles.methodLabel}>{method.label}</Text>
+              <AppText style={styles.methodLabel}>{method.label}</AppText>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -52,22 +53,22 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
         <View style={styles.inputCard}>
           <View style={styles.inputWrapper}>
               <AppIcon name="qr-code" size="sm" color={Colors.textSecondary} />
-            <Text style={styles.inputPlaceholder}>Nhập số tài khoản hoặc tên người nhận</Text>
+            <AppText style={styles.inputPlaceholder}>Nhập số tài khoản hoặc tên người nhận</AppText>
             <TouchableOpacity style={styles.scanBtn}>
                 <AppIcon name="scan" size="sm" color={Colors.primary} />
             </TouchableOpacity>
           </View>
           <View style={styles.extraActions}>
             <TouchableOpacity>
-              <Text style={styles.extraActionText}>📷 Chụp ảnh</Text>
+              <AppText style={styles.extraActionText}>📷 Chụp ảnh</AppText>
             </TouchableOpacity>
-            <Text style={styles.divider}>|</Text>
+            <AppText style={styles.divider}>|</AppText>
             <TouchableOpacity>
-              <Text style={styles.extraActionText}>🖼 Tải ảnh</Text>
+              <AppText style={styles.extraActionText}>🖼 Tải ảnh</AppText>
             </TouchableOpacity>
-            <Text style={styles.divider}>|</Text>
+            <AppText style={styles.divider}>|</AppText>
             <TouchableOpacity>
-              <Text style={styles.extraActionText}>📋 Dán</Text>
+              <AppText style={styles.extraActionText}>📋 Dán</AppText>
             </TouchableOpacity>
           </View>
         </View>
@@ -75,9 +76,9 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
         {/* Recent contacts */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Gần đây</Text>
+            <AppText style={styles.sectionTitle}>Gần đây</AppText>
             <TouchableOpacity>
-              <Text style={styles.seeAllText}>Xem tất cả</Text>
+              <AppText style={styles.seeAllText}>Xem tất cả</AppText>
             </TouchableOpacity>
           </View>
           <View style={styles.recentList}>
@@ -86,7 +87,7 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
                 <View style={styles.recentAvatar}>
                     <AppIcon name="person" size="sm" color={Colors.primary} />
                 </View>
-                <Text style={styles.recentName}>{name}</Text>
+                <AppText style={styles.recentName}>{name}</AppText>
                   <AppIcon name="chevron-forward" size="xs" color={Colors.textSecondary} />
               </TouchableOpacity>
             ))}
@@ -95,16 +96,16 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
 
         {/* Partners */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Đối tác liên kết</Text>
+          <AppText style={styles.sectionTitle}>Đối tác liên kết</AppText>
           <View style={styles.partnerList}>
             {['Shopee', 'Grab', 'Viettel', 'EVN'].map((partner, i) => (
               <TouchableOpacity key={i} style={styles.partnerItem}>
                 <View style={styles.partnerAvatar}>
-                  <Text style={styles.partnerInitial}>{partner[0]}</Text>
+                  <AppText style={styles.partnerInitial}>{partner[0]}</AppText>
                 </View>
-                <Text style={styles.partnerName}>{partner}</Text>
+                <AppText style={styles.partnerName}>{partner}</AppText>
                 <View style={styles.partnerBadge}>
-                  <Text style={styles.partnerBadgeText}>+99</Text>
+                  <AppText variant="captionXs" style={styles.partnerBadgeText}>+99</AppText>
                 </View>
               </TouchableOpacity>
             ))}
@@ -113,7 +114,7 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
 
         {/* Saved contacts */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Danh bạ</Text>
+          <AppText style={styles.sectionTitle}>Danh bạ</AppText>
           <View style={styles.savedList}>
             {['Nguyễn Văn A', 'Trần Thị B'].map((contact, i) => (
               <TouchableOpacity key={i} style={styles.savedItem}>
@@ -121,11 +122,11 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
                     <AppIcon name="person-circle" size="lg" color={Colors.primary} />
                 </View>
                 <View style={styles.savedInfo}>
-                  <Text style={styles.savedName}>{contact}</Text>
-                  <Text style={styles.savedAccount}>****1234</Text>
+                  <AppText style={styles.savedName}>{contact}</AppText>
+                  <AppText style={styles.savedAccount}>****1234</AppText>
                 </View>
                 <TouchableOpacity style={styles.transferBtn}>
-                  <Text style={styles.transferBtnText}>Chuyển</Text>
+                  <AppText style={styles.transferBtnText}>Chuyển</AppText>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -157,7 +158,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   headerIconBtn: {
@@ -173,8 +173,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   pageTitle: {
-    fontSize: Typography.headingXl.fontSize,
-    fontWeight: '800',
     color: Colors.textPrimary,
     marginBottom: Spacing.lg,
   },
@@ -198,7 +196,6 @@ const styles = StyleSheet.create({
   methodLabel: {
     
     color: Colors.textPrimary,
-    fontWeight: '500',
     marginTop: Spacing.xs,
     textAlign: 'center',
   },
@@ -254,15 +251,13 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   seeAllText: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
   recentList: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
@@ -288,7 +283,6 @@ const styles = StyleSheet.create({
   recentName: {
     flex: 1,
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   partnerList: {
@@ -316,13 +310,11 @@ const styles = StyleSheet.create({
   },
   partnerInitial: {
     
-    fontWeight: '700',
     color: Colors.primary,
   },
   partnerName: {
     flex: 1,
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   partnerBadge: {
@@ -332,8 +324,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   partnerBadgeText: {
-    fontSize: Typography.captionXs.fontSize,
-    fontWeight: '700',
     color: Colors.white,
   },
   savedList: {
@@ -357,7 +347,6 @@ const styles = StyleSheet.create({
   },
   savedName: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   savedAccount: {
@@ -373,7 +362,6 @@ const styles = StyleSheet.create({
   },
   transferBtnText: {
     
-    fontWeight: '600',
     color: Colors.white,
   },
 });

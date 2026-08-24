@@ -1,8 +1,9 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Radius, Shadows } from '../theme';
+import { Colors, Radius, Shadows, Opacity } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface PrimaryButtonProps {
   title: string;
@@ -26,7 +27,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     style={[styles.container, disabled ? styles.disabled : null, style]}
     pointerEvents={disabled ? 'none' : 'auto'}
   >
-    <Text style={[styles.text, textStyle]}>{title}</Text>
+    <AppText variant="body" style={[styles.text, textStyle]}>{title}</AppText>
   </LinearGradient>
 );
 
@@ -41,10 +42,8 @@ const styles = StyleSheet.create({
   },
   text: {
     color: Colors.white,
-    fontSize: Typography.body.fontSize,
-    fontWeight: '700',
-  },
+    },
   disabled: {
-    opacity: 0.5,
+    opacity: Opacity.disabled,
   },
 });

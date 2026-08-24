@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { StatusChip } from '../components/StatusChip';
 import { SolidCard } from '../components/SolidCard';
 import { EmptyState } from '../components/EmptyState';
+import { AppText } from '../components/typography/AppText';
 
 interface DeviceManagementScreenProps {
   navigation: any;
@@ -25,9 +26,9 @@ export default function DeviceManagementScreen({ navigation }: DeviceManagementS
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thiết bị đã đăng nhập</Text>
+        <AppText style={styles.headerTitle}>Thiết bị đã đăng nhập</AppText>
         <TouchableOpacity>
-          <Text style={styles.addBtn}>+ Thêm</Text>
+          <AppText style={styles.addBtn}>+ Thêm</AppText>
         </TouchableOpacity>
       </View>
 
@@ -41,7 +42,7 @@ export default function DeviceManagementScreen({ navigation }: DeviceManagementS
           />
         ) : (
           <>
-            <Text style={styles.sectionTitle}>Thiết bị hiện tại</Text>
+            <AppText style={styles.sectionTitle}>Thiết bị hiện tại</AppText>
             {devices.map((device) => (
               <SolidCard key={device.id} style={styles.deviceCard}>
                 <View style={styles.deviceHeader}>
@@ -59,16 +60,16 @@ export default function DeviceManagementScreen({ navigation }: DeviceManagementS
                   </LinearGradient>
                   <View style={styles.deviceInfo}>
                     <View style={styles.deviceNameRow}>
-                      <Text style={styles.deviceName}>{device.name}</Text>
+                      <AppText style={styles.deviceName}>{device.name}</AppText>
                       {device.current && <StatusChip text="Đang dùng" type="success" size="sm" />}
                     </View>
-                    <Text style={styles.devicePlatform}>{device.platform}</Text>
-                    <Text style={styles.deviceLastUsed}>Sử dụng lần cuối: {device.lastUsed}</Text>
+                    <AppText style={styles.devicePlatform}>{device.platform}</AppText>
+                    <AppText style={styles.deviceLastUsed}>Sử dụng lần cuối: {device.lastUsed}</AppText>
                   </View>
                 </View>
                 {!device.current && (
                   <TouchableOpacity style={styles.removeBtn}>
-                    <Text style={styles.removeText}>Gỡ thiết bị</Text>
+                    <AppText style={styles.removeText}>Gỡ thiết bị</AppText>
                   </TouchableOpacity>
                 )}
               </SolidCard>
@@ -77,9 +78,9 @@ export default function DeviceManagementScreen({ navigation }: DeviceManagementS
             {/* Security tip */}
             <View style={styles.tipCard}>
                 <AppIcon name="information-circle" size="md" color={Colors.primary} />
-              <Text style={styles.tipText}>
+              <AppText style={styles.tipText}>
                 Nếu bạn không nhận ra thiết bị nào, hãy đăng xuất và đổi mật khẩu ngay lập tức.
-              </Text>
+              </AppText>
             </View>
           </>
         )}
@@ -102,14 +103,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   addBtn: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
   scrollView: {
     flex: 1,
     paddingTop: Spacing.lg,
@@ -117,7 +116,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     
-    fontWeight: '600',
     color: Colors.textSecondary,
     marginBottom: Spacing.md,
   },
@@ -148,7 +146,6 @@ const styles = StyleSheet.create({
   },
   deviceName: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   devicePlatform: {
@@ -168,8 +165,7 @@ const styles = StyleSheet.create({
   removeText: {
     
     color: Colors.danger,
-    fontWeight: '600',
-  },
+    },
   tipCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',

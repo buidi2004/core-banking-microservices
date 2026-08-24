@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors, Radius, ListDivider } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface GroupedListRowProps {
   icon?: React.ReactNode;
@@ -46,13 +47,13 @@ export const GroupedListRow: React.FC<GroupedListRowProps> = ({
       <View style={styles.leftSection}>
         {icon && <View style={styles.iconWrapper}>{icon}</View>}
         <View style={styles.textGroup}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          <AppText variant="body" style={styles.title} numberOfLines={1}>{title}</AppText>
           {(subtitle || date) && (
-            <Text style={styles.meta}>
+            <AppText variant="caption" style={styles.meta}>
               {subtitle}
               {subtitle && date ? ' • ' : ''}
               {date}
-            </Text>
+            </AppText>
           )}
         </View>
       </View>
@@ -60,9 +61,9 @@ export const GroupedListRow: React.FC<GroupedListRowProps> = ({
       {/* Right section */}
       <View style={styles.rightSection}>
         {amount ? (
-          <Text style={[styles.amount, amountColor ? { color: amountColor } : null]}>
+          <AppText variant="body" style={[styles.amount, amountColor ? { color: amountColor } : null]}>
             {amount}
-          </Text>
+          </AppText>
         ) : null}
         {right ?? null}
         {hasBadge && <View style={styles.badge} />}
@@ -104,12 +105,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   meta: {
-    fontSize: Typography.caption.fontSize,
     color: Colors.textSecondary,
   },
   rightSection: {
@@ -117,8 +115,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   amount: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   divider: {

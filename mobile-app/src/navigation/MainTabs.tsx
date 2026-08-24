@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     right: 12,
     height: 70,
     borderRadius: Radius.xxl,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: Colors.glassSolid,
     ...Shadows.hero,
     borderTopWidth: 0,
     borderBottomWidth: 0,

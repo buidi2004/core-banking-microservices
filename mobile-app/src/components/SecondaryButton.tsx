@@ -1,7 +1,8 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
-import { Colors, Radius, Shadows } from '../theme';
+import { TouchableOpacity, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { Colors, Radius, Shadows, Opacity } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface SecondaryButtonProps {
   title: string;
@@ -23,7 +24,7 @@ export const SecondaryButton: React.FC<SecondaryButtonProps> = ({
     onPress={onPress}
     activeOpacity={0.8}
   >
-    <Text style={[styles.text, textStyle]}>{title}</Text>
+    <AppText variant="body" style={[styles.text, textStyle]}>{title}</AppText>
   </TouchableOpacity>
 );
 
@@ -39,10 +40,8 @@ const styles = StyleSheet.create({
   },
   text: {
     color: Colors.primary,
-    fontSize: Typography.body.fontSize,
-    fontWeight: '600',
-  },
+    },
   disabled: {
-    opacity: 0.5,
+    opacity: Opacity.disabled,
   },
 });

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
 import { FAQAccordionItem } from '../components/FAQAccordionItem';
 import { SearchBar } from '../components/SearchBar';
 import { ProviderIconGrid } from '../components/ProviderIconGrid';
+import { AppText } from '../components/typography/AppText';
 
 interface HelpCenterScreenProps {
   navigation: any;
@@ -34,7 +35,7 @@ export default function HelpCenterScreen({ navigation }: HelpCenterScreenProps) 
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Trợ giúp</Text>
+        <AppText style={styles.headerTitle}>Trợ giúp</AppText>
         <View style={styles.spacer} />
       </View>
 
@@ -47,13 +48,13 @@ export default function HelpCenterScreen({ navigation }: HelpCenterScreenProps) 
         />
 
         {/* Quick topics */}
-        <Text style={styles.sectionTitle}>Chủ đề nhanh</Text>
+        <AppText style={styles.sectionTitle}>Chủ đề nhanh</AppText>
         <ProviderIconGrid
           providers={quickTopics.map((t) => ({ ...t, onPress: () => {} }))}
         />
 
         {/* FAQ list */}
-        <Text style={styles.sectionTitle}>Câu hỏi thường gặp</Text>
+        <AppText style={styles.sectionTitle}>Câu hỏi thường gặp</AppText>
         <View style={styles.faqList}>
           {faqs.map((faq, index) => (
             <FAQAccordionItem
@@ -68,8 +69,8 @@ export default function HelpCenterScreen({ navigation }: HelpCenterScreenProps) 
         <TouchableOpacity style={styles.chatCard} onPress={() => navigation.navigate('LiveChat')}>
             <AppIcon name="chatbubble-ellipses" size="lg" color={Colors.primary} />
           <View style={styles.chatInfo}>
-            <Text style={styles.chatTitle}>Chat với hỗ trợ viên</Text>
-            <Text style={styles.chatSubtitle}>Trả lời trong vòng 2 phút</Text>
+            <AppText style={styles.chatTitle}>Chat với hỗ trợ viên</AppText>
+            <AppText style={styles.chatSubtitle}>Trả lời trong vòng 2 phút</AppText>
           </View>
             <AppIcon name="chevron-forward" size="sm" color={Colors.textSecondary} />
         </TouchableOpacity>
@@ -92,7 +93,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -104,7 +104,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     paddingHorizontal: Spacing.lg,
     marginTop: Spacing.md,
@@ -133,7 +132,6 @@ const styles = StyleSheet.create({
   },
   chatTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   chatSubtitle: {

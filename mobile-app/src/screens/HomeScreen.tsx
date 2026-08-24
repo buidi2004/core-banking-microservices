@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, Image, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
+import { AppText } from '../components/typography/AppText';
 
 interface HomeScreenProps {
   navigation: any;
@@ -20,7 +21,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       <BlurView intensity={70} tint="light" style={styles.headerBlur}>
         <View style={styles.header}>
           <Image source={{ uri: 'https://i.pravatar.cc/100' }} style={styles.avatar} />
-          <Text style={styles.headerTitle}>Trang chủ</Text>
+          <AppText variant="bodyLg" style={styles.headerTitle}>Trang chủ</AppText>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.headerIconBtn}>
               <AppIcon name="search" size="sm" color={Colors.textPrimary} />
@@ -47,16 +48,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
           <BlurView intensity={40} tint="light" style={styles.heroBlurOverlay} />
           <View style={styles.heroContent}>
             <View style={styles.walletHeader}>
-              <Text style={styles.walletLabel}>Tổng số dư</Text>
+              <AppText variant="caption" style={styles.walletLabel}>Tổng số dư</AppText>
               <TouchableOpacity onPress={() => setBalanceVisible(!balanceVisible)}>
                 <AppIcon name={balanceVisible ? "eyeOff" : "eye"} size="sm" color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.balanceText}>
+            <AppText variant="display" style={styles.balanceText}>
               {balanceVisible ? '5.500.000 VNĐ' : '••••••'}
-            </Text>
+            </AppText>
             <TouchableOpacity style={styles.viewDetailBtn}>
-              <Text style={styles.viewDetailText}>Xem chi tiết</Text>
+              <AppText variant="caption" style={styles.viewDetailText}>Xem chi tiết</AppText>
               <AppIcon name="chevronRight" size="sm" color={Colors.primary} />
             </TouchableOpacity>
           </View>
@@ -75,12 +76,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
                 <View style={styles.quickActionIcon}>
                   <AppIcon name={item.icon as any} size="md" color={Colors.primary} />
                 </View>
-                <Text style={styles.quickActionLabel}>{item.label}</Text>
+                <AppText variant="caption" style={styles.quickActionLabel}>{item.label}</AppText>
               </TouchableOpacity>
             ))}
           </View>
           <TouchableOpacity style={styles.viewAllBtn}>
-            <Text style={styles.viewAllText}>Xem thêm</Text>
+            <AppText variant="caption" style={styles.viewAllText}>Xem thêm</AppText>
             <AppIcon name="chevronRight" size="sm" color={Colors.primary} />
           </TouchableOpacity>
         </View>
@@ -94,10 +95,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             style={styles.promoGradient}
           >
             <View style={styles.promoContent}>
-              <Text style={styles.promoSubtitle}>Ưu đãi tháng 7!</Text>
-              <Text style={styles.promoTitle}>Giảm 20% khi thanh toán tại Highlands Coffee</Text>
+              <AppText variant="caption" style={styles.promoSubtitle}>Ưu đãi tháng 7!</AppText>
+              <AppText variant="body" style={styles.promoTitle}>Giảm 20% khi thanh toán tại Highlands Coffee</AppText>
               <View style={styles.promoButton}>
-                <Text style={styles.promoButtonText}>Xem ngay</Text>
+                <AppText variant="bodySm" style={styles.promoButtonText}>Xem ngay</AppText>
               </View>
             </View>
           </LinearGradient>
@@ -106,9 +107,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
         {/* Recent Transactions */}
         <View style={styles.historySection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Giao dịch gần đây</Text>
+            <AppText variant="heading" style={styles.sectionTitle}>Giao dịch gần đây</AppText>
             <TouchableOpacity onPress={() => navigation.navigate('History')}>
-              <Text style={styles.viewAllText}>Tất cả</Text>
+              <AppText variant="caption" style={styles.viewAllText}>Tất cả</AppText>
             </TouchableOpacity>
           </View>
           <View style={styles.historyList}>
@@ -173,8 +174,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
   },
   headerTitle: {
-    fontSize: Typography.bodyLg.fontSize,
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   headerActions: {
@@ -224,13 +223,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   walletLabel: {
-    fontSize: Typography.caption.fontSize,
     color: Colors.textSecondary,
-    fontWeight: '500',
-  },
+    },
   balanceText: {
-    fontSize: Typography.display.fontSize,
-    fontWeight: '800',
     color: Colors.textPrimary,
     marginBottom: Spacing.md,
     letterSpacing: -0.5,
@@ -241,10 +236,8 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   viewDetailText: {
-    fontSize: Typography.caption.fontSize,
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
   quickActionsSheet: {
     marginHorizontal: Spacing.lg,
     marginTop: -24,
@@ -271,10 +264,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quickActionLabel: {
-    fontSize: Typography.caption.fontSize,
     color: Colors.textPrimary,
-    fontWeight: '500',
-  },
+    },
   viewAllBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -283,10 +274,8 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
   },
   viewAllText: {
-    fontSize: Typography.caption.fontSize,
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
   promoBanner: {
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.xl,
@@ -303,15 +292,11 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   promoSubtitle: {
-    fontSize: Typography.caption.fontSize,
-    color: 'rgba(255,255,255,0.9)',
-    fontWeight: '600',
+    color: Colors.glassOpaque,
     marginBottom: 4,
   },
   promoTitle: {
-    fontSize: Typography.body.fontSize,
-    color: '#FFF',
-    fontWeight: '700',
+    color: Colors.white,
     lineHeight: 20,
     marginBottom: Spacing.sm,
   },
@@ -323,8 +308,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   promoButtonText: {
-    fontSize: Typography.bodySm.fontSize,
-    fontWeight: '700',
     color: Colors.primary,
   },
   historySection: {
@@ -337,8 +320,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   sectionTitle: {
-    fontSize: Typography.heading.fontSize,
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   historyList: {

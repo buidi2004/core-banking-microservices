@@ -66,6 +66,19 @@ export const Colors = {
 
   // Overlay dark (for banners)
   overlayDark: 'rgba(0,0,0,0.5)',
+  
+  // Custom glass/rgba overlays
+  glassLight: 'rgba(255,255,255,0.3)',
+  glassMedium: 'rgba(255,255,255,0.5)',
+  glassStrong: 'rgba(255,255,255,0.7)',
+  glassHeavy: 'rgba(255,255,255,0.8)',
+  glassOpaque: 'rgba(255,255,255,0.9)',
+  glassSolid: 'rgba(255,255,255,0.95)',
+} as const;
+
+export const Opacity = {
+  disabled: 0.5,
+  muted: 0.8,
 } as const;
 
 export const Radius = {

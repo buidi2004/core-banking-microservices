@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Colors, Radius } from '../theme';
+import { AppText } from './typography/AppText';
 
 type StatusType = 'success' | 'danger' | 'warning';
 
@@ -36,9 +37,9 @@ export const StatusChip: React.FC<StatusChipProps> = ({
           { backgroundColor: config.bg },
         ]}
       />
-      <Text style={[styles.text, size === 'md' ? styles.textMd : styles.textSm, { color: config.color }]}>
+      <AppText variant="caption" style={[styles.text, size === 'md' ? styles.textMd : styles.textSm, { color: config.color }]}>
         {text}
-      </Text>
+      </AppText>
     </View>
   );
 };
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   },
   dotMd: { width: 8, height: 8 },
   dotSm: { width: 6, height: 6 },
-  text: { fontWeight: '600', letterSpacing: 0.3 },
-  textMd: { fontSize: 14 },
-  textSm: { fontSize: 12 },
+  text: { letterSpacing: 0.3 },
+  textMd: { },
+  textSm: { },
 });

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { StatusChip } from '../components/StatusChip';
+import { AppText } from '../components/typography/AppText';
 
 interface QRMyScreenProps {
   navigation: any;
@@ -20,7 +21,7 @@ export default function QRMyScreen({ navigation }: QRMyScreenProps) {
           <TouchableOpacity onPress={() => navigation.goBack()}>
               <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>QR của tôi</Text>
+          <AppText style={styles.headerTitle}>QR của tôi</AppText>
           <View style={styles.spacer} />
         </View>
       </BlurView>
@@ -38,52 +39,52 @@ export default function QRMyScreen({ navigation }: QRMyScreenProps) {
             <View style={styles.qrUserInfo}>
               <Image source={{ uri: 'https://i.pravatar.cc/100' }} style={styles.userAvatar} />
               <View style={styles.userInfoText}>
-                <Text style={styles.userName}>Nguyễn Văn A</Text>
-                <Text style={styles.userId}>ID: 884729103</Text>
+                <AppText style={styles.userName}>Nguyễn Văn A</AppText>
+                <AppText style={styles.userId}>ID: 884729103</AppText>
               </View>
             </View>
 
             {/* Expiry badge */}
             <View style={styles.expiryBadge}>
                 <AppIcon name="timer" size="xs" color={Colors.warning} />
-              <Text style={styles.expiryText}>Hết hạn sau {expiryCountdown}</Text>
+              <AppText style={styles.expiryText}>Hết hạn sau {expiryCountdown}</AppText>
             </View>
           </View>
         </View>
 
         {/* Toggle switch */}
         <View style={styles.toggleSection}>
-          <Text style={styles.toggleLabel}>QR tĩnh</Text>
+          <AppText style={styles.toggleLabel}>QR tĩnh</AppText>
           <TouchableOpacity
             style={[styles.toggleSwitch, isAnimated && styles.toggleSwitchActive]}
             onPress={() => setIsAnimated(!isAnimated)}
           >
             <View style={[styles.toggleDot, isAnimated && styles.toggleDotActive]} />
           </TouchableOpacity>
-          <Text style={styles.toggleLabel}>QR động</Text>
+          <AppText style={styles.toggleLabel}>QR động</AppText>
         </View>
 
         {/* Info card */}
         <View style={styles.infoCard}>
             <AppIcon name="information-circle" size="md" color={Colors.primary} />
-          <Text style={styles.infoText}>
+          <AppText style={styles.infoText}>
             QR động được cập nhật mỗi 5 phút để tăng cường bảo mật.
-          </Text>
+          </AppText>
         </View>
 
         {/* Actions */}
         <View style={styles.actions}>
           <TouchableOpacity style={styles.actionBtn}>
               <AppIcon name="download" size="sm" color={Colors.primary} />
-            <Text style={styles.actionText}>Tải về</Text>
+            <AppText style={styles.actionText}>Tải về</AppText>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn}>
               <AppIcon name="share-social" size="sm" color={Colors.primary} />
-            <Text style={styles.actionText}>Chia sẻ</Text>
+            <AppText style={styles.actionText}>Chia sẻ</AppText>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionBtn}>
               <AppIcon name="refresh" size="sm" color={Colors.primary} />
-            <Text style={styles.actionText}>Làm mới</Text>
+            <AppText style={styles.actionText}>Làm mới</AppText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -112,7 +113,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -154,7 +154,6 @@ const styles = StyleSheet.create({
   },
   userName: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   userId: {
@@ -173,7 +172,6 @@ const styles = StyleSheet.create({
   },
   expiryText: {
     
-    fontWeight: '600',
     color: Colors.warningText,
   },
   toggleSection: {
@@ -185,7 +183,6 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     
-    fontWeight: '600',
     color: Colors.textSecondary,
   },
   toggleSwitch: {
@@ -236,6 +233,5 @@ const styles = StyleSheet.create({
   actionText: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
 });

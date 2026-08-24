@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
 import { EmptyState } from '../components/EmptyState';
 import { SearchBar } from '../components/SearchBar';
+import { AppText } from '../components/typography/AppText';
 
 interface SearchScreenProps {
   navigation: any;
@@ -43,15 +44,15 @@ export default function SearchScreen({ navigation }: SearchScreenProps) {
             {/* Recent searches */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Tìm kiếm gần đây</Text>
+                <AppText style={styles.sectionTitle}>Tìm kiếm gần đây</AppText>
                 <TouchableOpacity>
-                  <Text style={styles.clearAll}>Xoá hết</Text>
+                  <AppText style={styles.clearAll}>Xoá hết</AppText>
                 </TouchableOpacity>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
                 {recentSearches.map((search) => (
                   <TouchableOpacity key={search} style={styles.chip}>
-                    <Text style={styles.chipText}>{search}</Text>
+                    <AppText style={styles.chipText}>{search}</AppText>
                       <AppIcon name="close" size="xs" color={Colors.textSecondary} />
                   </TouchableOpacity>
                 ))}
@@ -60,12 +61,12 @@ export default function SearchScreen({ navigation }: SearchScreenProps) {
 
             {/* Suggested contacts */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Liên hệ gợi ý</Text>
+              <AppText style={styles.sectionTitle}>Liên hệ gợi ý</AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.contactsScroll}>
                 {suggestedContacts.map((contact) => (
                   <TouchableOpacity key={contact.id} style={styles.contactItem}>
                     <Image source={{ uri: contact.avatar }} style={styles.contactAvatar} />
-                    <Text style={styles.contactName}>{contact.name}</Text>
+                    <AppText style={styles.contactName}>{contact.name}</AppText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -73,7 +74,7 @@ export default function SearchScreen({ navigation }: SearchScreenProps) {
 
             {/* Quick actions */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Truy cập nhanh</Text>
+              <AppText style={styles.sectionTitle}>Truy cập nhanh</AppText>
               <View style={styles.quickActions}>
                 {[
                   { icon: 'swap-horizontal', label: 'Chuyển tiền' },
@@ -85,7 +86,7 @@ export default function SearchScreen({ navigation }: SearchScreenProps) {
                     <View style={styles.quickActionIcon}>
                         <AppIcon name={action.icon as any} size="md" color={Colors.primary} />
                     </View>
-                    <Text style={styles.quickActionLabel}>{action.label}</Text>
+                    <AppText style={styles.quickActionLabel}>{action.label}</AppText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -130,7 +131,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
@@ -138,8 +138,7 @@ const styles = StyleSheet.create({
   clearAll: {
     
     color: Colors.danger,
-    fontWeight: '600',
-  },
+    },
   chipScroll: {
     paddingHorizontal: Spacing.lg,
   },
@@ -175,7 +174,6 @@ const styles = StyleSheet.create({
   contactName: {
     
     color: Colors.textPrimary,
-    fontWeight: '500',
     marginTop: Spacing.xs,
   },
   quickActions: {
@@ -203,7 +201,6 @@ const styles = StyleSheet.create({
   quickActionLabel: {
     
     color: Colors.textPrimary,
-    fontWeight: '600',
     marginTop: Spacing.sm,
   },
   resultsContainer: {

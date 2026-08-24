@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { Typography } from '../theme';
@@ -8,6 +8,7 @@ import { SecondaryButton } from '../components/SecondaryButton';
 import { BankCardRow } from '../components/BankCardRow';
 import { QuickAmountChip } from '../components/QuickAmountChip';
 import { AmountEntryPad } from '../components/AmountEntryPad';
+import { AppText } from '../components/typography/AppText';
 
 interface DepositScreenProps {
   navigation: any;
@@ -23,7 +24,7 @@ export default function DepositScreen({ navigation }: DepositScreenProps) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Nạp tiền</Text>
+        <AppText style={styles.headerTitle}>Nạp tiền</AppText>
         <View style={styles.spacer} />
       </View>
 
@@ -33,8 +34,8 @@ export default function DepositScreen({ navigation }: DepositScreenProps) {
           <View style={styles.sourceLeft}>
               <AppIcon name="card" size="md" color={Colors.primary} />
             <View style={styles.sourceInfo}>
-              <Text style={styles.sourceLabel}>Nguồn nạp tiền</Text>
-              <Text style={styles.sourceValue}>{selectedSource}</Text>
+              <AppText style={styles.sourceLabel}>Nguồn nạp tiền</AppText>
+              <AppText style={styles.sourceValue}>{selectedSource}</AppText>
             </View>
           </View>
             <AppIcon name="chevron-forward" size="sm" color={Colors.textSecondary} />
@@ -42,10 +43,10 @@ export default function DepositScreen({ navigation }: DepositScreenProps) {
 
         {/* Amount input */}
         <View style={styles.amountSection}>
-          <Text style={styles.amountLabel}>Nhập số tiền nạp</Text>
+          <AppText style={styles.amountLabel}>Nhập số tiền nạp</AppText>
           <View style={styles.amountDisplay}>
-            <Text style={styles.currencySymbol}>VNĐ</Text>
-            <Text style={styles.amountValue}>{amount || '0'}</Text>
+            <AppText style={styles.currencySymbol}>VNĐ</AppText>
+            <AppText variant="display" style={styles.amountValue}>{amount || '0'}</AppText>
           </View>
         </View>
 
@@ -62,9 +63,9 @@ export default function DepositScreen({ navigation }: DepositScreenProps) {
         {/* Info */}
         <View style={styles.infoCard}>
             <AppIcon name="information-circle" size="sm" color={Colors.primary} />
-          <Text style={styles.infoText}>
+          <AppText style={styles.infoText}>
             Nạp từ 500.000đ nhận ngay voucher giảm giá 50.000đ
-          </Text>
+          </AppText>
         </View>
       </ScrollView>
 
@@ -94,7 +95,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -128,7 +128,6 @@ const styles = StyleSheet.create({
   },
   sourceValue: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   amountSection: {
@@ -137,7 +136,6 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
@@ -151,16 +149,12 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     
-    fontWeight: '600',
     color: Colors.textSecondary,
     marginRight: Spacing.sm,
   },
   amountValue: {
-    fontSize: Typography.display.fontSize,
-    fontWeight: '800',
     color: Colors.primary,
-    fontFamily: 'System',
-  },
+    },
   quickAmounts: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -180,8 +174,7 @@ const styles = StyleSheet.create({
     flex: 1,
     
     color: Colors.warningText,
-    fontWeight: '500',
-  },
+    },
   footer: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.lg,

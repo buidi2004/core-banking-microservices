@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface ForgotPasswordScreenProps {
   navigation: any;
@@ -14,23 +15,23 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>← Quay lại</Text>
+          <AppText style={styles.backText}>← Quay lại</AppText>
         </TouchableOpacity>
 
         <View style={styles.iconWrapper}>
-          <Text style={styles.icon}>🔒</Text>
+          <AppText variant="displayLarge" style={styles.icon}>🔒</AppText>
         </View>
 
-        <Text style={styles.title}>Quên mật khẩu?</Text>
-        <Text style={styles.desc}>
+        <AppText variant="headingXl" style={styles.title}>Quên mật khẩu?</AppText>
+        <AppText style={styles.desc}>
           Nhập số điện thoại đăng ký để nhận mã xác thực và đặt lại mật khẩu.
-        </Text>
+        </AppText>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Số điện thoại</Text>
+          <AppText style={styles.label}>Số điện thoại</AppText>
           <View style={styles.inputWrapper}>
-            <Text style={styles.countryCode}>+84</Text>
-            <Text style={styles.placeholder}>901234567</Text>
+            <AppText style={styles.countryCode}>+84</AppText>
+            <AppText style={styles.placeholder}>901234567</AppText>
           </View>
         </View>
 
@@ -62,8 +63,7 @@ const styles = StyleSheet.create({
   backText: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
   iconWrapper: {
     width: 80,
     height: 80,
@@ -75,11 +75,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xxl,
   },
   icon: {
-    fontSize: Typography.displayLarge.fontSize,
-  },
+    },
   title: {
-    fontSize: Typography.headingXl.fontSize,
-    fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
@@ -97,7 +94,6 @@ const styles = StyleSheet.create({
   },
   label: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   inputWrapper: {
@@ -111,7 +107,6 @@ const styles = StyleSheet.create({
   countryCode: {
     
     color: Colors.textPrimary,
-    fontWeight: '600',
     marginRight: Spacing.sm,
   },
   placeholder: {

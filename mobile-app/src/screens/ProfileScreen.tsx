@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
+import { AppText } from '../components/typography/AppText';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -14,7 +15,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
     <SafeAreaView style={styles.container}>
       <BlurView intensity={70} tint="light" style={styles.headerBlur}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Hồ sơ</Text>
+          <AppText style={styles.headerTitle}>Hồ sơ</AppText>
           <TouchableOpacity>
               <AppIcon name="settings-outline" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -26,14 +27,14 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         <View style={styles.profileHeader}>
           <Image source={{ uri: 'https://i.pravatar.cc/150' }} style={styles.profileAvatar} />
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>Nguyễn Văn A</Text>
-            <Text style={styles.profilePhone}>0901 234 567</Text>
+            <AppText style={styles.profileName}>Nguyễn Văn A</AppText>
+            <AppText style={styles.profilePhone}>0901 234 567</AppText>
           </View>
           <TouchableOpacity style={styles.editBtn}>
-            <Text style={styles.editBtnText}>Chỉnh sửa</Text>
+            <AppText style={styles.editBtnText}>Chỉnh sửa</AppText>
           </TouchableOpacity>
           <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.closeText}>✕</Text>
+            <AppText style={styles.closeText}>✕</AppText>
           </TouchableOpacity>
         </View>
 
@@ -58,7 +59,7 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
                 <View style={styles.iconBg}>
                     <AppIcon name={item.icon as any} size="sm" color={Colors.primary} />
                 </View>
-                <Text style={styles.menuItemLabel}>{item.label}</Text>
+                <AppText style={styles.menuItemLabel}>{item.label}</AppText>
               </View>
                 <AppIcon name="chevron-forward" size="sm" color={Colors.textSecondary} />
             </TouchableOpacity>
@@ -71,10 +72,10 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
             <View style={styles.iconBg}>
                 <AppIcon name="language" size="sm" color={Colors.primary} />
             </View>
-            <Text style={styles.menuItemLabel}>Ngôn ngữ</Text>
+            <AppText style={styles.menuItemLabel}>Ngôn ngữ</AppText>
           </View>
           <View style={styles.languageValue}>
-            <Text style={styles.languageText}>Tiếng Việt</Text>
+            <AppText style={styles.languageText}>Tiếng Việt</AppText>
               <AppIcon name="chevron-forward" size="sm" color={Colors.textSecondary} />
           </View>
         </View>
@@ -82,11 +83,11 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
         {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn}>
             <AppIcon name="log-out-outline" size="sm" color={Colors.danger} />
-          <Text style={styles.logoutText}>Đăng xuất</Text>
+          <AppText style={styles.logoutText}>Đăng xuất</AppText>
         </TouchableOpacity>
 
         {/* Version */}
-        <Text style={styles.versionText}>E-Wallet v1.0.0</Text>
+        <AppText style={styles.versionText}>E-Wallet v1.0.0</AppText>
       </ScrollView>
     </SafeAreaView>
   );
@@ -113,7 +114,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   scrollView: {
@@ -135,7 +135,6 @@ const styles = StyleSheet.create({
   },
   profileName: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: 4,
   },
@@ -151,7 +150,6 @@ const styles = StyleSheet.create({
   },
   editBtnText: {
     
-    fontWeight: '600',
     color: Colors.primary,
   },
   closeBtn: {
@@ -206,7 +204,6 @@ const styles = StyleSheet.create({
   },
   menuItemLabel: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   languageRow: {
@@ -227,7 +224,6 @@ const styles = StyleSheet.create({
   },
   languageText: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   logoutBtn: {
@@ -241,7 +237,6 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     
-    fontWeight: '600',
     color: Colors.danger,
   },
   versionText: {

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface BillInputScreenProps {
   route: any;
@@ -22,7 +23,7 @@ export default function BillInputScreen({ route, navigation }: BillInputScreenPr
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{provider}</Text>
+        <AppText style={styles.headerTitle}>{provider}</AppText>
         <TouchableOpacity>
             <AppIcon name="scan" size="sm" color={Colors.primary} />
         </TouchableOpacity>
@@ -33,32 +34,32 @@ export default function BillInputScreen({ route, navigation }: BillInputScreenPr
         <View style={[styles.inputCard, isValid && styles.inputCardValid]}>
           <View style={styles.inputHeader}>
               <AppIcon name={provider === 'Tiền điện' ? 'flash' : 'water'} size="md" color={Colors.primary} />
-            <Text style={styles.inputLabel}>Mã khách hàng / Số hợp đồng</Text>
+            <AppText style={styles.inputLabel}>Mã khách hàng / Số hợp đồng</AppText>
           </View>
           <View style={styles.inputWrapper}>
               <AppIcon name="barcode-outline" size="sm" color={Colors.textSecondary} />
-            <Text style={styles.inputPlaceholder}>Nhập mã khách hàng...</Text>
+            <AppText style={styles.inputPlaceholder}>Nhập mã khách hàng...</AppText>
           </View>
           {isValid && (
-            <Text style={styles.validText}>✓ Mã hợp lệ</Text>
+            <AppText style={styles.validText}>✓ Mã hợp lệ</AppText>
           )}
         </View>
 
         {/* Preview card */}
         {isValid && (
           <View style={styles.previewCard}>
-            <Text style={styles.previewLabel}>Thông tin thanh toán</Text>
+            <AppText style={styles.previewLabel}>Thông tin thanh toán</AppText>
             <View style={styles.previewRow}>
-              <Text style={styles.previewField}>Khách hàng</Text>
-              <Text style={styles.previewValue}>Nguyễn Văn A</Text>
+              <AppText style={styles.previewField}>Khách hàng</AppText>
+              <AppText style={styles.previewValue}>Nguyễn Văn A</AppText>
             </View>
             <View style={styles.previewRow}>
-              <Text style={styles.previewField}>Kỳ thanh toán</Text>
-              <Text style={styles.previewValue}>Tháng 10/2024</Text>
+              <AppText style={styles.previewField}>Kỳ thanh toán</AppText>
+              <AppText style={styles.previewValue}>Tháng 10/2024</AppText>
             </View>
             <View style={[styles.previewRow, styles.totalRow]}>
-              <Text style={styles.previewField}>Số tiền cần trả</Text>
-              <Text style={styles.totalAmount}>350.000 VNĐ</Text>
+              <AppText style={styles.previewField}>Số tiền cần trả</AppText>
+              <AppText variant="headingSm" style={styles.totalAmount}>350.000 VNĐ</AppText>
             </View>
           </View>
         )}
@@ -89,7 +90,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   scrollView: {
@@ -116,7 +116,6 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   inputWrapper: {
@@ -136,7 +135,6 @@ const styles = StyleSheet.create({
   validText: {
     
     color: Colors.success,
-    fontWeight: '600',
     marginTop: Spacing.sm,
   },
   previewCard: {
@@ -148,7 +146,6 @@ const styles = StyleSheet.create({
   },
   previewLabel: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.md,
   },
@@ -163,7 +160,6 @@ const styles = StyleSheet.create({
   },
   previewValue: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   totalRow: {
@@ -173,8 +169,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
   },
   totalAmount: {
-    fontSize: Typography.headingSm.fontSize,
-    fontWeight: '800',
     color: Colors.primary,
   },
   footer: {

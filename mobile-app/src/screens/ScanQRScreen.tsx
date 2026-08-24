@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Spacing } from '../theme';
+import { AppText } from '../components/typography/AppText';
 
 interface ScanQRScreenProps {
   navigation: any;
@@ -14,8 +15,8 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
 
       {/* Camera placeholder */}
       <View style={styles.cameraArea}>
-          <AppIcon name="camera" size="xxl" color="rgba(255,255,255,0.5)" />
-        <Text style={styles.cameraHint}>Đưa máy ảnh vào khung hình QR code</Text>
+          <AppIcon name="camera" size="xxl" color={Colors.glassMedium} />
+        <AppText style={styles.cameraHint}>Đưa máy ảnh vào khung hình QR code</AppText>
       </View>
 
       {/* Scanner frame */}
@@ -28,10 +29,10 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
 
       {/* Support labels */}
       <View style={styles.supportLabels}>
-        <Text style={styles.supportLabel}>Hỗ trợ mã:</Text>
+        <AppText style={styles.supportLabel}>Hỗ trợ mã:</AppText>
         <View style={styles.labelIcons}>
           {['qr-code', 'barcode', 'wallet'].map((icon, i) => (
-            <AppIcon key={i} name={icon as any} size="sm" color="rgba(255,255,255,0.7)" />
+            <AppIcon key={i} name={icon as any} size="sm" color={Colors.glassStrong} />
           ))}
         </View>
       </View>
@@ -40,15 +41,15 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
       <View style={styles.controls}>
         <TouchableOpacity style={styles.controlBtn}>
             <AppIcon name="qr-code" size="lg" color={Colors.black} />
-          <Text style={styles.controlText}>QR của tôi</Text>
+          <AppText style={styles.controlText}>QR của tôi</AppText>
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlBtn}>
             <AppIcon name="image" size="lg" color={Colors.black} />
-          <Text style={styles.controlText}>Chuyển tiền bằng ảnh</Text>
+          <AppText style={styles.controlText}>Chuyển tiền bằng ảnh</AppText>
         </TouchableOpacity>
         <TouchableOpacity style={styles.controlBtn}>
             <AppIcon name="folder-open" size="lg" color={Colors.black} />
-          <Text style={styles.controlText}>Tải ảnh lên</Text>
+          <AppText style={styles.controlText}>Tải ảnh lên</AppText>
         </TouchableOpacity>
       </View>
 
@@ -57,7 +58,7 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Quét mã QR</Text>
+        <AppText style={styles.headerTitle}>Quét mã QR</AppText>
         <TouchableOpacity style={styles.flashBtn}>
             <AppIcon name="flash" size="md" color={Colors.black} />
         </TouchableOpacity>
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
   cameraHint: {
     marginTop: Spacing.md,
     
-    color: 'rgba(255,255,255,0.7)',
+    color: Colors.glassStrong,
   },
   scannerFrame: {
     width: 280,
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
     left: '50%',
     marginLeft: -140,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.5)',
+    borderColor: Colors.glassMedium,
     borderRadius: Radius.md,
   },
   corner: {
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
   },
   supportLabel: {
     
-    color: 'rgba(255,255,255,0.8)',
+    color: Colors.glassHeavy,
   },
   labelIcons: {
     flexDirection: 'row',
@@ -131,8 +132,7 @@ const styles = StyleSheet.create({
   controlText: {
     
     color: Colors.white,
-    fontWeight: '500',
-  },
+    },
   topControls: {
     position: 'absolute',
     top: 60,
@@ -147,20 +147,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: Colors.glassLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.white,
   },
   flashBtn: {
     width: 40,
     height: 40,
     borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    backgroundColor: Colors.glassOpaque,
     justifyContent: 'center',
     alignItems: 'center',
   },

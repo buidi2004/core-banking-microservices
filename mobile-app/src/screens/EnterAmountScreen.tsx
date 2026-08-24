@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
@@ -7,6 +7,7 @@ import { Typography } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface EnterAmountScreenProps {
   route: any;
@@ -25,7 +26,7 @@ export default function EnterAmountScreen({ route, navigation }: EnterAmountScre
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrowLeft" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Nhập số tiền</Text>
+          <AppText style={styles.headerTitle}>Nhập số tiền</AppText>
           <View style={styles.spacer} />
         </View>
       </BlurView>
@@ -37,17 +38,17 @@ export default function EnterAmountScreen({ route, navigation }: EnterAmountScre
             <AppIcon name="profile" size="md" color={Colors.primary} />
           </View>
           <View style={styles.recipientInfo}>
-            <Text style={styles.recipientLabel}>Người nhận</Text>
-            <Text style={styles.recipientName}>{recipient}</Text>
+            <AppText style={styles.recipientLabel}>Người nhận</AppText>
+            <AppText style={styles.recipientName}>{recipient}</AppText>
           </View>
         </View>
 
         {/* Amount input */}
         <View style={styles.amountSection}>
-          <Text style={styles.amountLabel}>Số tiền chuyển</Text>
+          <AppText style={styles.amountLabel}>Số tiền chuyển</AppText>
           <View style={styles.amountDisplay}>
-            <Text style={styles.currencySymbol}>VNĐ</Text>
-            <Text style={styles.amountValue}>{amount || '0'}</Text>
+            <AppText style={styles.currencySymbol}>VNĐ</AppText>
+            <AppText variant="display" style={styles.amountValue}>{amount || '0'}</AppText>
           </View>
         </View>
 
@@ -59,16 +60,16 @@ export default function EnterAmountScreen({ route, navigation }: EnterAmountScre
               style={styles.quickChip}
               onPress={() => setAmount(q)}
             >
-              <Text style={styles.quickChipText}>{q}</Text>
+              <AppText style={styles.quickChipText}>{q}</AppText>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Notes input */}
         <View style={styles.notesSection}>
-          <Text style={styles.notesLabel}>Ghi chú (tùy chọn)</Text>
+          <AppText style={styles.notesLabel}>Ghi chú (tùy chọn)</AppText>
           <View style={styles.notesInput}>
-            <Text style={styles.notesPlaceholder}>Thêm ghi chú...</Text>
+            <AppText style={styles.notesPlaceholder}>Thêm ghi chú...</AppText>
           </View>
         </View>
       </ScrollView>
@@ -106,7 +107,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -143,7 +143,6 @@ const styles = StyleSheet.create({
   },
   recipientName: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   amountSection: {
@@ -152,7 +151,6 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
@@ -166,13 +164,10 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     
-    fontWeight: '600',
     color: Colors.textSecondary,
     marginRight: Spacing.sm,
   },
   amountValue: {
-    fontSize: Typography.display.fontSize,
-    fontWeight: '800',
     color: Colors.primary,
   },
   quickAmounts: {
@@ -189,7 +184,6 @@ const styles = StyleSheet.create({
   },
   quickChipText: {
     
-    fontWeight: '600',
     color: Colors.primaryDeep,
   },
   notesSection: {
@@ -197,7 +191,6 @@ const styles = StyleSheet.create({
   },
   notesLabel: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },

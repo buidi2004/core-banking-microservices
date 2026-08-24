@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface ConfirmTransferScreenProps {
   route: any;
@@ -21,7 +22,7 @@ export default function ConfirmTransferScreen({ route, navigation }: ConfirmTran
           <TouchableOpacity onPress={() => navigation.goBack()}>
               <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Xác nhận chuyển tiền</Text>
+          <AppText style={styles.headerTitle}>Xác nhận chuyển tiền</AppText>
           <View style={styles.spacer} />
         </View>
       </BlurView>
@@ -30,29 +31,29 @@ export default function ConfirmTransferScreen({ route, navigation }: ConfirmTran
         {/* Summary card */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Người nhận</Text>
-            <Text style={styles.summaryValue}>{recipient?.name || 'Người nhận'}</Text>
+            <AppText style={styles.summaryLabel}>Người nhận</AppText>
+            <AppText style={styles.summaryValue}>{recipient?.name || 'Người nhận'}</AppText>
           </View>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Số điện thoại</Text>
-            <Text style={styles.summaryValue}>{recipient?.phone || ''}</Text>
+            <AppText style={styles.summaryLabel}>Số điện thoại</AppText>
+            <AppText style={styles.summaryValue}>{recipient?.phone || ''}</AppText>
           </View>
           <View style={styles.divider} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Số tiền</Text>
-            <Text style={styles.amountValue}>{amount} VNĐ</Text>
+            <AppText style={styles.summaryLabel}>Số tiền</AppText>
+            <AppText style={styles.amountValue}>{amount} VNĐ</AppText>
           </View>
         </View>
 
         {/* Fee info */}
         <View style={styles.feeCard}>
           <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Phí giao dịch</Text>
-            <Text style={styles.feeValue}>Miễn phí</Text>
+            <AppText style={styles.feeLabel}>Phí giao dịch</AppText>
+            <AppText style={styles.feeValue}>Miễn phí</AppText>
           </View>
           <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Tổng thanh toán</Text>
-            <Text style={styles.totalValue}>{amount} VNĐ</Text>
+            <AppText style={styles.feeLabel}>Tổng thanh toán</AppText>
+            <AppText style={styles.totalValue}>{amount} VNĐ</AppText>
           </View>
         </View>
 
@@ -92,7 +93,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -121,12 +121,10 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   amountValue: {
     
-    fontWeight: '800',
     color: Colors.primary,
   },
   divider: {
@@ -152,12 +150,10 @@ const styles = StyleSheet.create({
   },
   feeValue: {
     
-    fontWeight: '600',
     color: Colors.success,
   },
   totalValue: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   secondaryBtn: {

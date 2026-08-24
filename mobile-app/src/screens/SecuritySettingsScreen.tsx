@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Spacing } from '../theme';
+import { AppText } from '../components/typography/AppText';
 
 interface SecuritySettingsScreenProps {
   navigation: any;
@@ -21,7 +22,7 @@ export default function SecuritySettingsScreen({ navigation }: SecuritySettingsS
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bảo mật</Text>
+        <AppText style={styles.headerTitle}>Bảo mật</AppText>
         <View style={styles.spacer} />
       </View>
 
@@ -41,8 +42,8 @@ export default function SecuritySettingsScreen({ navigation }: SecuritySettingsS
                   <AppIcon name={item.icon} size="sm" color={Colors.primary} />
               </View>
               <View style={styles.itemText}>
-                <Text style={styles.itemLabel}>{item.label}</Text>
-                <Text style={styles.itemDesc}>{item.desc}</Text>
+                <AppText style={styles.itemLabel}>{item.label}</AppText>
+                <AppText style={styles.itemDesc}>{item.desc}</AppText>
               </View>
             </View>
               <AppIcon name="chevron-forward" size="sm" color={Colors.textSecondary} />
@@ -67,7 +68,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -116,7 +116,6 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   itemDesc: {

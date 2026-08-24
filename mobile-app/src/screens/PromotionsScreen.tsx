@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { StatusChip } from '../components/StatusChip';
 import { EmptyState } from '../components/EmptyState';
 import { SearchBar } from '../components/SearchBar';
+import { AppText } from '../components/typography/AppText';
 
 interface PromotionsScreenProps {
   navigation: any;
@@ -27,7 +28,7 @@ export default function PromotionsScreen({ navigation }: PromotionsScreenProps) 
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Ưu đãi</Text>
+        <AppText style={styles.headerTitle}>Ưu đãi</AppText>
         <TouchableOpacity>
             <AppIcon name="search" size="sm" color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -40,7 +41,7 @@ export default function PromotionsScreen({ navigation }: PromotionsScreenProps) 
             <TouchableOpacity key={promo.id} style={styles.bannerCard}>
               <Image source={{ uri: promo.image }} style={styles.bannerImage} />
               <View style={styles.bannerOverlay}>
-                <Text style={styles.bannerTitle}>{promo.title}</Text>
+                <AppText style={styles.bannerTitle}>{promo.title}</AppText>
               </View>
             </TouchableOpacity>
           ))}
@@ -54,9 +55,9 @@ export default function PromotionsScreen({ navigation }: PromotionsScreenProps) 
               style={[styles.tab, activeTab === tab.toLowerCase() && styles.tabActive]}
               onPress={() => setActiveTab(tab.toLowerCase())}
             >
-              <Text style={[styles.tabText, activeTab === tab.toLowerCase() && styles.tabTextActive]}>
+              <AppText style={[styles.tabText, activeTab === tab.toLowerCase() && styles.tabTextActive]}>
                 {tab}
-              </Text>
+              </AppText>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -74,13 +75,13 @@ export default function PromotionsScreen({ navigation }: PromotionsScreenProps) 
               <TouchableOpacity key={promo.id} style={styles.card}>
                 {promo.isNew && (
                   <View style={styles.newBadge}>
-                    <Text style={styles.newBadgeText}>Mới</Text>
+                    <AppText style={styles.newBadgeText}>Mới</AppText>
                   </View>
                 )}
                 <Image source={{ uri: promo.image }} style={styles.cardImage} />
                 <View style={styles.cardContent}>
-                  <Text style={styles.cardTitle}>{promo.title}</Text>
-                  <Text style={styles.cardExpiry}>Hết hạn: {promo.expiry}</Text>
+                  <AppText style={styles.cardTitle}>{promo.title}</AppText>
+                  <AppText style={styles.cardExpiry}>Hết hạn: {promo.expiry}</AppText>
                 </View>
               </TouchableOpacity>
             ))}
@@ -105,7 +106,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   scrollView: {
@@ -133,11 +133,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: Spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: Colors.overlayDark,
   },
   bannerTitle: {
     
-    fontWeight: '700',
     color: Colors.white,
   },
   tabsScroll: {
@@ -156,13 +155,11 @@ const styles = StyleSheet.create({
   },
   tabText: {
     
-    fontWeight: '500',
     color: Colors.textSecondary,
   },
   tabTextActive: {
     color: Colors.white,
-    fontWeight: '600',
-  },
+    },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -188,7 +185,6 @@ const styles = StyleSheet.create({
   },
   newBadgeText: {
     
-    fontWeight: '700',
     color: Colors.white,
   },
   cardImage: {
@@ -200,7 +196,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: 4,
   },

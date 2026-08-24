@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
+import { AppText } from '../components/typography/AppText';
 
 interface Transaction {
   name: string;
@@ -38,7 +39,7 @@ export default function HistoryScreen({ navigation }: HistoryScreenProps) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Lịch sử giao dịch</Text>
+        <AppText style={styles.headerTitle}>Lịch sử giao dịch</AppText>
         <View style={styles.spacer} />
       </View>
 
@@ -54,9 +55,9 @@ export default function HistoryScreen({ navigation }: HistoryScreenProps) {
               ]}
               onPress={() => setActiveCategory(cat)}
             >
-              <Text style={[styles.filterText, activeCategory === cat && styles.filterTextActive]}>
+              <AppText style={[styles.filterText, activeCategory === cat && styles.filterTextActive]}>
                 {cat}
-              </Text>
+              </AppText>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -85,7 +86,7 @@ export default function HistoryScreen({ navigation }: HistoryScreenProps) {
         </View>
 
         <TouchableOpacity style={styles.viewAllBtn}>
-          <Text style={styles.viewAllText}>Xem tất cả giao dịch</Text>
+          <AppText style={styles.viewAllText}>Xem tất cả giao dịch</AppText>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -106,7 +107,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -131,7 +131,6 @@ const styles = StyleSheet.create({
   },
   filterText: {
     
-    fontWeight: '600',
     color: Colors.textSecondary,
   },
   filterTextActive: {
@@ -152,6 +151,5 @@ const styles = StyleSheet.create({
   viewAllText: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
 });

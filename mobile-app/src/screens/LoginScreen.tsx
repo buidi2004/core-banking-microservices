@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { AppIcon } from '../components/icons/AppIcon';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface LoginScreenProps {
   navigation: any;
@@ -16,22 +17,22 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         <View style={styles.logoWrapper}>
           <AppIcon name="qr" size="lg" color={Colors.primary} />
         </View>
-        <Text style={styles.title}>Chào mừng đến với E-Wallet</Text>
-        <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
+        <AppText variant="headingXl" style={styles.title}>Chào mừng đến với E-Wallet</AppText>
+        <AppText style={styles.subtitle}>Đăng nhập để tiếp tục</AppText>
 
         <View style={styles.form}>
           <View style={styles.field}>
-            <Text style={styles.label}>Số điện thoại</Text>
+            <AppText style={styles.label}>Số điện thoại</AppText>
             <View style={styles.inputWrapper}>
-              <Text style={styles.countryCode}>+84</Text>
-              <Text style={styles.inputPlaceholder}>901234567</Text>
+              <AppText style={styles.countryCode}>+84</AppText>
+              <AppText style={styles.inputPlaceholder}>901234567</AppText>
             </View>
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Mật khẩu</Text>
+            <AppText style={styles.label}>Mật khẩu</AppText>
             <View style={styles.inputWrapper}>
-              <Text style={styles.inputPlaceholder}>••••••••</Text>
+              <AppText style={styles.inputPlaceholder}>••••••••</AppText>
               <TouchableOpacity>
                 <AppIcon name="eye" size="sm" color={Colors.textSecondary} />
               </TouchableOpacity>
@@ -42,11 +43,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         <PrimaryButton title="Đăng nhập" onPress={() => navigation.navigate('MainTabs')} />
 
         <TouchableOpacity style={styles.forgotLink}>
-          <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+          <AppText style={styles.forgotText}>Quên mật khẩu?</AppText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.registerLink}>
-          <Text style={styles.registerText}>Chưa có tài khoản? Đăng ký</Text>
+          <AppText style={styles.registerText}>Chưa có tài khoản? Đăng ký</AppText>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -74,8 +75,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xxl,
   },
   title: {
-    fontSize: Typography.headingXl.fontSize,
-    fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
@@ -95,7 +94,6 @@ const styles = StyleSheet.create({
   },
   label: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
@@ -110,7 +108,6 @@ const styles = StyleSheet.create({
   countryCode: {
     
     color: Colors.textPrimary,
-    fontWeight: '600',
     marginRight: Spacing.sm,
   },
   inputPlaceholder: {
@@ -125,8 +122,7 @@ const styles = StyleSheet.create({
   forgotText: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
   registerLink: {
     alignSelf: 'center',
   },

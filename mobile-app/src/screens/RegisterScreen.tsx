@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface RegisterScreenProps {
   navigation: any;
@@ -14,15 +15,15 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtn}>←</Text>
+            <AppText variant="headingXl" style={styles.backBtn}>←</AppText>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Đăng ký tài khoản</Text>
+          <AppText style={styles.headerTitle}>Đăng ký tài khoản</AppText>
           <View style={styles.spacer} />
         </View>
 
         <View style={styles.form}>
           <View style={styles.field}>
-            <Text style={styles.label}>Họ và tên</Text>
+            <AppText style={styles.label}>Họ và tên</AppText>
             <TextInput
               style={styles.input}
               placeholder="Nhập họ tên"
@@ -31,7 +32,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Số điện thoại</Text>
+            <AppText style={styles.label}>Số điện thoại</AppText>
             <TextInput
               style={styles.input}
               placeholder="901234567"
@@ -41,7 +42,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Email</Text>
+            <AppText style={styles.label}>Email</AppText>
             <TextInput
               style={styles.input}
               placeholder="example@email.com"
@@ -51,7 +52,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Mật khẩu</Text>
+            <AppText style={styles.label}>Mật khẩu</AppText>
             <TextInput
               style={styles.input}
               placeholder="••••••••"
@@ -64,7 +65,7 @@ export default function RegisterScreen({ navigation }: RegisterScreenProps) {
 
           <View style={styles.divider}>
             <View style={styles.line} />
-            <Text style={styles.dividerText}>hoặc</Text>
+            <AppText style={styles.dividerText}>hoặc</AppText>
             <View style={styles.line} />
           </View>
 
@@ -92,12 +93,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   backBtn: {
-    fontSize: Typography.headingXl.fontSize,
     color: Colors.textPrimary,
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -113,7 +112,6 @@ const styles = StyleSheet.create({
   },
   label: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   input: {

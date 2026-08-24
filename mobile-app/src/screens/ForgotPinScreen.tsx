@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { Colors, Radius, Spacing, Shadows } from '../theme';
 import { Typography } from '../theme';
 import { PinDot } from '../components/PinDot';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface ForgotPinScreenProps {
   navigation: any;
@@ -57,16 +58,16 @@ export default function ForgotPinScreen({ navigation }: ForgotPinScreenProps) {
         </View>
 
         {/* Title */}
-        <Text style={styles.title}>
+        <AppText variant="headingXl" style={styles.title}>
           {step === 1 ? 'Xác thực OTP' : step === 2 ? 'Đặt PIN mới' : 'Xác nhận PIN'}
-        </Text>
-        <Text style={styles.subtitle}>
+        </AppText>
+        <AppText style={styles.subtitle}>
           {step === 1
             ? 'Nhập mã OTP gửi đến SĐT của bạn'
             : step === 2
             ? 'Nhập PIN 6 chữ số mới'
             : 'Nhập lại PIN để xác nhận'}
-        </Text>
+        </AppText>
 
         {/* OTP input */}
         {step === 1 && (
@@ -101,7 +102,7 @@ export default function ForgotPinScreen({ navigation }: ForgotPinScreenProps) {
               ))}
             </View>
 
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            {error ? <AppText style={styles.errorText}>{error}</AppText> : null}
 
             {/* Keypad */}
             <View style={styles.keypad}>
@@ -118,7 +119,7 @@ export default function ForgotPinScreen({ navigation }: ForgotPinScreenProps) {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.keyText}>{key === 'del' ? '⌫' : key}</Text>
+                  <AppText variant="headingXl" style={styles.keyText}>{key === 'del' ? '⌫' : key}</AppText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -134,7 +135,7 @@ export default function ForgotPinScreen({ navigation }: ForgotPinScreenProps) {
               disabled={!otp.every(v => v !== '')}
             />
             <TouchableOpacity style={styles.resendBtn}>
-              <Text style={styles.resendText}>Gửi lại mã</Text>
+              <AppText style={styles.resendText}>Gửi lại mã</AppText>
             </TouchableOpacity>
           </View>
         )}
@@ -148,7 +149,7 @@ export default function ForgotPinScreen({ navigation }: ForgotPinScreenProps) {
         )}
 
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backText}>← Quay lại</Text>
+          <AppText style={styles.backText}>← Quay lại</AppText>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -181,8 +182,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   title: {
-    fontSize: Typography.headingXl.fontSize,
-    fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
@@ -232,8 +231,6 @@ const styles = StyleSheet.create({
     shadowColor: Colors.shadowTransparent,
   },
   keyText: {
-    fontSize: Typography.headingXl.fontSize,
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   actions: {
@@ -247,8 +244,7 @@ const styles = StyleSheet.create({
   resendText: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
   backBtn: {
     alignSelf: 'center',
     paddingVertical: Spacing.md,
@@ -257,6 +253,5 @@ const styles = StyleSheet.create({
   backText: {
     
     color: Colors.textSecondary,
-    fontWeight: '500',
-  },
+    },
 });

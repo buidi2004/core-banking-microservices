@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { SecondaryButton } from '../components/SecondaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface TransferResultScreenProps {
   route: any;
@@ -32,29 +33,29 @@ export default function TransferResultScreen({ route, navigation }: TransferResu
           />
         </View>
 
-        <Text style={styles.title}>
+        <AppText variant="heading" style={styles.title}>
           {success ? 'Giao dịch thành công!' : 'Giao dịch thất bại'}
-        </Text>
+        </AppText>
 
         <View style={styles.amountCard}>
-          <Text style={styles.amountLabel}>Số tiền đã chuyển</Text>
-          <Text style={styles.amountValue}>500.000 VNĐ</Text>
+          <AppText style={styles.amountLabel}>Số tiền đã chuyển</AppText>
+          <AppText variant="headingLg" style={styles.amountValue}>500.000 VNĐ</AppText>
         </View>
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Người nhận</Text>
-            <Text style={styles.infoValue}>Nguyễn Văn A</Text>
+            <AppText style={styles.infoLabel}>Người nhận</AppText>
+            <AppText style={styles.infoValue}>Nguyễn Văn A</AppText>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Mã giao dịch</Text>
-            <Text style={styles.infoValue}>TXN{Date.now().toString().slice(-6)}</Text>
+            <AppText style={styles.infoLabel}>Mã giao dịch</AppText>
+            <AppText style={styles.infoValue}>TXN{Date.now().toString().slice(-6)}</AppText>
           </View>
           <View style={styles.divider} />
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Thời gian</Text>
-            <Text style={styles.infoValue}>12/10/2024 14:30</Text>
+            <AppText style={styles.infoLabel}>Thời gian</AppText>
+            <AppText style={styles.infoValue}>12/10/2024 14:30</AppText>
           </View>
         </View>
 
@@ -101,8 +102,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   title: {
-    fontSize: Typography.heading.fontSize,
-    fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.lg,
@@ -121,8 +120,6 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xs,
   },
   amountValue: {
-    fontSize: Typography.headingLg.fontSize,
-    fontWeight: '800',
     color: Colors.primary,
   },
   infoCard: {
@@ -143,7 +140,6 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   divider: {

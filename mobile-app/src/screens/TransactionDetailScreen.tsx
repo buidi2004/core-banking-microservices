@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
+import { AppText } from '../components/typography/AppText';
 
 interface TransactionDetailScreenProps {
   route: any;
@@ -20,7 +21,7 @@ export default function TransactionDetailScreen({ route, navigation }: Transacti
           <TouchableOpacity onPress={() => navigation.goBack()}>
               <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi tiết giao dịch</Text>
+          <AppText style={styles.headerTitle}>Chi tiết giao dịch</AppText>
           <TouchableOpacity>
               <AppIcon name="share-outline" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -32,7 +33,7 @@ export default function TransactionDetailScreen({ route, navigation }: Transacti
         <View style={styles.statusContainer}>
           <GroupedListRow
             title="Trạng thái"
-            right={<Text style={styles.statusSuccess}>Hoàn thành</Text>}
+            right={<AppText style={styles.statusSuccess}>Hoàn thành</AppText>}
           />
         </View>
 
@@ -47,10 +48,10 @@ export default function TransactionDetailScreen({ route, navigation }: Transacti
             { label: 'Phí', value: 'Miễn phí' },
           ].map((item, i) => (
             <View key={i} style={styles.detailRow}>
-              <Text style={styles.detailLabel}>{item.label}</Text>
-              <Text style={[styles.detailValue, item.label === 'Số tiền' && styles.amountValue]}>
+              <AppText style={styles.detailLabel}>{item.label}</AppText>
+              <AppText style={[styles.detailValue, item.label === 'Số tiền' && styles.amountValue]}>
                 {item.value}
-              </Text>
+              </AppText>
               {i < 5 && <View style={styles.divider} />}
             </View>
           ))}
@@ -59,7 +60,7 @@ export default function TransactionDetailScreen({ route, navigation }: Transacti
         {/* Footer */}
         <View style={styles.footer}>
           <TouchableOpacity style={styles.reportBtn}>
-            <Text style={styles.reportText}>Báo cáo vấn đề</Text>
+            <AppText style={styles.reportText}>Báo cáo vấn đề</AppText>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -88,7 +89,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   scrollView: {
@@ -118,17 +118,14 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   amountValue: {
     
-    fontWeight: '800',
     color: Colors.primary,
   },
   statusSuccess: {
     
-    fontWeight: '600',
     color: Colors.success,
   },
   divider: {
@@ -150,6 +147,5 @@ const styles = StyleSheet.create({
   reportText: {
     
     color: Colors.danger,
-    fontWeight: '600',
-  },
+    },
 });

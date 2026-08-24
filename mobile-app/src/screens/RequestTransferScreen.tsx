@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { GlassCard } from '../components/GlassCard';
 import { StatusChip } from '../components/StatusChip';
+import { AppText } from '../components/typography/AppText';
 
 interface RequestTransferScreenProps {
   navigation: any;
@@ -29,7 +30,7 @@ export default function RequestTransferScreen({ navigation }: RequestTransferScr
           <TouchableOpacity onPress={() => setShowQR(false)}>
               <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Yêu cầu đã tạo</Text>
+          <AppText style={styles.headerTitle}>Yêu cầu đã tạo</AppText>
           <View style={styles.spacer} />
         </View>
 
@@ -38,9 +39,9 @@ export default function RequestTransferScreen({ navigation }: RequestTransferScr
           <GlassCard intensity={40} tint="light">
             <View style={styles.qrContent}>
                 <AppIcon name="qr-code" size="huge" color={Colors.textPrimary} />
-              <Text style={styles.qrTitle}>Quét mã để nộp tiền</Text>
-              <Text style={styles.qrAmount}>{amount || '500.000'} VNĐ</Text>
-              {message ? <Text style={styles.qrMessage}>{message}</Text> : null}
+              <AppText style={styles.qrTitle}>Quét mã để nộp tiền</AppText>
+              <AppText variant="headingLg" style={styles.qrAmount}>{amount || '500.000'} VNĐ</AppText>
+              {message ? <AppText style={styles.qrMessage}>{message}</AppText> : null}
             </View>
           </GlassCard>
 
@@ -48,11 +49,11 @@ export default function RequestTransferScreen({ navigation }: RequestTransferScr
           <View style={styles.actions}>
             <TouchableOpacity style={styles.actionBtn}>
                 <AppIcon name="share-social" size="sm" color={Colors.primary} />
-              <Text style={styles.actionText}>Chia sẻ</Text>
+              <AppText style={styles.actionText}>Chia sẻ</AppText>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionBtn}>
                 <AppIcon name="copy" size="sm" color={Colors.primary} />
-              <Text style={styles.actionText}>Sao chép link</Text>
+              <AppText style={styles.actionText}>Sao chép link</AppText>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -66,35 +67,35 @@ export default function RequestTransferScreen({ navigation }: RequestTransferScr
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Yêu cầu chuyển tiền</Text>
+        <AppText style={styles.headerTitle}>Yêu cầu chuyển tiền</AppText>
         <View style={styles.spacer} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         {/* Create request form */}
         <View style={styles.formCard}>
-          <Text style={styles.formTitle}>Tạo yêu cầu mới</Text>
+          <AppText style={styles.formTitle}>Tạo yêu cầu mới</AppText>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Người gửi</Text>
+            <AppText style={styles.label}>Người gửi</AppText>
             <View style={styles.inputWrapper}>
                 <AppIcon name="person-outline" size="sm" color={Colors.textSecondary} />
-              <Text style={styles.inputPlaceholder}>Chọn người gửi...</Text>
+              <AppText style={styles.inputPlaceholder}>Chọn người gửi...</AppText>
             </View>
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Số tiền</Text>
+            <AppText style={styles.label}>Số tiền</AppText>
             <View style={styles.amountInput}>
-              <Text style={styles.currency}>VNĐ</Text>
-              <Text style={styles.amount}>{amount || '...'}</Text>
+              <AppText style={styles.currency}>VNĐ</AppText>
+              <AppText style={styles.amount}>{amount || '...'}</AppText>
             </View>
           </View>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Lời nhắn (không bắt buộc)</Text>
+            <AppText style={styles.label}>Lời nhắn (không bắt buộc)</AppText>
             <View style={styles.messageInput}>
-              <Text style={styles.messagePlaceholder}>Nhập lời nhắn...</Text>
+              <AppText style={styles.messagePlaceholder}>Nhập lời nhắn...</AppText>
             </View>
           </View>
 
@@ -109,7 +110,7 @@ export default function RequestTransferScreen({ navigation }: RequestTransferScr
         </View>
 
         {/* Recent requests */}
-        <Text style={styles.sectionTitle}>Yêu cầu gần đây</Text>
+        <AppText style={styles.sectionTitle}>Yêu cầu gần đây</AppText>
         <View style={styles.requestsList}>
           {mockRequests.map((req, index) => (
             <View key={req.id} style={[styles.requestItem, index === mockRequests.length - 1 && styles.requestItemLast]}>
@@ -118,12 +119,12 @@ export default function RequestTransferScreen({ navigation }: RequestTransferScr
                     <AppIcon name="person" size="sm" color={Colors.primary} />
                 </View>
                 <View style={styles.requestInfo}>
-                  <Text style={styles.requestFrom}>{req.from}</Text>
-                  <Text style={styles.requestDate}>{req.date}</Text>
+                  <AppText style={styles.requestFrom}>{req.from}</AppText>
+                  <AppText style={styles.requestDate}>{req.date}</AppText>
                 </View>
               </View>
               <View style={styles.requestRight}>
-                <Text style={styles.requestAmount}>{req.amount}</Text>
+                <AppText style={styles.requestAmount}>{req.amount}</AppText>
                 <StatusChip
                   text={req.status === 'pending' ? 'Chờ' : req.status === 'accepted' ? 'Đã nhận' : 'Hết hạn'}
                   type={req.status === 'accepted' ? 'success' : req.status === 'pending' ? 'warning' : 'danger'}
@@ -152,7 +153,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -172,7 +172,6 @@ const styles = StyleSheet.create({
   },
   formTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.md,
   },
@@ -181,7 +180,6 @@ const styles = StyleSheet.create({
   },
   label: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
@@ -209,13 +207,11 @@ const styles = StyleSheet.create({
   },
   currency: {
     
-    fontWeight: '600',
     color: Colors.textSecondary,
   },
   amount: {
     flex: 1,
     
-    fontWeight: '700',
     color: Colors.primary,
   },
   messageInput: {
@@ -231,7 +227,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
@@ -270,7 +265,6 @@ const styles = StyleSheet.create({
   },
   requestFrom: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   requestDate: {
@@ -283,7 +277,6 @@ const styles = StyleSheet.create({
   },
   requestAmount: {
     
-    fontWeight: '700',
     color: Colors.primary,
   },
   qrContent: {
@@ -292,14 +285,11 @@ const styles = StyleSheet.create({
   },
   qrTitle: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
     marginTop: Spacing.md,
     marginBottom: Spacing.xs,
   },
   qrAmount: {
-    fontSize: Typography.headingLg.fontSize,
-    fontWeight: '800',
     color: Colors.primary,
   },
   qrMessage: {
@@ -319,6 +309,5 @@ const styles = StyleSheet.create({
   actionText: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
 });

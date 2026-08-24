@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { OtpBox } from '../components/OtpBox';
 import { PrimaryButton } from '../components/PrimaryButton';
+import { AppText } from '../components/typography/AppText';
 
 interface OtpVerificationScreenProps {
   navigation: any;
@@ -50,13 +51,13 @@ export default function OtpVerificationScreen({ navigation }: OtpVerificationScr
             style={styles.closeBtn}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.closeText}>✕</Text>
+            <AppText style={styles.closeText}>✕</AppText>
           </TouchableOpacity>
 
-          <Text style={styles.title}>Xác thực OTP</Text>
-          <Text style={styles.subtitle}>
+          <AppText variant="headingXl" style={styles.title}>Xác thực OTP</AppText>
+          <AppText style={styles.subtitle}>
             Chúng tôi đã gửi mã 6 chữ số đến số điện thoại của bạn
-          </Text>
+          </AppText>
 
           <View style={styles.otpContainer}>
             {otp.map((digit, index) => (
@@ -93,7 +94,7 @@ export default function OtpVerificationScreen({ navigation }: OtpVerificationScr
           />
 
           <TouchableOpacity style={styles.resendBtn}>
-            <Text style={styles.resendText}>Gửi lại mã</Text>
+            <AppText style={styles.resendText}>Gửi lại mã</AppText>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -131,8 +132,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   title: {
-    fontSize: Typography.headingXl.fontSize,
-    fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
@@ -162,6 +161,5 @@ const styles = StyleSheet.create({
   resendText: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
 });

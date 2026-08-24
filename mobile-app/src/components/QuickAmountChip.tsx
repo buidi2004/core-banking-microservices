@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface QuickAmountChipProps {
   value: string;
@@ -10,7 +11,7 @@ interface QuickAmountChipProps {
 
 export const QuickAmountChip: React.FC<QuickAmountChipProps> = ({ value, onPress }) => (
   <TouchableOpacity style={styles.chip} onPress={() => onPress(value)}>
-    <Text style={styles.chipText}>{value}</Text>
+    <AppText variant="caption" style={styles.chipText}>{value}</AppText>
   </TouchableOpacity>
 );
 
@@ -22,8 +23,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.pill,
   },
   chipText: {
-    fontSize: Typography.caption.fontSize,
-    fontWeight: '600',
     color: Colors.primaryDeep,
   },
 });

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { SearchBar } from '../components/SearchBar';
 import { ProviderIconGrid } from '../components/ProviderIconGrid';
 import { GroupedListRow } from '../components/GroupedListRow';
 import { EmptyState } from '../components/EmptyState';
+import { AppText } from '../components/typography/AppText';
 
 interface BillPaymentScreenProps {
   navigation: any;
@@ -34,7 +35,7 @@ export default function BillPaymentScreen({ navigation }: BillPaymentScreenProps
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thanh toán hoá đơn</Text>
+        <AppText style={styles.headerTitle}>Thanh toán hoá đơn</AppText>
         <TouchableOpacity>
             <AppIcon name="time-outline" size="sm" color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -49,7 +50,7 @@ export default function BillPaymentScreen({ navigation }: BillPaymentScreenProps
         />
 
         {/* Provider grid */}
-        <Text style={styles.sectionTitle}>Danh mục dịch vụ</Text>
+        <AppText style={styles.sectionTitle}>Danh mục dịch vụ</AppText>
         <ProviderIconGrid
           providers={providers.map((p) => ({
             ...p,
@@ -58,7 +59,7 @@ export default function BillPaymentScreen({ navigation }: BillPaymentScreenProps
         />
 
         {/* Saved bills */}
-        <Text style={styles.sectionTitle}>Hoá đơn đã lưu</Text>
+        <AppText style={styles.sectionTitle}>Hoá đơn đã lưu</AppText>
         {savedBills.length === 0 ? (
           <EmptyState title="Chưa có hoá đơn nào" subtitle="Bạn chưa có hóa đơn nào được lưu" />
         ) : (
@@ -70,11 +71,11 @@ export default function BillPaymentScreen({ navigation }: BillPaymentScreenProps
                 onPress={() => navigation.navigate('BillInput', { provider: bill.provider })}
               >
                 <View style={styles.billLeft}>
-                  <Text style={styles.billProvider}>{bill.provider}</Text>
-                  <Text style={styles.billDue}>Hạn: {bill.dueDate}</Text>
+                  <AppText style={styles.billProvider}>{bill.provider}</AppText>
+                  <AppText style={styles.billDue}>Hạn: {bill.dueDate}</AppText>
                 </View>
                 <View style={styles.billRight}>
-                  <Text style={styles.billAmount}>{bill.amount}</Text>
+                  <AppText style={styles.billAmount}>{bill.amount}</AppText>
                     <AppIcon name="chevron-forward" size="sm" color={Colors.textSecondary} />
                 </View>
               </TouchableOpacity>
@@ -100,7 +101,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   scrollView: {
@@ -109,7 +109,6 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     paddingHorizontal: Spacing.lg,
     marginTop: Spacing.md,
@@ -138,7 +137,6 @@ const styles = StyleSheet.create({
   },
   billProvider: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   billDue: {
@@ -152,7 +150,6 @@ const styles = StyleSheet.create({
   },
   billAmount: {
     
-    fontWeight: '700',
     color: Colors.primary,
   },
 });

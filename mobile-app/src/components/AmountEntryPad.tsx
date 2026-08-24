@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppIcon } from './icons/AppIcon';
 import { Colors, Radius, Spacing, Shadows } from '../theme';
 import { Typography } from '../theme';
+import { AppText } from './typography/AppText';
 
 interface AmountEntryPadProps {
   onInputChange?: (value: string) => void;
@@ -31,7 +32,7 @@ export const AmountEntryPad: React.FC<AmountEntryPadProps> = ({ onInputChange })
           {key === 'del' ? (
             <AppIcon name="close" size="sm" color={Colors.textPrimary} />
           ) : (
-            <Text style={styles.keyText}>{key}</Text>
+            <AppText variant="headingXl" style={styles.keyText}>{key}</AppText>
           )}
         </TouchableOpacity>
       ))}
@@ -61,8 +62,6 @@ const styles = StyleSheet.create({
     shadowColor: 'transparent',
   },
   keyText: {
-    fontSize: Typography.headingXl.fontSize,
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
 });

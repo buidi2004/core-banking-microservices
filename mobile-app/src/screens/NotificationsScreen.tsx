@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
 import { EmptyState } from '../components/EmptyState';
+import { AppText } from '../components/typography/AppText';
 
 interface NotificationsScreenProps {
   navigation: any;
@@ -26,7 +27,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
           <TouchableOpacity onPress={() => navigation.goBack()}>
               <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Thông báo</Text>
+          <AppText style={styles.headerTitle}>Thông báo</AppText>
           <TouchableOpacity>
               <AppIcon name="settings-outline" size="sm" color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -39,14 +40,14 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
           style={[styles.tab, activeTab === 'all' && styles.tabActive]}
           onPress={() => setActiveTab('all')}
         >
-          <Text style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>Tất cả</Text>
+          <AppText style={[styles.tabText, activeTab === 'all' && styles.tabTextActive]}>Tất cả</AppText>
           {activeTab === 'all' && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'unread' && styles.tabActive]}
           onPress={() => setActiveTab('unread')}
         >
-          <Text style={[styles.tabText, activeTab === 'unread' && styles.tabTextActive]}>Chưa đọc</Text>
+          <AppText style={[styles.tabText, activeTab === 'unread' && styles.tabTextActive]}>Chưa đọc</AppText>
           {activeTab === 'unread' && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
       </View>
@@ -106,7 +107,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   tabsContainer: {
@@ -125,13 +125,11 @@ const styles = StyleSheet.create({
   },
   tabText: {
     
-    fontWeight: '500',
     color: Colors.textSecondary,
   },
   tabTextActive: {
     color: Colors.textPrimary,
-    fontWeight: '700',
-  },
+    },
   tabIndicator: {
     position: 'absolute',
     bottom: 0,

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { PinDot } from '../components/PinDot';
+import { AppText } from '../components/typography/AppText';
 
 interface SetPinScreenProps {
   navigation: any;
@@ -29,8 +30,8 @@ export default function SetPinScreen({ navigation }: SetPinScreenProps) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Thiết lập PIN</Text>
-        <Text style={styles.subtitle}>Nhập PIN 6 chữ số mới</Text>
+        <AppText variant="headingLg" style={styles.title}>Thiết lập PIN</AppText>
+        <AppText style={styles.subtitle}>Nhập PIN 6 chữ số mới</AppText>
 
         <View style={styles.pinContainer}>
           {[...Array(6)].map((_, i) => (
@@ -50,9 +51,9 @@ export default function SetPinScreen({ navigation }: SetPinScreenProps) {
               activeOpacity={0.7}
             >
               {key === 'del' ? (
-                <Text style={styles.keyText}>⌫</Text>
+                <AppText variant="headingXl" style={styles.keyText}>⌫</AppText>
               ) : (
-                <Text style={styles.keyText}>{key}</Text>
+                <AppText variant="headingXl" style={styles.keyText}>{key}</AppText>
               )}
             </TouchableOpacity>
           ))}
@@ -80,8 +81,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: Typography.headingLg.fontSize,
-    fontWeight: '800',
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
@@ -117,8 +116,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   keyText: {
-    fontSize: Typography.headingXl.fontSize,
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   continueBtn: {

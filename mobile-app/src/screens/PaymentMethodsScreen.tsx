@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { AppIcon } from '../components/icons/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, Radius, Shadows, Spacing } from '../theme';
+import { Colors, Radius, Shadows, Spacing, Opacity } from '../theme';
 import { Typography } from '../theme';
 import { StatusChip } from '../components/StatusChip';
+import { AppText } from '../components/typography/AppText';
 
 interface PaymentMethodsScreenProps {
   navigation: any;
@@ -22,9 +23,9 @@ export default function PaymentMethodsScreen({ navigation }: PaymentMethodsScree
         <TouchableOpacity onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Phương thức thanh toán</Text>
+        <AppText style={styles.headerTitle}>Phương thức thanh toán</AppText>
         <TouchableOpacity>
-          <Text style={styles.addBtn}>+ Thêm</Text>
+          <AppText style={styles.addBtn}>+ Thêm</AppText>
         </TouchableOpacity>
       </View>
 
@@ -37,24 +38,24 @@ export default function PaymentMethodsScreen({ navigation }: PaymentMethodsScree
           style={styles.cardDisplay}
         >
           <View style={styles.cardHeader}>
-            <Text style={styles.cardType}>VISA</Text>
+            <AppText variant="headingSm" style={styles.cardType}>VISA</AppText>
               <AppIcon name="wifi" size="md" color={Colors.white} />
           </View>
-          <Text style={styles.cardNumber}>**** **** **** 8888</Text>
+          <AppText variant="headingSm" style={styles.cardNumber}>**** **** **** 8888</AppText>
           <View style={styles.cardFooter}>
             <View>
-              <Text style={styles.cardLabel}>Chủ thẻ</Text>
-              <Text style={styles.cardName}>NGUYEN VAN A</Text>
+              <AppText variant="captionXs" style={styles.cardLabel}>Chủ thẻ</AppText>
+              <AppText style={styles.cardName}>NGUYEN VAN A</AppText>
             </View>
             <View>
-              <Text style={styles.cardLabel}>Hết hạn</Text>
-              <Text style={styles.cardExpiry}>12/26</Text>
+              <AppText variant="captionXs" style={styles.cardLabel}>Hết hạn</AppText>
+              <AppText style={styles.cardExpiry}>12/26</AppText>
             </View>
           </View>
         </LinearGradient>
 
         {/* Card list */}
-        <Text style={styles.sectionTitle}>Thẻ đã lưu</Text>
+        <AppText style={styles.sectionTitle}>Thẻ đã lưu</AppText>
         <View style={styles.cardList}>
           {mockCards.map((card) => (
             <View key={card.id} style={styles.cardItem}>
@@ -67,10 +68,10 @@ export default function PaymentMethodsScreen({ navigation }: PaymentMethodsScree
                   />
                 </View>
                 <View>
-                  <Text style={styles.cardItemName}>
+                  <AppText style={styles.cardItemName}>
                     {card.type === 'visa' ? 'Visa' : 'Mastercard'} ****{card.last4}
-                  </Text>
-                  <Text style={styles.cardItemExpiry}>Hết hạn: {card.expiry}</Text>
+                  </AppText>
+                  <AppText style={styles.cardItemExpiry}>Hết hạn: {card.expiry}</AppText>
                 </View>
               </View>
               {card.current && <StatusChip text="Mặc định" type="success" size="sm" />}
@@ -79,7 +80,7 @@ export default function PaymentMethodsScreen({ navigation }: PaymentMethodsScree
         </View>
 
         {/* Other payment methods */}
-        <Text style={styles.sectionTitle}>Phương thức khác</Text>
+        <AppText style={styles.sectionTitle}>Phương thức khác</AppText>
         <View style={styles.methodsList}>
           {[
             { icon: 'wallet-outline', label: 'Ví E-Wallet', value: '5.500.000đ' },
@@ -90,8 +91,8 @@ export default function PaymentMethodsScreen({ navigation }: PaymentMethodsScree
               <View style={styles.methodIcon}>
                   <AppIcon name={method.icon as any} size="sm" color={Colors.primary} />
               </View>
-              <Text style={styles.methodLabel}>{method.label}</Text>
-              <Text style={styles.methodValue}>{method.value}</Text>
+              <AppText style={styles.methodLabel}>{method.label}</AppText>
+              <AppText style={styles.methodValue}>{method.value}</AppText>
             </TouchableOpacity>
           ))}
         </View>
@@ -114,14 +115,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   addBtn: {
     
     color: Colors.primary,
-    fontWeight: '600',
-  },
+    },
   scrollView: {
     flex: 1,
     paddingTop: Spacing.lg,
@@ -140,18 +139,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cardType: {
-    fontSize: Typography.headingSm.fontSize,
-    fontWeight: '800',
     color: Colors.white,
     letterSpacing: 1,
   },
   chipIcon: {
-    opacity: 0.8,
+    opacity: Opacity.muted,
   },
   cardNumber: {
-    fontSize: Typography.headingSm.fontSize,
     color: Colors.white,
-    fontWeight: '600',
     letterSpacing: 2,
     textAlign: 'center',
     marginVertical: Spacing.lg,
@@ -161,25 +156,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   cardLabel: {
-    fontSize: Typography.captionXs.fontSize,
-    color: 'rgba(255,255,255,0.7)',
+    color: Colors.glassStrong,
     textTransform: 'uppercase',
   },
   cardName: {
     
     color: Colors.white,
-    fontWeight: '600',
     marginTop: 4,
   },
   cardExpiry: {
     
     color: Colors.white,
-    fontWeight: '600',
     marginTop: 4,
   },
   sectionTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginTop: Spacing.xl,
     marginBottom: Spacing.sm,
@@ -213,7 +204,6 @@ const styles = StyleSheet.create({
   },
   cardItemName: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   cardItemExpiry: {
@@ -247,7 +237,6 @@ const styles = StyleSheet.create({
   methodLabel: {
     flex: 1,
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   methodValue: {

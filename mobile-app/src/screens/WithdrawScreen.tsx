@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
@@ -10,6 +10,7 @@ import { BankCardRow } from '../components/BankCardRow';
 import { QuickAmountChip } from '../components/QuickAmountChip';
 import { AmountEntryPad } from '../components/AmountEntryPad';
 import { StatusChip } from '../components/StatusChip';
+import { AppText } from '../components/typography/AppText';
 
 interface WithdrawScreenProps {
   navigation: any;
@@ -28,7 +29,7 @@ export default function WithdrawScreen({ navigation }: WithdrawScreenProps) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <AppIcon name="arrowLeft" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Rút tiền</Text>
+        <AppText style={styles.headerTitle}>Rút tiền</AppText>
         <View style={styles.spacer} />
       </View>
 
@@ -38,8 +39,8 @@ export default function WithdrawScreen({ navigation }: WithdrawScreenProps) {
           <View style={styles.sourceLeft}>
             <AppIcon name="card" size="lg" color={Colors.primary} />
             <View style={styles.sourceInfo}>
-              <Text style={styles.sourceLabel}>Ngân hàng nhận</Text>
-              <Text style={styles.sourceValue}>{selectedBank}</Text>
+              <AppText style={styles.sourceLabel}>Ngân hàng nhận</AppText>
+              <AppText style={styles.sourceValue}>{selectedBank}</AppText>
             </View>
           </View>
           <AppIcon name="chevronRight" size="md" color={Colors.textSecondary} />
@@ -47,12 +48,12 @@ export default function WithdrawScreen({ navigation }: WithdrawScreenProps) {
 
         {/* Amount input */}
         <View style={styles.amountSection}>
-          <Text style={styles.amountLabel}>Số tiền rút</Text>
+          <AppText style={styles.amountLabel}>Số tiền rút</AppText>
           <View style={styles.amountDisplay}>
-            <Text style={styles.currencySymbol}>VNĐ</Text>
-            <Text style={styles.amountValue}>{amount || '0'}</Text>
+            <AppText style={styles.currencySymbol}>VNĐ</AppText>
+            <AppText variant="display" style={styles.amountValue}>{amount || '0'}</AppText>
           </View>
-          <Text style={styles.balanceHint}>Số dư khả dụng: {balance.toLocaleString()} VNĐ</Text>
+          <AppText style={styles.balanceHint}>Số dư khả dụng: {balance.toLocaleString()} VNĐ</AppText>
           {isExceedBalance && (
             <View style={styles.warningContainer}>
               <StatusChip text="Vượt quá số dư" type="warning" size="sm" />
@@ -73,12 +74,12 @@ export default function WithdrawScreen({ navigation }: WithdrawScreenProps) {
         {/* Fee info */}
         <View style={styles.feeCard}>
           <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Phí rút tiền</Text>
-            <Text style={styles.feeValue}>Miễn phí</Text>
+            <AppText style={styles.feeLabel}>Phí rút tiền</AppText>
+            <AppText style={styles.feeValue}>Miễn phí</AppText>
           </View>
           <View style={styles.feeRow}>
-            <Text style={styles.feeLabel}>Thời gian xử lý</Text>
-            <Text style={styles.feeValue}>Trong ngày</Text>
+            <AppText style={styles.feeLabel}>Thời gian xử lý</AppText>
+            <AppText style={styles.feeValue}>Trong ngày</AppText>
           </View>
         </View>
       </ScrollView>
@@ -109,7 +110,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
   },
   spacer: {
@@ -143,7 +143,6 @@ const styles = StyleSheet.create({
   },
   sourceValue: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   amountSection: {
@@ -152,7 +151,6 @@ const styles = StyleSheet.create({
   },
   amountLabel: {
     
-    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
@@ -166,13 +164,10 @@ const styles = StyleSheet.create({
   },
   currencySymbol: {
     
-    fontWeight: '600',
     color: Colors.textSecondary,
     marginRight: Spacing.sm,
   },
   amountValue: {
-    fontSize: Typography.display.fontSize,
-    fontWeight: '800',
     color: Colors.primary,
   },
   balanceHint: {
@@ -207,7 +202,6 @@ const styles = StyleSheet.create({
   },
   feeValue: {
     
-    fontWeight: '600',
     color: Colors.textPrimary,
   },
   footer: {
