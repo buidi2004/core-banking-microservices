@@ -181,12 +181,8 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.primarySoft,
   },
   itemFirst: {
-    borderTopLeftRadius: Radius.sm,
-    borderTopRightRadius: Radius.sm,
   },
   itemLast: {
-    borderBottomLeftRadius: Radius.sm,
-    borderBottomRightRadius: Radius.sm,
     borderBottomWidth: 0,
   },
   menuItemLeft: {

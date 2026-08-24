@@ -21,10 +21,10 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
 
       {/* Scanner frame */}
       <View style={styles.scannerFrame}>
-        <View style={[styles.corner, styles.cornerTL]} />
-        <View style={[styles.corner, styles.cornerTR]} />
-        <View style={[styles.corner, styles.cornerBL]} />
-        <View style={[styles.corner, styles.cornerBR]} />
+        <View style={[styles.corner, styles.cornerTL, { borderColor: Colors.primary }]} />
+        <View style={[styles.corner, styles.cornerTR, { borderColor: Colors.primary }]} />
+        <View style={[styles.corner, styles.cornerBL, { borderColor: Colors.primary }]} />
+        <View style={[styles.corner, styles.cornerBR, { borderColor: Colors.primary }]} />
       </View>
 
       {/* Support labels */}
@@ -58,7 +58,7 @@ export default function ScanQRScreen({ navigation }: ScanQRScreenProps) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
             <AppIcon name="arrow-back" size="md" color={Colors.white} />
         </TouchableOpacity>
-        <AppText style={styles.headerTitle}>Quét mã QR</AppText>
+        <AppText variant="heading" style={styles.headerTitle}>Quét mã QR</AppText>
         <TouchableOpacity style={styles.flashBtn}>
             <AppIcon name="flash" size="md" color={Colors.black} />
         </TouchableOpacity>
@@ -143,6 +143,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
   },
+  headerTitle: {
+    color: Colors.white,
+  },
   backBtn: {
     width: 40,
     height: 40,
@@ -151,10 +154,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    
-    color: Colors.white,
-  },
+
   flashBtn: {
     width: 40,
     height: 40,

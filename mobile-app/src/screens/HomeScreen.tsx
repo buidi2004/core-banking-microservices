@@ -20,8 +20,10 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       {/* Header */}
       <BlurView intensity={70} tint="light" style={styles.headerBlur}>
         <View style={styles.header}>
-          <Image source={{ uri: 'https://i.pravatar.cc/100' }} style={styles.avatar} />
-          <AppText variant="bodyLg" style={styles.headerTitle}>Trang chủ</AppText>
+          <View style={styles.logoContainer}>
+            <AppIcon name="wallet" size="md" color={Colors.primary} />
+            <AppText variant="heading" style={styles.logoText}>EWallet</AppText>
+          </View>
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.headerIconBtn}>
               <AppIcon name="search" size="sm" color={Colors.textPrimary} />
@@ -31,7 +33,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
               <View style={styles.notifDot} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerIconBtn}>
-              <AppIcon name="profile" size="sm" color={Colors.textPrimary} />
+              <AppIcon name="menu" size="sm" color={Colors.textPrimary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -168,13 +170,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.pill,
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
   },
-  headerTitle: {
-    color: Colors.textPrimary,
+  logoText: {
+    color: Colors.primary,
   },
   headerActions: {
     flexDirection: 'row',
@@ -242,7 +244,8 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginTop: -24,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    borderTopLeftRadius: Radius.lg,
+    borderTopRightRadius: Radius.lg,
     padding: Spacing.lg,
     ...Shadows.card,
     zIndex: 1,

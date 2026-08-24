@@ -21,10 +21,14 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
           <TouchableOpacity onPress={() => navigation.goBack()}>
               <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
           </TouchableOpacity>
-          <AppText style={styles.headerTitle}>Chọn người nhận</AppText>
-          <TouchableOpacity style={styles.headerIconBtn}>
-              <AppIcon name="notifications-outline" size="sm" color={Colors.textPrimary} />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.headerIconBtn}>
+                <AppIcon name="notification" size="sm" color={Colors.textPrimary} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('Home')}>
+                <AppIcon name="home" size="sm" color={Colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </BlurView>
 
@@ -73,42 +77,44 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
           </View>
         </View>
 
-        {/* Recent contacts */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <AppText style={styles.sectionTitle}>Gần đây</AppText>
-            <TouchableOpacity>
-              <AppText style={styles.seeAllText}>Xem tất cả</AppText>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.recentList}>
-            {['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C'].map((name, i) => (
-              <TouchableOpacity key={i} style={styles.recentItem}>
-                <View style={styles.recentAvatar}>
-                    <AppIcon name="person" size="sm" color={Colors.primary} />
-                </View>
-                <AppText style={styles.recentName}>{name}</AppText>
-                  <AppIcon name="chevron-forward" size="xs" color={Colors.textSecondary} />
+        <View style={styles.parallelSections}>
+          {/* Recent contacts */}
+          <View style={styles.halfSection}>
+            <View style={styles.sectionHeader}>
+              <AppText style={styles.sectionTitle}>Gần đây</AppText>
+              <TouchableOpacity>
+                <AppText style={styles.seeAllText}>Tất cả</AppText>
               </TouchableOpacity>
-            ))}
+            </View>
+            <View style={styles.recentList}>
+              {['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C'].map((name, i) => (
+                <TouchableOpacity key={i} style={styles.recentItem}>
+                  <View style={styles.recentAvatar}>
+                      <AppIcon name="person" size="sm" color={Colors.primary} />
+                  </View>
+                  <AppText style={styles.recentName} numberOfLines={1}>{name}</AppText>
+                    <AppIcon name="chevron-forward" size="xs" color={Colors.textSecondary} />
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
 
-        {/* Partners */}
-        <View style={styles.section}>
-          <AppText style={styles.sectionTitle}>Đối tác liên kết</AppText>
-          <View style={styles.partnerList}>
-            {['Shopee', 'Grab', 'Viettel', 'EVN'].map((partner, i) => (
-              <TouchableOpacity key={i} style={styles.partnerItem}>
-                <View style={styles.partnerAvatar}>
-                  <AppText style={styles.partnerInitial}>{partner[0]}</AppText>
-                </View>
-                <AppText style={styles.partnerName}>{partner}</AppText>
-                <View style={styles.partnerBadge}>
-                  <AppText variant="captionXs" style={styles.partnerBadgeText}>+99</AppText>
-                </View>
-              </TouchableOpacity>
-            ))}
+          {/* Partners */}
+          <View style={styles.halfSection}>
+            <AppText style={styles.sectionTitle}>Đối tác liên kết</AppText>
+            <View style={styles.partnerList}>
+              {['Shopee', 'Grab', 'Viettel', 'EVN'].map((partner, i) => (
+                <TouchableOpacity key={i} style={styles.partnerItem}>
+                  <View style={styles.partnerAvatar}>
+                    <AppText style={styles.partnerInitial}>{partner[0]}</AppText>
+                  </View>
+                  <AppText style={styles.partnerName} numberOfLines={1}>{partner}</AppText>
+                  <View style={styles.partnerBadge}>
+                    <AppText variant="captionXs" style={styles.partnerBadgeText}>+99</AppText>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
 
@@ -156,9 +162,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
   },
-  headerTitle: {
-    
-    color: Colors.textPrimary,
+  headerActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
   },
   headerIconBtn: {
     width: 36,
@@ -240,6 +246,14 @@ const styles = StyleSheet.create({
     
     color: Colors.textSecondary,
   },
+  parallelSections: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  halfSection: {
+    flex: 1,
+  },
   section: {
     marginBottom: Spacing.lg,
   },
@@ -286,12 +300,10 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   partnerList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
     gap: Spacing.sm,
   },
   partnerItem: {
-    width: '47%',
     backgroundColor: Colors.surface,
     borderRadius: Radius.sm,
     padding: Spacing.md,
