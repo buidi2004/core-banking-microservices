@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 
 public class TransferRequest {
 
+    @NotBlank(message = "Request ID is required for idempotent processing")
     private String requestId;
 
     @NotBlank(message = "Source wallet ID is required")

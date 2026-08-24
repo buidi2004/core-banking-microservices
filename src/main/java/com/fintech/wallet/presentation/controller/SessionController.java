@@ -1,47 +1,59 @@
 package com.fintech.wallet.presentation.controller;
 
-import com.fintech.wallet.domain.model.UserSession;
-import com.fintech.wallet.domain.port.in.SessionUseCase;
+import com.fintech.wallet.domain.model.DeviceSession;
+import com.fintech.wallet.domain.port.in.SessionManagementUseCase;
 import com.fintech.wallet.presentation.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/account/sessions")
+@RequestMapping("/api/v1/sessions")
+@Tag(name = "Session Management", description = "APIs for managing user sessions and devices")
 public class SessionController {
 
-    private final SessionUseCase sessionUseCase;
+    private final SessionManagementUseCase sessionManagementUseCase;
 
-    public SessionController(SessionUseCase sessionUseCase) {
-        this.sessionUseCase = sessionUseCase;
+    public SessionController(SessionManagementUseCase sessionManagementUseCase) {
+        this.sessionManagementUseCase = sessionManagementUseCase;
     }
 
+    @Operation(summary = "Get active sessions")
     @GetMapping
-    public ResponseEntity<ApiResponse<List<UserSession>>> getActiveSessions(Authentication auth) {
+    public ResponseEntity<ApiResponse<List<DeviceSession>>> getActiveSessions(Authentication auth) {
         String userId = auth.getName();
-        List<UserSession> sessions = sessionUseCase.getActiveSessions(userId);
+        List<DeviceSession> sessions = sessionManagementUseCase.getActiveSessions(userId);
         return ResponseEntity.ok(ApiResponse.success("Active sessions retrieved", sessions));
     }
 
-    @DeleteMapping("/{sessionId}")
-    public ResponseEntity<ApiResponse<Void>> revokeSession(
-            Authentication auth, @PathVariable String sessionId) {
+    @Operation(summary = "Revoke a specific session (Remote Logout)")
+    @DeleteMapping("/{deviceId}")
+    public ResponseEntity<ApiResponse<Void>> revokeSession(Authentication auth, @PathVariable String deviceId) {
         String userId = auth.getName();
-        sessionUseCase.revokeSession(userId, sessionId);
-        return ResponseEntity.ok(ApiResponse.success("Session revoked successfully", null));
+        sessionManagementUseCase.revokeSession(userId, deviceId);
+        return ResponseEntity.ok(ApiResponse.success("Session revoked", null));
     }
 
+    @Operation(summary = "Revoke all sessions")
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> revokeAllSessions(Authentication auth) {
         String userId = auth.getName();
-        sessionUseCase.revokeAllSessions(userId);
-        return ResponseEntity.ok(ApiResponse.success("All active sessions revoked successfully", null));
+        sessionManagementUseCase.revokeAllSessions(userId);
+        return ResponseEntity.ok(ApiResponse.success("All sessions revoked", null));
+    }
+
+    @Operation(summary = "Register FCM Token for device")
+    @PostMapping("/{deviceId}/fcm")
+    public ResponseEntity<ApiResponse<Void>> registerFcmToken(
+            Authentication auth,
+            @PathVariable String deviceId,
+            @RequestParam String fcmToken) {
+        String userId = auth.getName();
+        sessionManagementUseCase.updateFcmToken(userId, deviceId, fcmToken);
+        return ResponseEntity.ok(ApiResponse.success("FCM token registered", null));
     }
 }

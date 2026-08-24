@@ -1,129 +1,105 @@
 package com.fintech.wallet.application.service;
 
-import com.fintech.wallet.domain.model.UserSession;
-import com.fintech.wallet.domain.port.out.SessionStorePort;
+import com.fintech.wallet.domain.model.DeviceSession;
+import com.fintech.wallet.domain.port.out.SessionPersistencePort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 class SessionServiceTest {
 
-    /**
-     * Simple in-memory implementation of SessionStorePort.
-     * Avoids any dependency on Spring Redis / Mockito for concrete classes.
-     */
-    private static class InMemorySessionStore implements SessionStorePort {
-        private final Map<String, String> store = new HashMap<>();
+    @Mock
+    private SessionPersistencePort sessionPersistencePort;
 
-        @Override
-        public void set(String key, String value, long timeout, TimeUnit unit) {
-            store.put(key, value);
-        }
-
-        @Override
-        public String get(String key) {
-            return store.get(key);
-        }
-
-        @Override
-        public void delete(String key) {
-            store.remove(key);
-        }
-
-        @Override
-        public void deleteAll(Set<String> keys) {
-            keys.forEach(store::remove);
-        }
-
-        @Override
-        public Set<String> keys(String pattern) {
-            // Convert Redis glob pattern "session:userId:*" to prefix match
-            String prefix = pattern.endsWith("*")
-                    ? pattern.substring(0, pattern.length() - 1)
-                    : pattern;
-            return store.keySet().stream()
-                    .filter(k -> k.startsWith(prefix))
-                    .collect(Collectors.toSet());
-        }
-    }
-
-    private SessionService sessionService;
+    @InjectMocks
+    private SessionService target;
 
     @BeforeEach
     void setUp() {
-        sessionService = new SessionService(new InMemorySessionStore());
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void createSession_shouldReturnSessionWithCorrectFields() {
-        UserSession session = sessionService.createSession("u1", "iOS App", "192.168.1.1");
+    void createOrUpdateSession_createNew_shouldReturnNewSession() {
+        String userId = "user1";
+        String deviceId = "dev1";
+        
+        when(sessionPersistencePort.findByUserIdAndDeviceId(userId, deviceId)).thenReturn(Optional.empty());
+
+        DeviceSession session = target.createOrUpdateSession(userId, deviceId, "127.0.0.1", "Agent");
 
         assertNotNull(session);
-        assertNotNull(session.getSessionId());
-        assertEquals("u1", session.getUserId());
-        assertEquals("iOS App", session.getDeviceInfo());
-        assertEquals("192.168.1.1", session.getIpAddress());
+        assertNotNull(session.getRefreshToken());
+        assertEquals(userId, session.getUserId());
+        assertTrue(session.isActive());
+        verify(sessionPersistencePort, times(1)).save(any(DeviceSession.class));
     }
 
     @Test
-    void getActiveSessions_shouldReturnCreatedSessions() {
-        sessionService.createSession("u1", "iOS App", "10.0.0.1");
-        sessionService.createSession("u1", "Android App", "10.0.0.2");
+    void createOrUpdateSession_existing_shouldUpdateSession() {
+        String userId = "user1";
+        String deviceId = "dev1";
+        DeviceSession existingSession = DeviceSession.createNew(userId, deviceId, "127.0.0.1", "Agent", Instant.now().plusSeconds(3600));
+        
+        when(sessionPersistencePort.findByUserIdAndDeviceId(userId, deviceId)).thenReturn(Optional.of(existingSession));
 
-        List<UserSession> sessions = sessionService.getActiveSessions("u1");
+        DeviceSession session = target.createOrUpdateSession(userId, deviceId, "127.0.0.1", "Agent");
 
-        assertEquals(2, sessions.size());
+        assertNotNull(session);
+        assertEquals(userId, session.getUserId());
+        assertTrue(session.isActive());
+        verify(sessionPersistencePort, times(1)).save(existingSession);
     }
 
     @Test
-    void getActiveSessions_differentUser_shouldReturnEmpty() {
-        sessionService.createSession("u1", "iOS App", "10.0.0.1");
+    void validateSession_active_shouldReturnSession() {
+        String userId = "user1";
+        String deviceId = "dev1";
+        DeviceSession existingSession = DeviceSession.createNew(userId, deviceId, "127.0.0.1", "Agent", Instant.now().plusSeconds(3600));
+        
+        when(sessionPersistencePort.findByUserIdAndDeviceId(userId, deviceId)).thenReturn(Optional.of(existingSession));
 
-        List<UserSession> sessions = sessionService.getActiveSessions("u2");
-
-        assertTrue(sessions.isEmpty());
+        Optional<DeviceSession> result = target.validateSession(userId, deviceId);
+        
+        assertTrue(result.isPresent());
     }
 
     @Test
-    void revokeSession_shouldRemoveOnlyThatSession() {
-        UserSession s1 = sessionService.createSession("u1", "Device A", "1.1.1.1");
-        sessionService.createSession("u1", "Device B", "2.2.2.2");
+    void validateSession_revoked_shouldReturnEmpty() {
+        String userId = "user1";
+        String deviceId = "dev1";
+        DeviceSession existingSession = DeviceSession.createNew(userId, deviceId, "127.0.0.1", "Agent", Instant.now().plusSeconds(3600));
+        existingSession.revoke();
 
-        sessionService.revokeSession("u1", s1.getSessionId());
+        when(sessionPersistencePort.findByUserIdAndDeviceId(userId, deviceId)).thenReturn(Optional.of(existingSession));
 
-        List<UserSession> remaining = sessionService.getActiveSessions("u1");
-        assertEquals(1, remaining.size());
-        assertFalse(remaining.stream()
-                .anyMatch(s -> s.getSessionId().equals(s1.getSessionId())));
+        Optional<DeviceSession> result = target.validateSession(userId, deviceId);
+        
+        assertTrue(result.isEmpty());
     }
 
     @Test
-    void revokeAllSessions_shouldRemoveAllSessionsForUser() {
-        sessionService.createSession("u1", "Device A", "1.1.1.1");
-        sessionService.createSession("u1", "Device B", "2.2.2.2");
+    void revokeSession_shouldCallSaveWithRevokedSession() {
+        String userId = "user1";
+        String deviceId = "dev1";
+        DeviceSession existingSession = DeviceSession.createNew(userId, deviceId, "127.0.0.1", "Agent", Instant.now().plusSeconds(3600));
+        
+        when(sessionPersistencePort.findByUserIdAndDeviceId(userId, deviceId)).thenReturn(Optional.of(existingSession));
 
-        sessionService.revokeAllSessions("u1");
+        target.revokeSession(userId, deviceId);
 
-        assertTrue(sessionService.getActiveSessions("u1").isEmpty());
-    }
-
-    @Test
-    void revokeAllSessions_shouldNotAffectOtherUsers() {
-        sessionService.createSession("u1", "Device A", "1.1.1.1");
-        sessionService.createSession("u2", "Device X", "9.9.9.9");
-
-        sessionService.revokeAllSessions("u1");
-
-        assertTrue(sessionService.getActiveSessions("u1").isEmpty());
-        assertEquals(1, sessionService.getActiveSessions("u2").size());
+        assertFalse(existingSession.isActive());
+        verify(sessionPersistencePort, times(1)).save(existingSession);
     }
 }

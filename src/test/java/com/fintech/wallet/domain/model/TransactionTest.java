@@ -22,7 +22,7 @@ class TransactionTest {
     void createTransfer_shouldSetCorrectFields() {
         Transaction tx = Transaction.createTransfer("tx-2", "w-1", "w-2", Money.of(new BigDecimal("500"), "VND"));
         assertEquals(TransactionType.TRANSFER, tx.getType());
-        assertEquals(TransactionStatus.PENDING, tx.getStatus());
+        assertEquals(TransactionStatus.PENDING_CONFIRMATION, tx.getStatus());
         assertEquals("w-1", tx.getSourceWalletId());
         assertEquals("w-2", tx.getTargetWalletId());
     }

@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
+import com.fintech.wallet.domain.model.AuthTokens;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -28,18 +31,25 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
         User user = authUseCase.register(request.getPhoneNumber(), request.getPassword());
-        String token = authUseCase.login(request.getPhoneNumber(), request.getPassword());
-        AuthResponse response = new AuthResponse(user.getId(), token);
+        
+        String ipAddress = getClientIpAddress(httpRequest);
+        String userAgent = httpRequest.getHeader("User-Agent");
+        AuthTokens tokens = authUseCase.login(request.getPhoneNumber(), request.getPassword(), request.getDeviceId(), ipAddress, userAgent);
+        
+        AuthResponse response = new AuthResponse(user.getId(), tokens.getAccessToken(), tokens.getRefreshToken());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("User registered successfully", response));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
-        String token = authUseCase.login(request.getPhoneNumber(), request.getPassword());
-        AuthResponse response = new AuthResponse(null, token);
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String ipAddress = getClientIpAddress(httpRequest);
+        String userAgent = httpRequest.getHeader("User-Agent");
+        AuthTokens tokens = authUseCase.login(request.getPhoneNumber(), request.getPassword(), request.getDeviceId(), ipAddress, userAgent);
+        
+        AuthResponse response = new AuthResponse(null, tokens.getAccessToken(), tokens.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
@@ -56,9 +66,11 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<String>> refreshToken(@RequestParam String refreshToken) {
-        String newAccessToken = authUseCase.refreshToken(refreshToken);
-        return ResponseEntity.ok(ApiResponse.success("Access token refreshed", newAccessToken));
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestParam String refreshToken, HttpServletRequest httpRequest) {
+        String ipAddress = getClientIpAddress(httpRequest);
+        AuthTokens tokens = authUseCase.refreshToken(refreshToken, ipAddress);
+        AuthResponse response = new AuthResponse(null, tokens.getAccessToken(), tokens.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Access token refreshed", response));
     }
 
     @PostMapping("/forgot-password")
@@ -116,5 +128,13 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(
                 "Current device logged out successfully. Please discard your access and refresh tokens.", 
                 null));
+    }
+
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader == null || xfHeader.isEmpty() || !xfHeader.contains(request.getRemoteAddr())) {
+            return request.getRemoteAddr();
+        }
+        return xfHeader.split(",")[0];
     }
 }

@@ -1,7 +1,7 @@
 package com.fintech.wallet.presentation.controller;
 
-import com.fintech.wallet.domain.model.UserSession;
-import com.fintech.wallet.domain.port.in.SessionUseCase;
+import com.fintech.wallet.domain.model.DeviceSession;
+import com.fintech.wallet.domain.port.in.SessionManagementUseCase;
 import com.fintech.wallet.presentation.response.ApiResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import static org.mockito.Mockito.*;
 class SessionControllerTest {
 
     @Mock
-    private SessionUseCase sessionUseCase;   // interface → Mockito can mock it
+    private SessionManagementUseCase sessionManagementUseCase;
 
     @Mock
     private Authentication auth;
@@ -36,38 +36,48 @@ class SessionControllerTest {
 
     @Test
     void getActiveSessions_shouldReturnSessionList() {
-        Instant now = Instant.now();
-        UserSession session = new UserSession("s1", "user-1", "iOS App", "1.1.1.1", now, now);
-        when(sessionUseCase.getActiveSessions("user-1")).thenReturn(List.of(session));
+        DeviceSession session = DeviceSession.createNew("user-1", "dev1", "1.1.1.1", "Agent", Instant.now().plusSeconds(3600));
+        when(sessionManagementUseCase.getActiveSessions("user-1")).thenReturn(List.of(session));
 
-        ResponseEntity<ApiResponse<List<UserSession>>> response =
+        ResponseEntity<ApiResponse<List<DeviceSession>>> response =
                 target.getActiveSessions(auth);
 
         assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().getData().size());
-        verify(sessionUseCase).getActiveSessions("user-1");
+        verify(sessionManagementUseCase).getActiveSessions("user-1");
     }
 
     @Test
     void revokeSession_shouldCallUseCaseAndReturn200() {
-        doNothing().when(sessionUseCase).revokeSession("user-1", "sess-abc");
+        doNothing().when(sessionManagementUseCase).revokeSession("user-1", "dev1");
 
         ResponseEntity<ApiResponse<Void>> response =
-                target.revokeSession(auth, "sess-abc");
+                target.revokeSession(auth, "dev1");
 
         assertEquals(200, response.getStatusCode().value());
-        verify(sessionUseCase).revokeSession("user-1", "sess-abc");
+        verify(sessionManagementUseCase).revokeSession("user-1", "dev1");
     }
 
     @Test
     void revokeAllSessions_shouldCallUseCaseAndReturn200() {
-        doNothing().when(sessionUseCase).revokeAllSessions("user-1");
+        doNothing().when(sessionManagementUseCase).revokeAllSessions("user-1");
 
         ResponseEntity<ApiResponse<Void>> response =
                 target.revokeAllSessions(auth);
 
         assertEquals(200, response.getStatusCode().value());
-        verify(sessionUseCase).revokeAllSessions("user-1");
+        verify(sessionManagementUseCase).revokeAllSessions("user-1");
+    }
+
+    @Test
+    void registerFcmToken_shouldCallUseCaseAndReturn200() {
+        doNothing().when(sessionManagementUseCase).updateFcmToken("user-1", "dev1", "fcm123");
+
+        ResponseEntity<ApiResponse<Void>> response =
+                target.registerFcmToken(auth, "dev1", "fcm123");
+
+        assertEquals(200, response.getStatusCode().value());
+        verify(sessionManagementUseCase).updateFcmToken("user-1", "dev1", "fcm123");
     }
 }

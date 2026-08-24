@@ -3,6 +3,7 @@ package com.fintech.wallet.infrastructure.notification;
 import com.fintech.wallet.domain.event.TransactionCompletedEvent;
 import com.fintech.wallet.domain.model.Transaction;
 import com.fintech.wallet.domain.model.Wallet;
+import com.fintech.wallet.domain.port.out.NotificationPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -14,10 +15,10 @@ public class NotificationEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationEventListener.class);
 
-    private final WebSocketNotificationAdapter webSocketNotificationAdapter;
+    private final NotificationPort webSocketNotificationAdapter;
     private final MockFcmNotificationAdapter fcmNotificationAdapter;
 
-    public NotificationEventListener(WebSocketNotificationAdapter webSocketNotificationAdapter,
+    public NotificationEventListener(NotificationPort webSocketNotificationAdapter,
                                        MockFcmNotificationAdapter fcmNotificationAdapter) {
         this.webSocketNotificationAdapter = webSocketNotificationAdapter;
         this.fcmNotificationAdapter = fcmNotificationAdapter;

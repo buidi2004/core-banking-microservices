@@ -38,6 +38,11 @@ public class WalletPersistenceAdapter implements WalletPersistencePort {
     }
 
     @Override
+    public Optional<Wallet> findWalletByIdForUpdate(String walletId) {
+        return walletRepository.findByIdForUpdate(walletId).map(mapper::toDomain);
+    }
+
+    @Override
     public Optional<Wallet> findWalletByOwnerId(String ownerId) {
         return walletRepository.findByOwnerId(ownerId).map(mapper::toDomain);
     }

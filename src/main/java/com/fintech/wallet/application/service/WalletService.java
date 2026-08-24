@@ -1,5 +1,9 @@
 package com.fintech.wallet.application.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.fintech.wallet.domain.exception.InvalidMoneyException;
 import com.fintech.wallet.domain.exception.TransactionLimitExceededException;
 import com.fintech.wallet.domain.exception.WalletNotFoundException;
@@ -14,16 +18,21 @@ import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.port.in.DepositMoneyUseCase;
 import com.fintech.wallet.domain.port.in.GetWalletUseCase;
 import com.fintech.wallet.domain.port.in.TransactionQueryUseCase;
+import com.fintech.wallet.domain.port.in.LedgerUseCase;
 import com.fintech.wallet.domain.port.in.TransferMoneyUseCase;
 import com.fintech.wallet.domain.port.in.WithdrawMoneyUseCase;
 import com.fintech.wallet.domain.port.out.AuditLogPersistencePort;
 import com.fintech.wallet.domain.port.out.BankGatewayPort;
+import com.fintech.wallet.domain.port.out.ClientInfoPort;
 import com.fintech.wallet.domain.port.out.DistributedLockPort;
 import com.fintech.wallet.domain.port.out.NotificationPort;
 import com.fintech.wallet.domain.port.out.TransactionPersistencePort;
 import com.fintech.wallet.domain.port.out.TransactionalOperationPort;
 import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
+import com.fintech.wallet.domain.port.out.KycPersistencePort;
+import com.fintech.wallet.domain.util.NameMaskingUtils;
+import com.fintech.wallet.presentation.response.RecipientInfoResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +64,13 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     private final BankGatewayPort bankGatewayPort;
     private final UserPersistencePort userPersistencePort;
     private final AuditLogPersistencePort auditLogPersistencePort;
+    private final ClientInfoPort clientInfoPort;
+    private final LedgerUseCase ledgerUseCase;
+    
+    @Autowired(required = false)
+    private KycPersistencePort kycPersistencePort;
 
+    @Autowired
     public WalletService(WalletPersistencePort walletPersistencePort,
                          TransactionPersistencePort transactionPersistencePort,
                          DistributedLockPort distributedLockPort,
@@ -63,7 +78,9 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                          TransactionalOperationPort transactionalOperationPort,
                          BankGatewayPort bankGatewayPort,
                          UserPersistencePort userPersistencePort,
-                         AuditLogPersistencePort auditLogPersistencePort) {
+                         AuditLogPersistencePort auditLogPersistencePort,
+                         ClientInfoPort clientInfoPort,
+                         LedgerUseCase ledgerUseCase) {
         this.walletPersistencePort = walletPersistencePort;
         this.transactionPersistencePort = transactionPersistencePort;
         this.distributedLockPort = distributedLockPort;
@@ -72,6 +89,8 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         this.bankGatewayPort = bankGatewayPort;
         this.userPersistencePort = userPersistencePort;
         this.auditLogPersistencePort = auditLogPersistencePort;
+        this.clientInfoPort = clientInfoPort;
+        this.ledgerUseCase = ledgerUseCase;
     }
 
     public WalletService(WalletPersistencePort walletPersistencePort,
@@ -80,7 +99,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                          NotificationPort notificationPort,
                          TransactionalOperationPort transactionalOperationPort,
                          BankGatewayPort bankGatewayPort) {
-        this(walletPersistencePort, transactionPersistencePort, distributedLockPort, notificationPort, transactionalOperationPort, bankGatewayPort, null, null);
+        this(walletPersistencePort, transactionPersistencePort, distributedLockPort, notificationPort, transactionalOperationPort, bankGatewayPort, null, null, null, null);
     }
 
     public WalletService(WalletPersistencePort walletPersistencePort,
@@ -88,7 +107,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                          DistributedLockPort distributedLockPort,
                          NotificationPort notificationPort,
                          TransactionalOperationPort transactionalOperationPort) {
-        this(walletPersistencePort, transactionPersistencePort, distributedLockPort, notificationPort, transactionalOperationPort, null, null, null);
+        this(walletPersistencePort, transactionPersistencePort, distributedLockPort, notificationPort, transactionalOperationPort, null, null, null, null, null);
     }
 
 
@@ -146,6 +165,39 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     "No " + currency + " wallet found for user: " + userId);
         }
         return wallet;
+    }
+
+    @Override
+    public RecipientInfoResponse getRecipientInfo(String walletId, String phoneNumber) {
+        Wallet wallet;
+        User user;
+
+        if (walletId != null && !walletId.isBlank()) {
+            wallet = getWalletById(walletId);
+            user = userPersistencePort.findUserById(wallet.getOwnerId())
+                    .orElseThrow(() -> new IllegalArgumentException("Wallet owner not found"));
+        } else if (phoneNumber != null && !phoneNumber.isBlank()) {
+            user = userPersistencePort.findUserByPhoneNumber(phoneNumber)
+                    .orElseThrow(() -> new IllegalArgumentException("User with phone number " + phoneNumber + " not found"));
+            wallet = getWalletByUserIdAndCurrency(user.getId(), "VND");
+        } else {
+            throw new IllegalArgumentException("Either walletId or phoneNumber must be provided");
+        }
+
+        String rawName = null;
+        if (kycPersistencePort != null) {
+            var kycOpt = kycPersistencePort.findKycByUserId(user.getId());
+            if (kycOpt.isPresent() && kycOpt.get().getFullName() != null && !kycOpt.get().getFullName().isBlank()) {
+                rawName = kycOpt.get().getFullName();
+            }
+        }
+        if (rawName == null || rawName.isBlank()) {
+            String phone = user.getPhoneNumber();
+            rawName = "NGƯỜI DÙNG " + (phone.length() > 4 ? phone.substring(phone.length() - 4) : phone);
+        }
+
+        String maskedName = NameMaskingUtils.maskName(rawName);
+        return new RecipientInfoResponse(wallet.getId(), user.getPhoneNumber(), maskedName);
     }
 
     @Override
@@ -226,6 +278,8 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             throw new InvalidMoneyException("Transfer amount cannot be null");
         }
 
+        validatePerTransactionLimits(amount);
+
         // Bug #2 fix: Idempotency — only return SUCCESS
         if (requestId != null && !requestId.isBlank()) {
             Optional<Transaction> existingTx = transactionPersistencePort.findTransactionByRequestId(requestId);
@@ -233,6 +287,10 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 return existingTx.get();
             }
         }
+
+        // Pre-validate daily and monthly limits before acquiring locks
+        Wallet initialSourceWallet = getWalletById(sourceWalletId);
+        validateDailyTransactionLimit(initialSourceWallet.getOwnerId(), sourceWalletId, amount);
 
         // Lock ordering based on ID comparison to prevent deadlocks
         String firstLockId = sourceWalletId.compareTo(targetWalletId) < 0 ? sourceWalletId : targetWalletId;
@@ -399,6 +457,125 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     }
 
     @Override
+    public Transaction initTransfer(String requestId, String sourceWalletId, String targetWalletId, Money amount) {
+        if (sourceWalletId == null || sourceWalletId.isBlank() || targetWalletId == null || targetWalletId.isBlank()) {
+            throw new IllegalArgumentException("Source and target wallet IDs must not be empty");
+        }
+        if (sourceWalletId.equals(targetWalletId)) {
+            throw new IllegalArgumentException("Cannot transfer money to the same wallet");
+        }
+        if (amount == null) {
+            throw new InvalidMoneyException("Transfer amount cannot be null");
+        }
+        
+        validatePerTransactionLimits(amount);
+
+        if (requestId != null && !requestId.isBlank()) {
+            java.util.Optional<Transaction> existingTx = transactionPersistencePort.findTransactionByRequestId(requestId);
+            if (existingTx.isPresent() && existingTx.get().getStatus() != TransactionStatus.FAILED) {
+                return existingTx.get();
+            }
+        }
+        
+        // Validate daily & monthly transaction limits before creating transaction
+        Wallet sourceWallet = getWalletById(sourceWalletId);
+        validateDailyTransactionLimit(sourceWallet.getOwnerId(), sourceWalletId, amount);
+
+        Transaction transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount);
+        return transactionPersistencePort.saveTransaction(transaction);
+    }
+
+
+    /**
+     * Confirms and executes a pending transfer.
+     * <p>
+     * <b>EDGE-2 (Optimistic Locking):</b> This method relies on JPA {@code @Version} fields in the Wallet entity
+     * to prevent concurrent modification anomalies. If two concurrent transactions attempt to debit or credit
+     * the same wallet, the second one to commit will fail with an {@code ObjectOptimisticLockingFailureException}.
+     * The global exception handler translates this to a 409 Conflict status. API clients must implement a retry
+     * strategy (e.g., exponential backoff) when encountering 409s during balance operations.
+     * </p>
+     *
+     * @param transactionId The ID of the pending transaction
+     * @return The completed Transaction
+     */
+    @Override
+    public Transaction confirmTransfer(String transactionId) {
+        Transaction transaction = transactionPersistencePort.findTransactionById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found"));
+                
+        if (transaction.getStatus() == TransactionStatus.SUCCESS) {
+            return transaction;
+        }
+        
+        if (transaction.getStatus() != TransactionStatus.PENDING && transaction.getStatus() != TransactionStatus.PENDING_CONFIRMATION) {
+            throw new IllegalStateException("Transaction is not pending");
+        }
+
+        String sourceWalletId = transaction.getSourceWalletId();
+        String targetWalletId = transaction.getTargetWalletId();
+        Money amount = transaction.getAmount();
+
+        String firstLockId = sourceWalletId.compareTo(targetWalletId) < 0 ? sourceWalletId : targetWalletId;
+        String secondLockId = sourceWalletId.compareTo(targetWalletId) < 0 ? targetWalletId : sourceWalletId;
+
+        String lockKey1 = "lock:wallet:" + firstLockId;
+        String lockKey2 = "lock:wallet:" + secondLockId;
+
+        return distributedLockPort.executeWithLock(lockKey1, LOCK_TIMEOUT_SECONDS, () ->
+            distributedLockPort.executeWithLock(lockKey2, LOCK_TIMEOUT_SECONDS, () -> {
+                // re-fetch to ensure no race condition
+                Transaction tx = transactionPersistencePort.findTransactionById(transactionId)
+                        .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
+                if (tx.getStatus() != TransactionStatus.PENDING && tx.getStatus() != TransactionStatus.PENDING_CONFIRMATION) {
+                    return tx;
+                }
+                
+                Wallet sourceWallet = getWalletById(sourceWalletId);
+                Wallet targetWallet = getWalletById(targetWalletId);
+
+                // Enforce daily & monthly limit for source wallet owner (only check inside lock to prevent TOCTOU)
+                validateDailyTransactionLimit(sourceWallet.getOwnerId(), sourceWalletId, amount);
+
+                if (!sourceWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
+                    throw new InvalidMoneyException("Currency mismatch");
+                }
+                if (!targetWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
+                    throw new InvalidMoneyException("Currency mismatch");
+                }
+
+                // BUG-1 fix: wrap all DB writes in a single transaction for atomicity
+                Transaction savedTx;
+                try {
+                    sourceWallet.withdraw(amount);
+                    targetWallet.deposit(amount);
+
+                    savedTx = transactionalOperationPort.executeInTransaction(() -> {
+                        walletPersistencePort.saveWallet(sourceWallet);
+                        walletPersistencePort.saveWallet(targetWallet);
+                        tx.markSuccess();
+                        return transactionPersistencePort.saveTransaction(tx);
+                    });
+                } catch (Exception e) {
+                    tx.markFailed();
+                    try {
+                        transactionPersistencePort.saveTransaction(tx);
+                    } catch (Exception saveEx) {
+                        log.error("Failed to save FAILED transaction record for txId={}", transactionId, saveEx);
+                    }
+                    throw e;
+                }
+                recordAuditLog(sourceWallet.getOwnerId(), "TRANSFER", tx.getId());
+
+                safeNotify(savedTx, sourceWallet);
+                safeNotify(savedTx, targetWallet);
+                return savedTx;
+            })
+        );
+    }
+
+    
+    @Override
     public Transaction getTransactionById(String transactionId) {
         return transactionPersistencePort.findTransactionById(transactionId)
                 .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
@@ -419,8 +596,8 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         StringBuilder csv = new StringBuilder("Transaction ID,Request ID,Type,Status,Amount,Currency,Created At\n");
         for (Transaction tx : transactions) {
             csv.append(String.format("%s,%s,%s,%s,%s,%s,%s\n",
-                    tx.getId(),
-                    tx.getRequestId() != null ? tx.getRequestId() : "",
+                    escapeCsvField(tx.getId()),
+                    escapeCsvField(tx.getRequestId() != null ? tx.getRequestId() : ""),
                     tx.getType(),
                     tx.getStatus(),
                     tx.getAmount().getAmount(),
@@ -510,49 +687,68 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         }
     }
 
+    public static final BigDecimal DEFAULT_DAILY_LIMIT = new BigDecimal("100000000"); // 100,000,000 VND
+    public static final BigDecimal DEFAULT_MONTHLY_LIMIT = new BigDecimal("500000000"); // 500,000,000 VND
+
     private void validateDailyTransactionLimit(String userId, String walletId, Money amount) {
-        if (userPersistencePort == null) return;
+        if (walletId == null || amount == null) return;
 
-        User user = userPersistencePort.findUserById(userId).orElse(null);
-        KycStatus status = user != null && user.getKycStatus() != null ? user.getKycStatus() : KycStatus.UNVERIFIED;
-
-        BigDecimal limitAmount = (status == KycStatus.VERIFIED)
-                ? new BigDecimal("100000000")
-                : new BigDecimal("5000000");
+        BigDecimal limitAmount = DEFAULT_DAILY_LIMIT;
+        if (userPersistencePort != null && userId != null) {
+            User user = userPersistencePort.findUserById(userId).orElse(null);
+            if (user != null && user.getKycStatus() == KycStatus.UNVERIFIED) {
+                limitAmount = new BigDecimal("5000000");
+            }
+        }
 
         Instant startOfDay = LocalDate.now(ZoneOffset.UTC).atStartOfDay(ZoneOffset.UTC).toInstant();
-        BigDecimal spentToday = transactionPersistencePort.calculateDailySpentByWalletId(walletId, startOfDay);
+        BigDecimal spentToday = transactionPersistencePort != null
+                ? transactionPersistencePort.calculateDailySpentByWalletId(walletId, startOfDay)
+                : BigDecimal.ZERO;
+        if (spentToday == null) {
+            spentToday = BigDecimal.ZERO;
+        }
 
         if (spentToday.add(amount.getAmount()).compareTo(limitAmount) > 0) {
             throw new TransactionLimitExceededException(String.format(
-                    "Daily transaction limit exceeded for KYC level %s. Spent today: %s, Attempted: %s, Limit: %s %s",
-                    status, spentToday, amount.getAmount(), limitAmount, amount.getCurrency()
+                    "Daily transaction limit exceeded. Spent today: %s, Attempted: %s, Limit: %s %s",
+                    spentToday, amount.getAmount(), limitAmount, amount.getCurrency()
             ));
         }
 
-        validateMonthlyTransactionLimit(userId, walletId, amount, status);
+        validateMonthlyTransactionLimit(userId, walletId, amount);
     }
 
-    private void validateMonthlyTransactionLimit(String userId, String walletId, Money amount, KycStatus status) {
-        BigDecimal monthlyLimit = (status == KycStatus.VERIFIED)
-                ? new BigDecimal("500000000")
-                : new BigDecimal("20000000");
+    private void validateMonthlyTransactionLimit(String userId, String walletId, Money amount) {
+        BigDecimal monthlyLimit = DEFAULT_MONTHLY_LIMIT;
+        if (userPersistencePort != null && userId != null) {
+            User user = userPersistencePort.findUserById(userId).orElse(null);
+            if (user != null && user.getKycStatus() == KycStatus.UNVERIFIED) {
+                monthlyLimit = new BigDecimal("20000000");
+            }
+        }
 
         Instant startOfMonth = LocalDate.now(ZoneOffset.UTC).withDayOfMonth(1).atStartOfDay(ZoneOffset.UTC).toInstant();
-        BigDecimal spentThisMonth = transactionPersistencePort.calculateMonthlySpentByWalletId(walletId, startOfMonth);
+        BigDecimal spentThisMonth = transactionPersistencePort != null
+                ? transactionPersistencePort.calculateMonthlySpentByWalletId(walletId, startOfMonth)
+                : BigDecimal.ZERO;
+        if (spentThisMonth == null) {
+            spentThisMonth = BigDecimal.ZERO;
+        }
 
         if (spentThisMonth.add(amount.getAmount()).compareTo(monthlyLimit) > 0) {
             throw new TransactionLimitExceededException(String.format(
-                    "Monthly transaction limit exceeded for KYC level %s. Spent this month: %s, Attempted: %s, Limit: %s %s",
-                    status, spentThisMonth, amount.getAmount(), monthlyLimit, amount.getCurrency()
+                    "Monthly transaction limit exceeded. Spent this month: %s, Attempted: %s, Limit: %s %s",
+                    spentThisMonth, amount.getAmount(), monthlyLimit, amount.getCurrency()
             ));
         }
     }
 
     private void recordAuditLog(String callerId, String action, String payloadHash) {
-        if (auditLogPersistencePort != null && callerId != null) {
+        if (auditLogPersistencePort != null) {
             try {
-                auditLogPersistencePort.saveAuditLog(AuditLog.record(callerId, "127.0.0.1", action, payloadHash));
+                String ip = clientInfoPort != null ? clientInfoPort.getClientIp() : "127.0.0.1";
+                auditLogPersistencePort.saveAuditLog(AuditLog.record(callerId, ip, action, payloadHash));
             } catch (Exception e) {
                 log.warn("Failed to record audit log action={}: {}", action, e.getMessage());
             }
@@ -573,5 +769,37 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             log.warn("Notification failed for transaction={} wallet={}, but business transaction committed successfully",
                     transaction.getId(), wallet.getId(), e);
         }
+    }
+
+    public static final BigDecimal MIN_TRANSACTION_AMOUNT_VND = new BigDecimal("1000");
+    public static final BigDecimal MAX_TRANSACTION_AMOUNT_PER_TX = new BigDecimal("50000000");
+
+    private void validatePerTransactionLimits(Money amount) {
+        if (amount == null) {
+            throw new InvalidMoneyException("Transaction amount cannot be null");
+        }
+        if (amount.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidMoneyException("Transaction amount must be positive");
+        }
+        if ("VND".equalsIgnoreCase(amount.getCurrency()) && amount.getAmount().compareTo(MIN_TRANSACTION_AMOUNT_VND) < 0) {
+            throw new InvalidMoneyException("Số tiền giao dịch tối thiểu là 1,000 VND");
+        }
+        if (amount.getAmount().compareTo(MAX_TRANSACTION_AMOUNT_PER_TX) > 0) {
+            throw new TransactionLimitExceededException("Số tiền vượt quá hạn mức tối đa cho 1 giao dịch (50,000,000 " + amount.getCurrency() + ")");
+        }
+    }
+
+    /**
+     * SEC-2 fix: Escapes a CSV field to prevent formula injection and field corruption.
+     * Wraps field in double quotes if it contains commas, quotes, or formula-triggering characters.
+     */
+    private static String escapeCsvField(String field) {
+        if (field == null) return "";
+        // Strip leading formula triggers (=, +, -, @, \t, \r)
+        String sanitized = field.replaceAll("^[=+\\-@\\t\\r]+", "");
+        if (sanitized.contains(",") || sanitized.contains("\"") || sanitized.contains("\n")) {
+            return "\"" + sanitized.replace("\"", "\"\"") + "\"";
+        }
+        return sanitized;
     }
 }

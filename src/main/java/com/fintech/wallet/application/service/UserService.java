@@ -1,5 +1,9 @@
 package com.fintech.wallet.application.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.fintech.wallet.domain.exception.InvalidPinException;
 import com.fintech.wallet.domain.model.KycStatus;
 import com.fintech.wallet.domain.model.User;
@@ -8,6 +12,7 @@ import com.fintech.wallet.domain.port.in.KycUseCase;
 import com.fintech.wallet.domain.port.in.PinUseCase;
 import com.fintech.wallet.domain.model.AuditLog;
 import com.fintech.wallet.domain.port.out.AuditLogPersistencePort;
+import com.fintech.wallet.domain.port.out.ClientInfoPort;
 import com.fintech.wallet.domain.port.out.KycPersistencePort;
 import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import com.fintech.wallet.infrastructure.security.JwtTokenProvider;
@@ -27,26 +32,38 @@ public class UserService implements PinUseCase, KycUseCase {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final AuditLogPersistencePort auditLogPersistencePort;
+    private final ClientInfoPort clientInfoPort;
 
+    @Autowired
     public UserService(UserPersistencePort userPersistencePort,
                        KycPersistencePort kycPersistencePort,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider,
-                       AuditLogPersistencePort auditLogPersistencePort) {
+                       AuditLogPersistencePort auditLogPersistencePort,
+                       ClientInfoPort clientInfoPort) {
         this.userPersistencePort = userPersistencePort;
         this.kycPersistencePort = kycPersistencePort;
         this.passwordEncoder = passwordEncoder;
         this.tokenProvider = tokenProvider;
         this.auditLogPersistencePort = auditLogPersistencePort;
+        this.clientInfoPort = clientInfoPort;
     }
 
     public UserService(UserPersistencePort userPersistencePort,
                        KycPersistencePort kycPersistencePort,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider tokenProvider) {
-        this(userPersistencePort, kycPersistencePort, passwordEncoder, tokenProvider, null);
+        this(userPersistencePort, kycPersistencePort, passwordEncoder, tokenProvider, null, null);
     }
 
+
+    @Override
+    public boolean verifyPin(String userId, String rawPin) {
+        User user = userPersistencePort.findUserById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+        if (user.getPinHash() == null) return false;
+        return passwordEncoder.matches(rawPin, user.getPinHash());
+    }
 
     @Override
     @Transactional

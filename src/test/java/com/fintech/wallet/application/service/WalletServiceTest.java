@@ -11,6 +11,7 @@ import com.fintech.wallet.domain.port.out.TransactionPersistencePort;
 import com.fintech.wallet.domain.port.out.TransactionalOperationPort;
 import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
+import com.fintech.wallet.domain.port.in.LedgerUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +37,8 @@ class WalletServiceTest {
     private TransactionalOperationPort transactionalOperationPort;
     private UserPersistencePort userPersistencePort;
     private AuditLogPersistencePort auditLogPersistencePort;
+
+    private LedgerUseCase ledgerUseCase;
     private WalletService walletService;
 
     @BeforeEach
@@ -46,6 +49,7 @@ class WalletServiceTest {
         transactionalOperationPort = mock(TransactionalOperationPort.class);
         userPersistencePort = mock(UserPersistencePort.class);
         auditLogPersistencePort = mock(AuditLogPersistencePort.class);
+        ledgerUseCase = mock(LedgerUseCase.class);
 
         walletService = new WalletService(
                 walletPersistencePort,
@@ -54,11 +58,9 @@ class WalletServiceTest {
                 null,
                 transactionalOperationPort,
                 null,
-                userPersistencePort,
-                auditLogPersistencePort
-        );
+                userPersistencePort, auditLogPersistencePort, mock(com.fintech.wallet.domain.port.out.ClientInfoPort.class), ledgerUseCase);
 
-        when(distributedLockPort.executeWithLock(anyString(), any(Long.class), any())).thenAnswer(invocation -> {
+        when(distributedLockPort.executeWithLock(anyString(), org.mockito.ArgumentMatchers.anyLong(), any())).thenAnswer(invocation -> {
             java.util.function.Supplier<Object> supplier = invocation.getArgument(2);
             return supplier.get();
         });
@@ -79,6 +81,8 @@ class WalletServiceTest {
         Wallet targetWallet = new Wallet("wallet-2", "user-456", Money.of(new BigDecimal("1000000"), "VND"), Instant.now(), Instant.now(), 0L);
 
         when(walletPersistencePort.findWalletById("wallet-1")).thenReturn(Optional.of(sourceWallet));
+        when(walletPersistencePort.findWalletById("wallet-1")).thenReturn(Optional.of(sourceWallet));
+        when(walletPersistencePort.findWalletById("wallet-2")).thenReturn(Optional.of(targetWallet));
         when(walletPersistencePort.findWalletById("wallet-2")).thenReturn(Optional.of(targetWallet));
 
         when(transactionPersistencePort.calculateDailySpentByWalletId(eq("wallet-1"), any())).thenReturn(new BigDecimal("4000000"));
@@ -91,6 +95,7 @@ class WalletServiceTest {
     @Test
     void getWalletById_shouldReturnWallet() {
         Wallet wallet = new Wallet("w1", "u1", Money.zero("VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
         when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
         Wallet result = walletService.getWalletById("w1");
         assertEquals("w1", result.getId());
@@ -117,6 +122,7 @@ class WalletServiceTest {
     @Test
     void withdraw_success_shouldReturnTransaction() {
         Wallet wallet = new Wallet("w1", "u1", Money.of(new BigDecimal("1000"), "VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
         when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
         
         com.fintech.wallet.domain.model.Transaction tx = com.fintech.wallet.domain.model.Transaction.createWithdrawal("req1", "w1", Money.of(new BigDecimal("100"), "VND"));

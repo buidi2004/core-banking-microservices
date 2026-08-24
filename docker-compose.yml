@@ -39,7 +39,7 @@ services:
     image: redis:7-alpine
     container_name: wallet-redis
     ports:
-      - "6379:6379"
+      - "6381:6379"
     volumes:
       - redis-data:/data
     networks:

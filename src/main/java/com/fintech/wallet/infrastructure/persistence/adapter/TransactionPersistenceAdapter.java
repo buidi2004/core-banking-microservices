@@ -89,7 +89,7 @@ public class TransactionPersistenceAdapter implements TransactionPersistencePort
 
     @Override
     public BigDecimal calculateMonthlySpentByWalletId(String walletId, Instant startOfMonth) {
-        BigDecimal spent = transactionRepository.sumDailySpentByWalletId(walletId, startOfMonth);
+        BigDecimal spent = transactionRepository.sumMonthlySpentByWalletId(walletId, startOfMonth);
         return spent != null ? spent : BigDecimal.ZERO;
     }
 }

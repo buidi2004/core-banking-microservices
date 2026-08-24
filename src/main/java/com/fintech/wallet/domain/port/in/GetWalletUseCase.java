@@ -14,4 +14,9 @@ public interface GetWalletUseCase {
      * Used in P2P money request flow where we know the userId but not the walletId.
      */
     Wallet getWalletByUserIdAndCurrency(String userId, String currency);
+
+    /**
+     * Get masked recipient information for pre-transfer verification.
+     */
+    com.fintech.wallet.presentation.response.RecipientInfoResponse getRecipientInfo(String walletId, String phoneNumber);
 }

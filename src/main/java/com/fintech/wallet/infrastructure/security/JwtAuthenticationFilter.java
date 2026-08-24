@@ -1,5 +1,6 @@
 package com.fintech.wallet.infrastructure.security;
 
+import com.fintech.wallet.domain.port.in.SessionManagementUseCase;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,9 +20,16 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
+    private final com.fintech.wallet.domain.port.out.TokenBlacklistPort tokenBlacklistPort;
+    private final SessionManagementUseCase sessionManagementUseCase;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider) {
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider,
+                                   @org.springframework.beans.factory.annotation.Autowired(required = false)
+                                   com.fintech.wallet.domain.port.out.TokenBlacklistPort tokenBlacklistPort,
+                                   SessionManagementUseCase sessionManagementUseCase) {
         this.tokenProvider = tokenProvider;
+        this.tokenBlacklistPort = tokenBlacklistPort;
+        this.sessionManagementUseCase = sessionManagementUseCase;
     }
 
     @Override
@@ -30,10 +38,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwt = getJwtFromRequest(request);
 
         if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+            if (tokenBlacklistPort != null && tokenBlacklistPort.isBlacklisted(jwt)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
             String userId = tokenProvider.getUserIdFromToken(jwt);
             String tokenType = tokenProvider.getTokenType(jwt);
+            String deviceId = tokenProvider.getDeviceIdFromToken(jwt);
 
             if ("ACCESS".equals(tokenType)) {
+                // Check database session deep validation
+                boolean isSessionValid = sessionManagementUseCase.validateSession(userId, deviceId).isPresent();
+                if (!isSessionValid) {
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session expired or revoked");
+                    return;
+                }
+
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userId, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
                 );

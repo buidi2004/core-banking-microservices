@@ -1,8 +1,10 @@
 package com.fintech.wallet.application.service;
 
-import com.fintech.wallet.domain.model.DeviceToken;
-import com.fintech.wallet.domain.model.NotificationInfo;
+
+import com.fintech.wallet.domain.model.NotificationType;
 import com.fintech.wallet.domain.port.in.NotificationUseCase;
+import com.fintech.wallet.domain.port.out.NotificationQueryPort;
+import com.fintech.wallet.presentation.response.PageResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,48 +21,26 @@ public class NotificationService implements NotificationUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
 
-    private final List<NotificationInfo> notificationsStore = new ArrayList<>();
-    private final List<DeviceToken> deviceTokensStore = new ArrayList<>();
+    private final NotificationQueryPort notificationQueryPort;
     private final Map<String, Map<String, Boolean>> settingsStore = new ConcurrentHashMap<>();
 
+    public NotificationService(NotificationQueryPort notificationQueryPort) {
+        this.notificationQueryPort = notificationQueryPort;
+    }
+
     @Override
-    public List<NotificationInfo> getNotifications(String userId, int page, int size) {
-        return notificationsStore.stream()
-                .filter(n -> n.getUserId().equals(userId))
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .skip((long) page * size)
-                .limit(size)
-                .collect(Collectors.toList());
+    public PageResponse<com.fintech.wallet.domain.model.NotificationInfo> getNotifications(String userId, String type, int page, int size) {
+        return notificationQueryPort.getNotifications(userId, type, page, size);
     }
 
     @Override
     public void markAsRead(String userId, String notificationId) {
-        notificationsStore.stream()
-                .filter(n -> n.getUserId().equals(userId) && n.getId().equals(notificationId))
-                .findFirst()
-                .ifPresent(NotificationInfo::markAsRead);
+        notificationQueryPort.markAsRead(userId, notificationId);
     }
 
     @Override
-    public void markAllAsRead(String userId) {
-        notificationsStore.stream()
-                .filter(n -> n.getUserId().equals(userId))
-                .forEach(NotificationInfo::markAsRead);
-    }
-
-    @Override
-    public DeviceToken registerDeviceToken(String userId, String deviceId, String fcmToken) {
-        deviceTokensStore.removeIf(d -> d.getUserId().equals(userId) && d.getDeviceId().equals(deviceId));
-        DeviceToken token = DeviceToken.createNew(userId, deviceId, fcmToken);
-        deviceTokensStore.add(token);
-        log.info("Registered FCM device token for user={}, device={}", userId, deviceId);
-        return token;
-    }
-
-    @Override
-    public void unregisterDeviceToken(String userId, String deviceId) {
-        deviceTokensStore.removeIf(d -> d.getUserId().equals(userId) && d.getDeviceId().equals(deviceId));
-        log.info("Unregistered FCM device token for user={}, device={}", userId, deviceId);
+    public void markAllAsRead(String userId, String type) {
+        notificationQueryPort.markAllAsRead(userId, type);
     }
 
     @Override
@@ -72,6 +52,13 @@ public class NotificationService implements NotificationUseCase {
     }
 
     public void addNotification(String userId, String title, String content, String type) {
-        notificationsStore.add(NotificationInfo.createNew(userId, title, content, type));
+        NotificationType enumType;
+        try {
+            enumType = NotificationType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            enumType = NotificationType.SYSTEM;
+        }
+        com.fintech.wallet.domain.model.NotificationInfo notification = com.fintech.wallet.domain.model.NotificationInfo.createNew(userId, title, content, enumType, null);
+        notificationQueryPort.saveNotification(notification);
     }
 }

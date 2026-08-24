@@ -1,0 +1,127 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { Colors, Radius, Spacing } from '../theme';
+import { Typography } from '../theme';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { PinDot } from '../components/PinDot';
+
+interface SetPinScreenProps {
+  navigation: any;
+}
+
+export default function SetPinScreen({ navigation }: SetPinScreenProps) {
+  const [pin, setPin] = useState<string>('');
+
+  const handlePress = (num: string) => {
+    if (pin.length < 6) {
+      setPin(prev => prev + num);
+    }
+  };
+
+  const handleDelete = () => {
+    setPin(prev => prev.slice(0, -1));
+  };
+
+  if (pin.length === 6) {
+    navigation.navigate('Home');
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Thiết lập PIN</Text>
+        <Text style={styles.subtitle}>Nhập PIN 6 chữ số mới</Text>
+
+        <View style={styles.pinContainer}>
+          {[...Array(6)].map((_, i) => (
+            <PinDot key={i} filled={i < pin.length} size={18} />
+          ))}
+        </View>
+
+        <View style={styles.keypad}>
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((key, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.key, key === '' && styles.emptyKey]}
+              onPress={() => {
+                if (key === 'del') handleDelete();
+                else if (key) handlePress(key);
+              }}
+              activeOpacity={0.7}
+            >
+              {key === 'del' ? (
+                <Text style={styles.keyText}>⌫</Text>
+              ) : (
+                <Text style={styles.keyText}>{key}</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <PrimaryButton
+          title="Tiếp tục"
+          onPress={() => navigation.navigate('Home')}
+          disabled={pin.length !== 6}
+          style={styles.continueBtn}
+        />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.bgBase,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: Spacing.xxl,
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: Typography.headingLg.fontSize,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.xxl,
+  },
+  pinContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    marginBottom: Spacing.xxl,
+  },
+  keypad: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.xxl,
+  },
+  key: {
+    width: 72,
+    height: 72,
+    borderRadius: Radius.pill,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyKey: {
+    backgroundColor: 'transparent',
+  },
+  keyText: {
+    fontSize: Typography.headingXl.fontSize,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  continueBtn: {
+    marginTop: Spacing.md,
+  },
+});

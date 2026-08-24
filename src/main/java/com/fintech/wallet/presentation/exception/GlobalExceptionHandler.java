@@ -1,5 +1,6 @@
 package com.fintech.wallet.presentation.exception;
 
+import com.fintech.wallet.domain.exception.AccountLockedException;
 import com.fintech.wallet.domain.exception.InsufficientBalanceException;
 import com.fintech.wallet.domain.exception.InvalidMoneyException;
 import com.fintech.wallet.domain.exception.InvalidPinException;
@@ -28,55 +29,61 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(WalletNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleWalletNotFound(WalletNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), "WALLET_NOT_FOUND"));
     }
 
     @ExceptionHandler(InsufficientBalanceException.class)
     public ResponseEntity<ApiResponse<Void>> handleInsufficientBalance(InsufficientBalanceException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), "INSUFFICIENT_BALANCE"));
     }
 
     @ExceptionHandler(InvalidMoneyException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidMoney(InvalidMoneyException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), "INVALID_AMOUNT"));
     }
 
     @ExceptionHandler(InvalidPinException.class)
     public ResponseEntity<ApiResponse<Void>> handleInvalidPin(InvalidPinException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), "INVALID_PIN"));
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccountLocked(AccountLockedException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), "ACCOUNT_LOCKED"));
     }
 
     @ExceptionHandler(KycRequiredException.class)
     public ResponseEntity<ApiResponse<Void>> handleKycRequired(KycRequiredException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), "KYC_REQUIRED"));
     }
 
     @ExceptionHandler(LedgerUnbalancedException.class)
     public ResponseEntity<ApiResponse<Void>> handleLedgerUnbalanced(LedgerUnbalancedException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), "LEDGER_UNBALANCED"));
     }
 
     @ExceptionHandler(TransactionLimitExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleTransactionLimitExceeded(TransactionLimitExceededException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), "LIMIT_EXCEEDED"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage()));
+                .body(ApiResponse.error(ex.getMessage(), "BAD_REQUEST"));
     }
 
     @ExceptionHandler(LockAcquisitionException.class)
     public ResponseEntity<ApiResponse<Void>> handleLockAcquisition(LockAcquisitionException ex) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                .body(ApiResponse.error("System is busy processing this transaction. Please retry."));
+                .body(ApiResponse.error("System is busy processing this transaction. Please retry.", "SYSTEM_BUSY"));
     }
 
     // Bug #5 companion: Optimistic locking conflict → tell client to retry
@@ -84,7 +91,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
         log.warn("Optimistic locking conflict: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiResponse.error("Concurrent modification detected. Please retry your transaction."));
+                .body(ApiResponse.error("Concurrent modification detected. Please retry your transaction.", "CONCURRENT_CONFLICT"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -93,7 +100,7 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error("Validation failed: " + errorMessage));
+                .body(ApiResponse.error("Validation failed: " + errorMessage, "VALIDATION_FAILED"));
     }
 
     // Bug #7 fix: never expose internal exception details to external clients
@@ -101,6 +108,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         log.error("Unexpected internal error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An unexpected error occurred. Please contact support."));
+                .body(ApiResponse.error("An unexpected error occurred. Please contact support.", "INTERNAL_SERVER_ERROR"));
     }
 }

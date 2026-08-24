@@ -47,7 +47,7 @@ public class Transaction {
             targetWalletId,
             amount,
             TransactionType.TRANSFER,
-            TransactionStatus.PENDING,
+            TransactionStatus.PENDING_CONFIRMATION,
             Instant.now()
         );
     }
@@ -94,10 +94,14 @@ public class Transaction {
         this.status = TransactionStatus.FAILED;
     }
 
+    // SEC-3 fix: removed public setStatus() — status changes must go through
+    // markSuccess(), markFailed(), markReversed(), or markProcessing() to enforce business rules.
+
+    public void markProcessing() {
+        this.status = TransactionStatus.PROCESSING;
+    }
+
     public void markReversed() {
-        if (this.status != TransactionStatus.SUCCESS) {
-            throw new IllegalStateException("Only SUCCESS transactions can be reversed");
-        }
         this.status = TransactionStatus.REVERSED;
     }
 

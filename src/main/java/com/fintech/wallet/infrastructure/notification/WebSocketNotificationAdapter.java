@@ -3,6 +3,7 @@ package com.fintech.wallet.infrastructure.notification;
 import com.fintech.wallet.domain.model.Transaction;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.port.out.NotificationPort;
+import com.fintech.wallet.domain.port.out.NotificationQueryPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -22,9 +23,11 @@ public class WebSocketNotificationAdapter implements NotificationPort {
 
     private static final Logger log = LoggerFactory.getLogger(WebSocketNotificationAdapter.class);
     private final SimpMessagingTemplate messagingTemplate;
+    private final NotificationQueryPort notificationQueryPort;
 
-    public WebSocketNotificationAdapter(SimpMessagingTemplate messagingTemplate) {
+    public WebSocketNotificationAdapter(SimpMessagingTemplate messagingTemplate, NotificationQueryPort notificationQueryPort) {
         this.messagingTemplate = messagingTemplate;
+        this.notificationQueryPort = notificationQueryPort;
     }
 
     @Override
@@ -56,6 +59,24 @@ public class WebSocketNotificationAdapter implements NotificationPort {
             log.debug("Notification payload: {}", payload);
         } catch (Exception e) {
             log.error("Failed to send WebSocket notification to {}", destination, e);
+        }
+
+        try {
+            String title = "Biến động số dư: " + transaction.getType().name();
+            String body = "Giao dịch " + transaction.getAmount().getAmount() + " " + transaction.getAmount().getCurrency();
+            // TODO: JSON serialization for metadata could be added here
+            String metadata = "{\"transactionId\":\"" + transaction.getId() + "\"}";
+            
+            com.fintech.wallet.domain.model.NotificationInfo notification = com.fintech.wallet.domain.model.NotificationInfo.createNew(
+                    wallet.getOwnerId(),
+                    title,
+                    body,
+                    com.fintech.wallet.domain.model.NotificationType.BALANCE,
+                    metadata
+            );
+            notificationQueryPort.saveNotification(notification);
+        } catch (Exception e) {
+            log.error("Failed to persist notification to DB for wallet={}", wallet.getId(), e);
         }
     }
 }

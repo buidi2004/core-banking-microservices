@@ -14,18 +14,32 @@ public class MockBankGatewayAdapter implements BankGatewayPort {
 
     private static final Logger log = LoggerFactory.getLogger(MockBankGatewayAdapter.class);
 
+    // For testing purposes, we can set this flag to force an exception
+    private boolean simulateFailure = false;
+    private int failureCount = 0;
+    
+    public void setSimulateFailure(boolean simulateFailure) {
+        this.simulateFailure = simulateFailure;
+        this.failureCount = 0;
+    }
+
+    public int getFailureCount() {
+        return failureCount;
+    }
+
     @Override
-    @CircuitBreaker(name = "bankGateway", fallbackMethod = "transferToBankFallback")
+    // We only use Retry for Task 4. We can keep CircuitBreaker but no fallback so exception propagates.
     @Retry(name = "bankGateway")
+    @CircuitBreaker(name = "bankGateway")
     public boolean transferToBank(String bankAccountId, Money amount, String transactionReference) {
+        if (simulateFailure) {
+            failureCount++;
+            log.warn("Mock Bank Gateway: Simulated failure attempt {}", failureCount);
+            throw new RuntimeException("Simulated Bank Gateway Timeout/Error");
+        }
+        
         log.info("Mock Bank Gateway: Transferred {} to bank account {} with txRef {}",
                 amount, bankAccountId, transactionReference);
         return true;
-    }
-
-    public boolean transferToBankFallback(String bankAccountId, Money amount, String transactionReference, Throwable t) {
-        log.error("Circuit Breaker Triggered: Bank Gateway transfer failed for bankAccountId={} txRef={}: {}",
-                bankAccountId, transactionReference, t.getMessage());
-        return false;
     }
 }

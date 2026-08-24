@@ -94,11 +94,12 @@ class AuthServiceTest {
 
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
 
-        String token = authService.login(phone, password);
+        com.fintech.wallet.domain.model.AuthTokens tokens = authService.login(phone, password, "dev1", "127.0.0.1", "Agent");
 
-        assertNotNull(token);
-        assertTrue(tokenProvider.validateToken(token));
-        assertEquals("user_1", tokenProvider.getUserIdFromToken(token));
+        assertNotNull(tokens);
+        assertNotNull(tokens.getAccessToken());
+        assertTrue(tokenProvider.validateToken(tokens.getAccessToken()));
+        assertEquals("user_1", tokenProvider.getUserIdFromToken(tokens.getAccessToken()));
     }
 
     @Test
@@ -110,13 +111,13 @@ class AuthServiceTest {
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
 
         assertThrows(IllegalArgumentException.class,
-                () -> authService.login(phone, "wrong"));
+                () -> authService.login(phone, "wrong", "dev1", "127.0.0.1", "Agent"));
     }
 
     @Test
     void login_unknownPhone_shouldThrow() {
         when(userPersistencePort.findUserByPhoneNumber(any())).thenReturn(Optional.empty());
         assertThrows(IllegalArgumentException.class,
-                () -> authService.login("0000000000", "pass"));
+                () -> authService.login("0000000000", "pass", "dev1", "127.0.0.1", "Agent"));
     }
 }

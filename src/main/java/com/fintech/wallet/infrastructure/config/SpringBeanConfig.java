@@ -9,6 +9,7 @@ import com.fintech.wallet.domain.port.out.TransactionPersistencePort;
 import com.fintech.wallet.domain.port.out.TransactionalOperationPort;
 import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
+import com.fintech.wallet.domain.port.in.LedgerUseCase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,10 +24,12 @@ public class SpringBeanConfig {
                                        TransactionalOperationPort transactionalOperationPort,
                                        BankGatewayPort bankGatewayPort,
                                        UserPersistencePort userPersistencePort,
-                                       AuditLogPersistencePort auditLogPersistencePort) {
+                                       AuditLogPersistencePort auditLogPersistencePort,
+                                       com.fintech.wallet.domain.port.out.ClientInfoPort clientInfoPort,
+                                       LedgerUseCase ledgerUseCase) {
         return new WalletService(walletPersistencePort, transactionPersistencePort,
                 distributedLockPort, notificationPort, transactionalOperationPort, bankGatewayPort,
-                userPersistencePort, auditLogPersistencePort);
+                userPersistencePort, auditLogPersistencePort, clientInfoPort, ledgerUseCase);
     }
 }
 

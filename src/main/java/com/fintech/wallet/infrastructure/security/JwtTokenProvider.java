@@ -27,7 +27,7 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(String userId, String phoneNumber) {
+    public String generateAccessToken(String userId, String phoneNumber, String deviceId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + accessTokenValidityMs);
 
@@ -35,6 +35,7 @@ public class JwtTokenProvider {
                 .subject(userId)
                 .claim("phone", phoneNumber)
                 .claim("type", "ACCESS")
+                .claim("deviceId", deviceId)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey)
@@ -85,5 +86,10 @@ public class JwtTokenProvider {
     public String getTokenType(String token) {
         Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
         return claims.get("type", String.class);
+    }
+
+    public String getDeviceIdFromToken(String token) {
+        Claims claims = Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
+        return claims.get("deviceId", String.class);
     }
 }

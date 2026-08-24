@@ -9,13 +9,18 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     private Instant timestamp;
+    private String errorCode;
 
     public static <T> ApiResponse<T> success(String message, T data) {
-        return new ApiResponse<>(true, message, data, Instant.now());
+        return new ApiResponse<>(true, message, data, Instant.now(), null);
     }
 
     public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>(false, message, null, Instant.now());
+        return new ApiResponse<>(false, message, null, Instant.now(), null);
+    }
+
+    public static <T> ApiResponse<T> error(String message, String errorCode) {
+        return new ApiResponse<>(false, message, null, Instant.now(), errorCode);
     }
 
     public boolean getSuccess() {
@@ -46,12 +51,24 @@ public class ApiResponse<T> {
         this.timestamp = timestamp;
     }
 
+    public String getErrorCode() {
+        return errorCode;
+    }
+    public void setErrorCode(String errorCode) {
+        this.errorCode = errorCode;
+    }
+
     public ApiResponse() {}
 
     public ApiResponse(boolean success, String message, T data, Instant timestamp) {
+        this(success, message, data, timestamp, null);
+    }
+
+    public ApiResponse(boolean success, String message, T data, Instant timestamp, String errorCode) {
         this.success = success;
         this.message = message;
         this.data = data;
         this.timestamp = timestamp;
+        this.errorCode = errorCode;
     }
 }

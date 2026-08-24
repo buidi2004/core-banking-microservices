@@ -1,0 +1,137 @@
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { Colors, Radius, Spacing } from '../theme';
+import { Typography } from '../theme';
+import { AppIcon } from '../components/icons/AppIcon';
+import { PrimaryButton } from '../components/PrimaryButton';
+
+interface LoginScreenProps {
+  navigation: any;
+}
+
+export default function LoginScreen({ navigation }: LoginScreenProps) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.logoWrapper}>
+          <AppIcon name="qr" size="lg" color={Colors.primary} />
+        </View>
+        <Text style={styles.title}>Chào mừng đến với E-Wallet</Text>
+        <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
+
+        <View style={styles.form}>
+          <View style={styles.field}>
+            <Text style={styles.label}>Số điện thoại</Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.countryCode}>+84</Text>
+              <Text style={styles.inputPlaceholder}>901234567</Text>
+            </View>
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Mật khẩu</Text>
+            <View style={styles.inputWrapper}>
+              <Text style={styles.inputPlaceholder}>••••••••</Text>
+              <TouchableOpacity>
+                <AppIcon name="eye" size="sm" color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <PrimaryButton title="Đăng nhập" onPress={() => navigation.navigate('MainTabs')} />
+
+        <TouchableOpacity style={styles.forgotLink}>
+          <Text style={styles.forgotText}>Quên mật khẩu?</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.registerLink}>
+          <Text style={styles.registerText}>Chưa có tài khoản? Đăng ký</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.bgBase,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: Spacing.xxl,
+    paddingTop: Spacing.xxxl,
+    alignItems: 'center',
+  },
+  logoWrapper: {
+    width: 100,
+    height: 100,
+    borderRadius: Radius.xxl,
+    backgroundColor: Colors.primarySoft,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.xxl,
+  },
+  title: {
+    fontSize: Typography.headingXl.fontSize,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xxl,
+  },
+  form: {
+    width: '100%',
+    gap: Spacing.md,
+    marginBottom: Spacing.xxl,
+  },
+  field: {
+    gap: Spacing.xs,
+  },
+  label: {
+    
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    height: 52,
+  },
+  countryCode: {
+    
+    color: Colors.textPrimary,
+    fontWeight: '600',
+    marginRight: Spacing.sm,
+  },
+  inputPlaceholder: {
+    flex: 1,
+    
+    color: Colors.textSecondary,
+  },
+  forgotLink: {
+    alignSelf: 'center',
+    marginBottom: Spacing.sm,
+  },
+  forgotText: {
+    
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  registerLink: {
+    alignSelf: 'center',
+  },
+  registerText: {
+    
+    color: Colors.textSecondary,
+  },
+});
