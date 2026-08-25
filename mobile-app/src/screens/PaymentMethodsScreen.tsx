@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/icons/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Shadows, Spacing, Opacity } from '../theme';

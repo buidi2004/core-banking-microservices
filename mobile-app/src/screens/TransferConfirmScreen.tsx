@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, Modal } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';

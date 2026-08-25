@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Radius, Spacing, Shadows } from '../theme';
 import { Typography } from '../theme';
 import { PinDot } from '../components/PinDot';

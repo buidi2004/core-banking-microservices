@@ -1,93 +1,139 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { AppIcon } from '../components/icons/AppIcon';
-import { Colors, Radius, Shadows, Spacing } from '../theme';
-import { GroupedListRow } from '../components/GroupedListRow';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Image, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { AppText } from '../components/typography/AppText';
+import { Colors } from '../theme';
+import { useApp } from '../context/AppContext';
 
 interface ProfileScreenProps {
   navigation: any;
 }
 
 export default function ProfileScreen({ navigation }: ProfileScreenProps) {
+  const { user } = useApp();
+  
   return (
     <SafeAreaView style={styles.container}>
-      <BlurView intensity={70} tint="light" style={styles.headerBlur}>
-        <View style={styles.header}>
-          <AppText style={styles.headerTitle}>Hồ sơ</AppText>
-          <TouchableOpacity>
-              <AppIcon name="settings-outline" size="md" color={Colors.textPrimary} />
-          </TouchableOpacity>
-        </View>
-      </BlurView>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        {/* Profile header */}
-        <View style={styles.profileHeader}>
-          <Image source={{ uri: 'https://i.pravatar.cc/150' }} style={styles.profileAvatar} />
-          <View style={styles.profileInfo}>
-            <AppText style={styles.profileName}>Nguyễn Văn A</AppText>
-            <AppText style={styles.profilePhone}>0901 234 567</AppText>
-          </View>
-          <TouchableOpacity style={styles.editBtn}>
-            <AppText style={styles.editBtnText}>Chỉnh sửa</AppText>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
-            <AppText style={styles.closeText}>✕</AppText>
-          </TouchableOpacity>
-        </View>
-
-        {/* Menu items */}
-        <View style={styles.menuContainer}>
-          {[
-            { icon: 'person', label: 'Thông tin cá nhân' },
-            { icon: 'shield-checkmark', label: 'Bảo mật' },
-            { icon: 'phone-portrait', label: 'Quản lý thiết bị' },
-            { icon: 'card', label: 'Phương thức thanh toán' },
-            { icon: 'help-circle', label: 'Trung tâm trợ giúp' },
-          ].map((item, i, arr) => (
-            <TouchableOpacity
-              key={item.label}
-              style={[
-                styles.menuItem,
-                i === 0 && styles.itemFirst,
-                i === arr.length - 1 && styles.itemLast,
-              ]}
-            >
-              <View style={styles.menuItemLeft}>
-                <View style={styles.iconBg}>
-                    <AppIcon name={item.icon as any} size="sm" color={Colors.primary} />
-                </View>
-                <AppText style={styles.menuItemLabel}>{item.label}</AppText>
-              </View>
-                <AppIcon name="chevron-forward" size="sm" color={Colors.textSecondary} />
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Language setting */}
-        <View style={styles.languageRow}>
-          <View style={styles.menuItemLeft}>
-            <View style={styles.iconBg}>
-                <AppIcon name="language" size="sm" color={Colors.primary} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        
+        {/* User Profile Header */}
+        <View style={styles.profileRow}>
+          <View style={styles.avatarWrapper}>
+            <Image
+              source={{ uri: 'https://i.pravatar.cc/150?img=11' }}
+              style={styles.avatar}
+            />
+            <View style={styles.verifiedBadge}>
+              <MaterialCommunityIcons name="shield-check" size={16} color="#10B981" />
             </View>
-            <AppText style={styles.menuItemLabel}>Ngôn ngữ</AppText>
           </View>
-          <View style={styles.languageValue}>
-            <AppText style={styles.languageText}>Tiếng Việt</AppText>
-              <AppIcon name="chevron-forward" size="sm" color={Colors.textSecondary} />
+
+          <View style={styles.profileInfo}>
+            <AppText style={styles.profileName}>{user?.name || 'Tài khoản'}</AppText>
+            <TouchableOpacity
+              style={styles.profileLinkRow}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('UserProfile')}
+            >
+              <AppText style={styles.profileLinkText}>Hồ sơ người dùng</AppText>
+              <Ionicons name="chevron-forward" size={14} color={Colors.primary} />
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutBtn}>
-            <AppIcon name="log-out-outline" size="sm" color={Colors.danger} />
-          <AppText style={styles.logoutText}>Đăng xuất</AppText>
-        </TouchableOpacity>
+        <View style={styles.divider} />
 
-        {/* Version */}
-        <AppText style={styles.versionText}>E-Wallet v1.0.0</AppText>
+        {/* Menu List with Real Vector Icons */}
+        <View style={styles.menuList}>
+          {/* Item 1: Cấu hình */}
+          <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
+            <View style={styles.menuLeft}>
+              <MaterialCommunityIcons name="view-grid-plus-outline" size={24} color={Colors.primary} />
+              <AppText style={styles.menuTitle}>Cấu hình</AppText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.primary} />
+          </TouchableOpacity>
+
+          {/* Item 2: Cài đặt with NEW badge */}
+          <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
+            <View style={styles.menuLeft}>
+              <Ionicons name="settings-outline" size={24} color={Colors.primary} />
+              <AppText style={styles.menuTitle}>Cài đặt</AppText>
+              <View style={styles.newBadge}>
+                <AppText style={styles.newBadgeText}>NEW</AppText>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.primary} />
+          </TouchableOpacity>
+
+          {/* Item 3: Hội viên MB with Basic badge */}
+          <TouchableOpacity
+            style={styles.menuRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('KycLevel')}
+          >
+            <View style={styles.menuLeft}>
+              <FontAwesome5 name="crown" size={20} color={Colors.primary} />
+              <AppText style={styles.menuTitle}>Hội viên MB</AppText>
+            </View>
+            <View style={styles.basicPillBadge}>
+              <FontAwesome5 name="crown" size={12} color="#94A3B8" />
+              <AppText style={styles.basicPillText}>Basic</AppText>
+            </View>
+          </TouchableOpacity>
+
+          {/* Item 4: Điều khoản sử dụng */}
+          <TouchableOpacity
+            style={styles.menuRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('TermsOfService')}
+          >
+            <View style={styles.menuLeft}>
+              <MaterialCommunityIcons name="file-document-outline" size={24} color={Colors.primary} />
+              <AppText style={styles.menuTitle}>Điều khoản & Điều kiện</AppText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ flex: 1, minHeight: 80 }} />
+
+        {/* Bottom Actions */}
+        <View style={styles.bottomSection}>
+          {/* Ngôn ngữ */}
+          <TouchableOpacity style={styles.bottomRow} activeOpacity={0.7}>
+            <View style={styles.menuLeft}>
+              <Ionicons name="globe-outline" size={24} color={Colors.primary} />
+              <AppText style={styles.bottomTitle}>Ngôn ngữ</AppText>
+            </View>
+            <View style={styles.langValueRow}>
+              <AppText style={styles.langText}>Tiếng Việt</AppText>
+              <AppText style={{ fontSize: 20 }}>🇻🇳</AppText>
+            </View>
+          </TouchableOpacity>
+
+          {/* Đăng xuất */}
+          <TouchableOpacity
+            style={styles.bottomRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <View style={styles.menuLeft}>
+              <Ionicons name="log-out-outline" size={24} color={Colors.primary} />
+              <AppText style={styles.bottomTitle}>Đăng xuất</AppText>
+            </View>
+          </TouchableOpacity>
+
+          {/* Version & Status */}
+          <View style={styles.versionFooter}>
+            <AppText style={styles.versionNumber}>v6.5.15 (763)</AppText>
+            <AppText style={styles.versionStatus}>Phiên bản mới nhất</AppText>
+          </View>
+        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -96,149 +142,151 @@ export default function ProfileScreen({ navigation }: ProfileScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bgBase,
+    backgroundColor: '#FFFFFF',
   },
-  headerBlur: {
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 40,
+  },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    gap: 16,
+  },
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#FCE7F3',
+  },
+  verifiedBadge: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-  },
-  headerTitle: {
-    
-    color: Colors.textPrimary,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.lg,
-    gap: Spacing.md,
-  },
-  profileAvatar: {
-    width: 64,
-    height: 64,
-    borderRadius: Radius.xl,
+    bottom: -2,
+    right: -2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 1,
   },
   profileInfo: {
     flex: 1,
   },
   profileName: {
-    
-    color: Colors.textPrimary,
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: 0.2,
   },
-  profilePhone: {
-    
-    color: Colors.textSecondary,
+  profileLinkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
   },
-  editBtn: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.primarySoft,
-    borderRadius: Radius.pill,
-  },
-  editBtnText: {
-    
+  profileLinkText: {
+    fontSize: 13.5,
+    fontWeight: '600',
     color: Colors.primary,
   },
-  closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Radius.sm,
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 10,
   },
-  closeText: {
-    
-    color: Colors.textPrimary,
+  menuList: {
+    paddingTop: 8,
   },
-  menuContainer: {
-    marginHorizontal: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    ...Shadows.card,
-  },
-  menuItem: {
+  menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.primarySoft,
+    borderBottomColor: '#F8FAFC',
   },
-  itemFirst: {
-  },
-  itemLast: {
-    borderBottomWidth: 0,
-  },
-  menuItemLeft: {
+  menuLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: 14,
   },
-  iconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.xs,
-    backgroundColor: Colors.primarySoft,
-    justifyContent: 'center',
-    alignItems: 'center',
+  menuTitle: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    color: '#0F172A',
   },
-  menuItemLabel: {
-    
-    color: Colors.textPrimary,
+  newBadge: {
+    backgroundColor: '#EF4444',
+    borderRadius: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    marginLeft: 4,
   },
-  languageRow: {
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.sm,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.sm,
-    padding: Spacing.md,
+  newBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
+  basicPillBadge: {
     flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    gap: 4,
+  },
+  basicPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  bottomSection: {
+    paddingTop: 16,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    ...Shadows.card,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
-  languageValue: {
+  bottomTitle: {
+    fontSize: 15.5,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  langValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: 6,
   },
-  languageText: {
-    
-    color: Colors.textPrimary,
+  langText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#64748B',
   },
-  logoutBtn: {
-    flexDirection: 'row',
+  versionFooter: {
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.lg,
+    paddingTop: 24,
+    paddingBottom: 10,
   },
-  logoutText: {
-    
-    color: Colors.danger,
+  versionNumber: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#94A3B8',
   },
-  versionText: {
-    textAlign: 'center',
-    
-    color: Colors.textSecondary,
-    marginBottom: Spacing.lg,
+  versionStatus: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#CBD5E1',
+    marginTop: 2,
   },
 });

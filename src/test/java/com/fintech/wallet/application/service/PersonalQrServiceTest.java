@@ -21,10 +21,19 @@ import static org.junit.jupiter.api.Assertions.*;
 class PersonalQrServiceTest {
 
     private PersonalQrService personalQrService;
+    private com.fintech.wallet.domain.port.out.UserPersistencePort userPersistencePortMock;
 
     @BeforeEach
     void setUp() {
-        personalQrService = new PersonalQrService();
+        userPersistencePortMock = org.mockito.Mockito.mock(com.fintech.wallet.domain.port.out.UserPersistencePort.class);
+        org.mockito.Mockito.when(userPersistencePortMock.findUserById(org.mockito.ArgumentMatchers.anyString()))
+            .thenReturn(java.util.Optional.of(
+                com.fintech.wallet.domain.entity.User.builder()
+                    .id("user-123")
+                    .phoneNumber("0988111222")
+                    .build()
+            ));
+        personalQrService = new PersonalQrService(userPersistencePortMock);
     }
 
     // ─── getPersonalQrPayload ────────────────────────────────────────────────

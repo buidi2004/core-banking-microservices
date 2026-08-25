@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Radius, Spacing } from '../theme';
 import { Typography } from '../theme';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -10,22 +11,35 @@ interface SetPinScreenProps {
   navigation: any;
 }
 
+import { WalletApi } from '../services/api';
+
 export default function SetPinScreen({ navigation }: SetPinScreenProps) {
   const [pin, setPin] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePress = (num: string) => {
-    if (pin.length < 6) {
-      setPin(prev => prev + num);
+  const handlePress = async (num: string) => {
+    if (pin.length < 6 && !isLoading) {
+      const newPin = pin + num;
+      setPin(newPin);
+      
+      if (newPin.length === 6) {
+        try {
+          setIsLoading(true);
+          await WalletApi.setPin(newPin);
+          setIsLoading(false);
+          navigation.navigate('Home');
+        } catch (error: any) {
+          setIsLoading(false);
+          setPin('');
+          Alert.alert('Lỗi', error.message || 'Không thể thiết lập mã PIN');
+        }
+      }
     }
   };
 
   const handleDelete = () => {
     setPin(prev => prev.slice(0, -1));
   };
-
-  if (pin.length === 6) {
-    navigation.navigate('Home');
-  }
 
   return (
     <SafeAreaView style={styles.container}>

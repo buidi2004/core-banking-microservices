@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { Typography } from '../theme';
@@ -16,7 +17,7 @@ interface DepositScreenProps {
 
 export default function DepositScreen({ navigation }: DepositScreenProps) {
   const [amount, setAmount] = useState('');
-  const [selectedSource, setSelectedSource] = useState('Vietcombank ****8888');
+  const [selectedSource, setSelectedSource] = useState('');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -72,7 +73,7 @@ export default function DepositScreen({ navigation }: DepositScreenProps) {
       <View style={styles.footer}>
         <PrimaryButton
           title="Tiếp tục"
-          onPress={() => navigation.navigate('DepositConfirm')}
+          onPress={() => navigation.navigate('DepositConfirm', { amount, selectedSource })}
           disabled={!amount || parseInt(amount.replace(/\./g, '')) === 0}
         />
         <SecondaryButton title="Hủy" onPress={() => navigation.goBack()} style={styles.secondaryBtn} />

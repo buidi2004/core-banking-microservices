@@ -1,5 +1,5 @@
 import React from 'react';
-import { TextProps } from 'react-native';
+import { Text, TextProps } from 'react-native';
 import { Typography } from '../../theme';
 
 type Variant = keyof typeof Typography;
@@ -11,7 +11,7 @@ interface AppTextProps extends TextProps {
 export function AppText({ variant = 'body', style, ...rest }: AppTextProps) {
   const variantStyle = Typography[variant];
   return (
-    <AppText
+    <Text
       style={[variantStyle as any, style]}
       {...rest}
     />

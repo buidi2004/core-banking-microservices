@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
@@ -16,10 +17,14 @@ interface WithdrawScreenProps {
   navigation: any;
 }
 
+import { useApp } from '../context/AppContext';
+
 export default function WithdrawScreen({ navigation }: WithdrawScreenProps) {
+  const { wallet } = useApp();
   const [amount, setAmount] = useState('');
-  const [selectedBank] = useState('Ngân hàng A ****8888');
-  const balance = 5500000;
+  const [selectedBank] = useState('');
+  
+  const balance = wallet?.balance || 0;
   const amountNum = parseInt(amount.replace(/\./g, '') || '0');
   const isExceedBalance = amountNum > balance;
 
@@ -53,7 +58,7 @@ export default function WithdrawScreen({ navigation }: WithdrawScreenProps) {
             <AppText style={styles.currencySymbol}>VNĐ</AppText>
             <AppText variant="display" style={styles.amountValue}>{amount || '0'}</AppText>
           </View>
-          <AppText style={styles.balanceHint}>Số dư khả dụng: {balance.toLocaleString()} VNĐ</AppText>
+          <AppText style={styles.balanceHint}>Số dư khả dụng: {balance.toLocaleString('vi-VN')} VNĐ</AppText>
           {isExceedBalance && (
             <View style={styles.warningContainer}>
               <StatusChip text="Vượt quá số dư" type="warning" size="sm" />
@@ -87,7 +92,7 @@ export default function WithdrawScreen({ navigation }: WithdrawScreenProps) {
       <View style={styles.footer}>
         <PrimaryButton
           title="Xác nhận rút tiền"
-          onPress={() => navigation.navigate('WithdrawConfirm')}
+          onPress={() => navigation.navigate('WithdrawConfirm', { amount, selectedBank })}
           disabled={!amount || amountNum === 0 || isExceedBalance}
         />
         <SecondaryButton title="Hủy" onPress={() => navigation.goBack()} style={styles.secondaryBtn} />

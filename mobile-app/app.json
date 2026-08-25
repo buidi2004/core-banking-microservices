@@ -3,6 +3,7 @@
     "name": "mobile-app",
     "slug": "mobile-app",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -20,6 +21,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-splash-screen"
+    ]
   }
 }

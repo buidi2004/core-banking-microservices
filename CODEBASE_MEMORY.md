@@ -267,6 +267,22 @@ Database Schema được quản lý tập trung qua Flyway Script `V1__init_sche
 - **Số lượng bỏ qua (Skipped):** **`0`**
 - **Công cụ kiểm thử:** JUnit 5, Mockito, Spring Boot Test, JaCoCo Coverage Agent.
 
+### Task 19: Tích hợp Frontend-Backend E2E (Khớp nối Auth & Chuyển Tiền)
+- **Mục tiêu:** Đảm bảo luồng Đăng ký, Đăng nhập và Chuyển tiền từ Mobile App (React Native) xuống Backend hoạt động trơn tru 100%, không bị sai lệch dữ liệu.
+- **Triển khai:**
+  - Phát hiện và vá lỗ hổng Type Mapping ở Frontend (Backend trả về `accessToken` và `refreshToken`, nhưng Frontend móc nhầm vào `token`).
+  - Xử lý triệt để lỗi `WalletNotFoundException`: Ở Backend, `walletId` bắt buộc là chuỗi UUID. Tuy nhiên, API Auth không trả về `walletId`, khiến Frontend gán mặc định `walletId = phoneNumber`. Đã bổ sung logic gọi API `WalletApi.getRecipientInfo()` ngầm sau khi Đăng nhập/Đăng ký để lấy chính xác UUID thật của ví và đưa vào Context.
+  - Tối ưu hóa `LoginScreen`: Gỡ bỏ dữ liệu Hardcode, bổ sung Form nhập liệu linh hoạt (Số điện thoại & Mật khẩu) cùng hiệu ứng Glassmorphism.
+  - Triển khai kịch bản test tự động E2E (`scripts/test_auth_transfer_e2e.js`) bắn trực tiếp vào API với 8 kịch bản khắt khe (Chặn đăng ký trùng, chặn đăng nhập sai, chặn chuyển tiền quá số dư, khóa TOCTOU khi InitTransfer).
+
+### Task 22: Khớp Nối Nâng Cao & Phá Bỏ Giao Diện Mock (Frontend - Backend)
+- **Mục tiêu:** Kiểm toán và khớp nối 100% dữ liệu thực cho các tính năng quan trọng, loại bỏ hoàn toàn dữ liệu giả (mock data) trên Frontend.
+- **Triển khai:**
+  - **KYC & Danh bạ thụ hưởng:** Đã xác nhận Frontend tích hợp thành công màn hình `EKycScreen` (gọi `POST /users/kyc`) và `BeneficiariesScreen` (gọi `GET/DELETE /beneficiaries`).
+  - **Xuất Biên Lai & Sao Kê (E-Receipt):** Tích hợp thành công `expo-file-system` và `expo-sharing`. Màn hình kết quả chuyển tiền và lịch sử giao dịch đã có thể gọi API tải file PDF/CSV/Excel trực tiếp từ Backend và mở bảng chia sẻ (Share Sheet).
+  - **Quản lý thiết bị đăng nhập (Session):** Gỡ bỏ mảng dữ liệu `mockDevices` tĩnh, kết nối thành công `DeviceManagementScreen` với API `GET /api/v1/sessions` và chức năng "Gỡ thiết bị" từ xa `DELETE /api/v1/sessions/{deviceId}`.
+  - **Cảnh báo (Chưa hoàn thiện):** Chức năng "Quên mã PIN" (Forgot PIN) hiện tại Frontend mới chỉ có giao diện, Backend `PinUseCase` đang **THIẾU** logic reset mã PIN qua OTP. Đây là lỗ hổng cần vá tiếp theo.
+
 ---
 
 ## 7. HƯỚNG DẪN VẬN HÀNH & TRIỂN KHAI

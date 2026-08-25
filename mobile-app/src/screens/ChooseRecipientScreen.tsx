@@ -1,142 +1,295 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { AppIcon } from '../components/icons/AppIcon';
-import { Colors, Radius, Shadows, Spacing } from '../theme';
-import { Typography } from '../theme';
-import { EmptyState } from '../components/EmptyState';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Image,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { AppText } from '../components/typography/AppText';
+import { Colors } from '../theme';
 
-interface ChooseRecipientScreenProps {
-  navigation: any;
-}
+const { width } = Dimensions.get('window');
 
-export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScreenProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+export default function ChooseRecipientScreen({ navigation }: any) {
+  const [keyword, setKeyword] = useState('');
+
+  // 5 Danh mục chuyển tiền ngang với Icon chuẩn từ Expo Vector Icons
+  const TRANSFER_METHODS = [
+    { id: '1', title: 'Số\ntài khoản', icon: <MaterialCommunityIcons name="bank-outline" size={26} color="#D2519D" /> },
+    { id: '2', title: 'Số\nđiện thoại', icon: <Ionicons name="call-outline" size={25} color="#D2519D" /> },
+    { id: '3', title: 'Số thẻ', icon: <Ionicons name="card-outline" size={26} color="#D2519D" /> },
+    { id: '4', title: 'Mẫu\nchuyển', icon: <Ionicons name="receipt-outline" size={25} color="#D2519D" /> },
+    { id: '5', title: 'Thẻ\nquốc tế', icon: <MaterialCommunityIcons name="earth" size={26} color="#D2519D" /> },
+  ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <BlurView intensity={70} tint="light" style={styles.headerBlur}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-              <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FDF2F8" />
+
+      {/* TOP BACKGROUND SOFT LOTUS PINK GRADIENT AURA */}
+      <LinearGradient
+        colors={['#FDF2F8', '#FCE7F3', '#F8FAFC']}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 0.4 }}
+        style={styles.topGradientAura}
+      />
+
+      {/* 1. TOP NAVIGATION BAR */}
+      <View style={styles.navBar}>
+        <TouchableOpacity
+          style={styles.navBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#700F43" />
+        </TouchableOpacity>
+
+        <View style={styles.navRightActions}>
+          <TouchableOpacity
+            style={styles.navBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Notifications')}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#700F43" />
           </TouchableOpacity>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerIconBtn}>
-                <AppIcon name="notification" size="sm" color={Colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.headerIconBtn} onPress={() => navigation.navigate('Home')}>
-                <AppIcon name="home" size="sm" color={Colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
+
+          <TouchableOpacity
+            style={styles.navBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Home')}
+          >
+            <Ionicons name="home-outline" size={22} color="#700F43" />
+          </TouchableOpacity>
         </View>
-      </BlurView>
+      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        {/* Title */}
-        <AppText variant="headingXl" style={styles.pageTitle}>Chuyển tiền</AppText>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* 2. PAGE TITLE */}
+        <AppText style={styles.pageHeading}>Siêu chuyển tiền</AppText>
 
-        {/* Quick input methods */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.methodScroll}>
-          {[
-            { icon: 'phone-portrait', label: 'Số tài khoản' },
-            { icon: 'call', label: 'Số điện thoại' },
-            { icon: 'qr-code', label: 'Quét QR' },
-            { icon: 'bookmarks', label: 'Mẫu chuyển' },
-          ].map((method, i) => (
-            <TouchableOpacity key={i} style={styles.methodItem}>
-              <View style={styles.methodIcon}>
-                  <AppIcon name={method.icon as any} size="md" color={Colors.primary} />
+        {/* 3. HORIZONTAL METHODS CAROUSEL */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.methodsScroll}
+        >
+          {TRANSFER_METHODS.map((method) => (
+            <TouchableOpacity
+              key={method.id}
+              style={styles.methodCard}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('EnterAmount', { method: method.title })}
+            >
+              <View style={styles.methodIconCircle}>
+                {method.icon}
               </View>
-              <AppText style={styles.methodLabel}>{method.label}</AppText>
+              <AppText style={styles.methodTitle}>{method.title}</AppText>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {/* Main input card */}
-        <View style={styles.inputCard}>
-          <View style={styles.inputWrapper}>
-              <AppIcon name="qr-code" size="sm" color={Colors.textSecondary} />
-            <AppText style={styles.inputPlaceholder}>Nhập số tài khoản hoặc tên người nhận</AppText>
-            <TouchableOpacity style={styles.scanBtn}>
-                <AppIcon name="scan" size="sm" color={Colors.primary} />
+        {/* 4. MBAI SMART TRANSFER CARD */}
+        <View style={styles.mbaiCard}>
+          {/* Top-Left MBAI Pill Badge */}
+          <View style={styles.mbaiBadge}>
+            <Ionicons name="sparkles" size={11} color="#FFFFFF" />
+            <AppText style={styles.mbaiBadgeText}>MBAI</AppText>
+          </View>
+
+          {/* Input & QR Scanner Viewfinder Row */}
+          <View style={styles.mbaiInputRow}>
+            <TextInput
+              style={styles.mbaiTextInput}
+              placeholder="Nhập số điện thoại cần chuyển"
+              placeholderTextColor="#94A3B8"
+              value={keyword}
+              onChangeText={setKeyword}
+              keyboardType="numeric"
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                if (keyword.trim()) {
+                  navigation.navigate('EnterAmount', { phone: keyword.trim() });
+                }
+              }}
+            />
+
+            <TouchableOpacity
+              style={styles.qrScanBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('QR')}
+            >
+              <MaterialCommunityIcons name="qrcode-scan" size={22} color="#D2519D" />
             </TouchableOpacity>
           </View>
-          <View style={styles.extraActions}>
-            <TouchableOpacity>
-              <AppText style={styles.extraActionText}>📷 Chụp ảnh</AppText>
+
+          {/* Divider */}
+          <View style={styles.cardDivider} />
+
+          {/* 3 Action Buttons (Chụp ảnh | Tải ảnh | Dán) */}
+          <View style={styles.mbaiActionsRow}>
+            {/* Chụp ảnh */}
+            <TouchableOpacity
+              style={styles.actionCol}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('QR')}
+            >
+              <View style={styles.actionIconWrap}>
+                <Ionicons name="sparkles" size={11} color="#D2519D" />
+                <Ionicons name="camera-outline" size={19} color="#D2519D" style={{ marginLeft: 3 }} />
+              </View>
+              <AppText style={styles.actionBtnLabel}>Chụp ảnh</AppText>
             </TouchableOpacity>
-            <AppText style={styles.divider}>|</AppText>
-            <TouchableOpacity>
-              <AppText style={styles.extraActionText}>🖼 Tải ảnh</AppText>
+
+            <View style={styles.verticalDivider} />
+
+            {/* Tải ảnh */}
+            <TouchableOpacity
+              style={styles.actionCol}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('QR')}
+            >
+              <View style={styles.actionIconWrap}>
+                <Ionicons name="sparkles" size={11} color="#D2519D" />
+                <Ionicons name="images-outline" size={19} color="#D2519D" style={{ marginLeft: 3 }} />
+              </View>
+              <AppText style={styles.actionBtnLabel}>Tải ảnh</AppText>
             </TouchableOpacity>
-            <AppText style={styles.divider}>|</AppText>
-            <TouchableOpacity>
-              <AppText style={styles.extraActionText}>📋 Dán</AppText>
+
+            <View style={styles.verticalDivider} />
+
+            {/* Dán */}
+            <TouchableOpacity
+              style={styles.actionCol}
+              activeOpacity={0.7}
+              onPress={() => setKeyword('0923158725')}
+            >
+              <View style={styles.actionIconWrap}>
+                <Ionicons name="sparkles" size={11} color="#D2519D" />
+                <Ionicons name="clipboard-outline" size={19} color="#D2519D" style={{ marginLeft: 3 }} />
+              </View>
+              <AppText style={styles.actionBtnLabel}>Dán</AppText>
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.parallelSections}>
-          {/* Recent contacts */}
-          <View style={styles.halfSection}>
-            <View style={styles.sectionHeader}>
-              <AppText style={styles.sectionTitle}>Gần đây</AppText>
-              <TouchableOpacity>
-                <AppText style={styles.seeAllText}>Tất cả</AppText>
-              </TouchableOpacity>
+        {/* 5. 2 QUICK ACCESS CARDS (Gần đây | Ví điện tử & đối tác) */}
+        <View style={styles.twoCardsRow}>
+          {/* Card Trái: Gần đây */}
+          <TouchableOpacity
+            style={styles.quickCard}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('EnterAmount')}
+          >
+            <View style={styles.quickCardHeader}>
+              <AppText style={styles.quickCardTitle}>Gần đây</AppText>
+              <Ionicons name="chevron-forward" size={16} color="#D2519D" />
             </View>
-            <View style={styles.recentList}>
-              {['Nguyễn Văn A', 'Trần Thị B', 'Lê Văn C'].map((name, i) => (
-                <TouchableOpacity key={i} style={styles.recentItem}>
-                  <View style={styles.recentAvatar}>
-                      <AppIcon name="person" size="sm" color={Colors.primary} />
-                  </View>
-                  <AppText style={styles.recentName} numberOfLines={1}>{name}</AppText>
-                    <AppIcon name="chevron-forward" size="xs" color={Colors.textSecondary} />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
 
-          {/* Partners */}
-          <View style={styles.halfSection}>
-            <AppText style={styles.sectionTitle}>Đối tác liên kết</AppText>
-            <View style={styles.partnerList}>
-              {['Shopee', 'Grab', 'Viettel', 'EVN'].map((partner, i) => (
-                <TouchableOpacity key={i} style={styles.partnerItem}>
-                  <View style={styles.partnerAvatar}>
-                    <AppText style={styles.partnerInitial}>{partner[0]}</AppText>
-                  </View>
-                  <AppText style={styles.partnerName} numberOfLines={1}>{partner}</AppText>
-                  <View style={styles.partnerBadge}>
-                    <AppText variant="captionXs" style={styles.partnerBadgeText}>+99</AppText>
-                  </View>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.quickCardLogosRow}>
+              {/* MB Star mini */}
+              <View style={[styles.miniBrandLogo, { backgroundColor: '#E11D48' }]}>
+                <AppText style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900' }}>★</AppText>
+              </View>
+
+              {/* MoMo mini */}
+              <View style={[styles.miniBrandLogo, { backgroundColor: '#D82D8B' }]}>
+                <AppText style={{ color: '#FFFFFF', fontSize: 8, fontWeight: '900', textAlign: 'center' }}>mo{'\n'}mo</AppText>
+              </View>
+
+              {/* Badge +8 */}
+              <View style={styles.plusCountBadge}>
+                <AppText style={styles.plusCountText}>+8</AppText>
+              </View>
             </View>
+          </TouchableOpacity>
+
+          {/* Card Phải: Ví điện tử & đối tác */}
+          <TouchableOpacity
+            style={styles.quickCard}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('PaymentMethods')}
+          >
+            <View style={styles.quickCardHeader}>
+              <AppText style={styles.quickCardTitle} numberOfLines={1}>Ví điện tử & đối tác</AppText>
+              <Ionicons name="chevron-forward" size={16} color="#D2519D" />
+            </View>
+
+            <View style={styles.quickCardLogosRow}>
+              {/* Viettel Money Red Circle */}
+              <View style={[styles.miniBrandLogo, { backgroundColor: '#EF4444', borderRadius: 12 }]}>
+                <AppText style={{ color: '#FFFFFF', fontSize: 10 }}>📱</AppText>
+              </View>
+
+              {/* ZaloPay Green Text */}
+              <View style={[styles.miniBrandLogo, { backgroundColor: '#ECFDF5' }]}>
+                <AppText style={{ color: '#059669', fontSize: 7.5, fontWeight: '900', textAlign: 'center' }}>Zalo{'\n'}pay</AppText>
+              </View>
+
+              {/* MoMo mini */}
+              <View style={[styles.miniBrandLogo, { backgroundColor: '#D82D8B' }]}>
+                <AppText style={{ color: '#FFFFFF', fontSize: 8, fontWeight: '900', textAlign: 'center' }}>mo{'\n'}mo</AppText>
+              </View>
+
+              {/* Badge +3 */}
+              <View style={styles.plusCountBadge}>
+                <AppText style={styles.plusCountText}>+3</AppText>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* 6. MONEY CHAT SECTION */}
+        <View style={styles.moneyChatHeader}>
+          <AppText style={styles.moneyChatTitle}>Money Chat</AppText>
+
+          <View style={styles.moneyChatActions}>
+            <TouchableOpacity style={styles.searchCircleBtn} activeOpacity={0.7}>
+              <Ionicons name="search-outline" size={18} color="#700F43" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.newChatPillBtn} activeOpacity={0.8}>
+              <AppText style={styles.newChatPillText}>+ Chat mới</AppText>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Saved contacts */}
-        <View style={styles.section}>
-          <AppText style={styles.sectionTitle}>Danh bạ</AppText>
-          <View style={styles.savedList}>
-            {['Nguyễn Văn A', 'Trần Thị B'].map((contact, i) => (
-              <TouchableOpacity key={i} style={styles.savedItem}>
-                <View style={styles.savedAvatar}>
-                    <AppIcon name="person-circle" size="lg" color={Colors.primary} />
-                </View>
-                <View style={styles.savedInfo}>
-                  <AppText style={styles.savedName}>{contact}</AppText>
-                  <AppText style={styles.savedAccount}>****1234</AppText>
-                </View>
-                <TouchableOpacity style={styles.transferBtn}>
-                  <AppText style={styles.transferBtnText}>Chuyển</AppText>
-                </TouchableOpacity>
-              </TouchableOpacity>
-            ))}
+        {/* 7. RECENT MONEY CHAT ITEM (BUI VAN DI) */}
+        <TouchableOpacity
+          style={styles.chatUserCard}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('EnterAmount', { name: 'BUI VAN DI', phone: '0923158725' })}
+        >
+          <Image
+            source={{ uri: 'https://i.pravatar.cc/150?img=11' }}
+            style={styles.chatUserAvatar}
+          />
+          <View style={styles.chatUserInfo}>
+            <AppText style={styles.chatUserName}>BUI VAN DI</AppText>
+            <AppText style={styles.chatUserSub}>
+              0923158725 | <AppText style={{ color: '#64748B' }}>Tài khoản thanh toán</AppText>
+            </AppText>
           </View>
+        </TouchableOpacity>
+
+        {/* 8. EMPTY SAVED RECIPIENTS SECTION (OFFICIAL VECTOR ICONS) */}
+        <View style={styles.emptyContainer}>
+          <View style={styles.emptyIconHalo}>
+            <MaterialCommunityIcons name="account-search-outline" size={48} color="#D2519D" />
+          </View>
+          <AppText style={styles.emptyTitle}>Chưa có người nhận đã lưu</AppText>
+          <AppText style={styles.emptySub}>
+            Thực hiện chuyển tiền để lưu người nhận và dễ dàng quản lý các giao dịch lần sau.
+          </AppText>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -146,234 +299,326 @@ export default function ChooseRecipientScreen({ navigation }: ChooseRecipientScr
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bgBase,
+    backgroundColor: '#F8FAFC',
   },
-  headerBlur: {
+  topGradientAura: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10,
+    height: 280,
   },
-  header: {
+  navBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
-  headerActions: {
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  navRightActions: {
     flexDirection: 'row',
-    gap: Spacing.sm,
+    alignItems: 'center',
+    gap: 8,
   },
-  headerIconBtn: {
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  pageHeading: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#700F43',
+    letterSpacing: -0.5,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  methodsScroll: {
+    paddingRight: 10,
+    gap: 16,
+    marginBottom: 20,
+  },
+  methodCard: {
+    alignItems: 'center',
+    width: 68,
+  },
+  methodIconCircle: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#D2519D',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FCE7F3',
+  },
+  methodTitle: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#1E293B',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  mbaiCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#D2519D',
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 14,
+    marginBottom: 16,
+    shadowColor: '#D2519D',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  mbaiBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#D2519D',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    gap: 3,
+    marginBottom: 8,
+  },
+  mbaiBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10.5,
+    fontWeight: '900',
+    letterSpacing: 0.2,
+  },
+  mbaiInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  mbaiTextInput: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1E293B',
+    paddingVertical: 4,
+  },
+  qrScanBtn: {
     width: 36,
     height: 36,
-    borderRadius: Radius.sm,
+    borderRadius: 10,
+    backgroundColor: '#FDF2F8',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scrollView: {
-    flex: 1,
-    paddingTop: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#FCE7F3',
+    marginVertical: 12,
   },
-  pageTitle: {
-    color: Colors.textPrimary,
-    marginBottom: Spacing.lg,
-  },
-  methodScroll: {
-    marginBottom: Spacing.lg,
-  },
-  methodItem: {
-    alignItems: 'center',
-    marginRight: Spacing.md,
-    minWidth: 72,
-  },
-  methodIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadows.card,
-  },
-  methodLabel: {
-    
-    color: Colors.textPrimary,
-    marginTop: Spacing.xs,
-    textAlign: 'center',
-  },
-  inputCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    borderWidth: 1.5,
-    borderColor: Colors.primary,
-    ...Shadows.card,
-    marginBottom: Spacing.lg,
-  },
-  inputWrapper: {
+  mbaiActionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.bgBase,
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.md,
-    height: 48,
-  },
-  inputPlaceholder: {
-    flex: 1,
-    
-    color: Colors.textSecondary,
-    marginLeft: Spacing.sm,
-  },
-  scanBtn: {
-    padding: Spacing.xs,
-  },
-  extraActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.sm,
-    gap: Spacing.sm,
-  },
-  extraActionText: {
-    
-    color: Colors.primary,
-  },
-  divider: {
-    
-    color: Colors.textSecondary,
-  },
-  parallelSections: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-  halfSection: {
-    flex: 1,
-  },
-  section: {
-    marginBottom: Spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.sm,
   },
-  sectionTitle: {
-    
-    color: Colors.textPrimary,
-    marginBottom: Spacing.sm,
-  },
-  seeAllText: {
-    
-    color: Colors.primary,
-    },
-  recentList: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    ...Shadows.card,
-  },
-  recentItem: {
+  actionCol: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.primarySoft,
-  },
-  recentAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.primarySoft,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.sm,
+    gap: 6,
   },
-  recentName: {
-    flex: 1,
-    
-    color: Colors.textPrimary,
-  },
-  partnerList: {
-    flexDirection: 'column',
-    gap: Spacing.sm,
-  },
-  partnerItem: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.sm,
-    padding: Spacing.md,
+  actionIconWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
-    ...Shadows.card,
   },
-  partnerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.primarySoft,
+  actionBtnLabel: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    color: '#700F43',
+  },
+  verticalDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: '#FCE7F3',
+  },
+  twoCardsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  quickCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: '#D2519D',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#FCE7F3',
+  },
+  quickCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  quickCardTitle: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#700F43',
+    flex: 1,
+  },
+  quickCardLogosRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  miniBrandLogo: {
+    width: 26,
+    height: 26,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  partnerInitial: {
-    
-    color: Colors.primary,
-  },
-  partnerName: {
-    flex: 1,
-    
-    color: Colors.textPrimary,
-  },
-  partnerBadge: {
-    backgroundColor: Colors.warning,
-    borderRadius: Radius.xs,
+  plusCountBadge: {
+    backgroundColor: '#FDF2F8',
+    borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#FCE7F3',
   },
-  partnerBadgeText: {
-    color: Colors.white,
+  plusCountText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#D2519D',
   },
-  savedList: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    ...Shadows.card,
-  },
-  savedItem: {
+  moneyChatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.primarySoft,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  savedAvatar: {
-    marginRight: Spacing.sm,
+  moneyChatTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#700F43',
   },
-  savedInfo: {
+  moneyChatActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  searchCircleBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FCE7F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  newChatPillBtn: {
+    backgroundColor: '#D2519D',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    shadowColor: '#D2519D',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  newChatPillText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  chatUserCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 32,
+    shadowColor: '#D2519D',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 5,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#FCE7F3',
+  },
+  chatUserAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  chatUserInfo: {
     flex: 1,
   },
-  savedName: {
-    
-    color: Colors.textPrimary,
+  chatUserName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F172A',
   },
-  savedAccount: {
-    
-    color: Colors.textSecondary,
-    marginTop: 2,
+  chatUserSub: {
+    fontSize: 12.5,
+    color: '#0F172A',
+    fontWeight: '600',
+    marginTop: 3,
   },
-  transferBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.pill,
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
   },
-  transferBtnText: {
-    
-    color: Colors.white,
+  emptyIconHalo: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FDF2F8',
+    borderWidth: 1,
+    borderColor: '#FCE7F3',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#D2519D',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#700F43',
+    marginTop: 14,
+    textAlign: 'center',
+  },
+  emptySub: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 6,
+    paddingHorizontal: 20,
+    lineHeight: 18,
   },
 });

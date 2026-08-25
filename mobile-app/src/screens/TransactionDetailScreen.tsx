@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
 import { AppText } from '../components/typography/AppText';
+
+import { useApp } from '../context/AppContext';
 
 interface TransactionDetailScreenProps {
   route: any;
@@ -12,7 +15,17 @@ interface TransactionDetailScreenProps {
 }
 
 export default function TransactionDetailScreen({ route, navigation }: TransactionDetailScreenProps) {
+  const { user } = useApp();
   const { transaction } = route.params || {};
+  
+  const isCredit = transaction?.type === 'DEPOSIT' || (transaction?.type === 'TRANSFER' && transaction?.targetWalletId === user?.walletId);
+  const typeText = transaction?.type === 'DEPOSIT' ? 'Nạp tiền' : (transaction?.type === 'WITHDRAWAL' ? 'Rút tiền' : 'Chuyển tiền');
+  const amountStr = `${isCredit ? '+' : '-'}${transaction?.amount?.toLocaleString('vi-VN') || 0} đ`;
+  
+  const txDateStr = transaction?.timestamp || transaction?.createdAt;
+  const dateStr = txDateStr ? new Date(txDateStr).toLocaleString('vi-VN') : '—';
+  
+  const txId = transaction?.transactionId || transaction?.id || '—';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -33,19 +46,19 @@ export default function TransactionDetailScreen({ route, navigation }: Transacti
         <View style={styles.statusContainer}>
           <GroupedListRow
             title="Trạng thái"
-            right={<AppText style={styles.statusSuccess}>Hoàn thành</AppText>}
+            right={<AppText style={styles.statusSuccess}>{transaction?.status === 'COMPLETED' ? 'Hoàn thành' : transaction?.status || 'Hoàn thành'}</AppText>}
           />
         </View>
 
         {/* Detail card */}
         <View style={styles.detailCard}>
           {[
-            { label: 'Loại giao dịch', value: transaction?.type === 'credit' ? 'Tiền vào' : 'Tiền ra' },
-            { label: 'Người nhận/Gửi', value: transaction?.name || '—' },
-            { label: 'Số tiền', value: transaction?.amount || '—' },
-            { label: 'Thời gian', value: transaction?.date || '12/10/2024 14:30' },
-            { label: 'Mã giao dịch', value: 'TXN' + Math.random().toString(36).substr(2, 9).toUpperCase() },
-            { label: 'Phí', value: 'Miễn phí' },
+            { label: 'Loại giao dịch', value: typeText },
+            { label: 'Người nhận/Gửi', value: transaction?.targetWalletId || 'N/A' },
+            { label: 'Số tiền', value: amountStr },
+            { label: 'Thời gian', value: dateStr },
+            { label: 'Mã giao dịch', value: txId },
+            { label: 'Phí', value: transaction?.feeAmount ? `${transaction.feeAmount.toLocaleString('vi-VN')} đ` : 'Miễn phí' },
           ].map((item, i) => (
             <View key={i} style={styles.detailRow}>
               <AppText style={styles.detailLabel}>{item.label}</AppText>

@@ -1,9 +1,19 @@
 /**
  * API Service Client for Fintech Wallet Mobile App
  * Connects to Spring Boot Backend (Hexagonal Architecture)
+ *
+ * ENVIRONMENT CONFIG:
+ * - Development (Expo Go/Simulator): Set API_BASE_URL to your local machine IP, e.g. http://192.168.1.100:8080/api/v1
+ * - Expo Tunnel: Use https://<your-ngrok-id>.ngrok.io/api/v1
+ * - Production: Replace with your deployed API domain.
+ *
+ * NOTE: 'localhost' does NOT work from a physical device. Use your machine's LAN IP.
+ * The app currently runs in OFFLINE DEMO MODE (API calls are not wired into screens yet).
  */
 
-export const API_BASE_URL = 'http://localhost:8080/api/v1';
+// --- ⚠️ IMPORTANT: Change this to your machine's LAN IP when testing on physical device ---
+// Example: export const API_BASE_URL = 'http://192.168.1.100:8080/api/v1';
+export const API_BASE_URL = 'http://172.29.37.86:8080/api/v1';
 
 let authToken: string | null = null;
 let refreshToken: string | null = null;
@@ -50,10 +60,24 @@ async function request<T>(
     headers['Idempotency-Key'] = generateUUID();
   }
 
-  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+      signal: controller.signal as any,
+    });
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error('Kết nối tới máy chủ đã hết hạn (Timeout). Vui lòng kiểm tra lại mạng.');
+    }
+    throw error;
+  }
+  clearTimeout(timeoutId);
 
   // Interceptor for 401 Unauthorized - attempt to refresh token
   if (response.status === 401 && refreshToken && !endpoint.includes('/auth/refresh')) {
@@ -69,10 +93,25 @@ async function request<T>(
         
         // Retry the original request with new token
         headers['Authorization'] = `Bearer ${authToken}`;
-        response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          ...options,
-          headers,
-        });
+        
+        const retryController = new AbortController();
+        const retryTimeoutId = setTimeout(() => retryController.abort(), 15000);
+        
+        try {
+          response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+            signal: retryController.signal as any,
+          });
+        } catch (e: any) {
+          clearTimeout(retryTimeoutId);
+          if (e.name === 'AbortError') {
+            throw new Error('Kết nối tới máy chủ đã hết hạn (Timeout). Vui lòng kiểm tra lại mạng.');
+          }
+          throw e;
+        } finally {
+          clearTimeout(retryTimeoutId);
+        }
       } else {
         // Refresh failed, clear tokens (simulate logout)
         authToken = null;
@@ -95,13 +134,13 @@ async function request<T>(
 export const WalletApi = {
   // --- Auth & Security ---
   register: (phoneNumber: string, password: string) =>
-    request<{ userId: string; token: string }>('/auth/register', {
+    request<{ userId: string; accessToken: string; refreshToken: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify({ phoneNumber, password }),
     }),
 
   login: (phoneNumber: string, password: string) =>
-    request<{ token: string }>('/auth/login', {
+    request<{ accessToken: string; refreshToken: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ phoneNumber, password }),
     }),
@@ -134,7 +173,7 @@ export const WalletApi = {
 
   // --- Wallet Operations ---
   getWallet: (walletId: string) =>
-    request<{ id: string; ownerId: string; balanceAmount: number; currency: string }>(`/wallets/${walletId}`),
+    request<{ id: string; ownerId: string; balance: number; currency: string }>(`/wallets/${walletId}`),
 
   getRecipientInfo: (walletId?: string, phoneNumber?: string) => {
     const params = new URLSearchParams();
@@ -155,8 +194,39 @@ export const WalletApi = {
       true
     ),
 
-  initTransfer: (sourceWalletId: string, targetWalletId: string, amount: number, currency = 'VND') =>
+  verifyPin: (pin: string) =>
+    request<{ pinToken: string }>('/users/pin/verify', {
+      method: 'POST',
+      body: JSON.stringify({ pin }),
+    }),
+
+  setPin: (pin: string) =>
+    request<any>('/users/pin/set', {
+      method: 'POST',
+      body: JSON.stringify({ pin }),
+    }),
+
+  submitKyc: (idCardNumber: string, fullName: string, dob: string, frontCardUrl: string, backCardUrl: string, selfieUrl: string) =>
+    request<any>('/users/kyc', {
+      method: 'POST',
+      body: JSON.stringify({ idCardNumber, fullName, dob, frontCardUrl, backCardUrl, selfieUrl }),
+    }),
+
+  getKycStatus: () =>
+    request<any>('/users/kyc/status'),
+
+  withdraw: (walletId: string, amount: number, currency = 'VND', bankAccountId: string, pinToken: string) =>
     request<{ id: string; status: string; amount: number }>(
+      '/wallets/withdraw',
+      {
+        method: 'POST',
+        body: JSON.stringify({ requestId: generateUUID(), walletId, amount, currency, bankAccountId, pinToken }),
+      },
+      true
+    ),
+
+  initTransfer: (sourceWalletId: string, targetWalletId: string, amount: number, currency = 'VND') =>
+    request<{ transactionId: string; status: string; amount: number }>(
       '/wallets/transfer/init',
       {
         method: 'POST',
@@ -165,24 +235,31 @@ export const WalletApi = {
       true
     ),
 
-  confirmTransfer: (transactionId: string, pin: string, otp: string) =>
-    request<{ id: string; status: string }>(
-      '/wallets/transfer/confirm',
-      {
-        method: 'POST',
-        body: JSON.stringify({ transactionId, pin, otp }),
-      },
+  confirmTransfer: (transactionId: string, pin: string, otp: string) => {
+    const params = new URLSearchParams();
+    if (pin) params.append('pin', pin);
+    if (otp) params.append('otp', otp);
+    return request<{ transactionId: string; status: string }>(
+      `/wallets/transfer/${transactionId}/confirm?${params.toString()}`,
+      { method: 'POST' },
       true
-    ),
+    );
+  },
 
   initTransferQr: (qrCode: string, amount?: number) =>
-    request<{ id: string; status: string }>(
+    request<{ id: string; status: string; amount: number; transactionId?: string }>(
       '/wallets/transfer/qr/init',
       {
         method: 'POST',
         body: JSON.stringify({ requestId: generateUUID(), qrCode, amount }),
       },
       true
+    ),
+
+  decodeVietQr: (qrString: string) =>
+    request<{ bankBin: string; accountNumber: string; amount: number; purpose: string; qrCodeString: string }>(
+      `/payments/vietqr/decode?qrString=${encodeURIComponent(qrString)}`,
+      { method: 'POST' }
     ),
 
   estimateFees: (sourceWalletId: string, amount: number, type = 'TRANSFER', currency = 'VND') =>
@@ -198,10 +275,15 @@ export const WalletApi = {
   },
 
   downloadReceipt: (transactionId: string) => {
-    // This endpoint returns a PDF file, so it should be handled differently (e.g., via browser download or Blob fetch)
-    return fetch(`${API_BASE_URL}/transactions/${transactionId}/receipt.pdf`, {
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
+    // This returns the full URL to the PDF so we can download it via FileSystem
+    return `${API_BASE_URL}/transactions/${transactionId}/receipt.pdf`;
+  },
+
+  exportStatement: (walletId: string, format: 'csv' | 'pdf' | 'excel', fromDate?: string, toDate?: string) => {
+    const params = new URLSearchParams({ walletId });
+    if (fromDate) params.append('fromDate', fromDate);
+    if (toDate) params.append('toDate', toDate);
+    return `${API_BASE_URL}/transactions/export/${format}?${params.toString()}`;
   },
 
   // --- Funding Sources (Cards / Bank Accounts) ---
@@ -242,10 +324,15 @@ export const WalletApi = {
   getBeneficiaries: () =>
     request<any[]>('/beneficiaries'),
 
-  addBeneficiary: (name: string, phoneNumber?: string, bankAccount?: string, bankName?: string) =>
+  addBeneficiary: (beneficiaryWalletId: string, nickname: string, bankCode: string, accountNumber: string) =>
     request<any>('/beneficiaries', {
       method: 'POST',
-      body: JSON.stringify({ name, phoneNumber, bankAccount, bankName }),
+      body: JSON.stringify({ beneficiaryWalletId, nickname, bankCode, accountNumber }),
+    }),
+
+  deleteBeneficiary: (id: string) =>
+    request<void>(`/beneficiaries/${id}`, {
+      method: 'DELETE',
     }),
 
   // --- Legal Limits & Terms ---
@@ -258,6 +345,13 @@ export const WalletApi = {
   // --- Support FAQ ---
   getFaq: () =>
     request<any[]>('/support/faq'),
+
+  // --- Session & Device Management ---
+  getActiveSessions: () =>
+    request<any[]>('/sessions'),
+
+  revokeSession: (deviceId: string) =>
+    request<void>(`/sessions/${deviceId}`, { method: 'DELETE' }),
 
   // --- Bill Payment ---
   lookupBill: (type: string, customerCode: string) =>

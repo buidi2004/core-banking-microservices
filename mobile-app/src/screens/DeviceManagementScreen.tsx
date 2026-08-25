@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/icons/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
@@ -7,18 +8,83 @@ import { StatusChip } from '../components/StatusChip';
 import { SolidCard } from '../components/SolidCard';
 import { EmptyState } from '../components/EmptyState';
 import { AppText } from '../components/typography/AppText';
+import { WalletApi } from '../services/api';
 
 interface DeviceManagementScreenProps {
   navigation: any;
 }
 
-const mockDevices = [
-  { id: '1', name: 'iPhone 15 Pro', lastUsed: 'Hiện tại', current: true, platform: 'iOS' },
-  { id: '2', name: 'Samsung Galaxy S24', lastUsed: '2 giờ trước', current: false, platform: 'Android' },
-];
+interface DeviceSession {
+  id: string;
+  deviceId: string;
+  ipAddress: string;
+  userAgent: string;
+  active: boolean;
+  lastActiveAt: string;
+  isCurrent?: boolean; // We'll infer this
+}
 
 export default function DeviceManagementScreen({ navigation }: DeviceManagementScreenProps) {
-  const devices = mockDevices;
+  const [sessions, setSessions] = useState<DeviceSession[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchSessions = async () => {
+    try {
+      setIsLoading(true);
+      const res = await WalletApi.getActiveSessions();
+      if (res.data) {
+        // Find the most recently active session to mark as 'current'
+        // Alternatively, the backend could tell us which one is the current token's session.
+        const sorted = res.data.sort((a: any, b: any) => 
+          new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime()
+        );
+        if (sorted.length > 0) {
+          sorted[0].isCurrent = true;
+        }
+        setSessions(sorted);
+      }
+    } catch (e) {
+      console.warn('Failed to fetch sessions:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSessions();
+  }, []);
+
+  const handleRevoke = (deviceId: string, deviceName: string) => {
+    Alert.alert(
+      'Gỡ thiết bị',
+      `Bạn có chắc chắn muốn đăng xuất khỏi thiết bị "${deviceName}"?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Gỡ thiết bị',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              await WalletApi.revokeSession(deviceId);
+              await fetchSessions();
+            } catch (e: any) {
+              Alert.alert('Lỗi', e.message || 'Không thể gỡ thiết bị.');
+              setIsLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const getPlatform = (ua: string) => {
+    if (!ua) return 'Unknown';
+    if (ua.toLowerCase().includes('iphone') || ua.toLowerCase().includes('ios') || ua.toLowerCase().includes('mac')) return 'iOS';
+    if (ua.toLowerCase().includes('android')) return 'Android';
+    if (ua.toLowerCase().includes('windows')) return 'Windows';
+    return 'Web/Khác';
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -27,53 +93,60 @@ export default function DeviceManagementScreen({ navigation }: DeviceManagementS
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
         <AppText style={styles.headerTitle}>Thiết bị đã đăng nhập</AppText>
-        <TouchableOpacity>
-          <AppText style={styles.addBtn}>+ Thêm</AppText>
+        <TouchableOpacity onPress={fetchSessions}>
+          <AppIcon name="refresh" size="sm" color={Colors.primary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
-        {devices.length === 0 ? (
+        {isLoading ? (
+          <ActivityIndicator size="large" color={Colors.primary} style={{ marginTop: 40 }} />
+        ) : sessions.length === 0 ? (
           <EmptyState
             icon="phone-portrait-outline"
             title="Chưa có thiết bị nào"
             subtitle="Thiết bị bạn đăng nhập sẽ hiển thị ở đây"
-            actionLabel="Thêm thiết bị"
           />
         ) : (
           <>
             <AppText style={styles.sectionTitle}>Thiết bị hiện tại</AppText>
-            {devices.map((device) => (
-              <SolidCard key={device.id} style={styles.deviceCard}>
-                <View style={styles.deviceHeader}>
-                  <LinearGradient
-                    colors={[Colors.primarySoft, Colors.deviceIconGradEnd]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.deviceIcon}
-                  >
-                    <AppIcon
-                      name={device.platform === 'iOS' ? 'phone-portrait' : 'logo-android'}
-                      size="lg"
-                      color={Colors.primary}
-                    />
-                  </LinearGradient>
-                  <View style={styles.deviceInfo}>
-                    <View style={styles.deviceNameRow}>
-                      <AppText style={styles.deviceName}>{device.name}</AppText>
-                      {device.current && <StatusChip text="Đang dùng" type="success" size="sm" />}
+            {sessions.map((device) => {
+              const platform = getPlatform(device.userAgent);
+              const name = device.userAgent.split(' ')[0] || device.deviceId;
+              const date = new Date(device.lastActiveAt).toLocaleString('vi-VN');
+
+              return (
+                <SolidCard key={device.id} style={styles.deviceCard}>
+                  <View style={styles.deviceHeader}>
+                    <LinearGradient
+                      colors={[Colors.primarySoft, Colors.deviceIconGradEnd]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.deviceIcon}
+                    >
+                      <AppIcon
+                        name={platform === 'iOS' ? 'phone-portrait' : (platform === 'Android' ? 'logo-android' : 'laptop-outline')}
+                        size="lg"
+                        color={Colors.primary}
+                      />
+                    </LinearGradient>
+                    <View style={styles.deviceInfo}>
+                      <View style={styles.deviceNameRow}>
+                        <AppText style={styles.deviceName} numberOfLines={1}>{name}</AppText>
+                        {device.isCurrent && <StatusChip text="Đang dùng" type="success" size="sm" />}
+                      </View>
+                      <AppText style={styles.devicePlatform}>{platform} • {device.ipAddress}</AppText>
+                      <AppText style={styles.deviceLastUsed}>Lần cuối: {date}</AppText>
                     </View>
-                    <AppText style={styles.devicePlatform}>{device.platform}</AppText>
-                    <AppText style={styles.deviceLastUsed}>Sử dụng lần cuối: {device.lastUsed}</AppText>
                   </View>
-                </View>
-                {!device.current && (
-                  <TouchableOpacity style={styles.removeBtn}>
-                    <AppText style={styles.removeText}>Gỡ thiết bị</AppText>
-                  </TouchableOpacity>
-                )}
-              </SolidCard>
-            ))}
+                  {!device.isCurrent && (
+                    <TouchableOpacity style={styles.removeBtn} onPress={() => handleRevoke(device.deviceId, name)}>
+                      <AppText style={styles.removeText}>Gỡ thiết bị</AppText>
+                    </TouchableOpacity>
+                  )}
+                </SolidCard>
+              );
+            })}
 
             {/* Security tip */}
             <View style={styles.tipCard}>

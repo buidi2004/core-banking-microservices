@@ -1,103 +1,179 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, Modal } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { Colors, Radius, Spacing } from '../theme';
-import { Typography } from '../theme';
-import { OtpBox } from '../components/OtpBox';
-import { PrimaryButton } from '../components/PrimaryButton';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  StatusBar,
+  Dimensions,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppText } from '../components/typography/AppText';
+import { Colors } from '../theme';
+import { WalletApi } from '../services/api';
+
+const { width } = Dimensions.get('window');
 
 interface OtpVerificationScreenProps {
+  route?: any;
   navigation: any;
 }
 
-export default function OtpVerificationScreen({ navigation }: OtpVerificationScreenProps) {
-  const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
-  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+export default function OtpVerificationScreen({ route, navigation }: OtpVerificationScreenProps) {
+  const { phone = '0923158725', fromScreen = 'ForgotPassword' } = route?.params || {};
+  const [pinDigits, setPinDigits] = useState<string[]>([]);
 
-  const handleChange = (text: string, index: number) => {
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
+  const [isLoading, setIsLoading] = useState(false);
 
-    if (text && index < 5) {
-      setFocusedIndex(index + 1);
-    }
+  const handleKeyPress = async (val: string) => {
+    if (pinDigits.length < 6 && !isLoading) {
+      const nextPins = [...pinDigits, val];
+      setPinDigits(nextPins);
 
-    if (newOtp.every(v => v !== '')) {
-      setTimeout(() => navigation.navigate('Home'), 300);
+      if (nextPins.length === 6) {
+        try {
+          setIsLoading(true);
+          const otpStr = nextPins.join('');
+          // Import WalletApi if not already imported (will add below if needed)
+          await WalletApi.verifyOtp(phone, otpStr);
+          setIsLoading(false);
+
+          if (fromScreen === 'ForgotPassword') {
+            navigation.navigate('ResetPassword', { phone, otp: otpStr });
+          } else {
+            navigation.navigate('MainTabs');
+          }
+        } catch (error: any) {
+          setIsLoading(false);
+          setPinDigits([]);
+          Alert.alert('Lỗi', error.message || 'Mã OTP không hợp lệ');
+        }
+      }
     }
   };
 
-  const handleBackspace = (index: number) => {
-    if (otp[index] === '') {
-      if (index > 0) {
-        setFocusedIndex(index - 1);
-      }
-    } else {
-      const newOtp = [...otp];
-      newOtp[index] = '';
-      setOtp(newOtp);
+  const handleDelete = () => {
+    if (pinDigits.length > 0) {
+      setPinDigits(pinDigits.slice(0, -1));
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Backdrop blur */}
-      <Modal visible transparent animationType="fade">
-        <BlurView intensity={40} tint="light" style={styles.backdrop} />
-        <View style={styles.modalContent}>
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={() => navigation.goBack()}
-          >
-            <AppText style={styles.closeText}>✕</AppText>
-          </TouchableOpacity>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
-          <AppText variant="headingXl" style={styles.title}>Xác thực OTP</AppText>
-          <AppText style={styles.subtitle}>
-            Chúng tôi đã gửi mã 6 chữ số đến số điện thoại của bạn
-          </AppText>
+      {/* TOP HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.headerBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="chevron-back" size={24} color="#700F43" />
+        </TouchableOpacity>
 
-          <View style={styles.otpContainer}>
-            {otp.map((digit, index) => (
-              <TouchableOpacity
-                key={index}
-                onPressIn={() => setFocusedIndex(index)}
-                onLongPress={() => handleBackspace(index)}
-              >
-                <OtpBox
-                  value={digit}
-                  isActive={focusedIndex === index}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
+        <AppText style={styles.headerTitle}>Xác thực OTP</AppText>
 
-          <TextInput
-            style={styles.hiddenInput}
-            value={otp.join('')}
-            onChangeText={(text) => {
-              const digits = text.split('').slice(0, 6);
-              setOtp([...digits, ...Array(6 - digits.length).fill('')]);
-            }}
-            keyboardType="number-pad"
-            maxLength={6}
-            autoFocus
-            onFocus={() => setFocusedIndex(otp.findIndex(v => v === ''))}
-          />
+        <TouchableOpacity
+          style={styles.headerBtn}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Home')}
+        >
+          <Ionicons name="home-outline" size={22} color="#700F43" />
+        </TouchableOpacity>
+      </View>
 
-          <PrimaryButton
-            title="Xác nhận"
-            onPress={() => navigation.navigate('Home')}
-            disabled={!otp.every(v => v !== '')}
-          />
-
-          <TouchableOpacity style={styles.resendBtn}>
-            <AppText style={styles.resendText}>Gửi lại mã</AppText>
-          </TouchableOpacity>
+      <View style={styles.content}>
+        {/* HERO ICON */}
+        <View style={styles.heroIconWrapper}>
+          <MaterialCommunityIcons name="shield-check" size={44} color="#10B981" />
         </View>
-      </Modal>
+
+        <AppText style={styles.title}>Nhập mã xác thực OTP</AppText>
+        <AppText style={styles.subtitle}>
+          Mã xác thực gồm 6 chữ số đã được gửi tới số điện thoại{' '}
+          <AppText style={{ fontWeight: '800', color: '#700F43' }}>{phone}</AppText>
+        </AppText>
+
+        {/* 6 PIN CIRCLE DOTS */}
+        <View style={styles.pinCirclesRow}>
+          {[0, 1, 2, 3, 4, 5].map((index) => {
+            const isFilled = index < pinDigits.length;
+            return (
+              <View
+                key={index}
+                style={[
+                  styles.pinCircle,
+                  isFilled && styles.pinCircleFilled,
+                ]}
+              >
+                {isFilled && <View style={styles.pinInnerDot} />}
+              </View>
+            );
+          })}
+        </View>
+
+        {/* RESEND OTP */}
+        <TouchableOpacity
+          style={styles.resendBtn}
+          activeOpacity={0.7}
+          onPress={() => setPinDigits([])}
+        >
+          <AppText style={styles.resendText}>Chưa nhận được mã? <AppText style={styles.resendHighlight}>Gửi lại (45s)</AppText></AppText>
+        </TouchableOpacity>
+      </View>
+
+      {/* NUMERIC KEYPAD */}
+      <View style={styles.keypadContainer}>
+        {[
+          ['1', '2', '3'],
+          ['4', '5', '6'],
+          ['7', '8', '9'],
+          ['clear', '0', 'del'],
+        ].map((row, rIdx) => (
+          <View key={rIdx} style={styles.keypadRow}>
+            {row.map((item, cIdx) => {
+              if (item === 'clear') {
+                return (
+                  <TouchableOpacity
+                    key={cIdx}
+                    style={styles.keypadBtn}
+                    activeOpacity={0.7}
+                    onPress={() => setPinDigits([])}
+                  >
+                    <AppText style={styles.keypadActionText}>Xóa hết</AppText>
+                  </TouchableOpacity>
+                );
+              }
+              if (item === 'del') {
+                return (
+                  <TouchableOpacity
+                    key={cIdx}
+                    style={styles.keypadBtn}
+                    activeOpacity={0.7}
+                    onPress={handleDelete}
+                  >
+                    <Ionicons name="backspace-outline" size={26} color="#700F43" />
+                  </TouchableOpacity>
+                );
+              }
+              return (
+                <TouchableOpacity
+                  key={cIdx}
+                  style={styles.keypadBtn}
+                  activeOpacity={0.7}
+                  onPress={() => handleKeyPress(item)}
+                >
+                  <AppText style={styles.keypadDigitText}>{item}</AppText>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
+      </View>
     </SafeAreaView>
   );
 }
@@ -105,61 +181,132 @@ export default function OtpVerificationScreen({ navigation }: OtpVerificationScr
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bgBase,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'space-between',
   },
-  backdrop: {
-    flex: 1,
-  },
-  modalContent: {
-    flex: 1,
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: Spacing.xxl,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
-  closeBtn: {
-    position: 'absolute',
-    top: Spacing.xl,
-    right: Spacing.lg,
+  headerBtn: {
     width: 40,
     height: 40,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.surface,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeText: {
-    
-    color: Colors.textPrimary,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#700F43',
+    letterSpacing: -0.3,
+  },
+  content: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+  },
+  heroIconWrapper: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#DCFCE7',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 2,
   },
   title: {
-    color: Colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#0F172A',
+    marginBottom: 8,
     textAlign: 'center',
-    marginBottom: Spacing.sm,
   },
   subtitle: {
-    
-    color: Colors.textSecondary,
+    fontSize: 13.5,
+    color: '#64748B',
     textAlign: 'center',
-    marginBottom: Spacing.xxl,
-    lineHeight: 22,
+    lineHeight: 20,
+    marginBottom: 28,
   },
-  otpContainer: {
+  pinCirclesRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: Spacing.sm,
-    marginBottom: Spacing.xxl,
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 20,
   },
-  hiddenInput: {
-    position: 'absolute',
-    opacity: 0,
-    width: 1,
-    height: 1,
+  pinCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.8,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  pinCircleFilled: {
+    borderColor: '#D2519D',
+    backgroundColor: '#FDF2F8',
+  },
+  pinInnerDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#D2519D',
   },
   resendBtn: {
-    marginTop: Spacing.xl,
+    paddingVertical: 8,
   },
   resendText: {
-    
-    color: Colors.primary,
-    },
+    fontSize: 13.5,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  resendHighlight: {
+    color: '#700F43',
+    fontWeight: '800',
+  },
+  keypadContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    gap: 12,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  keypadBtn: {
+    width: 76,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  keypadDigitText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  keypadActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#64748B',
+  },
 });

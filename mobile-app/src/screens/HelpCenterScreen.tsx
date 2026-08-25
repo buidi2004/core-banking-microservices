@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';

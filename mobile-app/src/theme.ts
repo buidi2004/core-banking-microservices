@@ -5,37 +5,53 @@
 
 export const Colors = {
   // Background
-  bgBase: '#F3F8FF',
+  bgBase: '#F3F8FC', // --color-surface-alt
+  bgGray: '#F3F8FC', 
 
   // Surface
   surface: '#FFFFFF',
 
-  // Primary palette
-  primary: '#2F6FE0',
-  primarySoft: '#DCEBFF',
-  primaryDeep: '#123B7A',
+  // Primary palette (Lotus Deep Pink - Hồng Sen Đậm & Hồng Cánh Sen)
+  primary: '#D2519D', // --color-primary-500: Hồng sen đậm rực rỡ
+  primarySoft: '#FDF2F8', // --color-primary-50: Hồng phấn nhẹ nhàng
+  primaryDeep: '#700F43', // --color-primary-900: Hồng sen sẫm quý phái (đáy gradient)
+  primary700: '#9D1764', // --color-primary-700
+  primary800: 'rgba(157, 23, 100, 0.55)', // --color-primary-800 cho Balance Card glass
+  primaryGlow: '#F472B6', // --color-primary-glow: Ánh hồng phát sáng (aura)
+  
+  // Custom Gradients (Hoa sen lúc nở rộ)
+  heroGradStart: '#E4ACB2', // Hồng cánh sen tươi sáng
+  heroGradMid: '#D2519D',   // Hồng sen đậm rực rỡ
+  heroGradEnd: '#700F43',   // Hồng sen sẫm quý phái
+  lotusPink: '#D2519D',
+  lotusPetal: '#E4ACB2',
+
+  bannerDeep: '#700F43', 
+  navBg: '#D2519D',
 
   // Text
-  textPrimary: '#0B2545',
-  textSecondary: '#5C7A9C',
+  textPrimary: '#1A1A1A',
+  textSecondary: '#8A93A6',
+  textOnDark: '#FFFFFF',
+  textOnDarkMuted: 'rgba(255,255,255,0.75)',
 
-  // Status
+  // Status & Accents
   success: '#34C759',
   danger: '#FF3B30',
   warning: '#FF9F0A',
+  
+  badgeRed: '#E11D48',
+  badgeBlueSoft: '#FCE7F3', // Hồng pastel cho badge
+  accentYellow: '#FDD349',
+  ctaPill: '#F472B6',
 
   // Glass
   glassTint: 'rgba(255,255,255,0.55)',
   glassBorder: 'rgba(255,255,255,0.65)',
 
   // Shadow
-  shadowColor: '#3A8DFF',
+  shadowColor: '#D2519D',
   shadowTransparent: 'transparent',
-
-  // Hero gradient stops
-  heroGradStart: '#2F6FE0',
-  heroGradMid: '#5FA8FF',
-  heroGradEnd: '#EAF4FF',
 
   // Status chip soft backgrounds
   successSoft: '#D1FAD1',
@@ -87,8 +103,6 @@ export const Radius = {
   sm: 12,
   md: 20,
   lg: 28,
-  xl: 32,
-  xxl: 40,
   pill: 999,
 } as const;
 
@@ -112,10 +126,10 @@ export const Shadows = {
     elevation: 4,
   },
   elevated: {
-    shadowColor: Colors.shadowColor,
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
     elevation: 6,
   },
   hero: {
@@ -140,6 +154,14 @@ export const Shadows = {
 // ============================================
 
 export const Typography = {
+  // Balance Amount
+  balanceLarge: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 28,
+    color: Colors.textOnDark,
+    fontVariant: ['tabular-nums'] as const,
+    lineHeight: 34,
+  },
   // Display/Balance (largest, for amounts and balances)
   displayLarge: {
     fontFamily: 'Manrope_800ExtraBold',
@@ -176,8 +198,8 @@ export const Typography = {
     lineHeight: 24,
   },
   headingSm: {
-    fontFamily: 'Inter_700Bold',
-    fontSize: 15,
+    fontFamily: 'Inter_600SemiBold', // Mua sắm giải trí (15-16px semi-bold)
+    fontSize: 16,
     color: Colors.textPrimary,
     lineHeight: 22,
   },
@@ -196,16 +218,16 @@ export const Typography = {
     lineHeight: 22,
   },
   bodyMd: {
-    fontFamily: 'Inter_500Medium',
-    fontSize: 15,
-    color: Colors.textPrimary,
-    lineHeight: 22,
-  },
-  bodySm: {
-    fontFamily: 'Inter_400Regular',
+    fontFamily: 'Inter_500Medium', // Action names
     fontSize: 13,
     color: Colors.textPrimary,
     lineHeight: 18,
+  },
+  bodySm: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12, // Tên icon dịch vụ
+    color: Colors.textPrimary,
+    lineHeight: 16,
   },
   
   // Caption/labels
@@ -217,7 +239,7 @@ export const Typography = {
   },
   captionSm: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 11,
+    fontSize: 11, // Label bottom nav
     color: Colors.textSecondary,
     lineHeight: 14,
   },
@@ -226,6 +248,13 @@ export const Typography = {
     fontSize: 10,
     color: Colors.textSecondary,
     lineHeight: 14,
+  },
+  badgeSmall: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 9,
+    letterSpacing: 0.3,
+    color: Colors.white,
+    lineHeight: 12,
   },
   
   // Button text

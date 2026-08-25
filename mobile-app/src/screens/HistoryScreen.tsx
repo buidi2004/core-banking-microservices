@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
 import { AppText } from '../components/typography/AppText';
+import { useApp } from '../context/AppContext';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import { WalletApi, getAuthToken } from '../services/api';
+import { Alert } from 'react-native';
 
 interface Transaction {
+  id: string;
   name: string;
   amount: string;
   date: string;
   icon: any;
   type: 'credit' | 'debit';
+  rawTx: any;
 }
 
 interface HistoryScreenProps {
@@ -18,20 +26,93 @@ interface HistoryScreenProps {
 }
 
 export default function HistoryScreen({ navigation }: HistoryScreenProps) {
+  const { user } = useApp();
   const [activeCategory, setActiveCategory] = useState('Tất cả');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   
   const categories = ['Tất cả', 'Tiền vào', 'Tiền ra', 'Chờ xử lý'];
-  
-  const transactions: Transaction[] = [
-    { name: 'Starbucks', amount: '-100.000 VNĐ', date: '12/10/2024', icon: 'cafe', type: 'debit' },
-    { name: 'Grab', amount: '-50.000 VNĐ', date: '12/10/2024', icon: 'car', type: 'debit' },
-    { name: 'Shopee', amount: '-200.000 VNĐ', date: '11/10/2024', icon: 'bag-handle', type: 'debit' },
-    { name: 'Nhận tiền', amount: '+500.000 VNĐ', date: '10/10/2024', icon: 'arrow-down-circle', type: 'credit' },
-    { name: 'Nạp tiền', amount: '+1.000.000 VNĐ', date: '09/10/2024', icon: 'wallet', type: 'credit' },
-    { name: 'ĐIỆN LỰC', amount: '-350.000 VNĐ', date: '08/10/2024', icon: 'flash', type: 'debit' },
-    { name: 'MOMO', amount: '-75.000 VNĐ', date: '07/10/2024', icon: 'wallet-outline', type: 'debit' },
-    { name: 'Hoàn tiền', amount: '+50.000 VNĐ', date: '06/10/2024', icon: 'return-up-back', type: 'credit' },
-  ];
+
+  const handleExport = (format: 'csv' | 'pdf' | 'excel') => {
+    if (!user?.walletId) return;
+    Alert.alert(
+      'Xuất sao kê',
+      `Bạn có muốn xuất sao kê định dạng ${format.toUpperCase()}?`,
+      [
+        { text: 'Hủy', style: 'cancel' },
+        { 
+          text: 'Xuất ngay', 
+          onPress: async () => {
+            try {
+              setIsExporting(true);
+              const url = WalletApi.exportStatement(user.walletId, format);
+              const token = getAuthToken();
+              const ext = format === 'excel' ? 'xlsx' : format;
+              const fileUri = `${FileSystem.documentDirectory}saokae_${Date.now()}.${ext}`;
+              
+              const { uri, status } = await FileSystem.downloadAsync(url, fileUri, {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              });
+              
+              if (status === 200) {
+                const isAvailable = await Sharing.isAvailableAsync();
+                if (isAvailable) {
+                  await Sharing.shareAsync(uri);
+                } else {
+                  Alert.alert('Thành công', `Sao kê đã được lưu tại ${uri}`);
+                }
+              } else {
+                throw new Error(`Tải về thất bại, mã lỗi: ${status}`);
+              }
+            } catch (e: any) {
+              console.error(e);
+              Alert.alert('Lỗi', 'Không thể xuất sao kê. ' + e.message);
+            } finally {
+              setIsExporting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        if (!user?.walletId) return;
+        setIsLoading(true);
+        // Map category
+        let typeFilter = undefined;
+        if (activeCategory === 'Tiền vào') typeFilter = 'CREDIT';
+        if (activeCategory === 'Tiền ra') typeFilter = 'DEBIT';
+
+        const res = await WalletApi.getTransactionHistory(user.walletId, 0, 50, typeFilter);
+        const data = res.data as any[];
+
+          const mapped: Transaction[] = data.map(tx => {
+          const isCredit = tx.type === 'DEPOSIT' || (tx.type === 'TRANSFER' && tx.targetWalletId === user.walletId);
+          return {
+            id: tx.transactionId || tx.id,
+            name: tx.type === 'DEPOSIT' ? 'Nạp tiền' : (tx.type === 'WITHDRAWAL' ? 'Rút tiền' : 'Chuyển tiền'),
+            amount: `${isCredit ? '+' : '-'}${tx.amount.toLocaleString('vi-VN')} đ`,
+            date: new Date(tx.timestamp || tx.createdAt).toLocaleDateString('vi-VN'),
+            icon: isCredit ? 'arrow-down-circle' : 'arrow-up-circle',
+            type: isCredit ? 'credit' : 'debit',
+            rawTx: tx,
+          };
+        });
+        setTransactions(mapped);
+      } catch (e) {
+        console.error('Lỗi tải lịch sử:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [user?.walletId, activeCategory]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -40,7 +121,16 @@ export default function HistoryScreen({ navigation }: HistoryScreenProps) {
             <AppIcon name="arrow-back" size="md" color={Colors.textPrimary} />
         </TouchableOpacity>
         <AppText style={styles.headerTitle}>Lịch sử giao dịch</AppText>
-        <View style={styles.spacer} />
+        <TouchableOpacity onPress={() => {
+          Alert.alert('Định dạng xuất', 'Chọn định dạng bạn muốn tải về:', [
+            { text: 'PDF', onPress: () => handleExport('pdf') },
+            { text: 'Excel', onPress: () => handleExport('excel') },
+            { text: 'CSV', onPress: () => handleExport('csv') },
+            { text: 'Hủy', style: 'cancel' }
+          ]);
+        }}>
+          <AppIcon name="download-outline" size="md" color={Colors.primary} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
@@ -64,25 +154,31 @@ export default function HistoryScreen({ navigation }: HistoryScreenProps) {
 
         {/* Transaction list */}
         <View style={styles.listContainer}>
-          {transactions.map((tx, index) => (
-            <GroupedListRow
-              key={`${tx.name}-${tx.date}-${index}`}
-              title={tx.name}
-              date={tx.date}
-              amount={tx.amount}
-              amountColor={tx.type === 'credit' ? Colors.success : Colors.danger}
-              isFirst={index === 0}
-              isLast={index === transactions.length - 1}
-              icon={
-                <AppIcon
-                  name={tx.icon}
-                  size="sm"
-                  color={tx.type === 'credit' ? Colors.success : Colors.danger}
-                />
-              }
-              onPress={() => navigation.navigate('TransactionDetail', { transaction: tx })}
-            />
-          ))}
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#D2519D" style={{ marginTop: 40 }} />
+          ) : transactions.length === 0 ? (
+            <AppText style={{ textAlign: 'center', marginTop: 40, color: '#64748B' }}>Không có giao dịch nào</AppText>
+          ) : (
+            transactions.map((tx, index) => (
+              <GroupedListRow
+                key={tx.id}
+                title={tx.name}
+                date={tx.date}
+                amount={tx.amount}
+                amountColor={tx.type === 'credit' ? Colors.success : Colors.danger}
+                isFirst={index === 0}
+                isLast={index === transactions.length - 1}
+                icon={
+                  <AppIcon
+                    name={tx.icon}
+                    size="sm"
+                    color={tx.type === 'credit' ? Colors.success : Colors.danger}
+                  />
+                }
+                onPress={() => navigation.navigate('TransactionDetail', { transaction: tx.rawTx })}
+              />
+            ))
+          )}
         </View>
 
         <TouchableOpacity style={styles.viewAllBtn}>

@@ -1,29 +1,19 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import 'react-native-gesture-handler';
+import React, { useEffect } from 'react';
+import { View, Text } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
-import {
-  useFonts,
-  Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold,
-} from '@expo-google-fonts/inter';
-import { Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 
-SplashScreen.preventAutoHideAsync();
-
 export default function App() {
-  const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Manrope_700Bold,
-    Manrope_800ExtraBold,
-  });
+  useEffect(() => {
+    // Force hide splash screen regardless of fonts
+    SplashScreen.hideAsync().catch(console.warn);
+  }, []);
 
-  if (!fontsLoaded) {
-    return null;
-  }
-
-  return <NavigationContainer><AppNavigator /></NavigationContainer>;
+  return (
+    <SafeAreaProvider>
+      <AppNavigator />
+    </SafeAreaProvider>
+  );
 }

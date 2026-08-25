@@ -1,0 +1,99 @@
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/BankCardsScreen.tsx
+   5:10  warning  'GroupedListRow' is defined but never used  @typescript-eslint/no-unused-vars
+  45:33  warning  'index' is defined but never used           @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/BillInputScreen.tsx
+   4:10  warning  'LinearGradient' is defined but never used          @typescript-eslint/no-unused-vars
+   6:10  warning  'Typography' is defined but never used              @typescript-eslint/no-unused-vars
+  17:10  warning  'customerId' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  17:22  warning  'setCustomerId' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  18:19  warning  'setIsValid' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/BillPaymentScreen.tsx
+  7:10  warning  'GroupedListRow' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/ChooseRecipientScreen.tsx
+   6:10  warning  'Typography' is defined but never used               @typescript-eslint/no-unused-vars
+   7:10  warning  'EmptyState' is defined but never used               @typescript-eslint/no-unused-vars
+  15:10  warning  'searchQuery' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  15:23  warning  'setSearchQuery' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/DepositScreen.tsx
+   5:10  warning  'Typography' is defined but never used                  @typescript-eslint/no-unused-vars
+   8:10  warning  'BankCardRow' is defined but never used                 @typescript-eslint/no-unused-vars
+  19:26  warning  'setSelectedSource' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/DeviceManagementScreen.tsx
+  5:26  warning  'Shadows' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/EnterAmountScreen.tsx
+   6:10  warning  'Typography' is defined but never used         @typescript-eslint/no-unused-vars
+   7:10  warning  'GroupedListRow' is defined but never used     @typescript-eslint/no-unused-vars
+  20:17  warning  'setNotes' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/ForgotPasswordScreen.tsx
+  4:10  warning  'Typography' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/ForgotPinScreen.tsx
+   4:10  warning  'Typography' is defined but never used                @typescript-eslint/no-unused-vars
+   7:10  warning  'SecondaryButton' is defined but never used           @typescript-eslint/no-unused-vars
+  21:9   warning  'handleOtpChange' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/HelpCenterScreen.tsx
+  5:10  warning  'GroupedListRow' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/HomeScreen.tsx
+  2:28  warning  'Image' is defined but never used       @typescript-eslint/no-unused-vars
+  7:10  warning  'Typography' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/LoginScreen.tsx
+  2:60  warning  'ScrollView' is defined but never used  @typescript-eslint/no-unused-vars
+  4:10  warning  'Typography' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/OtpVerificationScreen.tsx
+   5:10  warning  'Typography' is defined but never used             @typescript-eslint/no-unused-vars
+  18:9   warning  'handleChange' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/PaymentMethodsScreen.tsx
+  6:10  warning  'Typography' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/ProfileScreen.tsx
+  6:10  warning  'GroupedListRow' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/PromotionsScreen.tsx
+  5:10  warning  'StatusChip' is defined but never used  @typescript-eslint/no-unused-vars
+  7:10  warning  'SearchBar' is defined but never used   @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/QRMyScreen.tsx
+  6:10  warning  'StatusChip' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/RegisterScreen.tsx
+  4:10  warning  'Typography' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/RequestTransferScreen.tsx
+  5:10  warning  'Typography' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/SearchScreen.tsx
+   5:10  warning  'GroupedListRow' is defined but never used  @typescript-eslint/no-unused-vars
+  21:40  warning  'navigation' is defined but never used      @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/SetPinScreen.tsx
+  4:10  warning  'Typography' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/TransferConfirmScreen.tsx
+  2:46  warning  'SafeAreaView' is defined but never used  @typescript-eslint/no-unused-vars
+  6:10  warning  'Typography' is defined but never used    @typescript-eslint/no-unused-vars
+  7:10  warning  'StatusChip' is defined but never used    @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/TransferResultScreen.tsx
+  2:28  warning  'TouchableOpacity' is defined but never used  @typescript-eslint/no-unused-vars
+  6:10  warning  'Typography' is defined but never used        @typescript-eslint/no-unused-vars
+
+/home/wsk2/app-mono-di-va-khoa/mobile-app/src/screens/WithdrawScreen.tsx
+  3:10  warning  'BlurView' is defined but never used     @typescript-eslint/no-unused-vars
+  6:10  warning  'Typography' is defined but never used   @typescript-eslint/no-unused-vars
+  9:10  warning  'BankCardRow' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 48 problems (0 errors, 48 warnings)
+

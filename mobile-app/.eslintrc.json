@@ -1,0 +1,1 @@
+{"extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "plugin:react/recommended"], "parser": "@typescript-eslint/parser", "plugins": ["@typescript-eslint", "react", "react-native"], "env": {"node": true, "react-native/react-native": true}, "rules": {"react/react-in-jsx-scope": "off"}}

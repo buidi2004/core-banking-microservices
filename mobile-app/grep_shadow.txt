@@ -1,0 +1,2 @@
+src/components/AmountEntryPad.tsx:62:    shadowColor: 'transparent',
+src/screens/ForgotPinScreen.tsx:231:    shadowColor: Colors.shadowTransparent,

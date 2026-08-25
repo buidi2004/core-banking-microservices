@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/icons/AppIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
@@ -68,7 +69,7 @@ export default function BillInputScreen({ route, navigation }: BillInputScreenPr
       <View style={styles.footer}>
         <PrimaryButton
           title={`Thanh toán • ${isValid ? '350.000đ' : 'Nhập mã khách hàng'}`}
-          onPress={() => navigation.navigate('BillConfirm')}
+          onPress={() => navigation.navigate('BillConfirm', { provider, billId: customerId, amount: 350000 })}
           disabled={!isValid}
         />
       </View>

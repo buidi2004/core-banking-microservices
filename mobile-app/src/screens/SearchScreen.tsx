@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppIcon } from '../components/icons/AppIcon';
 import { Colors, Radius, Shadows, Spacing } from '../theme';
 import { GroupedListRow } from '../components/GroupedListRow';
@@ -169,7 +170,7 @@ const styles = StyleSheet.create({
   contactAvatar: {
     width: 64,
     height: 64,
-    borderRadius: Radius.xl,
+    borderRadius: Radius.pill,
   },
   contactName: {
     

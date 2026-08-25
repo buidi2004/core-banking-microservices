@@ -24,25 +24,36 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     colors={[Colors.primary, Colors.heroGradMid]}
     start={{ x: 0, y: 0 }}
     end={{ x: 1, y: 0 }}
-    style={[styles.container, disabled ? styles.disabled : null, style]}
-    pointerEvents={disabled ? 'none' : 'auto'}
+    style={[styles.container, disabled && styles.disabled, style]}
   >
-    <AppText variant="body" style={[styles.text, textStyle]}>{title}</AppText>
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      style={styles.touchable}
+      activeOpacity={0.8}
+    >
+      <AppText variant="body" style={[styles.text, textStyle]}>{title}</AppText>
+    </TouchableOpacity>
   </LinearGradient>
 );
 
 const styles = StyleSheet.create({
   container: {
     borderRadius: Radius.pill,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    width: '100%',
+    height: 52,
+    ...Shadows.elevated,
+  },
+  touchable: {
+    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.elevated,
   },
   text: {
     color: Colors.white,
-    },
+    fontWeight: '700',
+  },
   disabled: {
     opacity: Opacity.disabled,
   },
