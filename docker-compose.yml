@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   wallet-service:
-    build: .
+    build: ./backend
     container_name: wallet-service
     ports:
       - "8080:8080"
