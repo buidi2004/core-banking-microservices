@@ -19,7 +19,7 @@ public class JwtTokenProvider {
     private static final Logger log = LoggerFactory.getLogger(JwtTokenProvider.class);
 
     private final SecretKey secretKey;
-    private final long accessTokenValidityMs = 15 * 60 * 1000L; // 15 minutes
+    private final long accessTokenValidityMs = 5 * 60 * 1000L; // 5 minutes
     private final long refreshTokenValidityMs = 7 * 24 * 60 * 60 * 1000L; // 7 days
     private final long pinTokenValidityMs = 5 * 60 * 1000L; // 5 minutes
 
