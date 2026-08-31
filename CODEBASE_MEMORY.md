@@ -88,7 +88,7 @@ Dưới đây là đặc tả kỹ thuật chi tiết của 18 bài toán lõi �
 ### Task 6: Swagger / OpenAPI UI + Flyway Database Migration
 - **Mục tiêu:** Quản trị schema cơ sở dữ liệu phiên bản hóa và tài liệu hóa API chuẩn OpenAPI 3.0.
 - **Triển khai:**
-  - `V1__init_schema.sql` nằm tại `src/main/resources/db/migration` khởi tạo toàn bộ 11 bảng, indexes và foreign keys.
+  - `V1__init_schema.sql` nằm tại `backend/src/main/resources/db/migration` khởi tạo toàn bộ 11 bảng, indexes và foreign keys.
   - `OpenApiConfig`: Cấu hình OpenAPI documentation kèm Security Scheme `Bearer Authentication` cho phép test trực tiếp trên Swagger UI (`/swagger-ui/index.html`).
 
 ### Task 7: Unit & Integration Test End-to-End Luồng Transfer
@@ -233,6 +233,8 @@ Database Schema được quản lý tập trung qua Flyway Script `V1__init_sche
 
 ## 5. MOBILE APP ARCHITECTURE (31 MÀN HÌNH REACT NATIVE)
 
+> **Lưu ý:** Mã nguồn Mobile App đã được tách sang một repository riêng biệt. Phần dưới đây mô tả kiến trúc của ứng dụng di động để phục vụ tra cứu ngữ cảnh hệ thống.
+
 Ứng dụng di động xây dựng bằng **React Native (Expo) + TypeScript**, tuân thủ nghiêm ngặt hệ thống Design Tokens iOS Glassmorphism:
 
 ### Phân Nhóm 31 Màn Hình:
@@ -273,7 +275,7 @@ Database Schema được quản lý tập trung qua Flyway Script `V1__init_sche
   - Phát hiện và vá lỗ hổng Type Mapping ở Frontend (Backend trả về `accessToken` và `refreshToken`, nhưng Frontend móc nhầm vào `token`).
   - Xử lý triệt để lỗi `WalletNotFoundException`: Ở Backend, `walletId` bắt buộc là chuỗi UUID. Tuy nhiên, API Auth không trả về `walletId`, khiến Frontend gán mặc định `walletId = phoneNumber`. Đã bổ sung logic gọi API `WalletApi.getRecipientInfo()` ngầm sau khi Đăng nhập/Đăng ký để lấy chính xác UUID thật của ví và đưa vào Context.
   - Tối ưu hóa `LoginScreen`: Gỡ bỏ dữ liệu Hardcode, bổ sung Form nhập liệu linh hoạt (Số điện thoại & Mật khẩu) cùng hiệu ứng Glassmorphism.
-  - Triển khai kịch bản test tự động E2E (`scripts/test_auth_transfer_e2e.js`) bắn trực tiếp vào API với 8 kịch bản khắt khe (Chặn đăng ký trùng, chặn đăng nhập sai, chặn chuyển tiền quá số dư, khóa TOCTOU khi InitTransfer).
+  - Đã từng triển khai kịch bản test tự động E2E bắn trực tiếp vào API với 8 kịch bản khắt khe (hiện đã được dọn dẹp để tách repo).
 
 ### Task 22: Khớp Nối Nâng Cao & Phá Bỏ Giao Diện Mock (Frontend - Backend)
 - **Mục tiêu:** Kiểm toán và khớp nối 100% dữ liệu thực cho các tính năng quan trọng, loại bỏ hoàn toàn dữ liệu giả (mock data) trên Frontend.
@@ -292,20 +294,17 @@ Database Schema được quản lý tập trung qua Flyway Script `V1__init_sche
 docker compose up -d --build
 ```
 
-### Chạy kiểm thử tự động toàn bộ dự án:
+### Chạy kiểm thử tự động toàn bộ dự án (Tại thư mục backend):
 ```bash
+cd backend
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn clean test
 ```
 
-### Đóng gói ứng dụng:
+### Đóng gói ứng dụng (Tại thư mục backend):
 ```bash
+cd backend
 mvn clean package -DskipTests
 # File JAR thực thi: target/wallet-1.0.0-SNAPSHOT.jar
-```
-
-### Chạy script Demo toàn bộ luồng nghiệp vụ:
-```bash
-./scripts/demo_full_flow.sh
 ```
 
 ---

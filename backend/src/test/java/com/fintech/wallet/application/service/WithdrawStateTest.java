@@ -73,7 +73,8 @@ class WithdrawStateTest {
                 userPersistencePort,
                 mock(com.fintech.wallet.domain.port.out.AuditLogPersistencePort.class),
                 mock(com.fintech.wallet.domain.port.out.ClientInfoPort.class),
-                ledgerUseCase
+                ledgerUseCase,
+                null
         );
     }
 

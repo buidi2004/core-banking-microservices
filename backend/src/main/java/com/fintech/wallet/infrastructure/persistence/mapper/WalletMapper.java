@@ -49,7 +49,9 @@ public class WalletMapper {
                 amount,
                 TransactionType.valueOf(entity.getType()),
                 TransactionStatus.valueOf(entity.getStatus()),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                null,
+                entity.getNote()
         );
     }
 
@@ -64,7 +66,8 @@ public class WalletMapper {
                 domain.getAmount().getCurrency(),
                 domain.getType().name(),
                 domain.getStatus().name(),
-                domain.getCreatedAt()
+                domain.getCreatedAt(),
+                domain.getNote()
         );
     }
 }

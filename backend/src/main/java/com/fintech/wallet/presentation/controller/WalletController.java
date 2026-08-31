@@ -138,7 +138,7 @@ public class WalletController {
             throw new org.springframework.security.access.AccessDeniedException("Not authorized to transfer from this wallet");
         }
         Money money = Money.of(request.getAmount(), request.getCurrency());
-        Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), request.getTargetWalletId(), money);
+        Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), request.getTargetWalletId(), money, request.getNote());
         
         // Generate OTP
         otpService.generateAndStoreOtp(transaction.getId());
@@ -170,7 +170,8 @@ public class WalletController {
         // We use the account number from VietQR as the target wallet ID in this internal transfer context
         String targetWalletId = payload.getAccountNumber();
         
-        Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), targetWalletId, money);
+        String note = payload.getPurpose() != null ? payload.getPurpose() : "VietQR Transfer";
+        Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), targetWalletId, money, note);
         
         // Generate OTP
         otpService.generateAndStoreOtp(transaction.getId());

@@ -1,6 +1,7 @@
 package com.fintech.wallet.application.service;
 
 import com.fintech.wallet.domain.exception.TransactionLimitExceededException;
+import com.fintech.wallet.domain.exception.InsufficientBalanceException;
 import com.fintech.wallet.domain.model.KycStatus;
 import com.fintech.wallet.domain.model.Money;
 import com.fintech.wallet.domain.model.User;
@@ -58,7 +59,7 @@ class WalletServiceTest {
                 null,
                 transactionalOperationPort,
                 null,
-                userPersistencePort, auditLogPersistencePort, mock(com.fintech.wallet.domain.port.out.ClientInfoPort.class), ledgerUseCase);
+                userPersistencePort, auditLogPersistencePort, mock(com.fintech.wallet.domain.port.out.ClientInfoPort.class), ledgerUseCase, null);
 
         when(distributedLockPort.executeWithLock(anyString(), org.mockito.ArgumentMatchers.anyLong(), any())).thenAnswer(invocation -> {
             java.util.function.Supplier<Object> supplier = invocation.getArgument(2);
@@ -133,5 +134,39 @@ class WalletServiceTest {
         com.fintech.wallet.domain.model.Transaction result = walletService.withdraw("req1", "u1", "w1", "bank1", Money.of(new BigDecimal("100"), "VND"));
         assertNotNull(result.getId());
         assertEquals("req1", result.getRequestId());
+    }
+    @Test
+    void testTransfer_InsufficientFunds_ShouldThrow() {
+        Wallet sourceWallet = new Wallet("w1", "u1", Money.of(new BigDecimal("5000"), "VND"), Instant.now(), Instant.now(), 0L);
+        Wallet targetWallet = new Wallet("w2", "u2", Money.of(new BigDecimal("1000"), "VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(sourceWallet));
+        when(walletPersistencePort.findWalletById("w2")).thenReturn(Optional.of(targetWallet));
+        when(transactionPersistencePort.calculateDailySpentByWalletId(any(), any())).thenReturn(BigDecimal.ZERO);
+
+        assertThrows(InsufficientBalanceException.class, () -> {
+            walletService.transfer("req2", "w1", "w2", Money.of(new BigDecimal("6000"), "VND"));
+        });
+    }
+
+    @Test
+    void testTransfer_SameWallet_ShouldThrow() {
+        Wallet wallet = new Wallet("w1", "u1", Money.of(new BigDecimal("1000"), "VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            walletService.transfer("req3", "w1", "w1", Money.of(new BigDecimal("1000"), "VND"));
+        });
+    }
+
+    @Test
+    void testTransfer_NegativeAmount_ShouldThrow() {
+        Wallet sourceWallet = new Wallet("w1", "u1", Money.of(new BigDecimal("1000"), "VND"), Instant.now(), Instant.now(), 0L);
+        Wallet targetWallet = new Wallet("w2", "u2", Money.of(new BigDecimal("1000"), "VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(sourceWallet));
+        when(walletPersistencePort.findWalletById("w2")).thenReturn(Optional.of(targetWallet));
+
+        assertThrows(com.fintech.wallet.domain.exception.InvalidMoneyException.class, () -> {
+            walletService.transfer("req4", "w1", "w2", Money.of(new BigDecimal("-100"), "VND"));
+        });
     }
 }

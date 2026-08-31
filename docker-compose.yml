@@ -45,9 +45,24 @@ services:
     networks:
       - wallet-network
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: wallet-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: wallet
+      RABBITMQ_DEFAULT_PASS: wallet123
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - wallet-network
+
 volumes:
   postgres-data:
   redis-data:
+  rabbitmq-data:
 
 networks:
   wallet-network:

@@ -139,7 +139,7 @@ public class AuthService implements AuthUseCase {
         }
 
         String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getPhoneNumber(), deviceId);
-        return new AuthTokens(accessToken, refreshToken, deviceId);
+        return new AuthTokens(accessToken, refreshToken, deviceId, user.getId());
     }
 
     @Override
@@ -189,9 +189,9 @@ public class AuthService implements AuthUseCase {
             DeviceSession session = sessionService.refreshSession(refreshToken, ipAddress);
             User user = userPersistencePort.findUserById(session.getUserId()).orElseThrow(() -> new IllegalArgumentException("User not found"));
             String accessToken = tokenProvider.generateAccessToken(user.getId(), user.getPhoneNumber(), session.getDeviceId());
-            return new AuthTokens(accessToken, session.getRefreshToken(), session.getDeviceId());
+            return new AuthTokens(accessToken, session.getRefreshToken(), session.getDeviceId(), user.getId());
         }
-        return new AuthTokens(refreshToken, refreshToken, "unknown"); // Fallback if no session service
+        return new AuthTokens(refreshToken, refreshToken, "unknown", null); // Fallback if no session service
     }
 
     @Override

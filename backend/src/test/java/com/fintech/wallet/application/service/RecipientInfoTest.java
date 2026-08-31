@@ -61,7 +61,8 @@ public class RecipientInfoTest {
                 userPersistencePort,
                 auditLogPersistencePort,
                 clientInfoPort,
-                ledgerUseCase
+                ledgerUseCase,
+                null
         );
         // Inject kycPersistencePort using reflection or setter
         org.springframework.test.util.ReflectionTestUtils.setField(walletService, "kycPersistencePort", kycPersistencePort);

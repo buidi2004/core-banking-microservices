@@ -51,7 +51,7 @@ class ConcurrentWalletServiceTest {
                 null,
                 transactionalOperationPort,
                 null,
-                userPersistencePort, auditLogPersistencePort, mock(com.fintech.wallet.domain.port.out.ClientInfoPort.class), ledgerUseCase);
+                userPersistencePort, auditLogPersistencePort, mock(com.fintech.wallet.domain.port.out.ClientInfoPort.class), ledgerUseCase, null);
 
         when(distributedLockPort.executeWithLock(anyString(), org.mockito.ArgumentMatchers.anyLong(), any())).thenAnswer(invocation -> {
             java.util.function.Supplier<Object> supplier = invocation.getArgument(2);

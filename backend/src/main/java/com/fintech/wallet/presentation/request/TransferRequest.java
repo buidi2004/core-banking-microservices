@@ -24,6 +24,8 @@ public class TransferRequest {
     @NotBlank(message = "Currency is required")
     private String currency;
 
+    private String note;
+
     public String getRequestId() {
         return requestId;
     }
@@ -59,13 +61,21 @@ public class TransferRequest {
         this.currency = currency;
     }
 
+    public String getNote() {
+        return note;
+    }
+    public void setNote(String note) {
+        this.note = note;
+    }
+
     public TransferRequest() {}
 
-    public TransferRequest(String requestId, String sourceWalletId, String targetWalletId, BigDecimal amount, String currency) {
+    public TransferRequest(String requestId, String sourceWalletId, String targetWalletId, BigDecimal amount, String currency, String note) {
         this.requestId = requestId;
         this.sourceWalletId = sourceWalletId;
         this.targetWalletId = targetWalletId;
         this.amount = amount;
         this.currency = currency;
+        this.note = note;
     }
 }

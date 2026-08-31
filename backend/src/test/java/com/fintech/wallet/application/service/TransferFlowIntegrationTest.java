@@ -206,4 +206,25 @@ public class TransferFlowIntegrationTest {
         assertEquals(new BigDecimal("1000000").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
         assertEquals(new BigDecimal("0").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
     }
+
+    @Test
+    public void testTransfer_FractionalAmounts_ShouldMaintainBalanceIntegrity() {
+        String requestId = UUID.randomUUID().toString();
+        Money fractionalAmount = Money.of(new BigDecimal("1000.55"), "VND");
+
+        Transaction tx = walletService.transfer(requestId, senderWallet.getId(), receiverWallet.getId(), fractionalAmount);
+
+        assertEquals(TransactionStatus.SUCCESS, tx.getStatus());
+
+        Wallet updatedSenderWallet = walletService.getWalletById(senderWallet.getId());
+        Wallet updatedReceiverWallet = walletService.getWalletById(receiverWallet.getId());
+
+        assertEquals(new BigDecimal("998999.45").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("1000.55").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
+        
+        // System Total Balance
+        BigDecimal totalBefore = new BigDecimal("1000000"); // sender: 1M, receiver: 0
+        BigDecimal totalAfter = updatedSenderWallet.getBalance().getAmount().add(updatedReceiverWallet.getBalance().getAmount());
+        assertEquals(totalBefore.stripTrailingZeros(), totalAfter.stripTrailingZeros());
+    }
 }

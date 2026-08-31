@@ -33,6 +33,8 @@ import com.fintech.wallet.domain.port.out.WalletPersistencePort;
 import com.fintech.wallet.domain.port.out.KycPersistencePort;
 import com.fintech.wallet.domain.util.NameMaskingUtils;
 import com.fintech.wallet.presentation.response.RecipientInfoResponse;
+import com.fintech.wallet.domain.model.TransactionEvent;
+import com.fintech.wallet.domain.port.out.TransactionEventPublisherPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +68,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     private final AuditLogPersistencePort auditLogPersistencePort;
     private final ClientInfoPort clientInfoPort;
     private final LedgerUseCase ledgerUseCase;
+    private final TransactionEventPublisherPort transactionEventPublisherPort;
     
     @Autowired(required = false)
     private KycPersistencePort kycPersistencePort;
@@ -80,7 +83,8 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                          UserPersistencePort userPersistencePort,
                          AuditLogPersistencePort auditLogPersistencePort,
                          ClientInfoPort clientInfoPort,
-                         LedgerUseCase ledgerUseCase) {
+                         LedgerUseCase ledgerUseCase,
+                         TransactionEventPublisherPort transactionEventPublisherPort) {
         this.walletPersistencePort = walletPersistencePort;
         this.transactionPersistencePort = transactionPersistencePort;
         this.distributedLockPort = distributedLockPort;
@@ -91,6 +95,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         this.auditLogPersistencePort = auditLogPersistencePort;
         this.clientInfoPort = clientInfoPort;
         this.ledgerUseCase = ledgerUseCase;
+        this.transactionEventPublisherPort = transactionEventPublisherPort;
     }
 
     public WalletService(WalletPersistencePort walletPersistencePort,
@@ -99,7 +104,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                          NotificationPort notificationPort,
                          TransactionalOperationPort transactionalOperationPort,
                          BankGatewayPort bankGatewayPort) {
-        this(walletPersistencePort, transactionPersistencePort, distributedLockPort, notificationPort, transactionalOperationPort, bankGatewayPort, null, null, null, null);
+        this(walletPersistencePort, transactionPersistencePort, distributedLockPort, notificationPort, transactionalOperationPort, bankGatewayPort, null, null, null, null, null);
     }
 
     public WalletService(WalletPersistencePort walletPersistencePort,
@@ -107,7 +112,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                          DistributedLockPort distributedLockPort,
                          NotificationPort notificationPort,
                          TransactionalOperationPort transactionalOperationPort) {
-        this(walletPersistencePort, transactionPersistencePort, distributedLockPort, notificationPort, transactionalOperationPort, null, null, null, null, null);
+        this(walletPersistencePort, transactionPersistencePort, distributedLockPort, notificationPort, transactionalOperationPort, null, null, null, null, null, null);
     }
 
 
@@ -212,7 +217,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         // Bug #2 fix: Idempotency check — only return if SUCCESS, allow retry for FAILED
         if (requestId != null && !requestId.isBlank()) {
             Optional<Transaction> existingTx = transactionPersistencePort.findTransactionByRequestId(requestId);
-            if (existingTx.isPresent() && existingTx.get().getStatus() == TransactionStatus.SUCCESS) {
+            if (existingTx.isPresent()) {
                 return existingTx.get();
             }
         }
@@ -222,7 +227,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             // Re-check inside lock
             if (requestId != null && !requestId.isBlank()) {
                 Optional<Transaction> existingTx = transactionPersistencePort.findTransactionByRequestId(requestId);
-                if (existingTx.isPresent() && existingTx.get().getStatus() == TransactionStatus.SUCCESS) {
+                if (existingTx.isPresent()) {
                     return existingTx.get();
                 }
             }
@@ -267,7 +272,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     }
 
     @Override
-    public Transaction transfer(String requestId, String sourceWalletId, String targetWalletId, Money amount) {
+    public Transaction transfer(String requestId, String sourceWalletId, String targetWalletId, Money amount, String note) {
         if (sourceWalletId == null || sourceWalletId.isBlank() || targetWalletId == null || targetWalletId.isBlank()) {
             throw new IllegalArgumentException("Source and target wallet IDs must not be empty");
         }
@@ -280,10 +285,10 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
 
         validatePerTransactionLimits(amount);
 
-        // Bug #2 fix: Idempotency — only return SUCCESS
+        // Fix: Idempotency — return the exact previous transaction state
         if (requestId != null && !requestId.isBlank()) {
             Optional<Transaction> existingTx = transactionPersistencePort.findTransactionByRequestId(requestId);
-            if (existingTx.isPresent() && existingTx.get().getStatus() == TransactionStatus.SUCCESS) {
+            if (existingTx.isPresent()) {
                 return existingTx.get();
             }
         }
@@ -304,7 +309,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 // Re-check inside lock
                 if (requestId != null && !requestId.isBlank()) {
                     Optional<Transaction> existingTx = transactionPersistencePort.findTransactionByRequestId(requestId);
-                    if (existingTx.isPresent() && existingTx.get().getStatus() == TransactionStatus.SUCCESS) {
+                    if (existingTx.isPresent()) {
                         return existingTx.get();
                     }
                 }
@@ -325,7 +330,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                             + ") does not match wallet currency (" + sourceWallet.getBalance().getCurrency() + ")");
                 }
 
-                Transaction transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount);
+                Transaction transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, note);
 
                 // Bug #1 fix: atomic transaction for all DB writes
                 // Bug #4 fix: notification outside business try-catch
@@ -350,11 +355,24 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     throw e;
                 }
 
-                // Bug #4 fix: notification is fire-and-forget
-                // ISSUE #9 fix: use in-memory wallets directly, avoid extra DB queries
-                safeNotify(savedTx, sourceWallet);
-                safeNotify(savedTx, targetWallet);
-                recordAuditLog(sourceWallet.getOwnerId(), "TRANSFER", "txId:" + savedTx.getId() + ",amount:" + amount.getAmount());
+                // Publish Transaction Event instead of direct notify and audit
+                TransactionEvent event = new TransactionEvent(
+                        savedTx.getId(),
+                        savedTx.getType().name(),
+                        savedTx.getStatus().name(),
+                        savedTx.getSourceWalletId(),
+                        savedTx.getTargetWalletId(),
+                        savedTx.getAmount().getAmount(),
+                        savedTx.getAmount().getCurrency()
+                );
+                if (transactionEventPublisherPort != null) {
+                    transactionEventPublisherPort.publishTransactionEvent(event);
+                } else {
+                    safeNotify(savedTx, sourceWallet);
+                    safeNotify(savedTx, targetWallet);
+                    recordAuditLog(sourceWallet.getOwnerId(), "TRANSFER", "txId:" + savedTx.getId() + ",amount:" + amount.getAmount());
+                }
+                
                 return savedTx;
             })
         );
@@ -372,13 +390,13 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         // Idempotency check
         if (requestId != null && !requestId.isBlank()) {
             Optional<Transaction> existingTx = transactionPersistencePort.findTransactionByRequestId(requestId);
-            if (existingTx.isPresent() && existingTx.get().getStatus() == TransactionStatus.SUCCESS) {
+            if (existingTx.isPresent()) {
                 return existingTx.get();
             }
         }
 
         String lockKey = "lock:wallet:" + walletId;
-        return distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () -> {
+        Transaction finalSavedTx = distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () -> {
             Wallet wallet = getWalletById(walletId);
 
             if (!wallet.getOwnerId().equals(userId)) {
@@ -414,38 +432,69 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 throw e;
             }
 
-            if (bankGatewayPort != null) {
-                try {
-                    bankGatewayPort.transferToBank(bankAccountId, amount, savedTx.getId());
-                } catch (Exception bankEx) {
-                    log.error("Bank transfer failed for txId={}, bankAccountId={}. Initiating auto-reverse.",
-                            savedTx.getId(), bankAccountId, bankEx);
-                    // Auto-reverse: credit the amount back to the user's wallet
+            if (transactionEventPublisherPort != null) {
+                transactionEventPublisherPort.publishTransactionEvent(new TransactionEvent(
+                        savedTx.getId(),
+                        savedTx.getType().name(),
+                        savedTx.getStatus().name(),
+                        savedTx.getSourceWalletId(),
+                        savedTx.getTargetWalletId(),
+                        savedTx.getAmount().getAmount(),
+                        savedTx.getAmount().getCurrency()
+                ));
+            } else {
+                safeNotify(savedTx, wallet);
+            }
+            return savedTx;
+        });
+        
+        // Execute bank transfer OUTSIDE the lock to prevent lock timeouts on slow bank APIs
+        if (bankGatewayPort != null) {
+            try {
+                bankGatewayPort.transferToBank(bankAccountId, amount, finalSavedTx.getId());
+            } catch (Exception bankEx) {
+                log.error("Bank transfer failed for txId={}, bankAccountId={}. Initiating auto-reverse.",
+                        finalSavedTx.getId(), bankAccountId, bankEx);
+                // Auto-reverse: must re-acquire lock to safely update balance
+                distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () -> {
+                    Wallet walletToReverse = getWalletById(walletId);
                     try {
-                        wallet.deposit(amount);
+                        walletToReverse.deposit(amount);
                         transactionalOperationPort.executeInTransaction(() -> {
-                            walletPersistencePort.saveWallet(wallet);
-                            savedTx.markReversed();
-                            transactionPersistencePort.saveTransaction(savedTx);
+                            walletPersistencePort.saveWallet(walletToReverse);
+                            finalSavedTx.markReversed();
+                            transactionPersistencePort.saveTransaction(finalSavedTx);
                             Transaction reversalTx = Transaction.createReversal(
-                                    savedTx.getId(), walletId, amount);
+                                    finalSavedTx.getId(), walletId, amount);
                             reversalTx.markSuccess();
                             return transactionPersistencePort.saveTransaction(reversalTx);
                         });
-                        log.info("Auto-reverse completed for txId={}", savedTx.getId());
-                        recordAuditLog(userId, "AUTO_REVERSE",
-                                "originalTxId:" + savedTx.getId() + ",reason:bank_transfer_failed");
+                        log.info("Auto-reverse completed for txId={}", finalSavedTx.getId());
+                        if (transactionEventPublisherPort != null) {
+                            transactionEventPublisherPort.publishTransactionEvent(new TransactionEvent(
+                                    finalSavedTx.getId(),
+                                    "REVERSED",
+                                    finalSavedTx.getStatus().name(),
+                                    finalSavedTx.getSourceWalletId(),
+                                    finalSavedTx.getTargetWalletId(),
+                                    finalSavedTx.getAmount().getAmount(),
+                                    finalSavedTx.getAmount().getCurrency()
+                            ));
+                        } else {
+                            recordAuditLog(userId, "AUTO_REVERSE",
+                                    "originalTxId:" + finalSavedTx.getId() + ",reason:bank_transfer_failed");
+                            safeNotify(finalSavedTx, walletToReverse);
+                        }
                     } catch (Exception reverseEx) {
                         log.error("CRITICAL: Auto-reverse failed for txId={}. Manual intervention required.",
-                                savedTx.getId(), reverseEx);
+                                finalSavedTx.getId(), reverseEx);
                     }
-                }
+                    return null;
+                });
             }
+        }
 
-            safeNotify(savedTx, wallet);
-            recordAuditLog(userId, "WITHDRAW", "txId:" + savedTx.getId() + ",amount:" + amount.getAmount());
-            return savedTx;
-        });
+        return finalSavedTx;
     }
 
     @Override
@@ -457,7 +506,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     }
 
     @Override
-    public Transaction initTransfer(String requestId, String sourceWalletId, String targetWalletId, Money amount) {
+    public Transaction initTransfer(String requestId, String sourceWalletId, String targetWalletId, Money amount, String note) {
         if (sourceWalletId == null || sourceWalletId.isBlank() || targetWalletId == null || targetWalletId.isBlank()) {
             throw new IllegalArgumentException("Source and target wallet IDs must not be empty");
         }
@@ -481,7 +530,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         Wallet sourceWallet = getWalletById(sourceWalletId);
         validateDailyTransactionLimit(sourceWallet.getOwnerId(), sourceWalletId, amount);
 
-        Transaction transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount);
+        Transaction transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, note);
         return transactionPersistencePort.saveTransaction(transaction);
     }
 
@@ -565,10 +614,21 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     }
                     throw e;
                 }
-                recordAuditLog(sourceWallet.getOwnerId(), "TRANSFER", tx.getId());
-
-                safeNotify(savedTx, sourceWallet);
-                safeNotify(savedTx, targetWallet);
+                if (transactionEventPublisherPort != null) {
+                    transactionEventPublisherPort.publishTransactionEvent(new TransactionEvent(
+                            savedTx.getId(),
+                            savedTx.getType().name(),
+                            savedTx.getStatus().name(),
+                            savedTx.getSourceWalletId(),
+                            savedTx.getTargetWalletId(),
+                            savedTx.getAmount().getAmount(),
+                            savedTx.getAmount().getCurrency()
+                    ));
+                } else {
+                    recordAuditLog(sourceWallet.getOwnerId(), "TRANSFER", tx.getId());
+                    safeNotify(savedTx, sourceWallet);
+                    safeNotify(savedTx, targetWallet);
+                }
                 return savedTx;
             })
         );

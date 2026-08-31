@@ -18,12 +18,13 @@ public class Transaction {
     private TransactionStatus status;
     private final Instant createdAt;
     private final String originalTransactionId;
+    private final String note;
 
     public Transaction(String id, String requestId, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt) {
-        this(id, requestId, sourceWalletId, targetWalletId, amount, type, status, createdAt, null);
+        this(id, requestId, sourceWalletId, targetWalletId, amount, type, status, createdAt, null, null);
     }
 
-    public Transaction(String id, String requestId, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt, String originalTransactionId) {
+    public Transaction(String id, String requestId, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt, String originalTransactionId, String note) {
         this.id = id != null ? id : UUID.randomUUID().toString();
         this.requestId = requestId;
         this.sourceWalletId = sourceWalletId;
@@ -33,13 +34,14 @@ public class Transaction {
         this.status = status != null ? status : TransactionStatus.PENDING;
         this.createdAt = createdAt != null ? createdAt : Instant.now();
         this.originalTransactionId = originalTransactionId;
+        this.note = note;
     }
 
     public Transaction(String id, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt) {
         this(id, null, sourceWalletId, targetWalletId, amount, type, status, createdAt);
     }
 
-    public static Transaction createTransfer(String requestId, String sourceWalletId, String targetWalletId, Money amount) {
+    public static Transaction createTransfer(String requestId, String sourceWalletId, String targetWalletId, Money amount, String note) {
         return new Transaction(
             UUID.randomUUID().toString(),
             requestId,
@@ -48,12 +50,18 @@ public class Transaction {
             amount,
             TransactionType.TRANSFER,
             TransactionStatus.PENDING_CONFIRMATION,
-            Instant.now()
+            Instant.now(),
+            null,
+            note
         );
     }
 
+    public static Transaction createTransfer(String requestId, String sourceWalletId, String targetWalletId, Money amount) {
+        return createTransfer(requestId, sourceWalletId, targetWalletId, amount, null);
+    }
+
     public static Transaction createTransfer(String sourceWalletId, String targetWalletId, Money amount) {
-        return createTransfer(null, sourceWalletId, targetWalletId, amount);
+        return createTransfer(null, sourceWalletId, targetWalletId, amount, null);
     }
 
     public static Transaction createDeposit(String requestId, String targetWalletId, Money amount) {
@@ -115,7 +123,8 @@ public class Transaction {
             TransactionType.REVERSAL,
             TransactionStatus.PENDING,
             Instant.now(),
-            originalTransactionId
+            originalTransactionId,
+            null
         );
     }
 
@@ -153,6 +162,10 @@ public class Transaction {
 
     public String getOriginalTransactionId() {
         return originalTransactionId;
+    }
+
+    public String getNote() {
+        return note;
     }
 
     @Override

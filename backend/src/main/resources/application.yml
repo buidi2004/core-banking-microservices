@@ -19,27 +19,33 @@ spring:
       port: 6379
       timeout: 2000ms
   datasource:
-    driverClassName: org.h2.Driver
-    password: null
-    url: jdbc:h2:mem:walletdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
+    driverClassName: org.postgresql.Driver
+    password: walletpassword
+    username: walletuser
+    url: jdbc:postgresql://localhost:5432/walletdb
+
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
         jdbc:
           time_zone: UTC
     show-sql: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:wallet}
+    password: ${RABBITMQ_PASS:wallet123}
+    publisher-confirm-type: correlated
+    template:
+      retry:
+        enabled: true
+        initial-interval: 1000ms
+        max-attempts: 3
+        multiplier: 2.0
   jackson:
     time-zone: UTC
 

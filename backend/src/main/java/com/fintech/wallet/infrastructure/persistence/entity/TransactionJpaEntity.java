@@ -42,6 +42,9 @@ public class TransactionJpaEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "note")
+    private String note;
+
     public String getId() {
         return id;
     }
@@ -105,9 +108,16 @@ public class TransactionJpaEntity {
         this.createdAt = createdAt;
     }
 
+    public String getNote() {
+        return note;
+    }
+    public void setNote(String note) {
+        this.note = note;
+    }
+
     public TransactionJpaEntity() {}
 
-    public TransactionJpaEntity(String id, String requestId, String sourceWalletId, String targetWalletId, BigDecimal amount, String currency, String type, String status, Instant createdAt) {
+    public TransactionJpaEntity(String id, String requestId, String sourceWalletId, String targetWalletId, BigDecimal amount, String currency, String type, String status, Instant createdAt, String note) {
         this.id = id;
         this.requestId = requestId;
         this.sourceWalletId = sourceWalletId;
@@ -117,5 +127,6 @@ public class TransactionJpaEntity {
         this.type = type;
         this.status = status;
         this.createdAt = createdAt;
+        this.note = note;
     }
 }

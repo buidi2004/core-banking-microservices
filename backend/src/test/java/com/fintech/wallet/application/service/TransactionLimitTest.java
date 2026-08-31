@@ -68,7 +68,8 @@ public class TransactionLimitTest {
                 userPersistencePort,
                 auditLogPersistencePort,
                 clientInfoPort,
-                ledgerUseCase
+                ledgerUseCase,
+                null
         );
 
         verifiedUser = new User("user-verified", "0900000001", "hash", "123456", KycStatus.VERIFIED, Instant.now(), Instant.now());

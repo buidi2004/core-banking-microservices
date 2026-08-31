@@ -50,7 +50,7 @@ public class MerchantService implements MerchantUseCase {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Merchant order not found: " + orderId));
 
-        Transaction tx = transferMoneyUseCase.transfer("TX_MERCHANT_" + orderId, walletId, "W_MERCHANT_" + order.getMerchantId(), Money.of(order.getAmount(), order.getCurrency()));
+        Transaction tx = transferMoneyUseCase.transfer("TX_MERCHANT_" + orderId, walletId, "W_MERCHANT_" + order.getMerchantId(), Money.of(order.getAmount(), order.getCurrency()), "Payment for order " + orderId);
         order.markPaid();
         log.info("Confirmed merchant payment orderId={}, txId={}", orderId, tx.getId());
         return tx;

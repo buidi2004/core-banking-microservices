@@ -26,10 +26,11 @@ public class SpringBeanConfig {
                                        UserPersistencePort userPersistencePort,
                                        AuditLogPersistencePort auditLogPersistencePort,
                                        com.fintech.wallet.domain.port.out.ClientInfoPort clientInfoPort,
-                                       LedgerUseCase ledgerUseCase) {
+                                       LedgerUseCase ledgerUseCase,
+                                       com.fintech.wallet.domain.port.out.TransactionEventPublisherPort transactionEventPublisherPort) {
         return new WalletService(walletPersistencePort, transactionPersistencePort,
                 distributedLockPort, notificationPort, transactionalOperationPort, bankGatewayPort,
-                userPersistencePort, auditLogPersistencePort, clientInfoPort, ledgerUseCase);
+                userPersistencePort, auditLogPersistencePort, clientInfoPort, ledgerUseCase, transactionEventPublisherPort);
     }
 }
 

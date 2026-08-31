@@ -1,6 +1,8 @@
 package com.fintech.wallet.application.service;
 
 import com.fintech.wallet.domain.port.in.PersonalQrUseCase;
+import com.fintech.wallet.domain.port.in.UserProfileUseCase;
+import com.fintech.wallet.domain.port.in.VietQrUseCase;
 import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +21,13 @@ import java.util.Map;
 public class PersonalQrService implements PersonalQrUseCase {
 
     private final UserPersistencePort userPersistencePort;
+    private final UserProfileUseCase userProfileUseCase;
+    private final VietQrUseCase vietQrUseCase;
 
-    public PersonalQrService(UserPersistencePort userPersistencePort) {
+    public PersonalQrService(UserPersistencePort userPersistencePort, UserProfileUseCase userProfileUseCase, VietQrUseCase vietQrUseCase) {
         this.userPersistencePort = userPersistencePort;
+        this.userProfileUseCase = userProfileUseCase;
+        this.vietQrUseCase = vietQrUseCase;
     }
 
     @Override
@@ -30,12 +36,14 @@ public class PersonalQrService implements PersonalQrUseCase {
         return userPersistencePort.findUserById(userId)
             .map(user -> {
                 String phone = user.getPhoneNumber();
-                // SenBank: phone number IS the account number
-                String name = "SENBANK USER";
-                String encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8);
-                return "senbank://transfer?phone=" + phone + "&name=" + encodedName + "&bank=SENBANK";
+                // Get real name from profile
+                String name = userProfileUseCase.getProfile(userId).getFullName();
+                if (name == null || name.isBlank()) {
+                    name = "SENBANK USER";
+                }
+                return vietQrUseCase.generateQr("SENBANK", phone, java.math.BigDecimal.ZERO, "Chuyen tien " + name).getQrCodeString();
             })
-            .orElse("senbank://transfer?phone=unknown&name=UNKNOWN&bank=SENBANK");
+            .orElseGet(() -> vietQrUseCase.generateQr("SENBANK", "unknown", java.math.BigDecimal.ZERO, "Chuyen tien").getQrCodeString());
     }
 
     @Override
@@ -50,7 +58,12 @@ public class PersonalQrService implements PersonalQrUseCase {
                 for (String param : params) {
                     String[] kv = param.split("=");
                     if (kv.length == 2) {
-                        result.put(kv[0], kv[1].replace("+", " "));
+                        String key = kv[0];
+                        String value = kv[1].replace("+", " ");
+                        result.put(key, value);
+                        if ("phone".equals(key)) {
+                            result.put("accountNumber", value);
+                        }
                     }
                 }
             } else {
@@ -61,8 +74,28 @@ public class PersonalQrService implements PersonalQrUseCase {
             result.put("type", "WALLET_TRANSFER");
             result.put("targetUserId", parts.length >= 4 ? parts[3] : "");
         } else if (qrString != null && qrString.startsWith("000201")) {
-            result.put("type", "VIETQR");
-            result.put("payload", qrString);
+            if (qrString.contains("0007SENBANK01")) {
+                result.put("type", "SENBANK_INTERNAL_TRANSFER");
+                result.put("bankCode", "SENBANK");
+                result.put("bankName", "SenBank (Nội bộ)");
+                
+                // Extract account number: "0007SENBANK01" + 2 digit length + account number
+                int idx = qrString.indexOf("0007SENBANK01");
+                if (idx != -1) {
+                    int lenStart = idx + 13;
+                    if (lenStart + 2 <= qrString.length()) {
+                        try {
+                            int accLen = Integer.parseInt(qrString.substring(lenStart, lenStart + 2));
+                            if (lenStart + 2 + accLen <= qrString.length()) {
+                                result.put("accountNumber", qrString.substring(lenStart + 2, lenStart + 2 + accLen));
+                            }
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+            } else {
+                result.put("type", "VIETQR");
+                result.put("payload", qrString);
+            }
         } else if (qrString != null && qrString.startsWith("MERCHANT:")) {
             result.put("type", "MERCHANT_PAYMENT");
             result.put("merchantOrderId", qrString.replace("MERCHANT:", ""));

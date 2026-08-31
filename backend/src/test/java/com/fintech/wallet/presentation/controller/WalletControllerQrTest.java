@@ -92,7 +92,7 @@ class WalletControllerQrTest {
             TransactionStatus.PENDING_CONFIRMATION, 
             Instant.now()
         );
-        when(transferMoneyUseCase.initTransfer(any(), eq("wallet-source"), eq("wallet-target"), any(Money.class))).thenReturn(mockTx);
+        when(transferMoneyUseCase.initTransfer(any(), eq("wallet-source"), eq("wallet-target"), any(Money.class), anyString())).thenReturn(mockTx);
         
         ResponseEntity<ApiResponse<TransferResponse>> response = walletController.initTransferQr(auth, request);
         
@@ -105,7 +105,7 @@ class WalletControllerQrTest {
         assertEquals("PENDING_CONFIRMATION", txResponse.getStatus());
         
         verify(otpService).generateAndStoreOtp("tx-123");
-        verify(transferMoneyUseCase).initTransfer(any(), eq("wallet-source"), eq("wallet-target"), eq(Money.of(new BigDecimal("50000"), "VND")));
+        verify(transferMoneyUseCase).initTransfer(any(), eq("wallet-source"), eq("wallet-target"), eq(Money.of(new BigDecimal("50000"), "VND")), anyString());
     }
 
     @Test
@@ -127,13 +127,13 @@ class WalletControllerQrTest {
             TransactionStatus.PENDING_CONFIRMATION, 
             Instant.now()
         );
-        when(transferMoneyUseCase.initTransfer(any(), eq("wallet-source"), eq("wallet-target"), any(Money.class))).thenReturn(mockTx);
+        when(transferMoneyUseCase.initTransfer(any(), eq("wallet-source"), eq("wallet-target"), any(Money.class), anyString())).thenReturn(mockTx);
         
         ResponseEntity<ApiResponse<TransferResponse>> response = walletController.initTransferQr(auth, request);
         
         assertEquals(200, response.getStatusCode().value());
         
-        verify(transferMoneyUseCase).initTransfer(any(), eq("wallet-source"), eq("wallet-target"), eq(Money.of(new BigDecimal("100000"), "VND")));
+        verify(transferMoneyUseCase).initTransfer(any(), eq("wallet-source"), eq("wallet-target"), eq(Money.of(new BigDecimal("100000"), "VND")), anyString());
     }
 
     @Test

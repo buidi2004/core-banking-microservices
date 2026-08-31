@@ -38,7 +38,7 @@ public class AuthController {
         String userAgent = httpRequest.getHeader("User-Agent");
         AuthTokens tokens = authUseCase.login(request.getPhoneNumber(), request.getPassword(), request.getDeviceId(), ipAddress, userAgent);
         
-        AuthResponse response = new AuthResponse(user.getId(), tokens.getAccessToken(), tokens.getRefreshToken());
+        AuthResponse response = new AuthResponse(user.getId(), user.getPhoneNumber(), tokens.getAccessToken(), tokens.getRefreshToken());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("User registered successfully", response));
     }
@@ -49,7 +49,7 @@ public class AuthController {
         String userAgent = httpRequest.getHeader("User-Agent");
         AuthTokens tokens = authUseCase.login(request.getPhoneNumber(), request.getPassword(), request.getDeviceId(), ipAddress, userAgent);
         
-        AuthResponse response = new AuthResponse(null, tokens.getAccessToken(), tokens.getRefreshToken());
+        AuthResponse response = new AuthResponse(tokens.getUserId(), request.getPhoneNumber(), tokens.getAccessToken(), tokens.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 
@@ -69,7 +69,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestParam String refreshToken, HttpServletRequest httpRequest) {
         String ipAddress = getClientIpAddress(httpRequest);
         AuthTokens tokens = authUseCase.refreshToken(refreshToken, ipAddress);
-        AuthResponse response = new AuthResponse(null, tokens.getAccessToken(), tokens.getRefreshToken());
+        AuthResponse response = new AuthResponse(tokens.getUserId(), null, tokens.getAccessToken(), tokens.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.success("Access token refreshed", response));
     }
 

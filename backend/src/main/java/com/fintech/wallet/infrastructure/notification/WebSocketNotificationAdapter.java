@@ -49,7 +49,8 @@ public class WebSocketNotificationAdapter implements NotificationPort {
                 transaction.getAmount().getCurrency(),
                 wallet.getBalance().getAmount(),
                 wallet.getBalance().getCurrency(),
-                transaction.getCreatedAt().toString()
+                transaction.getCreatedAt().toString(),
+                transaction.getNote()
         );
 
         try {
@@ -62,9 +63,41 @@ public class WebSocketNotificationAdapter implements NotificationPort {
         }
 
         try {
-            String title = "Biến động số dư: " + transaction.getType().name();
-            String body = "Giao dịch " + transaction.getAmount().getAmount() + " " + transaction.getAmount().getCurrency();
-            // TODO: JSON serialization for metadata could be added here
+            boolean isDeduct = false;
+            String operationType = "Giao dịch";
+            if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
+                if (wallet.getId().equals(transaction.getSourceWalletId())) {
+                    isDeduct = true;
+                    operationType = "Chuyển tiền";
+                } else if (wallet.getId().equals(transaction.getTargetWalletId())) {
+                    isDeduct = false;
+                    operationType = "Nhận tiền";
+                }
+            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.WITHDRAWAL) {
+                isDeduct = true;
+                operationType = "Rút tiền";
+            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.DEPOSIT) {
+                isDeduct = false;
+                operationType = "Nạp tiền";
+            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.REVERSAL) {
+                isDeduct = false;
+                operationType = "Hoàn tiền";
+            }
+
+            String sign = isDeduct ? "-" : "+";
+            java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+            String formattedAmount = formatter.format(transaction.getAmount().getAmount());
+            String formattedBalance = formatter.format(wallet.getBalance().getAmount());
+            String currency = transaction.getAmount().getCurrency();
+            
+            java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy").withZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+            String formattedTime = dtf.format(transaction.getCreatedAt());
+
+            String content = transaction.getNote() != null && !transaction.getNote().isBlank() ? transaction.getNote() : operationType + " thành công";
+            String title = "Biến động số dư: " + operationType;
+            String body = String.format("Tài khoản: %s\nPS: %s%s %s\nSố dư cuối: %s %s\nThời gian: %s\nNội dung: %s",
+                    wallet.getId(), sign, formattedAmount, currency, formattedBalance, currency, formattedTime, content);
+            
             String metadata = "{\"transactionId\":\"" + transaction.getId() + "\"}";
             
             com.fintech.wallet.domain.model.NotificationInfo notification = com.fintech.wallet.domain.model.NotificationInfo.createNew(

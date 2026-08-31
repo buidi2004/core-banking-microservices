@@ -54,7 +54,8 @@ public class PerTransactionLimitTest {
                 userPersistencePort,
                 auditLogPersistencePort,
                 clientInfoPort,
-                ledgerUseCase
+                ledgerUseCase,
+                null
         );
     }
 
