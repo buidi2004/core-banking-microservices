@@ -5,6 +5,7 @@ import com.fintech.wallet.domain.model.TransactionEvent;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.port.out.NotificationPort;
 import com.fintech.wallet.domain.port.out.TransactionPersistencePort;
+import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
 import com.fintech.wallet.infrastructure.config.RabbitMqConfig;
 import com.fintech.wallet.infrastructure.notification.MockFcmNotificationAdapter;
@@ -25,17 +26,20 @@ public class NotificationConsumer {
     private final NotificationPort notificationPort;
     private final TransactionPersistencePort transactionPersistencePort;
     private final WalletPersistencePort walletPersistencePort;
+    private final UserPersistencePort userPersistencePort;
     private final StringRedisTemplate redisTemplate;
     private final MockFcmNotificationAdapter fcmNotificationAdapter;
 
     public NotificationConsumer(NotificationPort notificationPort, 
                               TransactionPersistencePort transactionPersistencePort, 
                               WalletPersistencePort walletPersistencePort, 
+                              UserPersistencePort userPersistencePort,
                               StringRedisTemplate redisTemplate,
                               MockFcmNotificationAdapter fcmNotificationAdapter) {
         this.notificationPort = notificationPort;
         this.transactionPersistencePort = transactionPersistencePort;
         this.walletPersistencePort = walletPersistencePort;
+        this.userPersistencePort = userPersistencePort;
         this.redisTemplate = redisTemplate;
         this.fcmNotificationAdapter = fcmNotificationAdapter;
     }
@@ -85,11 +89,41 @@ public class NotificationConsumer {
     }
 
     private void sendFcmPushNotification(Transaction tx, Wallet wallet) {
-        String title = "Biến động số dư ví: " + tx.getType().name();
-        String body = String.format("Giao dịch %s thành công %s %s. Số dư mới: %s %s",
-                tx.getStatus(), tx.getAmount().getAmount(), tx.getAmount().getCurrency(),
-                wallet.getBalance().getAmount(), wallet.getBalance().getCurrency());
+        boolean isDeduct = tx.getType() == com.fintech.wallet.domain.model.TransactionType.WITHDRAWAL ||
+                (tx.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER && wallet.getId().equals(tx.getSourceWalletId()));
 
-        fcmNotificationAdapter.sendPushNotification(wallet.getOwnerId(), title, body);
+        String myPhone = userPersistencePort.findUserById(wallet.getOwnerId())
+                .map(com.fintech.wallet.domain.model.User::getPhoneNumber)
+                .orElse(wallet.getId());
+
+        String counterpartyPhone = null;
+        if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
+            String counterpartyWalletId = isDeduct ? tx.getTargetWalletId() : tx.getSourceWalletId();
+            if (counterpartyWalletId != null) {
+                counterpartyPhone = walletPersistencePort.findWalletById(counterpartyWalletId)
+                        .flatMap(w -> userPersistencePort.findUserById(w.getOwnerId()))
+                        .map(com.fintech.wallet.domain.model.User::getPhoneNumber)
+                        .orElse(counterpartyWalletId);
+            }
+        }
+
+        String title = "Biến động số dư ví: " + tx.getType().name();
+        StringBuilder bodyBuilder = new StringBuilder();
+        bodyBuilder.append(String.format("TK %s GD %s thành công %s %s. SD: %s %s",
+                myPhone, tx.getStatus(), tx.getAmount().getAmount(), tx.getAmount().getCurrency(),
+                wallet.getBalance().getAmount(), wallet.getBalance().getCurrency()));
+        
+        if (counterpartyPhone != null) {
+            if (isDeduct) {
+                bodyBuilder.append(" - Đến: ").append(counterpartyPhone);
+            } else {
+                bodyBuilder.append(" - Từ: ").append(counterpartyPhone);
+            }
+        }
+        if (tx.getNote() != null && !tx.getNote().isBlank()) {
+            bodyBuilder.append(" - ND: ").append(tx.getNote());
+        }
+
+        fcmNotificationAdapter.sendPushNotification(wallet.getOwnerId(), title, bodyBuilder.toString());
     }
 }

@@ -4,6 +4,8 @@ import com.fintech.wallet.domain.model.Transaction;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.port.out.NotificationPort;
 import com.fintech.wallet.domain.port.out.NotificationQueryPort;
+import com.fintech.wallet.domain.port.out.UserPersistencePort;
+import com.fintech.wallet.domain.port.out.WalletPersistencePort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -24,10 +26,17 @@ public class WebSocketNotificationAdapter implements NotificationPort {
     private static final Logger log = LoggerFactory.getLogger(WebSocketNotificationAdapter.class);
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationQueryPort notificationQueryPort;
+    private final UserPersistencePort userPersistencePort;
+    private final WalletPersistencePort walletPersistencePort;
 
-    public WebSocketNotificationAdapter(SimpMessagingTemplate messagingTemplate, NotificationQueryPort notificationQueryPort) {
+    public WebSocketNotificationAdapter(SimpMessagingTemplate messagingTemplate, 
+                                        NotificationQueryPort notificationQueryPort,
+                                        UserPersistencePort userPersistencePort,
+                                        WalletPersistencePort walletPersistencePort) {
         this.messagingTemplate = messagingTemplate;
         this.notificationQueryPort = notificationQueryPort;
+        this.userPersistencePort = userPersistencePort;
+        this.walletPersistencePort = walletPersistencePort;
     }
 
     @Override
@@ -93,10 +102,37 @@ public class WebSocketNotificationAdapter implements NotificationPort {
             java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy").withZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
             String formattedTime = dtf.format(transaction.getCreatedAt());
 
+            String myPhone = userPersistencePort.findUserById(wallet.getOwnerId())
+                    .map(com.fintech.wallet.domain.model.User::getPhoneNumber)
+                    .orElse(wallet.getId());
+
+            String counterpartyPhone = null;
+            if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
+                String counterpartyWalletId = isDeduct ? transaction.getTargetWalletId() : transaction.getSourceWalletId();
+                if (counterpartyWalletId != null) {
+                    counterpartyPhone = walletPersistencePort.findWalletById(counterpartyWalletId)
+                            .flatMap(w -> userPersistencePort.findUserById(w.getOwnerId()))
+                            .map(com.fintech.wallet.domain.model.User::getPhoneNumber)
+                            .orElse(counterpartyWalletId);
+                }
+            }
+
             String content = transaction.getNote() != null && !transaction.getNote().isBlank() ? transaction.getNote() : operationType + " thành công";
             String title = "Biến động số dư: " + operationType;
-            String body = String.format("Tài khoản: %s\nPS: %s%s %s\nSố dư cuối: %s %s\nThời gian: %s\nNội dung: %s",
-                    wallet.getId(), sign, formattedAmount, currency, formattedBalance, currency, formattedTime, content);
+            
+            StringBuilder bodyBuilder = new StringBuilder();
+            bodyBuilder.append(String.format("Tài khoản: %s\nPS: %s%s %s\nSố dư cuối: %s %s\nThời gian: %s",
+                    myPhone, sign, formattedAmount, currency, formattedBalance, currency, formattedTime));
+            
+            if (counterpartyPhone != null) {
+                if (isDeduct) {
+                    bodyBuilder.append("\nChuyển đến: ").append(counterpartyPhone);
+                } else {
+                    bodyBuilder.append("\nNhận từ: ").append(counterpartyPhone);
+                }
+            }
+            bodyBuilder.append("\nNội dung: ").append(content);
+            String body = bodyBuilder.toString();
             
             String metadata = "{\"transactionId\":\"" + transaction.getId() + "\"}";
             
