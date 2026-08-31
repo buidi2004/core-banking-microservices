@@ -5,5 +5,6 @@ public enum TransactionType {
     WITHDRAWAL,
     TRANSFER,
     REVERSAL,
-    BILL_PAYMENT
+    BILL_PAYMENT,
+    TOPUP
 }

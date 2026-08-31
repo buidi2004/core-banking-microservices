@@ -167,8 +167,10 @@ public class WalletController {
 
         Money money = Money.of(finalAmount, request.getCurrency());
         
-        // We use the account number from VietQR as the target wallet ID in this internal transfer context
-        String targetWalletId = payload.getAccountNumber();
+        // Resolve account number (phone) to target wallet ID
+        String phoneNumber = payload.getAccountNumber();
+        RecipientInfoResponse recipientInfo = getWalletUseCase.getRecipientInfo(null, phoneNumber);
+        String targetWalletId = recipientInfo.getWalletId();
         
         String note = payload.getPurpose() != null ? payload.getPurpose() : "VietQR Transfer";
         Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), targetWalletId, money, note);

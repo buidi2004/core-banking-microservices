@@ -72,8 +72,30 @@ public class VietQrService implements VietQrUseCase {
         BigDecimal amount = BigDecimal.ZERO;
         String purpose = "VietQR Payment";
 
-        if (qrCodeString.contains(NAPAS_GUID)) {
-            // Extracted values
+        if (qrCodeString.contains("0007SENBANK01")) {
+            bankBin = "SENBANK";
+            int idx = qrCodeString.indexOf("0007SENBANK01");
+            int lenStart = idx + 13;
+            if (lenStart + 2 <= qrCodeString.length()) {
+                try {
+                    int accLen = Integer.parseInt(qrCodeString.substring(lenStart, lenStart + 2));
+                    if (lenStart + 2 + accLen <= qrCodeString.length()) {
+                        accountNumber = qrCodeString.substring(lenStart + 2, lenStart + 2 + accLen);
+                    }
+                } catch (Exception ignored) {}
+            }
+        } else if (qrCodeString.contains("000697041501")) {
+            bankBin = "970415";
+            int idx = qrCodeString.indexOf("000697041501");
+            int lenStart = idx + 12;
+            if (lenStart + 2 <= qrCodeString.length()) {
+                try {
+                    int accLen = Integer.parseInt(qrCodeString.substring(lenStart, lenStart + 2));
+                    if (lenStart + 2 + accLen <= qrCodeString.length()) {
+                        accountNumber = qrCodeString.substring(lenStart + 2, lenStart + 2 + accLen);
+                    }
+                } catch (Exception ignored) {}
+            }
         }
 
         return new VietQrPayload(bankBin, accountNumber, amount, purpose, qrCodeString);

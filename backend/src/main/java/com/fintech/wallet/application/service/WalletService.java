@@ -73,6 +73,9 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     @Autowired(required = false)
     private KycPersistencePort kycPersistencePort;
 
+    @Autowired(required = false)
+    private com.fintech.wallet.domain.port.in.FeeEstimationUseCase feeEstimationUseCase;
+
     @Autowired
     public WalletService(WalletPersistencePort walletPersistencePort,
                          TransactionPersistencePort transactionPersistencePort,
@@ -332,23 +335,35 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
 
                 Transaction transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, note);
 
-                // Bug #1 fix: atomic transaction for all DB writes
-                // Bug #4 fix: notification outside business try-catch
+                Money totalDeduction = amount;
+                if (feeEstimationUseCase != null) {
+                    com.fintech.wallet.domain.model.FeeEstimate feeEstimate = feeEstimationUseCase.estimateFee(
+                            sourceWallet.getOwnerId(),
+                            com.fintech.wallet.domain.model.TransactionType.TRANSFER,
+                            amount);
+                    if (feeEstimate.getFeeAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                        Money fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
+                        totalDeduction = amount.add(fee);
+                        transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, note + " (Fee: " + feeEstimate.getFeeAmount() + " " + amount.getCurrency() + ")");
+                    }
+                }
+
+                final Transaction finalTransaction = transaction;
                 Transaction savedTx;
                 try {
-                    sourceWallet.withdraw(amount);
+                    sourceWallet.withdraw(totalDeduction);
                     targetWallet.deposit(amount);
 
                     savedTx = transactionalOperationPort.executeInTransaction(() -> {
                         walletPersistencePort.saveWallet(sourceWallet);
                         walletPersistencePort.saveWallet(targetWallet);
-                        transaction.markSuccess();
-                        return transactionPersistencePort.saveTransaction(transaction);
+                        finalTransaction.markSuccess();
+                        return transactionPersistencePort.saveTransaction(finalTransaction);
                     });
                 } catch (Exception e) {
-                    transaction.markFailed();
+                    finalTransaction.markFailed();
                     try {
-                        transactionPersistencePort.saveTransaction(transaction);
+                        transactionPersistencePort.saveTransaction(finalTransaction);
                     } catch (Exception saveEx) {
                         log.error("Failed to save FAILED transaction record for requestId={}", requestId, saveEx);
                     }
@@ -413,19 +428,35 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
 
             Transaction transaction = Transaction.createWithdrawal(requestId, walletId, amount);
 
+            Money totalDeduction = amount;
+            if (feeEstimationUseCase != null) {
+                com.fintech.wallet.domain.model.FeeEstimate feeEstimate = feeEstimationUseCase.estimateFee(
+                        wallet.getOwnerId(),
+                        com.fintech.wallet.domain.model.TransactionType.WITHDRAWAL,
+                        amount);
+                if (feeEstimate.getFeeAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    Money fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
+                    totalDeduction = amount.add(fee);
+                    transaction = Transaction.createWithdrawal(requestId, walletId, amount);
+                    // Add fee to note
+                    transaction = new Transaction(transaction.getId(), transaction.getRequestId(), transaction.getSourceWalletId(), transaction.getTargetWalletId(), transaction.getAmount(), transaction.getType(), transaction.getStatus(), transaction.getCreatedAt(), null, "Fee: " + feeEstimate.getFeeAmount() + " " + amount.getCurrency());
+                }
+            }
+
+            final Transaction finalTransaction = transaction;
             Transaction savedTx;
             try {
-                wallet.withdraw(amount);
+                wallet.withdraw(totalDeduction);
 
                 savedTx = transactionalOperationPort.executeInTransaction(() -> {
                     walletPersistencePort.saveWallet(wallet);
-                    transaction.markSuccess();
-                    return transactionPersistencePort.saveTransaction(transaction);
+                    finalTransaction.markSuccess();
+                    return transactionPersistencePort.saveTransaction(finalTransaction);
                 });
             } catch (Exception e) {
-                transaction.markFailed();
+                finalTransaction.markFailed();
                 try {
-                    transactionPersistencePort.saveTransaction(transaction);
+                    transactionPersistencePort.saveTransaction(finalTransaction);
                 } catch (Exception saveEx) {
                     log.error("Failed to save FAILED transaction record for requestId={}", requestId, saveEx);
                 }
@@ -495,6 +526,96 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         }
 
         return finalSavedTx;
+    }
+
+    public Transaction processPaymentInternal(String requestId, String userId, String walletId, com.fintech.wallet.domain.model.TransactionType type, Money amount) {
+        if (walletId == null || walletId.isBlank()) {
+            throw new IllegalArgumentException("Wallet ID cannot be null or empty");
+        }
+        if (amount == null) {
+            throw new com.fintech.wallet.domain.exception.InvalidMoneyException("Payment amount cannot be null");
+        }
+
+        if (requestId != null && !requestId.isBlank()) {
+            java.util.Optional<Transaction> existingTx = transactionPersistencePort.findTransactionByRequestId(requestId);
+            if (existingTx.isPresent()) {
+                return existingTx.get();
+            }
+        }
+
+        String lockKey = "lock:wallet:" + walletId;
+        return distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () -> {
+            Wallet wallet = getWalletById(walletId);
+
+            if (!wallet.getOwnerId().equals(userId)) {
+                throw new IllegalArgumentException("Unauthorized wallet access for user: " + userId);
+            }
+
+            validateDailyTransactionLimit(userId, walletId, amount);
+
+            if (!wallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
+                throw new com.fintech.wallet.domain.exception.InvalidMoneyException("Payment currency mismatch");
+            }
+
+            Money totalDeduction = amount;
+            Transaction transaction = new Transaction(
+                java.util.UUID.randomUUID().toString(),
+                requestId,
+                walletId,
+                null,
+                amount,
+                type,
+                com.fintech.wallet.domain.model.TransactionStatus.PENDING,
+                java.time.Instant.now()
+            );
+
+            if (feeEstimationUseCase != null) {
+                com.fintech.wallet.domain.model.FeeEstimate feeEstimate = feeEstimationUseCase.estimateFee(
+                        wallet.getOwnerId(),
+                        type,
+                        amount);
+                if (feeEstimate.getFeeAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    Money fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
+                    totalDeduction = amount.add(fee);
+                    transaction = new Transaction(transaction.getId(), transaction.getRequestId(), transaction.getSourceWalletId(), transaction.getTargetWalletId(), transaction.getAmount(), transaction.getType(), transaction.getStatus(), transaction.getCreatedAt(), null, "Fee: " + feeEstimate.getFeeAmount() + " " + amount.getCurrency());
+                }
+            }
+
+            final Transaction finalTransaction = transaction;
+            Transaction savedTx;
+            try {
+                wallet.withdraw(totalDeduction);
+
+                savedTx = transactionalOperationPort.executeInTransaction(() -> {
+                    walletPersistencePort.saveWallet(wallet);
+                    finalTransaction.markSuccess();
+                    return transactionPersistencePort.saveTransaction(finalTransaction);
+                });
+            } catch (Exception e) {
+                finalTransaction.markFailed();
+                try {
+                    transactionPersistencePort.saveTransaction(finalTransaction);
+                } catch (Exception saveEx) {
+                    log.error("Failed to save FAILED transaction record for requestId={}", requestId, saveEx);
+                }
+                throw e;
+            }
+
+            if (transactionEventPublisherPort != null) {
+                transactionEventPublisherPort.publishTransactionEvent(new com.fintech.wallet.domain.model.TransactionEvent(
+                        savedTx.getId(),
+                        savedTx.getType().name(),
+                        savedTx.getStatus().name(),
+                        savedTx.getSourceWalletId(),
+                        savedTx.getTargetWalletId(),
+                        savedTx.getAmount().getAmount(),
+                        savedTx.getAmount().getCurrency()
+                ));
+            } else {
+                safeNotify(savedTx, wallet);
+            }
+            return savedTx;
+        });
     }
 
     @Override

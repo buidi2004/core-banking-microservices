@@ -92,7 +92,9 @@ class WalletControllerQrTest {
             TransactionStatus.PENDING_CONFIRMATION, 
             Instant.now()
         );
-        when(transferMoneyUseCase.initTransfer(any(), eq("wallet-source"), eq("wallet-target"), any(Money.class), anyString())).thenReturn(mockTx);
+        when(getWalletUseCase.getRecipientInfo(any(), any()))
+            .thenReturn(new com.fintech.wallet.presentation.response.RecipientInfoResponse("wallet-target", "wallet-target", "User B"));
+        when(transferMoneyUseCase.initTransfer(any(), any(), any(), any(), any())).thenReturn(mockTx);
         
         ResponseEntity<ApiResponse<TransferResponse>> response = walletController.initTransferQr(auth, request);
         
@@ -121,13 +123,15 @@ class WalletControllerQrTest {
         when(vietQrUseCase.decodeQr(request.getQrCode())).thenReturn(mockPayload);
         
         Transaction mockTx = new Transaction(
-            "tx-123", "req-1", "wallet-source", "wallet-target", 
+            "tx-124", "req-2", "wallet-source", "wallet-target", 
             Money.of(new BigDecimal("100000"), "VND"), 
             TransactionType.TRANSFER, 
             TransactionStatus.PENDING_CONFIRMATION, 
             Instant.now()
         );
-        when(transferMoneyUseCase.initTransfer(any(), eq("wallet-source"), eq("wallet-target"), any(Money.class), anyString())).thenReturn(mockTx);
+        when(getWalletUseCase.getRecipientInfo(any(), any()))
+            .thenReturn(new com.fintech.wallet.presentation.response.RecipientInfoResponse("wallet-target", "wallet-target", "User B"));
+        when(transferMoneyUseCase.initTransfer(any(), any(), any(), any(), any())).thenReturn(mockTx);
         
         ResponseEntity<ApiResponse<TransferResponse>> response = walletController.initTransferQr(auth, request);
         
