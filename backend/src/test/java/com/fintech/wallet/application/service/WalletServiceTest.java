@@ -75,7 +75,7 @@ class WalletServiceTest {
     @Test
     void testTransferExceedsUnverifiedLimit_throwsException() {
         String userId = "user-123";
-        User user = new User(userId, "0987654321", "hash", "123456", KycStatus.UNVERIFIED, Instant.now(), Instant.now());
+        User user = new User(userId, "0987654321", "Test Name", "hash", "123456", KycStatus.UNVERIFIED, Instant.now(), Instant.now());
         when(userPersistencePort.findUserById(userId)).thenReturn(Optional.of(user));
 
         Wallet sourceWallet = new Wallet("wallet-1", userId, Money.of(new BigDecimal("10000000"), "VND"), Instant.now(), Instant.now(), 0L);
@@ -89,7 +89,7 @@ class WalletServiceTest {
         when(transactionPersistencePort.calculateDailySpentByWalletId(eq("wallet-1"), any())).thenReturn(new BigDecimal("4000000"));
 
         assertThrows(TransactionLimitExceededException.class, () -> {
-            walletService.transfer("req-1", "wallet-1", "wallet-2", Money.of(new BigDecimal("2000000"), "VND"));
+            walletService.transfer("req-1", "wallet-1", "wallet-2", "SENHONG", Money.of(new BigDecimal("2000000"), "VND"), "test");
         });
     }
 
@@ -144,7 +144,7 @@ class WalletServiceTest {
         when(transactionPersistencePort.calculateDailySpentByWalletId(any(), any())).thenReturn(BigDecimal.ZERO);
 
         assertThrows(InsufficientBalanceException.class, () -> {
-            walletService.transfer("req2", "w1", "w2", Money.of(new BigDecimal("6000"), "VND"));
+            walletService.transfer("req2", "w1", "w2", "SENHONG", Money.of(new BigDecimal("6000"), "VND"), "test");
         });
     }
 
@@ -154,7 +154,7 @@ class WalletServiceTest {
         when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
 
         assertThrows(IllegalArgumentException.class, () -> {
-            walletService.transfer("req3", "w1", "w1", Money.of(new BigDecimal("1000"), "VND"));
+            walletService.transfer("req3", "w1", "w1", "SENHONG", Money.of(new BigDecimal("1000"), "VND"), "test");
         });
     }
 
@@ -166,7 +166,37 @@ class WalletServiceTest {
         when(walletPersistencePort.findWalletById("w2")).thenReturn(Optional.of(targetWallet));
 
         assertThrows(com.fintech.wallet.domain.exception.InvalidMoneyException.class, () -> {
-            walletService.transfer("req4", "w1", "w2", Money.of(new BigDecimal("-100"), "VND"));
+            walletService.transfer("req4", "w1", "w2", "SENHONG", Money.of(new BigDecimal("-100"), "VND"), "test");
         });
+    }
+
+    @Test
+    void confirmTransfer_ExternalBank_ShouldDeductFee() {
+        // Mock transaction
+        com.fintech.wallet.domain.model.Transaction pendingTx = new com.fintech.wallet.domain.model.Transaction(
+                "tx-ext", "req-ext", "w1", "w2", Money.of(new BigDecimal("100000"), "VND"),
+                com.fintech.wallet.domain.model.TransactionType.TRANSFER,
+                com.fintech.wallet.domain.model.TransactionStatus.PENDING_CONFIRMATION,
+                Instant.now()
+        );
+        pendingTx.setBankCode("970415");
+        when(transactionPersistencePort.findTransactionById("tx-ext")).thenReturn(Optional.of(pendingTx));
+
+        // Mock wallet
+        Wallet wallet = new Wallet("w1", "u1", Money.of(new BigDecimal("200000"), "VND"), Instant.now(), Instant.now(), 0L);
+        when(walletPersistencePort.findWalletById("w1")).thenReturn(Optional.of(wallet));
+
+        // Mock saving
+        when(transactionPersistencePort.saveTransaction(any())).thenAnswer(i -> i.getArgument(0));
+
+        // Execute
+        com.fintech.wallet.domain.model.Transaction confirmedTx = walletService.confirmTransfer("tx-ext");
+
+        // Verify
+        assertEquals(com.fintech.wallet.domain.model.TransactionStatus.SUCCESS, confirmedTx.getStatus());
+        assertEquals(new BigDecimal("11000"), confirmedTx.getFeeAmount());
+        assertEquals(new BigDecimal("89000"), confirmedTx.getBalanceAfter());
+        verify(walletPersistencePort).saveWallet(any());
+        verify(transactionPersistencePort).saveTransaction(any());
     }
 }

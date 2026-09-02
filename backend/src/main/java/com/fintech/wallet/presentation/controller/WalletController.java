@@ -62,6 +62,7 @@ public class WalletController {
     private final UserService userService;
     private final VietQrUseCase vietQrUseCase;
     private final TransactionQueryUseCase transactionQueryUseCase;
+    private final com.fintech.wallet.domain.port.in.UserProfileUseCase userProfileUseCase;
 
     public WalletController(GetWalletUseCase getWalletUseCase,
                             DepositMoneyUseCase depositMoneyUseCase,
@@ -73,7 +74,8 @@ public class WalletController {
                             OtpService otpService,
                             UserService userService,
                             VietQrUseCase vietQrUseCase,
-                            TransactionQueryUseCase transactionQueryUseCase) {
+                            TransactionQueryUseCase transactionQueryUseCase,
+                            com.fintech.wallet.domain.port.in.UserProfileUseCase userProfileUseCase) {
         this.getWalletUseCase = getWalletUseCase;
         this.depositMoneyUseCase = depositMoneyUseCase;
         this.transferMoneyUseCase = transferMoneyUseCase;
@@ -85,6 +87,7 @@ public class WalletController {
         this.userService = userService;
         this.vietQrUseCase = vietQrUseCase;
         this.transactionQueryUseCase = transactionQueryUseCase;
+        this.userProfileUseCase = userProfileUseCase;
     }
 
     @PostMapping
@@ -111,8 +114,32 @@ public class WalletController {
     public ResponseEntity<ApiResponse<RecipientInfoResponse>> getRecipientInfo(
             @RequestParam(required = false) String walletId,
             @RequestParam(required = false) String phoneNumber) {
-        RecipientInfoResponse response = getWalletUseCase.getRecipientInfo(walletId, phoneNumber);
-        return ResponseEntity.ok(ApiResponse.success("Recipient information retrieved successfully", response));
+        try {
+            RecipientInfoResponse response = getWalletUseCase.getRecipientInfo(walletId, phoneNumber);
+            
+            // Try to override with UserProfile name
+            try {
+                String uId = null;
+                if (response.getWalletId() != null) {
+                    uId = getWalletUseCase.getWalletById(response.getWalletId()).getOwnerId();
+                }
+                
+                if (uId != null) {
+                    com.fintech.wallet.domain.model.UserProfile profile = userProfileUseCase.getProfile(uId);
+                    if (profile != null && profile.getFullName() != null && !profile.getFullName().startsWith("User ")) {
+                        response.setMaskedName(com.fintech.wallet.domain.util.NameMaskingUtils.maskName(profile.getFullName()));
+                    }
+                }
+            } catch (Exception ex) {
+                // Ignore profile fetch error, fallback to default response
+            }
+            return ResponseEntity.ok(ApiResponse.success("Recipient information retrieved successfully", response));
+        } catch (IllegalArgumentException ex) {
+            // Fix timeout/500 by returning a standard error response gracefully
+            return ResponseEntity.status(404).body(ApiResponse.error(ex.getMessage(), "USER_NOT_FOUND"));
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(ApiResponse.error("Internal server error", "INTERNAL_ERROR"));
+        }
     }
 
     @PostMapping("/deposit")
@@ -138,7 +165,7 @@ public class WalletController {
             throw new org.springframework.security.access.AccessDeniedException("Not authorized to transfer from this wallet");
         }
         Money money = Money.of(request.getAmount(), request.getCurrency());
-        Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), request.getTargetWalletId(), money, request.getNote());
+        Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), request.getTargetWalletId(), request.getBankCode(), money, request.getNote());
         
         // Generate OTP
         otpService.generateAndStoreOtp(transaction.getId());
@@ -173,7 +200,8 @@ public class WalletController {
         String targetWalletId = recipientInfo.getWalletId();
         
         String note = payload.getPurpose() != null ? payload.getPurpose() : "VietQR Transfer";
-        Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), targetWalletId, money, note);
+        String bankCode = "SENHONG"; // VietQR is internal for now unless parsed differently
+        Transaction transaction = transferMoneyUseCase.initTransfer(request.getRequestId(), request.getSourceWalletId(), targetWalletId, bankCode, money, note);
         
         // Generate OTP
         otpService.generateAndStoreOtp(transaction.getId());
@@ -201,6 +229,28 @@ public class WalletController {
         
         Transaction transaction = transferMoneyUseCase.confirmTransfer(transactionId);
         TransferResponse response = TransferResponse.fromDomain(transaction);
+        
+        com.fintech.wallet.domain.model.User sourceUser = userService.getUserById(userId);
+        response.setSenderName(getFullName(sourceUser));
+        response.setSenderAccount(sourceUser.getPhoneNumber());
+        
+        boolean isInternal = transaction.getBankCode() == null || "SENHONG".equalsIgnoreCase(transaction.getBankCode());
+        response.setIsInternal(isInternal);
+        
+        if (isInternal) {
+            Wallet targetWallet = getWalletUseCase.getWalletById(transaction.getTargetWalletId());
+            com.fintech.wallet.domain.model.User targetUser = userService.getUserById(targetWallet.getOwnerId());
+            response.setRecipientName(getFullName(targetUser));
+            response.setRecipientAccount(targetUser.getPhoneNumber());
+            response.setCounterpartyName(getFullName(targetUser));
+            response.setCounterpartyAccount(targetUser.getPhoneNumber());
+            response.setCounterpartyBankName("SenHong");
+        } else {
+            response.setRecipientName("External Recipient");
+            response.setCounterpartyName("External Recipient");
+            response.setCounterpartyBankName(transaction.getBankCode());
+        }
+        
         return ResponseEntity.ok(ApiResponse.success("Transfer successful", response));
     }
 
@@ -254,6 +304,19 @@ public class WalletController {
         Transaction reversalTx = transactionReversalUseCase.reverseTransaction(transactionId, reason);
         TransferResponse response = TransferResponse.fromDomain(reversalTx);
         return ResponseEntity.ok(ApiResponse.success("Transaction reversed successfully", response));
+    }
+
+    private String getFullName(com.fintech.wallet.domain.model.User user) {
+        if (user == null) return "Unknown";
+        com.fintech.wallet.domain.model.UserKyc kyc = userService.getKycStatus(user.getId());
+        if (kyc != null && kyc.getFullName() != null) {
+            return kyc.getFullName();
+        }
+        com.fintech.wallet.domain.model.UserProfile profile = userProfileUseCase.getProfile(user.getId());
+        if (profile != null && profile.getFullName() != null && !profile.getFullName().startsWith("User ")) {
+            return profile.getFullName();
+        }
+        return user.getPhoneNumber();
     }
 }
 

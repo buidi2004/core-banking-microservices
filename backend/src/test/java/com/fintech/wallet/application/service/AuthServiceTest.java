@@ -58,7 +58,7 @@ class AuthServiceTest {
         when(userPersistencePort.saveUser(any(User.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
-        User registered = authService.register(phone, password);
+        User registered = authService.register(phone, "Test Name", password);
 
         assertNotNull(registered);
         assertEquals(phone, registered.getPhoneNumber());
@@ -71,18 +71,18 @@ class AuthServiceTest {
     @Test
     void register_duplicatePhone_shouldThrow() {
         String phone = "0987654321";
-        User existing = new User("u1", phone, "hash", null, null, null, null);
+        User existing = new User("u1", phone, "Test Name", "hash", null, null, null, null);
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(existing));
 
         assertThrows(IllegalArgumentException.class,
-                () -> authService.register(phone, "password123"));
+                () -> authService.register(phone, "Test Name", "password123"));
     }
 
     @Test
     void register_shortPassword_shouldThrow() {
         when(userPersistencePort.findUserByPhoneNumber(any())).thenReturn(Optional.empty());
         assertThrows(IllegalArgumentException.class,
-                () -> authService.register("0987654321", "123"));
+                () -> authService.register("0987654321", "Test Name", "123"));
     }
 
     @Test
@@ -90,7 +90,7 @@ class AuthServiceTest {
         String phone    = "0987654321";
         String password = "password123";
         String encoded  = passwordEncoder.encode(password);
-        User user = new User("user_1", phone, encoded, null, null, null, null);
+        User user = new User("user_1", phone, "Test Name", encoded, null, null, null, null);
 
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
 
@@ -106,7 +106,7 @@ class AuthServiceTest {
     void login_wrongPassword_shouldThrow() {
         String phone   = "0987654321";
         String encoded = passwordEncoder.encode("correct");
-        User user = new User("u1", phone, encoded, null, null, null, null);
+        User user = new User("u1", phone, "Test Name", encoded, null, null, null, null);
 
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
 

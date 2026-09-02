@@ -26,6 +26,9 @@ public class TransferRequest {
 
     private String note;
 
+    @NotBlank(message = "Bank code is required")
+    private String bankCode;
+
     public String getRequestId() {
         return requestId;
     }
@@ -68,14 +71,22 @@ public class TransferRequest {
         this.note = note;
     }
 
+    public String getBankCode() {
+        return bankCode;
+    }
+    public void setBankCode(String bankCode) {
+        this.bankCode = bankCode;
+    }
+
     public TransferRequest() {}
 
-    public TransferRequest(String requestId, String sourceWalletId, String targetWalletId, BigDecimal amount, String currency, String note) {
+    public TransferRequest(String requestId, String sourceWalletId, String targetWalletId, BigDecimal amount, String currency, String note, String bankCode) {
         this.requestId = requestId;
         this.sourceWalletId = sourceWalletId;
         this.targetWalletId = targetWalletId;
         this.amount = amount;
         this.currency = currency;
         this.note = note;
+        this.bankCode = bankCode;
     }
 }

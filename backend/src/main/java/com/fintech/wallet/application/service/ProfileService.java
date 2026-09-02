@@ -26,9 +26,12 @@ public class ProfileService implements UserProfileUseCase {
         User user = userPersistencePort.findUserById(userId).orElse(null);
         KycStatus status = user != null ? user.getKycStatus() : KycStatus.UNVERIFIED;
         String phone = user != null ? user.getPhoneNumber() : "0900000000";
+        String fullName = (user != null && user.getFullName() != null && !user.getFullName().isBlank()) 
+                            ? user.getFullName() 
+                            : "User " + phone.substring(Math.max(0, phone.length() - 4));
 
         return profileCache.computeIfAbsent(userId, k ->
-                new UserProfile(userId, "User " + phone.substring(Math.max(0, phone.length() - 4)),
+                new UserProfile(userId, fullName,
                         "user" + userId.substring(0, 4) + "@fintech.com", "1995-01-01",
                         "https://api.dicebear.com/7.x/avataaars/svg?seed=" + userId, status, Instant.now())
         );

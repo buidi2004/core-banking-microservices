@@ -23,9 +23,67 @@ import java.util.stream.Collectors;
 public class TransactionQueryController {
 
     private final TransactionQueryUseCase transactionQueryUseCase;
+    private final com.fintech.wallet.application.service.UserService userService;
+    private final com.fintech.wallet.domain.port.in.GetWalletUseCase getWalletUseCase;
+    private final com.fintech.wallet.domain.port.in.UserProfileUseCase userProfileUseCase;
 
-    public TransactionQueryController(TransactionQueryUseCase transactionQueryUseCase) {
+    public TransactionQueryController(TransactionQueryUseCase transactionQueryUseCase,
+                                      com.fintech.wallet.application.service.UserService userService,
+                                      com.fintech.wallet.domain.port.in.GetWalletUseCase getWalletUseCase,
+                                      com.fintech.wallet.domain.port.in.UserProfileUseCase userProfileUseCase) {
         this.transactionQueryUseCase = transactionQueryUseCase;
+        this.userService = userService;
+        this.getWalletUseCase = getWalletUseCase;
+        this.userProfileUseCase = userProfileUseCase;
+    }
+
+    private TransferResponse enrichResponse(Transaction transaction, String queryWalletId) {
+        TransferResponse response = TransferResponse.fromDomain(transaction);
+        boolean isInternal = transaction.getBankCode() == null || "SENHONG".equalsIgnoreCase(transaction.getBankCode());
+        response.setIsInternal(isInternal);
+        
+        try {
+            com.fintech.wallet.domain.model.Wallet sourceWallet = getWalletUseCase.getWalletById(transaction.getSourceWalletId());
+            com.fintech.wallet.domain.model.User sourceUser = userService.getUserById(sourceWallet.getOwnerId());
+            response.setSenderName(getFullName(sourceUser));
+            response.setSenderAccount(sourceUser.getPhoneNumber());
+            
+            if (isInternal && transaction.getTargetWalletId() != null) {
+                com.fintech.wallet.domain.model.Wallet targetWallet = getWalletUseCase.getWalletById(transaction.getTargetWalletId());
+                com.fintech.wallet.domain.model.User targetUser = userService.getUserById(targetWallet.getOwnerId());
+                response.setRecipientName(getFullName(targetUser));
+                response.setRecipientAccount(targetUser.getPhoneNumber());
+                
+                if (queryWalletId != null && queryWalletId.equals(transaction.getSourceWalletId())) {
+                    response.setCounterpartyName(getFullName(targetUser));
+                    response.setCounterpartyAccount(targetUser.getPhoneNumber());
+                    response.setCounterpartyBankName("SenHong");
+                } else if (queryWalletId != null && queryWalletId.equals(transaction.getTargetWalletId())) {
+                    response.setCounterpartyName(getFullName(sourceUser));
+                    response.setCounterpartyAccount(sourceUser.getPhoneNumber());
+                    response.setCounterpartyBankName("SenHong");
+                    response.setBalance(null);
+                    response.setRunningBalance(null);
+                }
+            } else {
+                response.setRecipientName("External Recipient");
+                // For external, account number might be stored in a different way, but we don't have it natively in Transaction model yet, so leave blank or fallback
+                if (queryWalletId != null && queryWalletId.equals(transaction.getSourceWalletId())) {
+                    response.setCounterpartyName("External Recipient");
+                    response.setCounterpartyBankName(transaction.getBankCode());
+                } else if (queryWalletId != null && queryWalletId.equals(transaction.getTargetWalletId())) {
+                    response.setCounterpartyName(getFullName(sourceUser));
+                    response.setCounterpartyAccount(sourceUser.getPhoneNumber());
+                    response.setCounterpartyBankName("SenHong");
+                    response.setBalance(null);
+                    response.setRunningBalance(null);
+                }
+            }
+        } catch (Exception e) {
+            // Ignore if user/wallet not found to avoid failing the whole query
+        }
+        
+        return response;
     }
 
     @GetMapping
@@ -36,7 +94,7 @@ public class TransactionQueryController {
             @RequestParam(defaultValue = "20") int size) {
         List<Transaction> transactions = transactionQueryUseCase.getTransactionHistory(walletId, type, page, size);
         List<TransferResponse> response = transactions.stream()
-                .map(TransferResponse::fromDomain)
+                .map(tx -> enrichResponse(tx, walletId))
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Transaction history retrieved", response));
     }
@@ -44,7 +102,7 @@ public class TransactionQueryController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<TransferResponse>> getById(@PathVariable String id) {
         Transaction transaction = transactionQueryUseCase.getTransactionById(id);
-        TransferResponse response = TransferResponse.fromDomain(transaction);
+        TransferResponse response = enrichResponse(transaction, null);
         return ResponseEntity.ok(ApiResponse.success("Transaction retrieved", response));
     }
 
@@ -82,6 +140,22 @@ public class TransactionQueryController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=statement_" + walletId + ".xlsx")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelData);
+    }
+
+    private String getFullName(com.fintech.wallet.domain.model.User user) {
+        if (user == null) return "Unknown";
+        if (user.getFullName() != null && !user.getFullName().isBlank()) {
+            return user.getFullName();
+        }
+        com.fintech.wallet.domain.model.UserKyc kyc = userService.getKycStatus(user.getId());
+        if (kyc != null && kyc.getFullName() != null) {
+            return kyc.getFullName();
+        }
+        com.fintech.wallet.domain.model.UserProfile profile = userProfileUseCase.getProfile(user.getId());
+        if (profile != null && profile.getFullName() != null && !profile.getFullName().startsWith("User ")) {
+            return profile.getFullName();
+        }
+        return user.getPhoneNumber();
     }
 }
 

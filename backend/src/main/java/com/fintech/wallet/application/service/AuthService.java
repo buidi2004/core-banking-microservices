@@ -21,6 +21,9 @@ public class AuthService implements AuthUseCase {
 
     private final UserPersistencePort userPersistencePort;
     private final GetWalletUseCase getWalletUseCase;
+    
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.fintech.wallet.domain.port.in.DepositMoneyUseCase depositMoneyUseCase;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
     private final RedisRateLimiter rateLimiter;
@@ -63,7 +66,7 @@ public class AuthService implements AuthUseCase {
 
     @Override
     @Transactional
-    public User register(String phoneNumber, String password) {
+    public User register(String phoneNumber, String fullName, String password) {
         if (phoneNumber == null || phoneNumber.isBlank()) {
             throw new IllegalArgumentException("Phone number cannot be empty");
         }
@@ -81,11 +84,16 @@ public class AuthService implements AuthUseCase {
         });
 
         String passwordHash = passwordEncoder.encode(password);
-        User user = User.createNew(phoneNumber, passwordHash);
+        User user = User.createNew(phoneNumber, fullName, passwordHash);
         User savedUser = userPersistencePort.saveUser(user);
 
         // Auto-create default VND wallet for the user
-        getWalletUseCase.createWallet(savedUser.getId(), "VND");
+        com.fintech.wallet.domain.model.Wallet wallet = getWalletUseCase.createWallet(savedUser.getId(), "VND");
+        
+        // Auto-deposit 50,000,000 VND as a registration bonus
+        if (depositMoneyUseCase != null) {
+            depositMoneyUseCase.deposit(java.util.UUID.randomUUID().toString(), wallet.getId(), com.fintech.wallet.domain.model.Money.of(new java.math.BigDecimal("50000000"), "VND"));
+        }
 
         return savedUser;
     }

@@ -38,7 +38,7 @@ public class FundingSourceServiceTest {
 
     @BeforeEach
     void setUp() {
-        mockUser = User.createNew("0987654321", "hash");
+        mockUser = User.createNew("0987654321", "Nguyen Van A", "hash");
     }
 
     @Test

@@ -16,6 +16,9 @@ public class UserJpaEntity {
     @Column(nullable = false, unique = true)
     private String phoneNumber;
 
+    @Column(name = "full_name")
+    private String fullName;
+
     @Column(nullable = false)
     private String passwordHash;
 
@@ -32,9 +35,10 @@ public class UserJpaEntity {
 
     public UserJpaEntity() {}
 
-    public UserJpaEntity(String id, String phoneNumber, String passwordHash, String pinHash, String kycStatus, Instant createdAt, Instant updatedAt) {
+    public UserJpaEntity(String id, String phoneNumber, String fullName, String passwordHash, String pinHash, String kycStatus, Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.phoneNumber = phoneNumber;
+        this.fullName = fullName;
         this.passwordHash = passwordHash;
         this.pinHash = pinHash;
         this.kycStatus = kycStatus;
@@ -46,6 +50,8 @@ public class UserJpaEntity {
     public void setId(String id) { this.id = id; }
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getPinHash() { return pinHash; }

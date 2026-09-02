@@ -13,6 +13,7 @@ public class UserMapper {
         return new User(
                 entity.getId(),
                 entity.getPhoneNumber(),
+                entity.getFullName(),
                 entity.getPasswordHash(),
                 entity.getPinHash(),
                 KycStatus.valueOf(entity.getKycStatus()),
@@ -26,6 +27,7 @@ public class UserMapper {
         return new UserJpaEntity(
                 domain.getId(),
                 domain.getPhoneNumber(),
+                domain.getFullName(),
                 domain.getPasswordHash(),
                 domain.getPinHash(),
                 domain.getKycStatus().name(),

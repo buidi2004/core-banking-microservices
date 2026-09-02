@@ -19,20 +19,28 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
 import com.fintech.wallet.domain.model.AuthTokens;
+import com.fintech.wallet.domain.port.in.UserProfileUseCase;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthUseCase authUseCase;
+    private final UserProfileUseCase userProfileUseCase;
 
-    public AuthController(AuthUseCase authUseCase) {
+    public AuthController(AuthUseCase authUseCase, UserProfileUseCase userProfileUseCase) {
         this.authUseCase = authUseCase;
+        this.userProfileUseCase = userProfileUseCase;
     }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request, HttpServletRequest httpRequest) {
-        User user = authUseCase.register(request.getPhoneNumber(), request.getPassword());
+        User user = authUseCase.register(request.getPhoneNumber(), request.getFullName(), request.getPassword());
+        
+        // Save the full name provided during registration in the cache as well
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            userProfileUseCase.updateProfile(user.getId(), request.getFullName(), null, null);
+        }
         
         String ipAddress = getClientIpAddress(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");

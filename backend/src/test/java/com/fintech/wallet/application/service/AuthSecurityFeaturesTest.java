@@ -79,7 +79,7 @@ public class AuthSecurityFeaturesTest {
     void testLogin_FifthFailedAttempt_LocksAccount() {
         String phone = "0987654321";
         String encoded = passwordEncoder.encode("correct_pass");
-        User user = new User("u1", phone, encoded, null, null, null, null);
+        User user = new User("u1", phone, "Test Name", encoded, null, null, null, null);
 
         when(redisTemplate.hasKey("login:locked:" + phone)).thenReturn(false);
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
@@ -99,7 +99,7 @@ public class AuthSecurityFeaturesTest {
         String phone = "0987654321";
         String pass = "correct_pass";
         String encoded = passwordEncoder.encode(pass);
-        User user = new User("u1", phone, encoded, null, null, null, null);
+        User user = new User("u1", phone, "Test Name", encoded, null, null, null, null);
 
         when(redisTemplate.hasKey("login:locked:" + phone)).thenReturn(false);
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));

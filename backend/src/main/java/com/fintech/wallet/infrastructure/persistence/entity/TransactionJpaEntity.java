@@ -45,6 +45,15 @@ public class TransactionJpaEntity {
     @Column(name = "note")
     private String note;
 
+    @Column(name = "bank_code")
+    private String bankCode;
+
+    @Column(name = "fee_amount")
+    private BigDecimal feeAmount;
+
+    @Column(name = "balance_after")
+    private BigDecimal balanceAfter;
+
     public String getId() {
         return id;
     }
@@ -113,6 +122,27 @@ public class TransactionJpaEntity {
     }
     public void setNote(String note) {
         this.note = note;
+    }
+
+    public String getBankCode() {
+        return bankCode;
+    }
+    public void setBankCode(String bankCode) {
+        this.bankCode = bankCode;
+    }
+
+    public BigDecimal getFeeAmount() {
+        return feeAmount;
+    }
+    public void setFeeAmount(BigDecimal feeAmount) {
+        this.feeAmount = feeAmount;
+    }
+
+    public BigDecimal getBalanceAfter() {
+        return balanceAfter;
+    }
+    public void setBalanceAfter(BigDecimal balanceAfter) {
+        this.balanceAfter = balanceAfter;
     }
 
     public TransactionJpaEntity() {}

@@ -4,6 +4,7 @@ public class RecipientInfoResponse {
     private String walletId;
     private String phoneNumber;
     private String maskedName;
+    private String fullName;
 
     public RecipientInfoResponse() {}
 
@@ -11,6 +12,14 @@ public class RecipientInfoResponse {
         this.walletId = walletId;
         this.phoneNumber = phoneNumber;
         this.maskedName = maskedName;
+        this.fullName = maskedName; // Default for backward compatibility
+    }
+
+    public RecipientInfoResponse(String walletId, String phoneNumber, String maskedName, String fullName) {
+        this.walletId = walletId;
+        this.phoneNumber = phoneNumber;
+        this.maskedName = maskedName;
+        this.fullName = fullName;
     }
 
     public String getWalletId() {
@@ -35,5 +44,13 @@ public class RecipientInfoResponse {
 
     public void setMaskedName(String maskedName) {
         this.maskedName = maskedName;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 }

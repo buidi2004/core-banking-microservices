@@ -192,11 +192,13 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             throw new IllegalArgumentException("Either walletId or phoneNumber must be provided");
         }
 
-        String rawName = null;
-        if (kycPersistencePort != null) {
-            var kycOpt = kycPersistencePort.findKycByUserId(user.getId());
-            if (kycOpt.isPresent() && kycOpt.get().getFullName() != null && !kycOpt.get().getFullName().isBlank()) {
-                rawName = kycOpt.get().getFullName();
+        String rawName = user.getFullName();
+        if (rawName == null || rawName.isBlank()) {
+            if (kycPersistencePort != null) {
+                var kycOpt = kycPersistencePort.findKycByUserId(user.getId());
+                if (kycOpt.isPresent() && kycOpt.get().getFullName() != null && !kycOpt.get().getFullName().isBlank()) {
+                    rawName = kycOpt.get().getFullName();
+                }
             }
         }
         if (rawName == null || rawName.isBlank()) {
@@ -204,8 +206,9 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             rawName = "NGƯỜI DÙNG " + (phone.length() > 4 ? phone.substring(phone.length() - 4) : phone);
         }
 
+        // We still mask it for maskedName but also pass the full rawName back for the frontend
         String maskedName = NameMaskingUtils.maskName(rawName);
-        return new RecipientInfoResponse(wallet.getId(), user.getPhoneNumber(), maskedName);
+        return new RecipientInfoResponse(wallet.getId(), user.getPhoneNumber(), maskedName, rawName);
     }
 
     @Override
@@ -275,12 +278,12 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     }
 
     @Override
-    public Transaction transfer(String requestId, String sourceWalletId, String targetWalletId, Money amount, String note) {
+    public Transaction transfer(String requestId, String sourceWalletId, String targetWalletId, String bankCode, Money amount, String note) {
         if (sourceWalletId == null || sourceWalletId.isBlank() || targetWalletId == null || targetWalletId.isBlank()) {
             throw new IllegalArgumentException("Source and target wallet IDs must not be empty");
         }
         if (sourceWalletId.equals(targetWalletId)) {
-            throw new IllegalArgumentException("Cannot transfer money to the same wallet");
+            throw new IllegalArgumentException("Không thể chuyển tiền vào chính tài khoản của bạn. Vui lòng nhập số tài khoản người nhận khác.");
         }
         if (amount == null) {
             throw new InvalidMoneyException("Transfer amount cannot be null");
@@ -334,6 +337,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 }
 
                 Transaction transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, note);
+                transaction.setBankCode(bankCode);
 
                 Money totalDeduction = amount;
                 if (feeEstimationUseCase != null) {
@@ -345,6 +349,8 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                         Money fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
                         totalDeduction = amount.add(fee);
                         transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, note + " (Fee: " + feeEstimate.getFeeAmount() + " " + amount.getCurrency() + ")");
+                        transaction.setBankCode(bankCode);
+                        transaction.setFeeAmount(fee);
                     }
                 }
 
@@ -440,6 +446,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     transaction = Transaction.createWithdrawal(requestId, walletId, amount);
                     // Add fee to note
                     transaction = new Transaction(transaction.getId(), transaction.getRequestId(), transaction.getSourceWalletId(), transaction.getTargetWalletId(), transaction.getAmount(), transaction.getType(), transaction.getStatus(), transaction.getCreatedAt(), null, "Fee: " + feeEstimate.getFeeAmount() + " " + amount.getCurrency());
+                    transaction.setFeeAmount(fee);
                 }
             }
 
@@ -578,6 +585,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     Money fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
                     totalDeduction = amount.add(fee);
                     transaction = new Transaction(transaction.getId(), transaction.getRequestId(), transaction.getSourceWalletId(), transaction.getTargetWalletId(), transaction.getAmount(), transaction.getType(), transaction.getStatus(), transaction.getCreatedAt(), null, "Fee: " + feeEstimate.getFeeAmount() + " " + amount.getCurrency());
+                    transaction.setFeeAmount(fee);
                 }
             }
 
@@ -627,12 +635,12 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     }
 
     @Override
-    public Transaction initTransfer(String requestId, String sourceWalletId, String targetWalletId, Money amount, String note) {
+    public Transaction initTransfer(String requestId, String sourceWalletId, String targetWalletId, String bankCode, Money amount, String note) {
         if (sourceWalletId == null || sourceWalletId.isBlank() || targetWalletId == null || targetWalletId.isBlank()) {
             throw new IllegalArgumentException("Source and target wallet IDs must not be empty");
         }
         if (sourceWalletId.equals(targetWalletId)) {
-            throw new IllegalArgumentException("Cannot transfer money to the same wallet");
+            throw new IllegalArgumentException("Không thể chuyển tiền vào chính tài khoản của bạn. Vui lòng nhập số tài khoản người nhận khác.");
         }
         if (amount == null) {
             throw new InvalidMoneyException("Transfer amount cannot be null");
@@ -652,6 +660,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         validateDailyTransactionLimit(sourceWallet.getOwnerId(), sourceWalletId, amount);
 
         Transaction transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, note);
+        transaction.setBankCode(bankCode);
         return transactionPersistencePort.saveTransaction(transaction);
     }
 
@@ -710,19 +719,54 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 if (!sourceWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
                     throw new InvalidMoneyException("Currency mismatch");
                 }
-                if (!targetWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
+                boolean isInternalForCheck = tx.getBankCode() == null || "SENHONG".equalsIgnoreCase(tx.getBankCode());
+                if (isInternalForCheck && !targetWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
                     throw new InvalidMoneyException("Currency mismatch");
                 }
+
+                boolean isInternal = tx.getBankCode() == null || "SENHONG".equalsIgnoreCase(tx.getBankCode());
+                
+                Money totalDeduction = amount;
+                Money fee = Money.of(java.math.BigDecimal.ZERO, amount.getCurrency());
+                if (feeEstimationUseCase != null) {
+                    com.fintech.wallet.domain.model.FeeEstimate feeEstimate = feeEstimationUseCase.estimateFee(
+                            sourceWallet.getOwnerId(),
+                            com.fintech.wallet.domain.model.TransactionType.TRANSFER,
+                            amount);
+                    if (feeEstimate.getFeeAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                        fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
+                        totalDeduction = amount.add(fee);
+                    }
+                }
+                
+                if (!isInternal) {
+                    // Mock NAPAS external transfer fee
+                    if (fee.getAmount().compareTo(java.math.BigDecimal.ZERO) == 0) {
+                        fee = Money.of(new java.math.BigDecimal("2000.00"), amount.getCurrency());
+                        totalDeduction = amount.add(fee);
+                    }
+                }
+
+                tx.setFeeAmount(fee);
 
                 // BUG-1 fix: wrap all DB writes in a single transaction for atomicity
                 Transaction savedTx;
                 try {
-                    sourceWallet.withdraw(amount);
-                    targetWallet.deposit(amount);
+                    sourceWallet.withdraw(totalDeduction);
+                    tx.setBalanceAfter(sourceWallet.getBalance());
+                    
+                    if (isInternal) {
+                        targetWallet.deposit(amount);
+                    } else {
+                        // Mock NAPAS integration
+                        log.info("Mocking external NAPAS transfer for tx {} to bank {}", tx.getId(), tx.getBankCode());
+                    }
 
                     savedTx = transactionalOperationPort.executeInTransaction(() -> {
                         walletPersistencePort.saveWallet(sourceWallet);
-                        walletPersistencePort.saveWallet(targetWallet);
+                        if (isInternal) {
+                            walletPersistencePort.saveWallet(targetWallet);
+                        }
                         tx.markSuccess();
                         return transactionPersistencePort.saveTransaction(tx);
                     });

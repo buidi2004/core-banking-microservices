@@ -1,20 +1,25 @@
 package com.fintech.wallet.application.service;
 
 import com.fintech.wallet.domain.model.BankAccount;
+import com.fintech.wallet.domain.model.Bank;
 import com.fintech.wallet.domain.port.in.BankLinkingUseCase;
+import com.fintech.wallet.domain.port.in.GetBankListUseCase;
 import com.fintech.wallet.domain.port.out.BankAccountPersistencePort;
+import com.fintech.wallet.domain.port.out.BankPersistencePort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
-public class BankService implements BankLinkingUseCase {
+public class BankService implements BankLinkingUseCase, GetBankListUseCase {
 
     private final BankAccountPersistencePort bankAccountPersistencePort;
+    private final BankPersistencePort bankPersistencePort;
 
-    public BankService(BankAccountPersistencePort bankAccountPersistencePort) {
+    public BankService(BankAccountPersistencePort bankAccountPersistencePort, BankPersistencePort bankPersistencePort) {
         this.bankAccountPersistencePort = bankAccountPersistencePort;
+        this.bankPersistencePort = bankPersistencePort;
     }
 
     @Override
@@ -45,5 +50,10 @@ public class BankService implements BankLinkingUseCase {
             throw new IllegalArgumentException("Unauthorized to unlink bank account");
         }
         bankAccountPersistencePort.deleteBankAccount(bankAccountId);
+    }
+
+    @Override
+    public List<Bank> getBanks() {
+        return bankPersistencePort.findAllBanks();
     }
 }

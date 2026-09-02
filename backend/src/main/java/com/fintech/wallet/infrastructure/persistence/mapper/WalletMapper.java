@@ -41,7 +41,7 @@ public class WalletMapper {
     public Transaction toDomain(TransactionJpaEntity entity) {
         if (entity == null) return null;
         Money amount = Money.of(entity.getAmount(), entity.getCurrency());
-        return new Transaction(
+        Transaction tx = new Transaction(
                 entity.getId(),
                 entity.getRequestId(),
                 entity.getSourceWalletId(),
@@ -53,11 +53,19 @@ public class WalletMapper {
                 null,
                 entity.getNote()
         );
+        tx.setBankCode(entity.getBankCode());
+        if (entity.getFeeAmount() != null) {
+            tx.setFeeAmount(Money.of(entity.getFeeAmount(), entity.getCurrency()));
+        }
+        if (entity.getBalanceAfter() != null) {
+            tx.setBalanceAfter(Money.of(entity.getBalanceAfter(), entity.getCurrency()));
+        }
+        return tx;
     }
 
     public TransactionJpaEntity toJpaEntity(Transaction domain) {
         if (domain == null) return null;
-        return new TransactionJpaEntity(
+        TransactionJpaEntity jpaEntity = new TransactionJpaEntity(
                 domain.getId(),
                 domain.getRequestId(),
                 domain.getSourceWalletId(),
@@ -69,5 +77,13 @@ public class WalletMapper {
                 domain.getCreatedAt(),
                 domain.getNote()
         );
+        jpaEntity.setBankCode(domain.getBankCode());
+        if (domain.getFeeAmount() != null) {
+            jpaEntity.setFeeAmount(domain.getFeeAmount().getAmount());
+        }
+        if (domain.getBalanceAfter() != null) {
+            jpaEntity.setBalanceAfter(domain.getBalanceAfter().getAmount());
+        }
+        return jpaEntity;
     }
 }

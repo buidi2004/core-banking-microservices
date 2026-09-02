@@ -101,9 +101,12 @@ public class MoneyRequestService implements MoneyRequestUseCase {
 
         // Execute the transfer from payer to requester
         Transaction transaction = transferMoneyUseCase.transfer(
+            "TX_MONEYREQ_" + request.getId(),
             request.getPayerWalletId(),
             request.getRequesterWalletId(),
-            request.getAmount()
+            "SENHONG",
+            request.getAmount(),
+            request.getMessage() != null ? request.getMessage() : "Money request payment"
         );
 
         // Update request status

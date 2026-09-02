@@ -19,6 +19,9 @@ public class Transaction {
     private final Instant createdAt;
     private final String originalTransactionId;
     private final String note;
+    private String bankCode;
+    private Money feeAmount;
+    private Money balanceAfter;
 
     public Transaction(String id, String requestId, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt) {
         this(id, requestId, sourceWalletId, targetWalletId, amount, type, status, createdAt, null, null);
@@ -166,6 +169,30 @@ public class Transaction {
 
     public String getNote() {
         return note;
+    }
+
+    public String getBankCode() {
+        return bankCode;
+    }
+
+    public void setBankCode(String bankCode) {
+        this.bankCode = bankCode;
+    }
+
+    public Money getFeeAmount() {
+        return feeAmount;
+    }
+
+    public void setFeeAmount(Money feeAmount) {
+        this.feeAmount = feeAmount;
+    }
+
+    public Money getBalanceAfter() {
+        return balanceAfter;
+    }
+
+    public void setBalanceAfter(Money balanceAfter) {
+        this.balanceAfter = balanceAfter;
     }
 
     @Override

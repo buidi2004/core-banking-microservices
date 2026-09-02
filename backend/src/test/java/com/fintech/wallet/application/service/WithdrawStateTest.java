@@ -44,7 +44,7 @@ class WithdrawStateTest {
         LedgerUseCase ledgerUseCase = mock(LedgerUseCase.class);
         userPersistencePort = mock(UserPersistencePort.class);
         
-        User mockUser = new User("user-1", "user", "hash", null, com.fintech.wallet.domain.model.KycStatus.VERIFIED, java.time.Instant.now(), java.time.Instant.now());
+        User mockUser = new User("user-1", "user", "Test Name", "hash", null, com.fintech.wallet.domain.model.KycStatus.VERIFIED, java.time.Instant.now(), java.time.Instant.now());
         when(userPersistencePort.findUserById(anyString())).thenReturn(Optional.of(mockUser));
         when(transactionPersistencePort.calculateDailySpentByWalletId(anyString(), any())).thenReturn(java.math.BigDecimal.ZERO);
         when(transactionPersistencePort.calculateMonthlySpentByWalletId(anyString(), any())).thenReturn(java.math.BigDecimal.ZERO);

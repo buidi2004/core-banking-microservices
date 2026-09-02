@@ -75,7 +75,7 @@ public class RecipientInfoTest {
         String phone = "0987654321";
 
         Wallet wallet = new Wallet(walletId, userId, Money.of(BigDecimal.ZERO, "VND"), Instant.now(), Instant.now(), 0L);
-        User user = new User(userId, phone, "hash", "123456", KycStatus.VERIFIED, Instant.now(), Instant.now());
+        User user = new User(userId, phone, "Test Name", "hash", "123456", KycStatus.VERIFIED, Instant.now(), Instant.now());
         UserKyc kyc = new UserKyc("kyc-1", userId, "123456789", "Nguyen Van An", "2000-01-01", "f", "b", "s", KycStatus.VERIFIED, Instant.now(), Instant.now());
 
         when(walletPersistencePort.findWalletById(walletId)).thenReturn(Optional.of(wallet));
@@ -97,7 +97,7 @@ public class RecipientInfoTest {
         String phone = "0912345678";
 
         Wallet wallet = new Wallet(walletId, userId, Money.of(BigDecimal.ZERO, "VND"), Instant.now(), Instant.now(), 0L);
-        User user = new User(userId, phone, "hash", "123456", KycStatus.UNVERIFIED, Instant.now(), Instant.now());
+        User user = new User(userId, phone, "Test Name", "hash", "123456", KycStatus.UNVERIFIED, Instant.now(), Instant.now());
 
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
         when(walletPersistencePort.findWalletByOwnerId(userId)).thenReturn(Optional.of(wallet));

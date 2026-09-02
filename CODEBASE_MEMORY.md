@@ -47,9 +47,9 @@ Hệ thống Ví điện tử (E-Wallet) được xây dựng theo tiêu chuẩn
 
 ---
 
-## 2. CHI TIẾT 18 BÀI TOÁN KỸ THUẬT FINTECH NÂNG CAO (TASKS 1 — 18)
+## 2. CHI TIẾT CÁC BÀI TOÁN KỸ THUẬT FINTECH NÂNG CAO
 
-Dưới đây là đặc tả kỹ thuật chi tiết của 18 bài toán lõi đã triển khai và kiểm thử thành công:
+Dưới đây là đặc tả kỹ thuật chi tiết của các bài toán lõi đã triển khai và kiểm thử thành công:
 
 ### Task 1: Idempotency-Key + Khóa Số Dư + Ghi Sổ Kép (Ledger)
 - **Mục tiêu:** Chống trừ tiền trùng lặp khi mạng chập chờn, loại bỏ Race Condition và tuân thủ chuẩn kế toán tài chính.
@@ -186,6 +186,35 @@ Dưới đây là đặc tả kỹ thuật chi tiết của 18 bài toán lõi �
   - **Masking Number:** Tự động che số thẻ trước khi lưu vào PostgreSQL (VD: `4970 **** **** 9012` hoặc `10****78`).
   - Hỗ trợ mô phỏng luồng (Mock Flow) liên kết nguồn tiền ngoài.
 
+### Task 23: Xử Lý Ngoại Lệ Hết Hạn Token & Tối Ưu Phiên Đăng Nhập (5 Phút)
+- **Mục tiêu:** Nâng cao bảo mật bằng cách rút ngắn thời gian sống của Access Token xuống 5 phút và xử lý mượt mà khi token hết hạn.
+- **Triển khai:**
+  - `JwtTokenProvider` giới hạn thời gian sống (TTL) của JWT xuống chính xác 5 phút.
+  - Xử lý triệt để lỗi 500 (`ExpiredJwtException`) trong `JwtAuthenticationFilter` để chuyển thành phản hồi 401 Unauthorized có cấu trúc, giúp Frontend tự động kích hoạt luồng gọi Refresh Token (Silent Refresh).
+
+### Task 24: Vá Lỗ Hổng Fee Evasion (Trốn Phí) Trong Core Tài Chính
+- **Mục tiêu:** Chống thất thoát doanh thu từ việc các giao dịch né được luồng tính phí.
+- **Triển khai:**
+  - Loại bỏ tính toán phí thủ công ở `WalletController`.
+  - Tiêm (Inject) trực tiếp `FeeEstimationUseCase` vào `WalletService`. Mọi thao tác `transfer`, `withdraw`, và `processPaymentInternal` đều tự động cộng thêm phí giao dịch (`amount + fee`) trước khi check số dư và khoá (Pessimistic Lock).
+
+### Task 25: Chống Thất Thoát Tiền Tự Động (Auto-Reversal) Khi Lỗi Provider
+- **Mục tiêu:** Không để người dùng bị mất tiền oan khi nạp tiền điện thoại (Topup) hoặc thanh toán hóa đơn (Bill) nhưng nhà cung cấp dịch vụ mạng (Viettel, EVN) bị lỗi.
+- **Triển khai:**
+  - Bổ sung loại giao dịch `TOPUP` vào `TransactionType`.
+  - `PaymentService` áp dụng mẫu Try-Catch bọc lệnh gọi `PaymentProviderPort`. Nếu Provider ném lỗi hoặc timeout, hệ thống tự động gọi `TransactionReversalUseCase` để lập tức hoàn tiền về ví cho khách hàng.
+
+### Task 26: Giải Mã QR Động (Decode QR) Theo Chuẩn VietQR
+- **Mục tiêu:** Hỗ trợ tính năng Quét mã QR, tự động trích xuất số tiền, nội dung và người nhận từ QR tĩnh/động.
+- **Triển khai:**
+  - `VietQrService` cung cấp phương thức giải mã chuỗi EMVCo, mapping các Tag 00, 01, 38, 53, 54 để lấy thông tin. Tích hợp vào `VietQrController` để phục vụ Frontend.
+
+### Task 27: Cá Nhân Hóa Thông Báo Biến Động Số Dư (Định Danh Qua SDT)
+- **Mục tiêu:** Thay thế chuỗi UUID vô nghĩa bằng Số Điện Thoại của khách hàng trong các tin nhắn Push Notification và WebSocket.
+- **Triển khai:**
+  - Tiêm `UserPersistencePort` vào `WebSocketNotificationAdapter` và `NotificationConsumer`.
+  - Hệ thống tự động tra cứu User ID của chủ ví và ví đối phương, chuyển đổi thành số điện thoại (VD: `Tài khoản: 098xxxx, Chuyển đến: 090xxxx`) hiển thị trong thông báo.
+
 ---
 
 ## 3. CƠ SỞ DỮ LIỆU & SCHEMA (POSTGRESQL + FLYWAY)
@@ -262,8 +291,8 @@ Database Schema được quản lý tập trung qua Flyway Script `V1__init_sche
 
 ## 6. BÁO CÁO KIỂM THỬ & CHỈ SỐ CHẤT LƯỢNG (TEST METRICS)
 
-- **Tổng số kịch bản kiểm thử tự động:** **`263 tests`**
-- **Tỷ lệ vượt qua (Pass Rate):** **`100% (263 / 263 passed)`**
+- **Tổng số kịch bản kiểm thử tự động:** **`288 tests`**
+- **Tỷ lệ vượt qua (Pass Rate):** **`100% (288 / 288 passed)`**
 - **Số lượng thất bại (Failures):** **`0`**
 - **Số lượng lỗi runtime (Errors):** **`0`**
 - **Số lượng bỏ qua (Skipped):** **`0`**

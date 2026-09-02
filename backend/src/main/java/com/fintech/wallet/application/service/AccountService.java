@@ -40,6 +40,7 @@ public class AccountService implements AccountUseCase {
         User updatedUser = new User(
                 user.getId(),
                 user.getPhoneNumber(),
+                user.getFullName(),
                 passwordEncoder.encode(newPassword),
                 user.getPinHash(),
                 user.getKycStatus(),
@@ -62,6 +63,7 @@ public class AccountService implements AccountUseCase {
         User updatedUser = new User(
                 user.getId(),
                 user.getPhoneNumber(),
+                user.getFullName(),
                 passwordEncoder.encode(newPassword),
                 user.getPinHash(),
                 user.getKycStatus(),

@@ -8,6 +8,9 @@ import com.fintech.wallet.domain.model.User;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.port.out.BankGatewayPort;
 import com.fintech.wallet.domain.port.out.NotificationPort;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fintech.wallet.presentation.response.TransferResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,11 +82,11 @@ public class TransferFlowIntegrationTest {
     @BeforeEach
     public void setup() {
         // Create Sender
-        sender = authService.register("0900000001", "password123");
+        sender = authService.register("0900000001", "Sender", "password123");
         userService.setPin(sender.getId(), "123456");
 
         // Create Receiver
-        receiver = authService.register("0900000002", "password123");
+        receiver = authService.register("0900000002", "Receiver", "password123");
         userService.setPin(receiver.getId(), "654321");
 
         // Set KYC to verified to allow transactions
@@ -226,5 +229,43 @@ public class TransferFlowIntegrationTest {
         BigDecimal totalBefore = new BigDecimal("1000000"); // sender: 1M, receiver: 0
         BigDecimal totalAfter = updatedSenderWallet.getBalance().getAmount().add(updatedReceiverWallet.getBalance().getAmount());
         assertEquals(totalBefore.stripTrailingZeros(), totalAfter.stripTrailingZeros());
+    }
+
+    @Test
+    public void testPrintJsonForFrontend() throws Exception {
+        String requestId = UUID.randomUUID().toString();
+        Money transferAmount = Money.of(new BigDecimal("200000"), "VND");
+
+        // Init Transfer
+        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), transferAmount);
+        
+        // Confirm Transfer
+        if (!userService.verifyPin(sender.getId(), "123456")) {
+            throw new InvalidPinException("Invalid PIN");
+        }
+        Transaction confirmedTx = walletService.confirmTransfer(initTx.getId());
+
+        // Map to Response
+        TransferResponse response = TransferResponse.fromDomain(confirmedTx);
+        
+        // Manually set fields that controller usually sets
+        com.fintech.wallet.domain.model.User sourceUser = userService.getUserById(sender.getId());
+        response.setSenderName(sourceUser.getPhoneNumber()); // Assuming no KYC for this test
+        response.setSenderAccount(sourceUser.getPhoneNumber());
+        
+        response.setIsInternal(true);
+        com.fintech.wallet.domain.model.Wallet targetWallet = walletService.getWalletById(confirmedTx.getTargetWalletId());
+        com.fintech.wallet.domain.model.User targetUser = userService.getUserById(targetWallet.getOwnerId());
+        response.setRecipientName(targetUser.getPhoneNumber());
+        response.setRecipientAccount(targetUser.getPhoneNumber());
+        response.setCounterpartyName(targetUser.getPhoneNumber());
+        response.setCounterpartyAccount(targetUser.getPhoneNumber());
+        response.setCounterpartyBankName("SenHong");
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        System.out.println("====== JSON RESPONSE FOR FRONTEND ======");
+        System.out.println(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(response));
+        System.out.println("========================================");
     }
 }

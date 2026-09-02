@@ -4,7 +4,7 @@ import com.fintech.wallet.domain.model.AuthTokens;
 import com.fintech.wallet.domain.model.User;
 
 public interface AuthUseCase {
-    User register(String phoneNumber, String password);
+    User register(String phoneNumber, String fullName, String password);
     AuthTokens login(String phoneNumber, String password, String deviceId, String ipAddress, String userAgent);
     boolean sendOtp(String phoneNumber);
     boolean verifyOtp(String phoneNumber, String otp);

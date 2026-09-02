@@ -72,8 +72,8 @@ public class TransactionLimitTest {
                 null
         );
 
-        verifiedUser = new User("user-verified", "0900000001", "hash", "123456", KycStatus.VERIFIED, Instant.now(), Instant.now());
-        unverifiedUser = new User("user-unverified", "0900000002", "hash", "123456", KycStatus.UNVERIFIED, Instant.now(), Instant.now());
+        verifiedUser = new User("user-verified", "0900000001", "Test Name", "hash", "123456", KycStatus.VERIFIED, Instant.now(), Instant.now());
+        unverifiedUser = new User("user-unverified", "0900000002", "Test Name", "hash", "123456", KycStatus.UNVERIFIED, Instant.now(), Instant.now());
 
         sourceWallet = new Wallet("wallet-1", "user-verified", Money.of(new BigDecimal("200000000"), "VND"), Instant.now(), Instant.now(), 0L);
         targetWallet = new Wallet("wallet-2", "user-receiver", Money.of(new BigDecimal("10000000"), "VND"), Instant.now(), Instant.now(), 0L);

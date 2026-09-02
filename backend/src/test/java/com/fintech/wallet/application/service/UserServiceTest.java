@@ -50,7 +50,7 @@ class UserServiceTest {
 
     @Test
     void setPin_validPin_shouldSave() {
-        User user = new User("u1", "0987654321", "hash", null,
+        User user = new User("u1", "0987654321", "Test Name", "hash", null,
                 KycStatus.UNVERIFIED, Instant.now(), Instant.now());
         when(userPersistencePort.findUserById("u1")).thenReturn(Optional.of(user));
 
@@ -78,7 +78,7 @@ class UserServiceTest {
     void verifyPinAndIssueToken_correctPin_shouldReturnToken() {
         String rawPin   = "123456";
         String encoded  = passwordEncoder.encode(rawPin);
-        User user = new User("u1", "0987654321", "hash", encoded,
+        User user = new User("u1", "0987654321", "Test Name", "hash", encoded,
                 KycStatus.UNVERIFIED, Instant.now(), Instant.now());
         when(userPersistencePort.findUserById("u1")).thenReturn(Optional.of(user));
 
@@ -93,7 +93,7 @@ class UserServiceTest {
     @Test
     void verifyPinAndIssueToken_incorrectPin_shouldThrow() {
         String encoded = passwordEncoder.encode("999999");
-        User user = new User("u1", "0987654321", "hash", encoded,
+        User user = new User("u1", "0987654321", "Test Name", "hash", encoded,
                 KycStatus.UNVERIFIED, Instant.now(), Instant.now());
         when(userPersistencePort.findUserById("u1")).thenReturn(Optional.of(user));
 
@@ -103,7 +103,7 @@ class UserServiceTest {
 
     @Test
     void verifyPinAndIssueToken_noPinSet_shouldThrow() {
-        User user = new User("u1", "0987654321", "hash", null,
+        User user = new User("u1", "0987654321", "Test Name", "hash", null,
                 KycStatus.UNVERIFIED, Instant.now(), Instant.now());
         when(userPersistencePort.findUserById("u1")).thenReturn(Optional.of(user));
 
@@ -115,7 +115,7 @@ class UserServiceTest {
     void validatePinToken_validToken_shouldReturnTrue() {
         String rawPin  = "123456";
         String encoded = passwordEncoder.encode(rawPin);
-        User user = new User("u1", "0987654321", "hash", encoded,
+        User user = new User("u1", "0987654321", "Test Name", "hash", encoded,
                 KycStatus.UNVERIFIED, Instant.now(), Instant.now());
         when(userPersistencePort.findUserById("u1")).thenReturn(Optional.of(user));
 
@@ -133,7 +133,7 @@ class UserServiceTest {
 
     @Test
     void submitKyc_shouldSaveKycAndUpdateUser() {
-        User user = new User("u1", "0987654321", "hash", null,
+        User user = new User("u1", "0987654321", "Test Name", "hash", null,
                 KycStatus.UNVERIFIED, Instant.now(), Instant.now());
         when(userPersistencePort.findUserById("u1")).thenReturn(Optional.of(user));
 
@@ -149,7 +149,7 @@ class UserServiceTest {
 
     @Test
     void processKycWebhook_approved_shouldSetVerified() {
-        User user = new User("u1", "0987654321", "hash", null,
+        User user = new User("u1", "0987654321", "Test Name", "hash", null,
                 KycStatus.PENDING, Instant.now(), Instant.now());
         UserKyc kyc = UserKyc.createPending("u1", "123", "Name", "1990", "f", "b", "s");
         when(kycPersistencePort.findKycByUserId("u1")).thenReturn(Optional.of(kyc));
@@ -164,7 +164,7 @@ class UserServiceTest {
 
     @Test
     void processKycWebhook_rejected_shouldSetRejected() {
-        User user = new User("u1", "0987654321", "hash", null,
+        User user = new User("u1", "0987654321", "Test Name", "hash", null,
                 KycStatus.PENDING, Instant.now(), Instant.now());
         UserKyc kyc = UserKyc.createPending("u1", "123", "Name", "1990", "f", "b", "s");
         when(kycPersistencePort.findKycByUserId("u1")).thenReturn(Optional.of(kyc));

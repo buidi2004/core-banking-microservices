@@ -66,7 +66,6 @@ public class NotificationConsumer {
             if (event.getSourceWalletId() != null) {
                 walletPersistencePort.findWalletById(event.getSourceWalletId())
                         .ifPresent(w -> {
-                            notificationPort.notifyTransactionCompleted(tx, w);
                             sendFcmPushNotification(tx, w);
                         });
             }
@@ -74,7 +73,6 @@ public class NotificationConsumer {
             if (event.getTargetWalletId() != null && !event.getTargetWalletId().equals(event.getSourceWalletId())) {
                 walletPersistencePort.findWalletById(event.getTargetWalletId())
                         .ifPresent(w -> {
-                            notificationPort.notifyTransactionCompleted(tx, w);
                             sendFcmPushNotification(tx, w);
                         });
             }
@@ -97,27 +95,43 @@ public class NotificationConsumer {
                 .orElse(wallet.getId());
 
         String counterpartyPhone = null;
+        String counterpartyName = null;
         if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
             String counterpartyWalletId = isDeduct ? tx.getTargetWalletId() : tx.getSourceWalletId();
             if (counterpartyWalletId != null) {
-                counterpartyPhone = walletPersistencePort.findWalletById(counterpartyWalletId)
-                        .flatMap(w -> userPersistencePort.findUserById(w.getOwnerId()))
-                        .map(com.fintech.wallet.domain.model.User::getPhoneNumber)
-                        .orElse(counterpartyWalletId);
+                com.fintech.wallet.domain.model.User counterparty = walletPersistencePort.findWalletById(counterpartyWalletId)
+                        .flatMap(w -> userPersistencePort.findUserById(w.getOwnerId())).orElse(null);
+                if (counterparty != null) {
+                    counterpartyPhone = counterparty.getPhoneNumber();
+                    counterpartyName = counterparty.getFullName();
+                } else {
+                    counterpartyPhone = counterpartyWalletId;
+                }
             }
         }
 
-        String title = "Biến động số dư ví: " + tx.getType().name();
+        java.math.BigDecimal displayAmountValue = tx.getAmount().getAmount();
+        if (isDeduct && tx.getFeeAmount() != null) {
+            displayAmountValue = displayAmountValue.add(tx.getFeeAmount().getAmount());
+        }
+
+        java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        String formattedAmount = formatter.format(displayAmountValue);
+        String formattedBalance = formatter.format(wallet.getBalance().getAmount());
+
+        String title = "Biến động số dư: " + tx.getType().name();
         StringBuilder bodyBuilder = new StringBuilder();
-        bodyBuilder.append(String.format("TK %s GD %s thành công %s %s. SD: %s %s",
-                myPhone, tx.getStatus(), tx.getAmount().getAmount(), tx.getAmount().getCurrency(),
-                wallet.getBalance().getAmount(), wallet.getBalance().getCurrency()));
+        String sign = isDeduct ? "-" : "+";
+        bodyBuilder.append(String.format("TK %s GD thành công. PS: %s%s %s. SD: %s %s",
+                myPhone, sign, formattedAmount, tx.getAmount().getCurrency(),
+                formattedBalance, wallet.getBalance().getCurrency()));
         
         if (counterpartyPhone != null) {
+            String displayCounterparty = (counterpartyName != null && !counterpartyName.isBlank()) ? counterpartyName + " (" + counterpartyPhone + ")" : counterpartyPhone;
             if (isDeduct) {
-                bodyBuilder.append(" - Đến: ").append(counterpartyPhone);
+                bodyBuilder.append(" - Đến: ").append(displayCounterparty);
             } else {
-                bodyBuilder.append(" - Từ: ").append(counterpartyPhone);
+                bodyBuilder.append(" - Từ: ").append(displayCounterparty);
             }
         }
         if (tx.getNote() != null && !tx.getNote().isBlank()) {

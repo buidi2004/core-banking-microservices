@@ -30,7 +30,7 @@ class PersonalQrServiceTest {
         userPersistencePortMock = org.mockito.Mockito.mock(com.fintech.wallet.domain.port.out.UserPersistencePort.class);
         org.mockito.Mockito.when(userPersistencePortMock.findUserById(org.mockito.ArgumentMatchers.anyString()))
             .thenReturn(java.util.Optional.of(
-                new com.fintech.wallet.domain.model.User("user-123", "0988111222", null, null, null, null, null)
+                new com.fintech.wallet.domain.model.User("user-123", "0988111222", "Test User", null, null, null, null, null)
             ));
             
         userProfileUseCaseMock = org.mockito.Mockito.mock(com.fintech.wallet.domain.port.in.UserProfileUseCase.class);

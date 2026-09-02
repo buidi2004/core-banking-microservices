@@ -57,6 +57,11 @@ public class UserService implements PinUseCase, KycUseCase {
     }
 
 
+    public User getUserById(String userId) {
+        return userPersistencePort.findUserById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+    }
+
     @Override
     public boolean verifyPin(String userId, String rawPin) {
         User user = userPersistencePort.findUserById(userId)

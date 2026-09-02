@@ -66,6 +66,7 @@ public class DeviceSession {
     }
 
     public void markActive() {
+        this.active = true;
         this.lastActiveAt = Instant.now();
     }
 

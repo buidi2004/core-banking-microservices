@@ -94,8 +94,13 @@ public class WebSocketNotificationAdapter implements NotificationPort {
             }
 
             String sign = isDeduct ? "-" : "+";
+            java.math.BigDecimal displayAmountValue = transaction.getAmount().getAmount();
+            if (isDeduct && transaction.getFeeAmount() != null) {
+                displayAmountValue = displayAmountValue.add(transaction.getFeeAmount().getAmount());
+            }
+
             java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
-            String formattedAmount = formatter.format(transaction.getAmount().getAmount());
+            String formattedAmount = formatter.format(displayAmountValue);
             String formattedBalance = formatter.format(wallet.getBalance().getAmount());
             String currency = transaction.getAmount().getCurrency();
             
@@ -107,13 +112,18 @@ public class WebSocketNotificationAdapter implements NotificationPort {
                     .orElse(wallet.getId());
 
             String counterpartyPhone = null;
+            String counterpartyName = null;
             if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
                 String counterpartyWalletId = isDeduct ? transaction.getTargetWalletId() : transaction.getSourceWalletId();
                 if (counterpartyWalletId != null) {
-                    counterpartyPhone = walletPersistencePort.findWalletById(counterpartyWalletId)
-                            .flatMap(w -> userPersistencePort.findUserById(w.getOwnerId()))
-                            .map(com.fintech.wallet.domain.model.User::getPhoneNumber)
-                            .orElse(counterpartyWalletId);
+                    com.fintech.wallet.domain.model.User counterparty = walletPersistencePort.findWalletById(counterpartyWalletId)
+                            .flatMap(w -> userPersistencePort.findUserById(w.getOwnerId())).orElse(null);
+                    if (counterparty != null) {
+                        counterpartyPhone = counterparty.getPhoneNumber();
+                        counterpartyName = counterparty.getFullName();
+                    } else {
+                        counterpartyPhone = counterpartyWalletId;
+                    }
                 }
             }
 
@@ -125,10 +135,11 @@ public class WebSocketNotificationAdapter implements NotificationPort {
                     myPhone, sign, formattedAmount, currency, formattedBalance, currency, formattedTime));
             
             if (counterpartyPhone != null) {
+                String displayCounterparty = (counterpartyName != null && !counterpartyName.isBlank()) ? counterpartyName + " (" + counterpartyPhone + ")" : counterpartyPhone;
                 if (isDeduct) {
-                    bodyBuilder.append("\nChuyển đến: ").append(counterpartyPhone);
+                    bodyBuilder.append("\nChuyển đến: ").append(displayCounterparty);
                 } else {
-                    bodyBuilder.append("\nNhận từ: ").append(counterpartyPhone);
+                    bodyBuilder.append("\nNhận từ: ").append(displayCounterparty);
                 }
             }
             bodyBuilder.append("\nNội dung: ").append(content);

@@ -94,7 +94,7 @@ class WalletControllerQrTest {
         );
         when(getWalletUseCase.getRecipientInfo(any(), any()))
             .thenReturn(new com.fintech.wallet.presentation.response.RecipientInfoResponse("wallet-target", "wallet-target", "User B"));
-        when(transferMoneyUseCase.initTransfer(any(), any(), any(), any(), any())).thenReturn(mockTx);
+        when(transferMoneyUseCase.initTransfer(any(), any(), any(), any(), any(), any())).thenReturn(mockTx);
         
         ResponseEntity<ApiResponse<TransferResponse>> response = walletController.initTransferQr(auth, request);
         
@@ -107,7 +107,7 @@ class WalletControllerQrTest {
         assertEquals("PENDING_CONFIRMATION", txResponse.getStatus());
         
         verify(otpService).generateAndStoreOtp("tx-123");
-        verify(transferMoneyUseCase).initTransfer(any(), eq("wallet-source"), eq("wallet-target"), eq(Money.of(new BigDecimal("50000"), "VND")), anyString());
+        verify(transferMoneyUseCase).initTransfer(any(), eq("wallet-source"), eq("wallet-target"), any(), eq(Money.of(new BigDecimal("50000"), "VND")), anyString());
     }
 
     @Test
@@ -131,13 +131,13 @@ class WalletControllerQrTest {
         );
         when(getWalletUseCase.getRecipientInfo(any(), any()))
             .thenReturn(new com.fintech.wallet.presentation.response.RecipientInfoResponse("wallet-target", "wallet-target", "User B"));
-        when(transferMoneyUseCase.initTransfer(any(), any(), any(), any(), any())).thenReturn(mockTx);
+        when(transferMoneyUseCase.initTransfer(any(), any(), any(), any(), any(), any())).thenReturn(mockTx);
         
         ResponseEntity<ApiResponse<TransferResponse>> response = walletController.initTransferQr(auth, request);
         
         assertEquals(200, response.getStatusCode().value());
         
-        verify(transferMoneyUseCase).initTransfer(any(), eq("wallet-source"), eq("wallet-target"), eq(Money.of(new BigDecimal("100000"), "VND")), anyString());
+        verify(transferMoneyUseCase).initTransfer(any(), eq("wallet-source"), eq("wallet-target"), any(), eq(Money.of(new BigDecimal("100000"), "VND")), anyString());
     }
 
     @Test
