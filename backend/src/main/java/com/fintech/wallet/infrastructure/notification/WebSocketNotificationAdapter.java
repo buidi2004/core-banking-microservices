@@ -100,6 +100,12 @@ public class WebSocketNotificationAdapter implements NotificationPort {
             } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.REVERSAL) {
                 isDeduct = false;
                 operationType = "Hoàn tiền";
+            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.BILL_PAYMENT) {
+                isDeduct = true;
+                operationType = "Thanh toán hoá đơn";
+            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TOPUP) {
+                isDeduct = true; // wait, topup is buying phone credit, so balance goes DOWN
+                operationType = "Nạp tiền điện thoại";
             }
 
             String sign = isDeduct ? "-" : "+";

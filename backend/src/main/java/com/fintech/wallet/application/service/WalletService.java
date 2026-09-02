@@ -270,9 +270,20 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 throw e;
             }
 
-            // Bug #4 fix: notification is fire-and-forget, never affects business result
-            // ISSUE #9 fix: use in-memory wallet directly (already has correct balance), avoid extra DB query
-            safeNotify(savedTx, wallet);
+            // Publish Transaction Event instead of direct notify to trigger FCM pushes and async workflows
+            if (transactionEventPublisherPort != null) {
+                transactionEventPublisherPort.publishTransactionEvent(new TransactionEvent(
+                        savedTx.getId(),
+                        savedTx.getType().name(),
+                        savedTx.getStatus().name(),
+                        null,
+                        savedTx.getTargetWalletId(),
+                        savedTx.getAmount().getAmount(),
+                        savedTx.getAmount().getCurrency()
+                ));
+            } else {
+                safeNotify(savedTx, wallet);
+            }
             return savedTx;
         });
     }
