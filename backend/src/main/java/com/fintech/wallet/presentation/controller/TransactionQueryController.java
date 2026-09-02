@@ -39,6 +39,13 @@ public class TransactionQueryController {
 
     private TransferResponse enrichResponse(Transaction transaction, String queryWalletId) {
         TransferResponse response = TransferResponse.fromDomain(transaction);
+        if ("TRANSFER".equals(response.getType()) && queryWalletId != null) {
+            if (queryWalletId.equals(transaction.getSourceWalletId())) {
+                response.setType("TRANSFER_OUT");
+            } else if (queryWalletId.equals(transaction.getTargetWalletId())) {
+                response.setType("TRANSFER_IN");
+            }
+        }
         boolean isInternal = transaction.getBankCode() == null || "SENHONG".equalsIgnoreCase(transaction.getBankCode());
         response.setIsInternal(isInternal);
         

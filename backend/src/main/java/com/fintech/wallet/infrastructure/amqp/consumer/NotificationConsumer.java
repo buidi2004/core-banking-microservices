@@ -119,7 +119,11 @@ public class NotificationConsumer {
         String formattedAmount = formatter.format(displayAmountValue);
         String formattedBalance = formatter.format(wallet.getBalance().getAmount());
 
-        String title = "Biến động số dư: " + tx.getType().name();
+        String typeName = tx.getType().name();
+        if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
+            typeName = isDeduct ? "TRANSFER_OUT" : "TRANSFER_IN";
+        }
+        String title = "Biến động số dư: " + typeName;
         StringBuilder bodyBuilder = new StringBuilder();
         String sign = isDeduct ? "-" : "+";
         bodyBuilder.append(String.format("TK %s GD thành công. PS: %s%s %s. SD: %s %s",

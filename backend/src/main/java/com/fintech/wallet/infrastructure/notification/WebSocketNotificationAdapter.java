@@ -47,11 +47,20 @@ public class WebSocketNotificationAdapter implements NotificationPort {
 
         String destination = "/topic/wallets/" + wallet.getId() + "/notifications";
 
+        String payloadType = transaction.getType().name();
+        if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
+            if (wallet.getId().equals(transaction.getSourceWalletId())) {
+                payloadType = "TRANSFER_OUT";
+            } else if (wallet.getId().equals(transaction.getTargetWalletId())) {
+                payloadType = "TRANSFER_IN";
+            }
+        }
+
         // OPT #4: Type-safe DTO instead of raw HashMap
         NotificationPayload payload = new NotificationPayload(
                 transaction.getId(),
                 transaction.getRequestId(),
-                transaction.getType().name(),
+                payloadType,
                 transaction.getStatus().name(),
                 wallet.getId(),
                 transaction.getAmount().getAmount(),
