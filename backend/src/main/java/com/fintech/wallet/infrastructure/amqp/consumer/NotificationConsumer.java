@@ -66,6 +66,7 @@ public class NotificationConsumer {
             if (event.getSourceWalletId() != null) {
                 walletPersistencePort.findWalletById(event.getSourceWalletId())
                         .ifPresent(w -> {
+                            notificationPort.notifyTransactionCompleted(tx, w);
                             sendFcmPushNotification(tx, w);
                         });
             }
@@ -73,6 +74,7 @@ public class NotificationConsumer {
             if (event.getTargetWalletId() != null && !event.getTargetWalletId().equals(event.getSourceWalletId())) {
                 walletPersistencePort.findWalletById(event.getTargetWalletId())
                         .ifPresent(w -> {
+                            notificationPort.notifyTransactionCompleted(tx, w);
                             sendFcmPushNotification(tx, w);
                         });
             }
