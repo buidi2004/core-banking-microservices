@@ -32,6 +32,7 @@ public class BillPaymentE2EIntegrationTest {
         RegisterRequest req = new RegisterRequest();
         req.setPhoneNumber(phone);
         req.setPassword(password);
+        req.setFullName("Test User");
 
         ResponseEntity<ApiResponse> regRes = restTemplate.postForEntity("/api/v1/auth/register", req, ApiResponse.class);
         assertEquals(HttpStatus.CREATED, regRes.getStatusCode());
@@ -86,8 +87,8 @@ public class BillPaymentE2EIntegrationTest {
         ResponseEntity<ApiResponse> balanceRes = restTemplate.exchange("/api/v1/wallets/" + walletId, HttpMethod.GET, getEntity, ApiResponse.class);
         Number finalBalance = (Number) ((Map<String, Object>) balanceRes.getBody().getData()).get("balance");
         
-        // Bill payment fee is 1% of 250,000 = 2,500
-        double expectedBalance = 500000.0 - billAmount.doubleValue() - 2500.0;
+        // Bill payment fee is flat 2,200 (UNVERIFIED). Plus 50M signup bonus.
+        double expectedBalance = 50500000.0 - billAmount.doubleValue() - 2200.0;
         assertEquals(expectedBalance, finalBalance.doubleValue());
     }
 }

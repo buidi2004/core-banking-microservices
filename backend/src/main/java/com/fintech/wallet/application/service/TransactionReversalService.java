@@ -117,15 +117,26 @@ public class TransactionReversalService implements TransactionReversalUseCase {
             Transaction reversalTx = Transaction.createReversal(
                     originalTx.getId(), refundWalletId, originalTx.getAmount());
 
+            // The original deduction was amount + fee. Refund both so the user
+            // doesn't permanently lose the fee amount on a failed/reversed transaction.
+            Money refundAmount = originalTx.getAmount();
+            if (originalTx.getFeeAmount() != null
+                    && originalTx.getFeeAmount().getAmount() != null
+                    && originalTx.getFeeAmount().getAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                refundAmount = originalTx.getAmount().add(originalTx.getFeeAmount());
+            }
+            final Money finalRefundAmount = refundAmount;
+
             Transaction savedReversalTx;
             try {
-                // Credit the amount back to the wallet
-                wallet.deposit(originalTx.getAmount());
+                // Credit the original amount + fee back to the wallet
+                wallet.deposit(finalRefundAmount);
 
                 savedReversalTx = transactionalOperationPort.executeInTransaction(() -> {
                     walletPersistencePort.saveWallet(wallet);
                     freshTx.markReversed();
                     transactionPersistencePort.saveTransaction(freshTx);
+                    reversalTx.setFeeAmount(originalTx.getFeeAmount());
                     reversalTx.markSuccess();
                     return transactionPersistencePort.saveTransaction(reversalTx);
                 });
@@ -142,7 +153,7 @@ public class TransactionReversalService implements TransactionReversalUseCase {
             // Fire-and-forget notification
             if (notificationPort != null) {
                 try {
-                    notificationPort.notifyTransactionCompleted(savedReversalTx, wallet);
+                    notificationPort.notifyTransactionCompleted(savedReversalTx, wallet, null, null, null);
                 } catch (Exception e) {
                     log.warn("Notification failed for reversal transaction={}", savedReversalTx.getId(), e);
                 }
@@ -154,7 +165,7 @@ public class TransactionReversalService implements TransactionReversalUseCase {
                     auditLogPersistencePort.saveAuditLog(AuditLog.record(
                             wallet.getOwnerId(), "127.0.0.1", "REVERSAL",
                             "originalTxId:" + originalTx.getId() + ",reversalTxId:" + savedReversalTx.getId()
-                                    + ",reason:" + reason));
+                                    + ",reason:" + reason, java.util.UUID.randomUUID().toString()));
                 } catch (Exception e) {
                     log.warn("Failed to record audit log for reversal: {}", e.getMessage());
                 }

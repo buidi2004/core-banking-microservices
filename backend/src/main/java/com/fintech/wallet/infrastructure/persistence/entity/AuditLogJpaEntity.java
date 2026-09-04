@@ -20,18 +20,22 @@ public class AuditLogJpaEntity {
     private String action;
 
     private String payloadHash;
+    
+    @Column(name = "idempotency_key", unique = true)
+    private String idempotencyKey;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
     public AuditLogJpaEntity() {}
 
-    public AuditLogJpaEntity(String id, String callerId, String ipAddress, String action, String payloadHash, Instant createdAt) {
+    public AuditLogJpaEntity(String id, String callerId, String ipAddress, String action, String payloadHash, String idempotencyKey, Instant createdAt) {
         this.id = id;
         this.callerId = callerId;
         this.ipAddress = ipAddress;
         this.action = action;
         this.payloadHash = payloadHash;
+        this.idempotencyKey = idempotencyKey;
         this.createdAt = createdAt;
     }
 
@@ -45,6 +49,8 @@ public class AuditLogJpaEntity {
     public void setAction(String action) { this.action = action; }
     public String getPayloadHash() { return payloadHash; }
     public void setPayloadHash(String payloadHash) { this.payloadHash = payloadHash; }
+    public String getIdempotencyKey() { return idempotencyKey; }
+    public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

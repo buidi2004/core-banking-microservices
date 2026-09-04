@@ -100,7 +100,7 @@ public class TransactionLimitTest {
         when(transactionPersistencePort.saveTransaction(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Transfer 20M VND (Total today: 30M <= 100M limit)
-        var tx = walletService.transfer(UUID.randomUUID().toString(), "wallet-1", "wallet-2", Money.of(new BigDecimal("20000000"), "VND"));
+        var tx = walletService.transfer(UUID.randomUUID().toString(), "wallet-1", "wallet-2", "SENHONG", Money.of(new BigDecimal("20000000"), "VND"), null);
 
         assertNotNull(tx);
         verify(walletPersistencePort, times(1)).saveWallet(sourceWallet);
@@ -116,7 +116,7 @@ public class TransactionLimitTest {
 
         // Attempt transfer 20M VND (Total today: 110M > 100M limit)
         TransactionLimitExceededException ex = assertThrows(TransactionLimitExceededException.class, () -> {
-            walletService.transfer(UUID.randomUUID().toString(), "wallet-1", "wallet-2", Money.of(new BigDecimal("20000000"), "VND"));
+            walletService.transfer(UUID.randomUUID().toString(), "wallet-1", "wallet-2", "SENHONG", Money.of(new BigDecimal("20000000"), "VND"), null);
         });
 
         assertTrue(ex.getMessage().contains("Daily transaction limit exceeded"));
@@ -134,7 +134,7 @@ public class TransactionLimitTest {
 
         // Attempt transfer 20M VND (Total this month: 510M > 500M monthly limit)
         TransactionLimitExceededException ex = assertThrows(TransactionLimitExceededException.class, () -> {
-            walletService.transfer(UUID.randomUUID().toString(), "wallet-1", "wallet-2", Money.of(new BigDecimal("20000000"), "VND"));
+            walletService.transfer(UUID.randomUUID().toString(), "wallet-1", "wallet-2", "SENHONG", Money.of(new BigDecimal("20000000"), "VND"), null);
         });
 
         assertTrue(ex.getMessage().contains("Monthly transaction limit exceeded"));
@@ -149,7 +149,7 @@ public class TransactionLimitTest {
 
         // Attempt to initialize transfer exceeding daily limit
         TransactionLimitExceededException ex = assertThrows(TransactionLimitExceededException.class, () -> {
-            walletService.initTransfer(UUID.randomUUID().toString(), "wallet-1", "wallet-2", Money.of(new BigDecimal("10000000"), "VND"));
+            walletService.initTransfer(UUID.randomUUID().toString(), "wallet-1", "wallet-2", "SENHONG", Money.of(new BigDecimal("10000000"), "VND"), null);
         });
 
         assertTrue(ex.getMessage().contains("Daily transaction limit exceeded"));
@@ -165,7 +165,7 @@ public class TransactionLimitTest {
 
         // Attempt transfer 2M VND (Total today: 6M > 5M limit)
         TransactionLimitExceededException ex = assertThrows(TransactionLimitExceededException.class, () -> {
-            walletService.transfer(UUID.randomUUID().toString(), "wallet-unverified", "wallet-2", Money.of(new BigDecimal("2000000"), "VND"));
+            walletService.transfer(UUID.randomUUID().toString(), "wallet-unverified", "wallet-2", "SENHONG", Money.of(new BigDecimal("2000000"), "VND"), null);
         });
 
         assertTrue(ex.getMessage().contains("Daily transaction limit exceeded"));

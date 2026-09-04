@@ -64,7 +64,7 @@ public class PerTransactionLimitTest {
         Money belowMin = Money.of(new BigDecimal("500"), "VND"); // Min is 1,000 VND
 
         assertThrows(InvalidMoneyException.class, () -> {
-            walletService.transfer(UUID.randomUUID().toString(), "w1", "w2", belowMin);
+            walletService.transfer(UUID.randomUUID().toString(), "w1", "w2", "SENHONG", belowMin, null);
         });
     }
 
@@ -73,7 +73,7 @@ public class PerTransactionLimitTest {
         Money overMaxSingle = Money.of(new BigDecimal("60000000"), "VND"); // Max single is 50M VND
 
         assertThrows(TransactionLimitExceededException.class, () -> {
-            walletService.transfer(UUID.randomUUID().toString(), "w1", "w2", overMaxSingle);
+            walletService.transfer(UUID.randomUUID().toString(), "w1", "w2", "SENHONG", overMaxSingle, null);
         });
     }
 
@@ -82,7 +82,7 @@ public class PerTransactionLimitTest {
         Money belowMin = Money.of(new BigDecimal("999"), "VND");
 
         assertThrows(InvalidMoneyException.class, () -> {
-            walletService.initTransfer(UUID.randomUUID().toString(), "w1", "w2", belowMin);
+            walletService.initTransfer(UUID.randomUUID().toString(), "w1", "w2", "SENHONG", belowMin, null);
         });
     }
 
@@ -91,7 +91,7 @@ public class PerTransactionLimitTest {
         Money overMaxSingle = Money.of(new BigDecimal("50000001"), "VND");
 
         assertThrows(TransactionLimitExceededException.class, () -> {
-            walletService.initTransfer(UUID.randomUUID().toString(), "w1", "w2", overMaxSingle);
+            walletService.initTransfer(UUID.randomUUID().toString(), "w1", "w2", "SENHONG", overMaxSingle, null);
         });
     }
 }

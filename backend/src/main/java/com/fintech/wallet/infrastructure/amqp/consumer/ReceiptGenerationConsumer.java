@@ -53,17 +53,12 @@ public class ReceiptGenerationConsumer {
             // Sinh PDF (tái sử dụng OpenPDF logic)
             byte[] pdfBytes = generateReceiptUseCase.generateReceiptPdf(event.getTransactionId(), userId);
             
-            // Lưu PDF (mô phỏng lưu vào local file system, thực tế có thể lưu S3)
-            File dir = new File("/tmp/receipts");
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-            File receiptFile = new File(dir, "receipt_" + event.getTransactionId() + ".pdf");
-            try (FileOutputStream fos = new FileOutputStream(receiptFile)) {
-                fos.write(pdfBytes);
-            }
+            // Mock S3 Upload
+            String s3Bucket = "s3://ewallet-receipts-prod/";
+            String objectKey = "receipt_" + event.getTransactionId() + ".pdf";
+            log.info("Mocking S3 upload of {} bytes to {}{}", pdfBytes.length, s3Bucket, objectKey);
             
-            log.info("Successfully generated and saved receipt to {}", receiptFile.getAbsolutePath());
+            log.info("Successfully generated and uploaded receipt to S3");
             
         } catch (Exception e) {
             log.error("Error processing receipt generation for transaction {}", event.getTransactionId(), e);

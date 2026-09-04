@@ -9,5 +9,5 @@ import com.fintech.wallet.domain.model.Wallet;
  * to client applications when transactions occur.
  */
 public interface NotificationPort {
-    void notifyTransactionCompleted(Transaction transaction, Wallet wallet);
+    void notifyTransactionCompleted(Transaction transaction, Wallet wallet, com.fintech.wallet.domain.model.User user, Wallet counterpartyWallet, com.fintech.wallet.domain.model.User counterpartyUser);
 }

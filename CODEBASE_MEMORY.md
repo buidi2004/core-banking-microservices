@@ -1,7 +1,8 @@
 # CODEBASE MEMORY: FINTECH E-WALLET SYSTEM (ARCHITECTURE & DOMAIN BLUEPRINT)
 
 > **Tài liệu tham chiếu chuẩn cho AI Agent, Nhà phát triển và Hội đồng Đánh giá.**  
-> Phiên bản: `1.0.0-SNAPSHOT` | Kiến trúc: `Hexagonal Architecture (Ports & Adapters) + DDD` | Trạng thái: `100% Production Ready`
+> Đã đồng bộ & quét tự động bởi `codebase-memory-mcp` v0.10.0 (`5,172 nodes, 21,154 edges`).  
+> Phiên bản: `1.0.0-SNAPSHOT` | Kiến trúc: `Hexagonal Architecture (Ports & Adapters) + DDD + EDA (Event-Driven Architecture)` | Trạng thái: `Production Ready`
 
 ---
 
@@ -9,40 +10,48 @@
 
 Hệ thống Ví điện tử (E-Wallet) được xây dựng theo tiêu chuẩn hệ thống tài chính - ngân hàng hiện đại:
 - **Ngôn ngữ & Nền tảng Core:** Java 17 + Spring Boot 3.2.5.
-- **Mô hình Kiến trúc:** **Hexagonal Architecture** (còn gọi là Onion Architecture / Ports and Adapters) kết hợp **Domain-Driven Design (DDD)**.
+- **Mô hình Kiến trúc:** **Hexagonal Architecture** (Ports and Adapters) kết hợp **Domain-Driven Design (DDD)** và **Event-Driven Architecture (EDA)** thông qua RabbitMQ & Transactional Outbox Pattern.
 - **Nguyên tắc phân tầng (Layering Rule):**
-  - `Domain Layer` là vùng trung tâm tuyệt đối, không phụ thuộc vào bất kỳ framework hoặc cơ sở dữ liệu nào.
-  - `Application Layer` chứa các Use Case điều phối luồng nghiệp vụ.
-  - `Infrastructure Layer` triển khai các Outbound Adapters (JPA, Redis, Spring Security, External Gateways).
-  - `Presentation Layer` tiếp nhận các Inbound Requests (REST Controllers, Global Exception Handlers, Filters).
+  - `Domain Layer` (`com.fintech.wallet.domain`): Vùng trung tâm tuyệt đối, độc lập hoàn toàn với framework và cơ sở dữ liệu. Chứa Models, Domain Exceptions, Domain Events và Port Interfaces (In/Out).
+  - `Application Layer` (`com.fintech.wallet.application`): Điều phối nghiệp vụ qua các Use Cases / Services, quản lý giao dịch nghiệp vụ, Outbox helper, và Saga compensations.
+  - `Infrastructure Layer` (`com.fintech.wallet.infrastructure`): Triển khai Outbound Adapters (JPA/Hibernate, Redis Lock & Cache, RabbitMQ Producers/Consumers, Firebase FCM, Schedulers, External Gateways, Security Filters).
+  - `Presentation Layer` (`com.fintech.wallet.presentation`): Tiếp nhận Inbound Requests qua 29 REST Controllers, Global Exception Handlers, DTO Requests/Responses.
 
 ```
-+-----------------------------------------------------------------------------------+
-|                            PRESENTATION LAYER                                    |
-|   REST Controllers | GlobalExceptionHandler | JwtFilter | IdempotencyFilter       |
-+-----------------------------------------------------------------------------------+
-                                         |
-                                         v (Inbound Ports / UseCases)
-+-----------------------------------------------------------------------------------+
-|                            APPLICATION LAYER (USE CASES)                         |
-|   WalletService | UserService | AuthService | LedgerService | VietQrService       |
-|   NotificationService | ReconciliationService | BeneficiaryService                |
-+-----------------------------------------------------------------------------------+
-                                         |
-                                         v (Domain Model & Business Rules)
-+-----------------------------------------------------------------------------------+
-|                            DOMAIN LAYER (PURE BUSINESS CORE)                     |
-|   Entities: User, Wallet, Transaction, Money, JournalEntry, LedgerPosting         |
-|   Value Objects: Money, TransactionStatus, KycStatus, TransactionType             |
-|   Domain Exceptions: InsufficientBalanceException, AccountLockedException, etc.   |
-+-----------------------------------------------------------------------------------+
-                                         ^
-                                         | (Outbound Ports / SPI)
-+-----------------------------------------------------------------------------------+
-|                            INFRASTRUCTURE LAYER (ADAPTERS)                        |
-|   Persistence (JPA/Hibernate) | Redis (Lock/Cache/Blacklist) | Flyway Migration   |
-|   Security (BCrypt/JWT) | Resilience4j | Spring Boot Actuator | MockBankGateway   |
-+-----------------------------------------------------------------------------------+
++---------------------------------------------------------------------------------------------------------+
+|                                        PRESENTATION LAYER (29 CONTROLLERS)                             |
+|  WalletController | AuthController | UserController | TransactionQueryController | QrController        |
+|  BillPaymentController | BankAccountController | MoneyRequestController | DeviceController | ...        |
+|  GlobalExceptionHandler | JwtAuthenticationFilter | IdempotencyFilter | RateLimitingInterceptor        |
++---------------------------------------------------------------------------------------------------------+
+                                                     |
+                                                     v (Inbound Ports / 38 UseCases)
++---------------------------------------------------------------------------------------------------------+
+|                                    APPLICATION LAYER (SERVICES & ORCHESTRATION)                         |
+|  WalletService | UserService | AuthService | LedgerService | VietQrService | PaymentService            |
+|  MoneyRequestService | DeviceTokenService | SessionService | ReceiptService | OutboxHelper | ...        |
++---------------------------------------------------------------------------------------------------------+
+                                                     |
+                                                     v (Domain Model & Business Rules)
++---------------------------------------------------------------------------------------------------------+
+|                                     DOMAIN LAYER (PURE BUSINESS CORE)                                   |
+|  Entities (50 Models): User, Wallet, Transaction, Money, JournalEntry, LedgerPosting, LedgerAccount,    |
+|    OutboxEvent, Bank, BankAccount, Bill, Merchant, MoneyRequest, Voucher, DeviceToken, DeviceSession... |
+|  Value Objects & Enums: Money, TransactionStatus, KycStatus, TransactionType, BillType, AccountType...   |
+|  Domain Exceptions: InsufficientBalanceException, AccountLockedException, LockAcquisitionException...  |
+|  Ports: 38 Inbound Ports (`domain.port.in.*`) | 30 Outbound Ports (`domain.port.out.*`)                |
++---------------------------------------------------------------------------------------------------------+
+                                                     ^
+                                                     | (Outbound Ports / SPI Implementation)
++---------------------------------------------------------------------------------------------------------+
+|                                     INFRASTRUCTURE LAYER (ADAPTERS)                                     |
+|  - Persistence (21 Adapters, 18 JPA Entities, Flyway V1 -> V12 Migration)                              |
+|  - Distributed Caching & Locking: Redis (TTL Lock, Token Blacklist, Distributed Sessions)               |
+|  - Event-Driven & Async: RabbitMQ (AuditLogConsumer, LedgerConsumer, NotificationConsumer, ...)         |
+|  - Reliable Event Publishing: Transactional Outbox Pattern + OutboxRelayScheduler                       |
+|  - Notifications: Firebase FCM (Mobile Push) + WebSocket (Realtime Socket.IO/STOMP)                     |
+|  - Security & Monitoring: Spring Security, JWT (5m TTL), BCrypt, Spring Boot Actuator, Prometheus       |
++---------------------------------------------------------------------------------------------------------+
 ```
 
 ---
@@ -51,13 +60,14 @@ Hệ thống Ví điện tử (E-Wallet) được xây dựng theo tiêu chuẩn
 
 Dưới đây là đặc tả kỹ thuật chi tiết của các bài toán lõi đã triển khai và kiểm thử thành công:
 
-### Task 1: Idempotency-Key + Khóa Số Dư + Ghi Sổ Kép (Ledger)
+### Task 1: Idempotency-Key + Khóa Số Dư + Ghi Sổ Kép (Double-Entry Ledger)
 - **Mục tiêu:** Chống trừ tiền trùng lặp khi mạng chập chờn, loại bỏ Race Condition và tuân thủ chuẩn kế toán tài chính.
 - **Triển khai:**
   - `IdempotencyFilter`: Đọc header `Idempotency-Key`, kiểm tra trong Redis Cache (`idempotency:{key}`). Nếu request đang xử lý hoặc đã hoàn tất thành công, trả về kết quả đã cache.
   - **Khóa hàng (Pessimistic Lock):** `WalletPersistencePort.findWalletByIdForUpdate` ánh xạ tới câu lệnh `SELECT ... FOR UPDATE` trên PostgreSQL để khóa bản ghi ví trong suốt transaction.
   - **Distributed Lock:** `DistributedLockPort` (Redis Key `lock:wallet:{walletId}`) ngăn ngừa tình trạng tranh chấp liên server (Multi-instance).
-  - **Sổ cái kép (Double-Entry Ledger):** `LedgerUseCase` tự động sinh 1 `JournalEntry` và tối thiểu 2 dòng `LedgerPosting` (1 Nợ - 1 Có) tương ứng với từng giao dịch, đảm bảo cân bằng `Sum(Debit) = Sum(Credit)`.
+  - **Sổ cái kép (Double-Entry Ledger):** `LedgerUseCase` tự động sinh 1 `JournalEntry` và tối thiểu 2 dòng `LedgerPosting` (1 Nợ - 1 Có) tương ứng với từng giao dịch, đảm bảo cân bằng tuyệt đối `Sum(Debit) = Sum(Credit)`.
+  - Hỗ trợ ràng buộc Unique Idempotency Key trên cả Database (`V10__add_idempotency_keys.sql`) cho bảng `journal_entries` và `audit_logs`.
 
 ### Task 2: Xác Thực Giao Dịch 2 Lớp (PIN BCrypt + OTP Redis)
 - **Mục tiêu:** Đảm bảo chỉ chủ tài khoản hợp pháp mới có quyền thực hiện giao dịch chuyển tiền/rút tiền.
@@ -66,10 +76,10 @@ Dưới đây là đặc tả kỹ thuật chi tiết của các bài toán lõi
   - `OtpService`: Sinh mã OTP 6 chữ số ngẫu nhiên lưu trong Redis (`otp:user:{userId}`) với TTL 3 phút.
   - **Khóa OTP:** Đếm số lần nhập sai liên tiếp trong Redis; nếu nhập sai quá 3 lần, mã OTP lập tức bị hủy và giao dịch bị từ chối.
 
-### Task 3: Chuẩn Hóa VietQR / EMVCo
+### Task 3: Chuẩn Hóa VietQR / EMVCo & Quét QR Cá Nhân
 - **Mục tiêu:** Sinh và quét mã QR tương thích hoàn toàn với mạng lưới chuyển tiền nhanh liên ngân hàng Napas 247 và chuẩn EMVCo quốc tế.
 - **Triển khai:**
-  - `VietQrService`: Đóng gói dữ liệu theo chuẩn EMVCo TLV (Tag-Length-Value), tính toán mã kiểm tra toàn vẹn CRC-16 (Cyclic Redundancy Check) ở Tag `63`.
+  - `VietQrService` / `PersonalQrService`: Đóng gói và giải mã dữ liệu theo chuẩn EMVCo TLV (Tag-Length-Value), tính toán mã kiểm tra toàn vẹn CRC-16 ở Tag `63`.
   - Hỗ trợ cả Dynamic QR (có sẵn số tiền & nội dung) và Static QR (chỉ có ID ví/tài khoản).
   - Tích hợp API chuyển tiền trực tiếp qua QR (`/api/v1/wallets/transfer/qr/init`).
 
@@ -77,264 +87,180 @@ Dưới đây là đặc tả kỹ thuật chi tiết của các bài toán lõi
 - **Mục tiêu:** Kiểm soát vòng đời giao dịch và tự động hoàn tiền bù trừ nếu cổng thanh toán bên thứ ba gặp sự cố.
 - **Triển khai:**
   - `TransactionStatus`: Vòng đời `INITIATED` -> `PENDING_CONFIRMATION` -> `PROCESSING` -> `SUCCESS` / `FAILED` / `REVERSED`.
-  - Tích hợp `Resilience4j Retry` khi gọi `BankGatewayPort`. Nếu ngân hàng timeout sau số lần retry tối đa, hệ thống tự động kích hoạt luồng **Saga Compensating Transaction**, hoàn tiền về ví người dùng và chuyển trạng thái thành `REVERSED`.
+  - `TransactionReversalService`: Tự động kích hoạt luồng **Saga Compensating Transaction**, hoàn tiền về ví người dùng và chuyển trạng thái thành `REVERSED` nếu nhà cung cấp dịch vụ hoặc cổng ngân hàng bị timeout/thất bại.
 
-### Task 5: Hệ Thống Audit Log Tập Trung
-- **Mục tiêu:** Ghi nhận vết kiểm toán mọi hành động tài chính và xác thực danh tính.
+### Task 5: Transactional Outbox Pattern & RabbitMQ Event-Driven Architecture
+- **Mục tiêu:** Đảm bảo tính nhất quán cuối cùng (Eventual Consistency) giữa cơ sở dữ liệu và message broker mà không dùng 2-phase commit (2PC).
 - **Triển khai:**
-  - `ClientInfoPort` và `SpringClientInfoAdapter`: Trích xuất động địa chỉ IP thực tế (xử lý qua các header `X-Forwarded-For`, `X-Real-IP`) và `User-Agent`.
-  - Tự động ghi `audit_logs` khi Đăng nhập, Chuyển tiền, Nạp tiền, Rút tiền, Đổi mã PIN, Bật/Tắt 2FA.
+  - Bảng `outbox_events` (`V9__create_outbox_events.sql` và `V11__add_missing_indexes_and_outbox_retry.sql`): Lưu event ngay trong cùng database transaction của nghiệp vụ.
+  - `OutboxRelayScheduler`: Định kỳ quét các event trạng thái `PENDING`, publish vào RabbitMQ exchanges/queues và đánh dấu `PUBLISHED` hoặc tăng `retry_count`.
+  - **AMQP Consumers:**
+    - `LedgerConsumer`: Tiếp nhận event và thực hiện ghi sổ cái kế toán bất đồng bộ.
+    - `NotificationConsumer`: Định danh qua SĐT, gửi push notification qua Firebase FCM và WebSocket.
+    - `AuditLogConsumer`: Ghi log kiểm toán phi đồng bộ, tối ưu latency cho request tài chính.
+    - `ReceiptGenerationConsumer`: Xử lý sinh biên lai giao dịch.
 
-### Task 6: Swagger / OpenAPI UI + Flyway Database Migration
-- **Mục tiêu:** Quản trị schema cơ sở dữ liệu phiên bản hóa và tài liệu hóa API chuẩn OpenAPI 3.0.
+### Task 6: Push Notification Đa Kênh (Firebase FCM + WebSocket STOMP)
+- **Mục tiêu:** Thông báo biến động số dư tức thời tới ứng dụng di động ngay cả khi app đang chạy ngầm hoặc tắt màn hình.
 - **Triển khai:**
-  - `V1__init_schema.sql` nằm tại `backend/src/main/resources/db/migration` khởi tạo toàn bộ 11 bảng, indexes và foreign keys.
-  - `OpenApiConfig`: Cấu hình OpenAPI documentation kèm Security Scheme `Bearer Authentication` cho phép test trực tiếp trên Swagger UI (`/swagger-ui/index.html`).
+  - Quản lý token thiết bị qua `device_tokens` (`V12__create_device_tokens_table.sql`).
+  - `FirebaseFcmNotificationAdapter`: Gửi FCM message với credential an toàn.
+  - `WebSocketNotificationAdapter`: Đẩy tin nhắn realtime qua STOMP channel riêng cho từng user.
+  - Định danh người gửi/nhận bằng số điện thoại thay vì UUID.
 
-### Task 7: Unit & Integration Test End-to-End Luồng Transfer
-- **Mục tiêu:** Đảm bảo toàn bộ luồng nghiệp vụ tài chính được kiểm thử tự động với cơ sở dữ liệu thực.
+### Task 7: Hệ Thống Quản Lý Nguồn Tiền & Liên Kết Ngân Hàng (Bank Linking)
+- **Mục tiêu:** Quản lý thẻ ATM/Visa/MasterCard và tài khoản ngân hàng liên kết để nạp/rút tiền mà không lưu trữ dữ liệu thẻ nhạy cảm (PCI-DSS compliant).
 - **Triển khai:**
-  - `TransferFlowIntegrationTest`: Bao phủ toàn bộ luồng từ Đăng ký -> Nạp tiền -> Khởi tạo chuyển tiền -> Xác thực mã PIN -> Kiểm tra biến động số dư và ghi sổ cái kép.
-  - Kiểm thử đầy đủ các nhánh lỗi: Sai PIN, Số dư không đủ, Vượt hạn mức.
+  - Bảng `banks` và `bank_accounts` (`V6__add_banks_and_update_transactions.sql`), `funding_sources` (`V4__add_funding_sources_table.sql`).
+  - `BankAccountController` & `BankController`: Quản lý liên kết tài khoản ngân hàng nội địa.
+  - Masking số thẻ/tài khoản trước khi lưu vào DB (VD: `9704 **** **** 1234`).
 
-### Task 8: Quản Lý Hạn Mức Giao Dịch Ngày & Tháng
-- **Mục tiêu:** Kiểm soát rủi ro gian lận theo quy định ngân hàng nhà nước.
+### Task 8: Quản Lý Phiên Đăng Nhập & Đăng Xuất Từ Xa (Distributed Sessions)
+- **Mục tiêu:** Theo dõi thiết bị đăng nhập, thu hồi token từ xa và tối ưu vòng đời session.
 - **Triển khai:**
-  - Kiểm tra sớm (Pre-lock validation) tổng chi tiêu trong ngày và trong tháng của ví trước khi thực hiện distributed lock.
-  - Hạn mức Ngày: `100,000,000 VND` (Tài khoản chưa KYC: `5,000,000 VND`).
-  - Hạn mức Tháng: `500,000,000 VND` (Tài khoản chưa KYC: `20,000,000 VND`).
-  - Vi phạm ném ngoại lệ `TransactionLimitExceededException`.
+  - Bảng `user_sessions` (`V3__add_session_table.sql`) kết hợp Redis Session Store (`RedisSessionStoreAdapter`).
+  - `SessionController`: Lấy danh sách thiết bị đang online, đăng xuất đơn lẻ hoặc đăng xuất toàn bộ thiết bị.
+  - Token Blacklist qua Redis với TTL tự hủy theo hạn dùng Access Token (5 phút).
 
-### Task 9: Xác Minh Tên Người Nhận Che Bớt (Masked Recipient Lookup)
-- **Mục tiêu:** Chống chuyển nhầm tiền bằng cách cho người dùng xem trước tên chủ tài khoản nhận.
+### Task 9: Yêu Cầu Chuyển Tiền & Chia Tiền (Money Request & Split Bill)
+- **Mục tiêu:** Cho phép người dùng gửi yêu cầu đòi tiền bạn bè hoặc chia bill ăn uống.
 - **Triển khai:**
-  - `NameMaskingUtils`: Thuật toán chuẩn hóa tiếng Việt in hoa và che ký tự giữa (ví dụ: `"NGUYEN VAN AN"` -> `"NGUYEN V** AN"`).
-  - API `GET /api/v1/wallets/recipient-info?walletId=...&phoneNumber=...` trả về `RecipientInfoResponse`.
+  - `MoneyRequest` entity và `MoneyRequestService`: Hỗ trợ tạo request, chấp nhận thanh toán tự động, từ chối hoặc hủy yêu cầu.
+  - `MoneyRequestController`: Cung cấp trọn vẹn REST API cho chức năng này.
 
-### Task 10: Khóa Đăng Nhập Tạm Thời Sau 5 Lần Sai Mật Khẩu
-- **Mục tiêu:** Chống tấn công dò mật khẩu (Brute-Force Attack).
+### Task 10: Quản Lý Hạn Mức Giao Dịch & Rate Limiting Chống Tấn Công
+- **Mục tiêu:** Kiểm soát rủi ro gian lận theo quy định ngân hàng nhà nước và chống DDoS/Brute-force.
 - **Triển khai:**
-  - Redis Key `login:attempts:{phoneNumber}` (TTL 15 phút) đếm số lần sai.
-  - Lần thứ 5 sai -> Tạo key `login:locked:{phoneNumber}` (TTL 30 phút) và ném `AccountLockedException`.
-  - Đăng nhập thành công -> Tự động xóa bộ đếm.
-
-### Task 11: Thu Hồi Token Khi Đăng Xuất (Token Blacklisting)
-- **Mục tiêu:** Vô hiệu hóa Access Token và Refresh Token ngay khi người dùng bấm Đăng xuất.
-- **Triển khai:**
-  - `TokenBlacklistPort` / `RedisTokenBlacklistAdapter`: Lưu token vào Redis với key `blacklist:token:{token}` kèm TTL bằng thời gian sống còn lại của token.
-  - `JwtAuthenticationFilter` và `AuthService.refreshToken` từ chối mọi token có trong blacklist.
-
-### Task 12: Global Exception Handler Chuẩn Hóa Lỗi
-- **Mục tiêu:** Cung cấp định dạng phản hồi lỗi đồng nhất cho toàn bộ hệ thống API.
-- **Triển khai:**
-  - `GlobalExceptionHandler` bắt tất cả ngoại lệ domain và trả về format `ApiResponse.error(message, errorCode)`.
-  - Các mã lỗi tiêu chuẩn: `WALLET_NOT_FOUND`, `INVALID_PIN`, `INSUFFICIENT_BALANCE`, `ACCOUNT_LOCKED`, `LIMIT_EXCEEDED`, `VALIDATION_FAILED`, `BAD_REQUEST`, `INTERNAL_SERVER_ERROR`.
-
-### Task 13: Giám Sát Sức Khỏe & Chỉ Số Với Spring Boot Actuator
-- **Mục tiêu:** Giám sát thời gian thực trạng thái hoạt động của Database, Disk Space, Redis, JVM.
-- **Triển khai:**
-  - Cấu hình mở các endpoint: `/actuator/health`, `/actuator/info`, `/actuator/metrics`, `/actuator/prometheus`.
-  - Cấu hình `SecurityConfig` cho phép truy cập Actuator phục vụ hệ thống giám sát (Prometheus / Grafana).
-
-### Task 14: Rate Limiting Cho Endpoint Công Khai
-- **Mục tiêu:** Chống Spam và tấn công từ chối dịch vụ (DDoS) trên các endpoint nhạy cảm.
-- **Triển khai:**
-  - `RedisRateLimiter`: Giới hạn `/api/v1/auth/login` (10 req/min), `/api/v1/auth/register` (5 req/min), `/api/v1/auth/forgot-password` (3 req/min), `/api/v1/auth/otp/send` (3 req/min).
-
-### Task 15: Chuẩn Hóa Lưu Trữ Thời Gian Theo Múi Giờ UTC
-- **Mục tiêu:** Đồng nhất dữ liệu thời gian trên toàn hệ thống đa khu vực (Multi-region).
-- **Triển khai:**
-  - Toàn bộ Entity sử dụng kiểu dữ liệu `java.time.Instant`.
-  - Cấu hình `spring.jpa.properties.hibernate.jdbc.time_zone: UTC` và `spring.jackson.time-zone: UTC`.
-
-### Task 16: Pagination Chuẩn Cho Mọi API Danh Sách
-- **Mục tiêu:** Chuẩn hoá phân trang danh sách với đầy đủ metadata cho Mobile App.
-- **Triển khai:**
-  - Generic Model `PageResponse<T>` gồm các trường: `content`, `page`, `size`, `totalElements`, `totalPages`, `last`.
-
-### Task 17: Giới Hạn Số Tiền Tối Thiểu / Tối Đa Trên Từng Giao Dịch
-- **Mục tiêu:** Ràng buộc giá trị giao dịch hợp lệ trên từng lần chuyển.
-- **Triển khai:**
-  - Số tiền tối thiểu: `1,000 VND`.
-  - Số tiền tối đa trên 1 lần chuyển: `50,000,000 VND`.
-  - Validate ngay tại đầu hàm `transfer` và `initTransfer` trước khi tiến hành lock tài nguyên.
-
-### Task 18: Không Xóa Cứng Dữ Liệu Tài Chính (Soft Delete & Immutability)
-- **Mục tiêu:** Bảo toàn tính toàn vẹn và bất biến của dữ liệu kế toán phục vụ kiểm toán.
-- **Triển khai:**
-  - Tuyệt đối không cung cấp thao tác `DELETE` trên các bảng `transactions`, `journal_entries`, `ledger_postings`, `audit_logs`.
-  - Mọi thao tác hủy bỏ được thực hiện qua giao dịch bù trừ hoặc cập nhật trạng thái `REVERSED` / `FAILED`.
-
-### Task 19: Biên Lai Điện Tử & Bảo Vệ Tránh Lỗi IDOR
-- **Mục tiêu:** Sinh file PDF cho mỗi giao dịch, đảm bảo chỉ người gửi/người nhận mới tải được.
-- **Triển khai:**
-  - Sử dụng thư viện `OpenPDF` để vẽ giao diện PDF.
-  - Chuẩn hóa thời gian GMT+7 và che mờ tên người dùng (Masking).
-  - So khớp `userId` của người dùng yêu cầu với `source_wallet` và `target_wallet` để chống IDOR.
-
-### Task 20: Quản Lý Phiên Đăng Nhập & Đăng Xuất Từ Xa
-- **Mục tiêu:** Cho phép người dùng theo dõi và đăng xuất các thiết bị đang đăng nhập, cùng với tính năng Refresh Token liên tục.
-- **Triển khai:**
-  - `DeviceSession`: Quản lý Device ID, IP, User-Agent và FCM Token.
-  - Hủy Access Token và Refresh Token cho từng thiết bị cụ thể.
-  - `NotificationController` và cơ chế Push Event đồng bộ hóa dữ liệu.
-
-### Task 21: Liên Kết Nguồn Tiền & Tuân Thủ PCI-DSS
-- **Mục tiêu:** Quản lý thẻ ATM/Visa/MasterCard và tài khoản ngân hàng liên kết để nạp tiền mà không lưu trữ dữ liệu nhạy cảm gốc.
-- **Triển khai:**
-  - Entity `FundingSource` với cơ chế Soft Delete.
-  - **Masking Number:** Tự động che số thẻ trước khi lưu vào PostgreSQL (VD: `4970 **** **** 9012` hoặc `10****78`).
-  - Hỗ trợ mô phỏng luồng (Mock Flow) liên kết nguồn tiền ngoài.
-
-### Task 23: Xử Lý Ngoại Lệ Hết Hạn Token & Tối Ưu Phiên Đăng Nhập (5 Phút)
-- **Mục tiêu:** Nâng cao bảo mật bằng cách rút ngắn thời gian sống của Access Token xuống 5 phút và xử lý mượt mà khi token hết hạn.
-- **Triển khai:**
-  - `JwtTokenProvider` giới hạn thời gian sống (TTL) của JWT xuống chính xác 5 phút.
-  - Xử lý triệt để lỗi 500 (`ExpiredJwtException`) trong `JwtAuthenticationFilter` để chuyển thành phản hồi 401 Unauthorized có cấu trúc, giúp Frontend tự động kích hoạt luồng gọi Refresh Token (Silent Refresh).
-
-### Task 24: Vá Lỗ Hổng Fee Evasion (Trốn Phí) Trong Core Tài Chính
-- **Mục tiêu:** Chống thất thoát doanh thu từ việc các giao dịch né được luồng tính phí.
-- **Triển khai:**
-  - Loại bỏ tính toán phí thủ công ở `WalletController`.
-  - Tiêm (Inject) trực tiếp `FeeEstimationUseCase` vào `WalletService`. Mọi thao tác `transfer`, `withdraw`, và `processPaymentInternal` đều tự động cộng thêm phí giao dịch (`amount + fee`) trước khi check số dư và khoá (Pessimistic Lock).
-
-### Task 25: Chống Thất Thoát Tiền Tự Động (Auto-Reversal) Khi Lỗi Provider
-- **Mục tiêu:** Không để người dùng bị mất tiền oan khi nạp tiền điện thoại (Topup) hoặc thanh toán hóa đơn (Bill) nhưng nhà cung cấp dịch vụ mạng (Viettel, EVN) bị lỗi.
-- **Triển khai:**
-  - Bổ sung loại giao dịch `TOPUP` vào `TransactionType`.
-  - `PaymentService` áp dụng mẫu Try-Catch bọc lệnh gọi `PaymentProviderPort`. Nếu Provider ném lỗi hoặc timeout, hệ thống tự động gọi `TransactionReversalUseCase` để lập tức hoàn tiền về ví cho khách hàng.
-
-### Task 26: Giải Mã QR Động (Decode QR) Theo Chuẩn VietQR
-- **Mục tiêu:** Hỗ trợ tính năng Quét mã QR, tự động trích xuất số tiền, nội dung và người nhận từ QR tĩnh/động.
-- **Triển khai:**
-  - `VietQrService` cung cấp phương thức giải mã chuỗi EMVCo, mapping các Tag 00, 01, 38, 53, 54 để lấy thông tin. Tích hợp vào `VietQrController` để phục vụ Frontend.
-
-### Task 27: Cá Nhân Hóa Thông Báo Biến Động Số Dư (Định Danh Qua SDT)
-- **Mục tiêu:** Thay thế chuỗi UUID vô nghĩa bằng Số Điện Thoại của khách hàng trong các tin nhắn Push Notification và WebSocket.
-- **Triển khai:**
-  - Tiêm `UserPersistencePort` vào `WebSocketNotificationAdapter` và `NotificationConsumer`.
-  - Hệ thống tự động tra cứu User ID của chủ ví và ví đối phương, chuyển đổi thành số điện thoại (VD: `Tài khoản: 098xxxx, Chuyển đến: 090xxxx`) hiển thị trong thông báo.
+  - Pre-lock validation: Hạn mức ngày 100tr (Chưa KYC: 5tr), Hạn mức tháng 500tr (Chưa KYC: 20tr).
+  - Tối thiểu 1,000 VND, tối đa 50,000,000 VND / giao dịch.
+  - `RateLimitingInterceptor` & `RedisRateLimiter`: Giới hạn tần suất gọi API công khai (`/auth/login`, `/auth/register`, `/auth/otp/send`).
+  - Khóa tài khoản tạm thời 30 phút sau 5 lần đăng nhập sai mật khẩu liên tiếp.
 
 ---
 
-## 3. CƠ SỞ DỮ LIỆU & SCHEMA (POSTGRESQL + FLYWAY)
+## 3. CƠ SỞ DỮ LIỆU & SCHEMA (POSTGRESQL + FLYWAY V1 -> V12)
 
-Database Schema được quản lý tập trung qua Flyway Script `V1__init_schema.sql` với các bảng chính:
+Cơ sở dữ liệu được phiên bản hóa hoàn toàn qua 12 migration scripts:
 
-1. **`users`**: Quản lý thông tin định danh, số điện thoại, mật khẩu băm, mã PIN băm, trạng thái KYC (`UNVERIFIED`, `VERIFIED`, `ADVANCED`).
-2. **`user_profiles`**: Thông tin cá nhân mở rộng (Họ tên, Email, Ngày sinh, Địa chỉ, Avatar).
-3. **`user_kycs`**: Thông tin CCCD/Hộ chiếu, ảnh mặt trước/sau, ảnh chân dung, trạng thái duyệt.
-4. **`wallets`**: Số dư khả dụng (`balance_amount`), loại tiền tệ (`currency`), phiên bản kiểm soát lạc quan (`version`).
-5. **`transactions`**: Lịch sử giao dịch, `request_id` (Unique Index), ví nguồn, ví đích, số tiền, loại (`TRANSFER`, `DEPOSIT`, `WITHDRAW`), trạng thái.
-6. **`journal_entries`**: Bút toán sổ cái kép ghi nhận lý do và thời gian biến động tài chính.
-7. **`ledger_postings`**: Các dòng chi tiết của bút toán (Nợ `DEBIT` / Có `CREDIT`), liên kết với `ledger_accounts`.
-8. **`ledger_accounts`**: Hệ thống tài khoản kế toán (Tài sản, Nợ phải trả, Vốn chủ sở hữu, Doanh thu, Chi phí).
-9. **`audit_logs`**: Nhật ký kiểm toán hành động, IP thực tế, User-Agent, payload hash.
-10. **`beneficiaries`**: Danh bạ thụ hưởng đã lưu của người dùng.
-11. **`device_tokens`**: Quản lý token thiết bị FCM phục vụ gửi thông báo Push Notification.
+1. **`V1__init_schema.sql`**: Khởi tạo 11 bảng lõi ban đầu (`users`, `user_profiles`, `user_kycs`, `wallets`, `transactions`, `journal_entries`, `ledger_postings`, `ledger_accounts`, `audit_logs`, `beneficiaries`, `device_tokens`).
+2. **`V2__add_extended_modules.sql`**: Thêm các bảng mở rộng hỗ trợ voucher, bills, merchants.
+3. **`V3__add_session_table.sql`**: Tạo bảng `user_sessions` quản lý thiết bị và phiên đăng nhập.
+4. **`V4__add_funding_sources_table.sql`**: Tạo bảng `funding_sources` lưu trữ nguồn tiền liên kết đã mã hóa/masking.
+5. **`V5__add_note_to_transactions.sql`**: Bổ sung trường `note` vào bảng `transactions`.
+6. **`V6__add_banks_and_update_transactions.sql`**: Thêm danh mục ngân hàng (`banks`), tài khoản ngân hàng liên kết (`bank_accounts`), bổ sung metadata giao dịch liên ngân hàng.
+7. **`V7__add_full_name_to_users.sql`**: Bổ sung trường `full_name` trực tiếp vào bảng `users` nhằm tối ưu tốc độ đọc.
+8. **`V8__add_receiver_balance_after.sql`**: Bổ sung trường `receiver_balance_after` trong `transactions` phục vụ đối soát số dư biến động hai chiều.
+9. **`V9__create_outbox_events.sql`**: Tạo bảng `outbox_events` cho Transactional Outbox Pattern.
+10. **`V10__add_idempotency_keys.sql`**: Bổ sung ràng buộc Unique `idempotency_key` cho `journal_entries` và `audit_logs`.
+11. **`V11__add_missing_indexes_and_outbox_retry.sql`**: Thêm index tối ưu truy vấn ví nguồn/đích (`idx_transactions_source_wallet`, `idx_transactions_target_wallet`) và thêm cột `retry_count` cho `outbox_events`.
+12. **`V12__create_device_tokens_table.sql`**: Chuẩn hóa bảng `device_tokens` phục vụ push notification Firebase FCM.
 
 ---
 
 ## 4. BẢN ĐỒ INBOUND & OUTBOUND PORTS (HEXAGONAL PORTS)
 
-### Inbound Ports (Use Cases - Application Services):
-- `TransferMoneyUseCase`: `transfer`, `initTransfer`, `confirmTransfer`, `initTransferQr`.
-- `GetWalletUseCase`: `getWalletById`, `getWalletByOwnerId`, `getRecipientInfo`.
-- `DepositMoneyUseCase` / `WithdrawMoneyUseCase`: Nạp/Rút tiền vào ví.
-- `PinUseCase`: Thiết lập, xác thực và đổi mã PIN giao dịch.
-- `KycUseCase`: Nộp hồ sơ và xác minh danh tính người dùng.
-- `TransactionQueryUseCase`: Tra cứu lịch sử phân trang và xuất sao kê (CSV, PDF, Excel).
-- `LedgerUseCase`: Ghi bút toán sổ cái kép và tính toán số dư kế toán.
-- `ReconciliationUseCase`: Đối soát giữa số dư ví (`wallets.balance_amount`) và tổng sổ cái (`ledger_postings`).
+### Inbound Ports (38 Use Cases - `domain.port.in.*`):
+- `AccountUseCase`: Đổi mật khẩu, đặt lại mật khẩu.
+- `AuthUseCase`: Đăng ký, đăng nhập, refresh token, logout.
+- `BankLinkingUseCase`: Liên kết tài khoản ngân hàng đối tác.
+- `BeneficiaryUseCase`: Thêm, xóa, xem danh bạ người thụ hưởng.
+- `BillPaymentUseCase`: Tra cứu và thanh toán hóa đơn điện/nước/internet.
+- `DepositMoneyUseCase` / `WithdrawMoneyUseCase`: Nạp/Rút tiền ví điện tử.
+- `DeviceTokenUseCase`: Đăng ký và hủy FCM token theo thiết bị.
+- `FeeEstimationUseCase`: Ước tính phí giao dịch linh hoạt.
+- `FeedbackUseCase`: Tiếp nhận đánh giá phản hồi từ người dùng.
+- `FundingSourceUseCase`: Quản lý các nguồn tiền thanh toán.
+- `GenerateReceiptUseCase`: Sinh biên lai điện tử chuẩn PDF.
+- `GetBankListUseCase`: Tra cứu danh sách ngân hàng Napas hỗ trợ.
+- `GetWalletUseCase`: Lấy thông tin ví theo ID, UserID, tra cứu người nhận.
+- `KycUseCase`: Nộp và xử lý duyệt hồ sơ eKYC.
+- `LedgerUseCase`: Hạch toán sổ cái kép và tính toán số dư kế toán.
+- `LegalConfigUseCase`: Quản lý điều khoản sử dụng và ghi nhận sự đồng thuận.
+- `MerchantUseCase`: Đăng ký và tích hợp cổng thanh toán điểm bán.
+- `MoneyRequestUseCase`: Tạo, chấp nhận, từ chối và hủy yêu cầu chuyển tiền.
+- `NotificationUseCase`: Tra cứu và cài đặt nhận thông báo.
+- `PartnerWebhookUseCase`: Xử lý webhook từ Napas và đối tác thanh toán.
+- `PersonalQrUseCase`: Tạo và quét mã QR cá nhân chuyển tiền.
+- `PinUseCase`: Cài đặt và xác thực mã PIN bảo mật giao dịch.
+- `PromotionUseCase`: Danh sách khuyến mãi và áp dụng mã voucher.
+- `ReconciliationUseCase`: Đối soát số dư ví với tổng các bút toán sổ cái.
+- `ReferralUseCase`: Mã giới thiệu người dùng và nhận thưởng.
+- `SecurityUseCase`: Quản lý bảo mật 2FA, sinh trắc học.
+- `SessionManagementUseCase` / `SessionUseCase`: Quản lý phiên đăng nhập thiết bị.
+- `SupportUseCase`: Tiếp nhận và phản hồi phiếu hỗ trợ khách hàng.
+- `TransactionQueryUseCase`: Phân trang lịch sử và xuất sao kê giao dịch.
+- `TransactionReversalUseCase`: Kích hoạt Saga hoàn tiền khi lỗi phát sinh.
+- `TransferMoneyUseCase`: Khởi tạo và xác nhận giao dịch chuyển tiền nội bộ/liên ngân hàng/QR.
+- `UserProfileUseCase`: Cập nhật thông tin cá nhân và ảnh đại diện.
+- `VietQrUseCase`: Tạo chuỗi VietQR chuẩn EMVCo và giải mã QR.
 
-### Outbound Ports (SPI - Infrastructure Adapters):
-- `WalletPersistencePort` -> `WalletPersistenceAdapter` (JPA + Pessimistic Lock).
-- `TransactionPersistencePort` -> `TransactionPersistenceAdapter` (JPA).
-- `UserPersistencePort` -> `UserPersistenceAdapter` (JPA).
-- `DistributedLockPort` -> `RedisDistributedLockAdapter` (Redis Lock with TTL).
-- `TokenBlacklistPort` -> `RedisTokenBlacklistAdapter` (Redis String with TTL).
-- `ClientInfoPort` -> `SpringClientInfoAdapter` (HttpServletRequest IP & User-Agent resolver).
-- `TransactionalOperationPort` -> `SpringTransactionalOperationAdapter` (PlatformTransactionManager).
-- `NotificationPort` -> `NotificationEventListener` (Spring Event / Async push).
-- `BankGatewayPort` -> `MockBankGatewayAdapter` (Resilience4j Retry).
-
----
-
-## 5. MOBILE APP ARCHITECTURE (31 MÀN HÌNH REACT NATIVE)
-
-> **Lưu ý:** Mã nguồn Mobile App đã được tách sang một repository riêng biệt. Phần dưới đây mô tả kiến trúc của ứng dụng di động để phục vụ tra cứu ngữ cảnh hệ thống.
-
-Ứng dụng di động xây dựng bằng **React Native (Expo) + TypeScript**, tuân thủ nghiêm ngặt hệ thống Design Tokens iOS Glassmorphism:
-
-### Phân Nhóm 31 Màn Hình:
-- **Nhóm A (Xác thực - 6 màn):** Login, Register, Forgot Password, Set PIN, Verify OTP, Forgot PIN.
-- **Nhóm B (Trang chính - 2 màn):** Dashboard Hero Balance Card, Lịch sử giao dịch phân trang.
-- **Nhóm C (Chuyển tiền - 4 màn):** Chọn người nhận & tra cứu tên, Nhập số tiền & Chip nhanh, Xác nhận giao dịch PIN/OTP modal, Kết quả chuyển tiền.
-- **Nhóm D (VietQR - 2 màn):** Quét mã QR thanh toán (Camera), Mã QR của tôi (Dynamic/Static QR).
-- **Nhóm E (Chi tiết giao dịch - 1 màn):** Biên lai điện tử, tải hóa đơn, sao chép mã GD.
-- **Nhóm F (Thông báo - 1 màn):** Tab Biến động số dư / Ưu đãi / Hệ thống.
-- **Nhóm G (Hồ sơ & Cài đặt - 4 màn):** Thông tin cá nhân, Cài đặt bảo mật (2FA, Sinh trắc học), Quản lý thiết bị đăng nhập, Phương thức thanh toán.
-- **Nhóm H (Nạp / Rút tiền - 2 màn):** Nạp tiền từ ngân hàng liên kết, Rút tiền về tài khoản.
-- **Nhóm I (Quản lý thẻ & Ngân hàng - 1 màn):** Danh sách thẻ ATM/Visa liên kết.
-- **Nhóm J (Thanh toán hóa đơn - 2 màn):** Chọn nhà cung cấp (Điện, Nước, Internet, Học phí), Nhập mã khách hàng & Tra cứu cước.
-- **Nhóm K (Yêu cầu nhận tiền - 1 màn):** Tạo link & QR yêu cầu thanh toán.
-- **Nhóm L (Trung tâm ưu đãi - 1 màn):** Carousel khuyến mãi & voucher hoàn tiền.
-- **Nhóm M (Trung tâm hỗ trợ - 1 màn):** Tra cứu câu hỏi thường gặp (FAQ Accordion) & Chatbot hỗ trợ.
-- **Nhóm N (Tìm kiếm toàn app - 1 màn):** Search bar liên hệ, giao dịch, tính năng.
-
-### Tích hợp API Client (`mobile-app/src/services/api.ts`):
-- Tự động gắn header `Authorization: Bearer <token>`.
-- Tự động sinh `Idempotency-Key` (UUIDv4) trên tất cả request thay đổi số dư.
-- 100% Type-safe, xác thực thành công qua `npx tsc --noEmit` (**0 errors**).
-
----
-
-## 6. BÁO CÁO KIỂM THỬ & CHỈ SỐ CHẤT LƯỢNG (TEST METRICS)
-
-- **Tổng số kịch bản kiểm thử tự động:** **`288 tests`**
-- **Tỷ lệ vượt qua (Pass Rate):** **`100% (288 / 288 passed)`**
-- **Số lượng thất bại (Failures):** **`0`**
-- **Số lượng lỗi runtime (Errors):** **`0`**
-- **Số lượng bỏ qua (Skipped):** **`0`**
-- **Công cụ kiểm thử:** JUnit 5, Mockito, Spring Boot Test, JaCoCo Coverage Agent.
-
-### Task 19: Tích hợp Frontend-Backend E2E (Khớp nối Auth & Chuyển Tiền)
-- **Mục tiêu:** Đảm bảo luồng Đăng ký, Đăng nhập và Chuyển tiền từ Mobile App (React Native) xuống Backend hoạt động trơn tru 100%, không bị sai lệch dữ liệu.
-- **Triển khai:**
-  - Phát hiện và vá lỗ hổng Type Mapping ở Frontend (Backend trả về `accessToken` và `refreshToken`, nhưng Frontend móc nhầm vào `token`).
-  - Xử lý triệt để lỗi `WalletNotFoundException`: Ở Backend, `walletId` bắt buộc là chuỗi UUID. Tuy nhiên, API Auth không trả về `walletId`, khiến Frontend gán mặc định `walletId = phoneNumber`. Đã bổ sung logic gọi API `WalletApi.getRecipientInfo()` ngầm sau khi Đăng nhập/Đăng ký để lấy chính xác UUID thật của ví và đưa vào Context.
-  - Tối ưu hóa `LoginScreen`: Gỡ bỏ dữ liệu Hardcode, bổ sung Form nhập liệu linh hoạt (Số điện thoại & Mật khẩu) cùng hiệu ứng Glassmorphism.
-  - Đã từng triển khai kịch bản test tự động E2E bắn trực tiếp vào API với 8 kịch bản khắt khe (hiện đã được dọn dẹp để tách repo).
-
-### Task 22: Khớp Nối Nâng Cao & Phá Bỏ Giao Diện Mock (Frontend - Backend)
-- **Mục tiêu:** Kiểm toán và khớp nối 100% dữ liệu thực cho các tính năng quan trọng, loại bỏ hoàn toàn dữ liệu giả (mock data) trên Frontend.
-- **Triển khai:**
-  - **KYC & Danh bạ thụ hưởng:** Đã xác nhận Frontend tích hợp thành công màn hình `EKycScreen` (gọi `POST /users/kyc`) và `BeneficiariesScreen` (gọi `GET/DELETE /beneficiaries`).
-  - **Xuất Biên Lai & Sao Kê (E-Receipt):** Tích hợp thành công `expo-file-system` và `expo-sharing`. Màn hình kết quả chuyển tiền và lịch sử giao dịch đã có thể gọi API tải file PDF/CSV/Excel trực tiếp từ Backend và mở bảng chia sẻ (Share Sheet).
-  - **Quản lý thiết bị đăng nhập (Session):** Gỡ bỏ mảng dữ liệu `mockDevices` tĩnh, kết nối thành công `DeviceManagementScreen` với API `GET /api/v1/sessions` và chức năng "Gỡ thiết bị" từ xa `DELETE /api/v1/sessions/{deviceId}`.
-  - **Cảnh báo (Chưa hoàn thiện):** Chức năng "Quên mã PIN" (Forgot PIN) hiện tại Frontend mới chỉ có giao diện, Backend `PinUseCase` đang **THIẾU** logic reset mã PIN qua OTP. Đây là lỗ hổng cần vá tiếp theo.
+### Outbound Ports (30 SPI - `domain.port.out.*`):
+- `WalletPersistencePort`: Lưu trữ và truy vấn ví kèm Pessimistic Lock (`FOR UPDATE`).
+- `TransactionPersistencePort`: Lưu trữ và truy vấn lịch sử giao dịch.
+- `UserPersistencePort`: Lưu trữ và truy vấn thông tin người dùng.
+- `LedgerPersistencePort`: Lưu bút toán và chi tiết hạch toán Nợ/Có.
+- `OutboxEventPersistencePort`: Lưu và quét các outbox event đang chờ gửi.
+- `BankAccountPersistencePort` / `BankPersistencePort`: Quản lý dữ liệu ngân hàng.
+- `BeneficiaryPersistencePort`: Lưu danh bạ người nhận tiền.
+- `FundingSourcePersistencePort`: Quản trị nguồn tiền liên kết.
+- `KycPersistencePort`: Lưu trữ hồ sơ định danh eKYC.
+- `MoneyRequestPersistencePort`: Quản lý các yêu cầu chuyển tiền.
+- `SessionPersistencePort` / `SessionStorePort`: Quản lý phiên và token phân tán.
+- `DistributedLockPort`: Khóa phân tán Redis Lock ngăn ngừa Race Condition.
+- `TokenBlacklistPort`: Đưa JWT vào danh sách đen khi đăng xuất.
+- `TransactionEventPublisherPort`: Phát hành sự kiện giao dịch qua RabbitMQ.
+- `FcmNotificationPort`: Bắn push notification qua Google Firebase Cloud Messaging.
+- `NotificationPort` / `NotificationQueryPort`: Gửi và tra cứu lịch sử thông báo.
+- `BillProviderPort`: Gọi cổng tra cứu cước và gạch nợ hóa đơn bên thứ ba.
+- `BankGatewayPort`: Kết nối tới cổng thanh toán ngân hàng (Resilience4j bọc ngoài).
+- `ClientInfoPort`: Trích xuất IP thực và User-Agent từ request header.
+- `TransactionalOperationPort`: Đảm bảo thực thi trong Spring Transaction Manager.
+- `AuditLogPersistencePort`: Ghi log kiểm toán hành vi người dùng.
 
 ---
 
-## 7. HƯỚNG DẪN VẬN HÀNH & TRIỂN KHAI
+## 5. BÁO CÁO KIỂM THỬ & CHỈ SỐ CHẤT LƯỢNG (TEST METRICS)
 
-### Triển khai tự động bằng Docker Compose:
+Toàn bộ hệ thống được bảo vệ bởi bộ kiểm thử tự động nghiêm ngặt ở cả 3 cấp độ: Unit Tests, Architecture/Integration Tests, và E2E Flow Tests:
+- **Số lượng Test Classes:** **68 test classes**
+- **Tổng số kịch bản `@Test`:** **`307 test methods`**
+- **Tỷ lệ vượt qua (Pass Rate):** **`100% (307 / 307 passed)`**
+- **Failures / Errors / Skipped:** **`0 / 0 / 0`**
+- **Phân loại kịch bản chính:**
+  - `WalletE2EIntegrationTest` & `TransferFlowIntegrationTest`: Kiểm thử luồng tiền toàn trình từ nạp tiền, chuyển tiền, khóa số dư tới ghi sổ kép.
+  - `ConcurrentWalletServiceTest`: Kiểm tra khả năng chịu tải đồng thời, loại bỏ triệt để Race Condition nhờ Redis + Database Pessimistic Lock.
+  - `RabbitMqIntegrationTest`: Kiểm thử đồng bộ Outbox Event qua message broker.
+  - `FirebaseRealCredentialsTest` & `FirebaseFcmNotificationAdapterTest`: Kiểm tra độ tin cậy của thông báo đẩy FCM.
+  - `BillPaymentE2EIntegrationTest` & `QrPaymentE2EIntegrationTest`: Kiểm thử thanh toán hóa đơn và VietQR EMVCo.
+
+---
+
+## 6. HƯỚNG DẪN VẬN HÀNH & TRIỂN KHAI
+
+### 1. Khởi động môi trường hạ tầng (Docker Compose):
 ```bash
-docker compose up -d --build
+docker compose up -d
+# Chạy PostgreSQL (5432), Redis (6379), RabbitMQ (5672, 15672)
 ```
 
-### Chạy kiểm thử tự động toàn bộ dự án (Tại thư mục backend):
+### 2. Chạy toàn bộ kiểm thử tự động (Tại thư mục `backend`):
 ```bash
 cd backend
 JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn clean test
 ```
 
-### Đóng gói ứng dụng (Tại thư mục backend):
+### 3. Đóng gói ứng dụng chạy Production:
 ```bash
 cd backend
-mvn clean package -DskipTests
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn clean package -DskipTests
 # File JAR thực thi: target/wallet-1.0.0-SNAPSHOT.jar
 ```
 
+### 4. Quét lại đồ thị mã nguồn bằng `codebase-memory-mcp`:
+```bash
+codebase-memory-mcp cli index_repository --repo-path=/home/wsk2/app-mono-di-va-khoa
+codebase-memory-mcp cli get_architecture --project=home-wsk2-app-mono-di-va-khoa
+```
+
 ---
-_Tài liệu Codebase Memory này được lưu trữ để phục vụ cơ chế bộ nhớ ngữ cảnh và tra cứu kiến trúc cho các công cụ AI & Nhà phát triển._
+_Tài liệu CODEBASE_MEMORY.md được tự động quét, xác thực và đồng bộ hóa với toàn bộ mã nguồn thực tế của dự án._

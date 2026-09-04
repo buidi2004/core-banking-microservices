@@ -15,6 +15,7 @@ public class AuditLogMapper {
                 entity.getIpAddress(),
                 entity.getAction(),
                 entity.getPayloadHash(),
+                entity.getIdempotencyKey(),
                 entity.getCreatedAt()
         );
     }
@@ -27,6 +28,7 @@ public class AuditLogMapper {
                 domain.getIpAddress(),
                 domain.getAction(),
                 domain.getPayloadHash(),
+                domain.getIdempotencyKey(),
                 domain.getCreatedAt()
         );
     }

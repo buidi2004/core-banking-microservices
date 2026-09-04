@@ -22,6 +22,7 @@ public class Transaction {
     private String bankCode;
     private Money feeAmount;
     private Money balanceAfter;
+    private Money receiverBalanceAfter;
 
     public Transaction(String id, String requestId, String sourceWalletId, String targetWalletId, Money amount, TransactionType type, TransactionStatus status, Instant createdAt) {
         this(id, requestId, sourceWalletId, targetWalletId, amount, type, status, createdAt, null, null);
@@ -193,6 +194,14 @@ public class Transaction {
 
     public void setBalanceAfter(Money balanceAfter) {
         this.balanceAfter = balanceAfter;
+    }
+
+    public Money getReceiverBalanceAfter() {
+        return receiverBalanceAfter;
+    }
+
+    public void setReceiverBalanceAfter(Money receiverBalanceAfter) {
+        this.receiverBalanceAfter = receiverBalanceAfter;
     }
 
     @Override

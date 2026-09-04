@@ -14,24 +14,27 @@ public class AuditLog {
     private final String ipAddress;
     private final String action;
     private final String payloadHash;
+    private final String idempotencyKey;
     private final Instant createdAt;
 
-    public AuditLog(String id, String callerId, String ipAddress, String action, String payloadHash, Instant createdAt) {
+    public AuditLog(String id, String callerId, String ipAddress, String action, String payloadHash, String idempotencyKey, Instant createdAt) {
         this.id = id != null ? id : UUID.randomUUID().toString();
         this.callerId = callerId;
         this.ipAddress = ipAddress;
         this.action = action;
         this.payloadHash = payloadHash;
+        this.idempotencyKey = idempotencyKey;
         this.createdAt = createdAt != null ? createdAt : Instant.now();
     }
 
-    public static AuditLog record(String callerId, String ipAddress, String action, String payloadHash) {
+    public static AuditLog record(String callerId, String ipAddress, String action, String payloadHash, String idempotencyKey) {
         return new AuditLog(
             UUID.randomUUID().toString(),
             callerId,
             ipAddress,
             action,
             payloadHash,
+            idempotencyKey,
             Instant.now()
         );
     }
@@ -41,6 +44,7 @@ public class AuditLog {
     public String getIpAddress() { return ipAddress; }
     public String getAction() { return action; }
     public String getPayloadHash() { return payloadHash; }
+    public String getIdempotencyKey() { return idempotencyKey; }
     public Instant getCreatedAt() { return createdAt; }
 
     @Override

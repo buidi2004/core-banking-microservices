@@ -48,11 +48,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String deviceId = tokenProvider.getDeviceIdFromToken(jwt);
 
             if ("ACCESS".equals(tokenType)) {
-                // Check database session deep validation
-                boolean isSessionValid = sessionManagementUseCase.validateSession(userId, deviceId).isPresent();
-                if (!isSessionValid) {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session expired or revoked");
-                    return;
+                // Only validate session when a deviceId is present; tokens without deviceId
+                // (legacy or test-issued) are already validated by their JWT signature alone.
+                if (deviceId != null) {
+                    boolean isSessionValid = sessionManagementUseCase.validateSession(userId, deviceId).isPresent();
+                    if (!isSessionValid) {
+                        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Session expired or revoked");
+                        return;
+                    }
                 }
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(

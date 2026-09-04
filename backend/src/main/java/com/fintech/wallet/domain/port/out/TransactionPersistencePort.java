@@ -15,5 +15,6 @@ public interface TransactionPersistencePort {
     List<Transaction> findTransactionsByWalletIdAndDateRange(String walletId, Instant fromDate, Instant toDate);
     BigDecimal calculateDailySpentByWalletId(String walletId, Instant startOfDay);
     BigDecimal calculateMonthlySpentByWalletId(String walletId, Instant startOfMonth);
+    List<Transaction> findExpiredPendingTransactions(Instant threshold);
 }
 

@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Fintech E-Wallet System Architecture",
+    "quality_profile": "showcase",
+    "viewBox": [1100, 600],
+    "views": [
+      {
+        "id": "payment-flow",
+        "label": "Core transaction path",
+        "focus": ["mobile", "gateway", "backend", "postgres", "redis"],
+        "note": "Money transfer with distributed lock, idempotency check, and double-entry ledger persistence."
+      },
+      {
+        "id": "async-events",
+        "label": "Async event pipeline",
+        "focus": ["backend", "rabbitmq", "consumers", "fcm"],
+        "note": "Transactional outbox relay and asynchronous consumers for audit and notifications."
+      },
+      {
+        "id": "external-banking",
+        "label": "Banking & VietQR integration",
+        "focus": ["backend", "banking"],
+        "note": "VietQR payment settlement and banking partner integration."
+      }
+    ]
+  },
+  "components": [
+    { "id": "mobile", "type": "frontend", "label": "Mobile App", "sublabel": "React Native", "pos": [40, 230], "size": [140, 64] },
+    { "id": "web", "type": "frontend", "label": "Web Portal", "sublabel": "Admin / Merchant", "pos": [40, 380], "size": [140, 64] },
+    { "id": "gateway", "type": "security", "label": "API Gateway", "sublabel": "JWT & Rate Limit", "pos": [250, 305], "size": [140, 64], "tag": "HTTPS :443" },
+    { "id": "backend", "type": "backend", "label": "Wallet Core", "sublabel": "Spring Boot 3.2", "brand": "spring", "pos": [470, 305], "size": [140, 64], "tag": "Hexagonal DDD" },
+    { "id": "redis", "type": "database", "label": "Redis Cache", "sublabel": "Lock & Idempotency", "brand": "redis", "pos": [470, 140], "size": [140, 64], "tag": ":6379" },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL", "sublabel": "Double-Entry Ledger", "brand": "postgresql", "pos": [700, 305], "size": [140, 64], "tag": ":5432" },
+    { "id": "rabbitmq", "type": "messagebus", "label": "RabbitMQ", "sublabel": "Event Broker", "brand": "rabbitmq", "pos": [470, 470], "size": [140, 64], "tag": ":5672" },
+    { "id": "consumers", "type": "backend", "label": "Async Consumers", "sublabel": "Audit / Ledger / FCM", "pos": [700, 470], "size": [140, 64] },
+    { "id": "banking", "type": "external", "label": "Partner Banks", "sublabel": "NAPAS & VietQR", "pos": [700, 140], "size": [140, 64] },
+    { "id": "fcm", "type": "cloud", "label": "Firebase FCM", "sublabel": "Push Notifications", "brand": "firebase", "pos": [920, 470], "size": [140, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "E-Wallet Core Infrastructure", "wraps": ["backend", "redis", "postgres", "rabbitmq", "consumers"] }
+  ],
+  "connections": [
+    { "id": "mobile-to-gw", "from": "mobile", "to": "gateway", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "web-to-gw", "from": "web", "to": "gateway", "label": "HTTPS" },
+    { "id": "gw-to-backend", "from": "gateway", "to": "backend", "label": "Forward", "variant": "emphasis" },
+    { "id": "backend-to-redis", "from": "backend", "to": "redis", "label": "Lock / Token", "fromSide": "top", "toSide": "bottom", "labelDy": -25 },
+    { "id": "backend-to-db", "from": "backend", "to": "postgres", "label": "JPA Ledger", "variant": "emphasis" },
+    { "id": "backend-to-mq", "from": "backend", "to": "rabbitmq", "label": "Outbox Relay", "fromSide": "bottom", "toSide": "top", "labelDy": 30 },
+    { "id": "backend-to-banking", "from": "backend", "to": "banking", "label": "VietQR API", "fromSide": "top", "toSide": "left", "variant": "dashed" },
+    { "id": "mq-to-consumers", "from": "rabbitmq", "to": "consumers", "label": "Subscribe" },
+    { "id": "consumers-to-fcm", "from": "consumers", "to": "fcm", "label": "Push Alert" },
+    { "id": "consumers-to-db", "from": "consumers", "to": "postgres", "label": "Update Log", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Hexagonal & Double-Entry",
+      "items": [
+        "Domain Layer is isolated with Ports & Adapters",
+        "Strict double-entry accounting balances Debit and Credit"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Concurrency & Idempotency",
+      "items": [
+        "Distributed lock via Redis prevents multi-instance race conditions",
+        "Pessimistic locking (SELECT FOR UPDATE) on PostgreSQL wallets"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Reliable Messaging",
+      "items": [
+        "Transactional Outbox pattern guarantees message delivery",
+        "RabbitMQ consumers decouple audit, ledger, and push notifications"
+      ]
+    }
+  ]
+}

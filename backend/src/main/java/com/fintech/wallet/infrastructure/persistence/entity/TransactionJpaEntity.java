@@ -54,6 +54,9 @@ public class TransactionJpaEntity {
     @Column(name = "balance_after")
     private BigDecimal balanceAfter;
 
+    @Column(name = "receiver_balance_after")
+    private BigDecimal receiverBalanceAfter;
+
     public String getId() {
         return id;
     }
@@ -143,6 +146,13 @@ public class TransactionJpaEntity {
     }
     public void setBalanceAfter(BigDecimal balanceAfter) {
         this.balanceAfter = balanceAfter;
+    }
+
+    public BigDecimal getReceiverBalanceAfter() {
+        return receiverBalanceAfter;
+    }
+    public void setReceiverBalanceAfter(BigDecimal receiverBalanceAfter) {
+        this.receiverBalanceAfter = receiverBalanceAfter;
     }
 
     public TransactionJpaEntity() {}

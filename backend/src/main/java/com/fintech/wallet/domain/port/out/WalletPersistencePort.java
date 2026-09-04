@@ -2,6 +2,7 @@ package com.fintech.wallet.domain.port.out;
 
 import com.fintech.wallet.domain.model.Wallet;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 public interface WalletPersistencePort {
@@ -9,4 +10,5 @@ public interface WalletPersistencePort {
     Optional<Wallet> findWalletById(String walletId);
     Optional<Wallet> findWalletByIdForUpdate(String walletId);
     Optional<Wallet> findWalletByOwnerId(String ownerId);
+    BigDecimal sumAllBalances();
 }

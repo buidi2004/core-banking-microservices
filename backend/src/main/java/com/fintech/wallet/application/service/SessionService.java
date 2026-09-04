@@ -15,9 +15,12 @@ import java.util.UUID;
 public class SessionService implements SessionManagementUseCase {
 
     private final SessionPersistencePort sessionPersistencePort;
+    private final com.fintech.wallet.domain.port.out.DeviceTokenPersistencePort deviceTokenPersistencePort;
 
-    public SessionService(SessionPersistencePort sessionPersistencePort) {
+    public SessionService(SessionPersistencePort sessionPersistencePort,
+                          com.fintech.wallet.domain.port.out.DeviceTokenPersistencePort deviceTokenPersistencePort) {
         this.sessionPersistencePort = sessionPersistencePort;
+        this.deviceTokenPersistencePort = deviceTokenPersistencePort;
     }
 
     @Override
@@ -66,6 +69,10 @@ public class SessionService implements SessionManagementUseCase {
     @Override
     public void revokeSession(String userId, String deviceId) {
         sessionPersistencePort.findByUserIdAndDeviceId(userId, deviceId).ifPresent(session -> {
+            String token = session.getFcmToken();
+            if (token != null && !token.isBlank()) {
+                deviceTokenPersistencePort.deleteByFcmToken(token);
+            }
             session.revoke();
             sessionPersistencePort.save(session);
         });
@@ -87,5 +94,11 @@ public class SessionService implements SessionManagementUseCase {
             session.updateFcmToken(fcmToken);
             sessionPersistencePort.save(session);
         });
+        if (fcmToken != null && !fcmToken.isBlank()) {
+            deviceTokenPersistencePort.findByFcmToken(fcmToken).ifPresentOrElse(
+                    existing -> deviceTokenPersistencePort.save(existing.updateOwner(userId, "ANDROID")),
+                    () -> deviceTokenPersistencePort.save(com.fintech.wallet.domain.model.DeviceToken.createNew(userId, fcmToken, "ANDROID"))
+            );
+        }
     }
 }

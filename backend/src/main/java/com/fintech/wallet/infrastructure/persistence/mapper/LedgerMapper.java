@@ -48,6 +48,7 @@ public class LedgerMapper {
                 entity.getId(),
                 entity.getTransactionId(),
                 entity.getDescription(),
+                entity.getIdempotencyKey(),
                 entity.getCreatedAt(),
                 postingDomains
         );
@@ -59,6 +60,7 @@ public class LedgerMapper {
                 domain.getId(),
                 domain.getTransactionId(),
                 domain.getDescription(),
+                domain.getIdempotencyKey(),
                 domain.getCreatedAt()
         );
     }

@@ -101,14 +101,13 @@ public class RecipientInfoTest {
 
         when(userPersistencePort.findUserByPhoneNumber(phone)).thenReturn(Optional.of(user));
         when(walletPersistencePort.findWalletByOwnerId(userId)).thenReturn(Optional.of(wallet));
-        when(kycPersistencePort.findKycByUserId(userId)).thenReturn(Optional.empty());
 
         RecipientInfoResponse response = walletService.getRecipientInfo(null, phone);
 
         assertNotNull(response);
         assertEquals(walletId, response.getWalletId());
         assertEquals(phone, response.getPhoneNumber());
-        assertEquals("NGƯỜI D*** 5678", response.getMaskedName());
+        assertEquals("T*** NAME", response.getMaskedName());
     }
 
     @Test

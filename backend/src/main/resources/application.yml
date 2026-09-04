@@ -23,6 +23,13 @@ spring:
     password: walletpassword
     username: walletuser
     url: jdbc:postgresql://localhost:5432/walletdb
+    hikari:
+      maximum-pool-size: 25
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: WalletHikariPool
 
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -30,10 +37,10 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         jdbc:
           time_zone: UTC
-    show-sql: true
+    show-sql: false
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -46,6 +53,12 @@ spring:
         initial-interval: 1000ms
         max-attempts: 3
         multiplier: 2.0
+    listener:
+      simple:
+        prefetch: 10
+        concurrency: 3
+        max-concurrency: 10
+        acknowledge-mode: auto
   jackson:
     time-zone: UTC
 
@@ -57,3 +70,7 @@ management:
   endpoint:
     health:
       show-details: always
+
+firebase:
+  credential:
+    path: ${FIREBASE_CREDENTIAL_PATH:classpath:firebase-service-account.json}

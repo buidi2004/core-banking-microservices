@@ -15,7 +15,7 @@ class JournalEntryTest {
         LedgerPosting debit = new LedgerPosting("p1", "je1", "acc_asset", EntryType.DEBIT, new BigDecimal("50000.00"));
         LedgerPosting credit = new LedgerPosting("p2", "je1", "acc_liability", EntryType.CREDIT, new BigDecimal("50000.00"));
 
-        JournalEntry entry = JournalEntry.create("tx_100", "Deposit posting", List.of(debit, credit));
+        JournalEntry entry = JournalEntry.create("tx_100", "Deposit posting", null, List.of(debit, credit));
 
         assertNotNull(entry);
         assertEquals("tx_100", entry.getTransactionId());
@@ -32,7 +32,7 @@ class JournalEntryTest {
         LedgerPosting credit = new LedgerPosting("p2", "je1", "acc_liability", EntryType.CREDIT, new BigDecimal("49000.00"));
 
         assertThrows(LedgerUnbalancedException.class, () ->
-            JournalEntry.create("tx_100", "Unbalanced posting", List.of(debit, credit))
+            JournalEntry.create("tx_100", "Unbalanced posting", null, List.of(debit, credit))
         );
     }
 }

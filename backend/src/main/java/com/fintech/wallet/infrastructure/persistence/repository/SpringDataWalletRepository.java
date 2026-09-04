@@ -12,6 +12,9 @@ import java.util.Optional;
 public interface SpringDataWalletRepository extends JpaRepository<WalletJpaEntity, String> {
     Optional<WalletJpaEntity> findByOwnerId(String ownerId);
 
+    @Query("SELECT SUM(w.balanceAmount) FROM WalletJpaEntity w")
+    java.math.BigDecimal sumAllBalances();
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT w FROM WalletJpaEntity w WHERE w.id = :id")
     Optional<WalletJpaEntity> findByIdForUpdate(@Param("id") String id);

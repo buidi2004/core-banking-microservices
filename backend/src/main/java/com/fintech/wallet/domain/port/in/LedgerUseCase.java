@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface LedgerUseCase {
     LedgerAccount createAccount(String accountName, AccountType accountType, String currency);
-    JournalEntry recordJournalEntry(String transactionId, String description, List<LedgerPosting> postings);
+    JournalEntry recordJournalEntry(String transactionId, String description, String idempotencyKey, List<LedgerPosting> postings);
     List<LedgerAccount> getAllAccounts();
     List<JournalEntry> getAllJournalEntries();
 }

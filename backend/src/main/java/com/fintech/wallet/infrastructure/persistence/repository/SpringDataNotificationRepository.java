@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public interface SpringDataNotificationRepository extends JpaRepository<NotificationEntity, String> {
@@ -16,10 +17,12 @@ public interface SpringDataNotificationRepository extends JpaRepository<Notifica
 
     Page<NotificationEntity> findByUserIdAndType(String userId, String type, Pageable pageable);
 
+    @Transactional
     @Modifying
     @Query("UPDATE NotificationEntity n SET n.isRead = true WHERE n.userId = :userId AND n.id = :notificationId")
     void markAsRead(@Param("userId") String userId, @Param("notificationId") String notificationId);
 
+    @Transactional
     @Modifying
     @Query("UPDATE NotificationEntity n SET n.isRead = true WHERE n.userId = :userId AND (:type IS NULL OR n.type = :type)")
     void markAllAsRead(@Param("userId") String userId, @Param("type") String type);

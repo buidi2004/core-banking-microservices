@@ -52,8 +52,12 @@ public class AuditLogConsumer {
             String action = event.getType();
             String payloadHash = "txId:" + event.getTransactionId() + ",amount:" + event.getAmount();
 
-            AuditLog auditLog = AuditLog.record(callerId, "async-worker", action, payloadHash);
-            auditLogPersistencePort.saveAuditLog(auditLog);
+            AuditLog auditLog = AuditLog.record(callerId, "async-worker", action, payloadHash, event.getEventId());
+            try {
+                auditLogPersistencePort.saveAuditLog(auditLog);
+            } catch (org.springframework.dao.DataIntegrityViolationException dive) {
+                log.info("Duplicate event ignored at DB level in AuditLogConsumer: {}", event.getEventId());
+            }
             
         } catch (Exception e) {
             log.error("Error processing audit log for transaction {}", event.getTransactionId(), e);

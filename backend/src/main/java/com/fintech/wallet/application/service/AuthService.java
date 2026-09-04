@@ -153,7 +153,7 @@ public class AuthService implements AuthUseCase {
     @Override
     public boolean sendOtp(String phoneNumber) {
         String rateKey = "rate:otp:" + phoneNumber;
-        if (!rateLimiter.isAllowed(rateKey, 3, 60)) {
+        if (rateLimiter != null && !rateLimiter.isAllowed(rateKey, 3, 60)) {
             throw new IllegalArgumentException("Too many OTP requests. Please try again in 1 minute.");
         }
         String otp = String.format("%06d", java.util.concurrent.ThreadLocalRandom.current().nextInt(1000000));

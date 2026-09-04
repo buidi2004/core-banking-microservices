@@ -9,7 +9,11 @@ public interface TransferMoneyUseCase {
     default Transaction initTransfer(String requestId, String sourceWalletId, String targetWalletId, String bankCode, Money amount) {
         return initTransfer(requestId, sourceWalletId, targetWalletId, bankCode, amount, null);
     }
-    
+
+    default Transaction initTransfer(String sourceWalletId, String targetWalletId, String bankCode, Money amount) {
+        return initTransfer(null, sourceWalletId, targetWalletId, bankCode, amount, null);
+    }
+
     Transaction confirmTransfer(String transactionId);
 
     Transaction transfer(String requestId, String sourceWalletId, String targetWalletId, String bankCode, Money amount, String note);
@@ -20,9 +24,5 @@ public interface TransferMoneyUseCase {
 
     default Transaction transfer(String sourceWalletId, String targetWalletId, String bankCode, Money amount) {
         return transfer(null, sourceWalletId, targetWalletId, bankCode, amount, null);
-    }
-
-    default Transaction initTransfer(String sourceWalletId, String targetWalletId, String bankCode, Money amount) {
-        return initTransfer(null, sourceWalletId, targetWalletId, bankCode, amount, null);
     }
 }

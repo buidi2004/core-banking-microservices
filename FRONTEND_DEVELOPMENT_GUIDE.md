@@ -1,137 +1,537 @@
-# HƯỚNG DẪN PHÁT TRIỂN FRONTEND TỪ BACKEND API
+# API Integration Guide — Sen Hồng E-Wallet Backend
 
-Tài liệu này ánh xạ các chức năng của Backend (các API endpoints) sang các màn hình Frontend tương ứng, đồng thời đề xuất **thứ tự ưu tiên phát triển** để đội ngũ Frontend (React Native / Web) có thể xây dựng ứng dụng một cách logic, không bị tắc nghẽn luồng dữ liệu (Blocking).
-
----
-
-## 🚀 GIAI ĐOẠN 1: XÁC THỰC & ĐỊNH DANH (AUTH)
-*Giai đoạn này cung cấp các luồng đăng nhập, đăng ký và quản lý phiên. Phải làm đầu tiên để có JWT Token giao tiếp với các API khác.*
-
-### 1. Màn hình Khởi động (Splash / Onboarding)
-- Kiểm tra trạng thái đăng nhập, gọi API Refresh Token nếu JWT hết hạn (Silent Refresh).
-- **API:** `POST /api/v1/auth/refresh`
-
-### 2. Màn hình Đăng Ký (Register) & Xác Thực OTP
-- Người dùng nhập Số điện thoại, Mật khẩu -> Đăng ký.
-- **API:** `POST /api/v1/auth/register` (Tạo user, trả về yêu cầu OTP).
-- **API:** `POST /api/v1/auth/otp/send` (Gửi lại OTP nếu cần).
-- **API:** `POST /api/v1/auth/otp/verify` (Xác minh OTP để kích hoạt tài khoản).
-
-### 3. Màn hình Đăng Nhập (Login)
-- Người dùng nhập Số điện thoại và Mật khẩu. Trả về Access Token (TTL 5 phút) và Refresh Token.
-- **API:** `POST /api/v1/auth/login`
-
-### 4. Màn hình Quên Mật Khẩu (Forgot Password)
-- Yêu cầu cấp lại mật khẩu thông qua Số điện thoại và OTP.
-- **API:** `POST /api/v1/auth/forgot-password` (Yêu cầu cấp lại)
-- **API:** `POST /api/v1/auth/reset-password` (Đặt lại mật khẩu)
+> **Base URL:** `http://localhost:8080`
+> **Auth:** `Authorization: Bearer {accessToken}` (JWT)
+> **Idempotency:** Header `Idempotency-Key: {uuid}` cho mọi POST thay đổi số dư
+> **WebSocket (React Native):** `ws://localhost:8080/ws-native`
+> **WebSocket (Web/SockJS):** `ws://localhost:8080/ws`
+> **Subscribe:** `/topic/users/{userId}/notifications`
 
 ---
 
-## 🛡️ GIAI ĐOẠN 2: BẢO MẬT & THIẾT LẬP TÀI KHOẢN (SECURITY & PROFILE)
-*Sau khi đăng nhập thành công, người dùng cần thiết lập các yếu tố bảo mật trước khi giao dịch.*
+## Response Format chuẩn
 
-### 5. Màn hình Cài đặt Bảo mật (Security Settings)
-- Kích hoạt sinh trắc học (Vân tay/FaceID), Bật/Tắt 2FA, Đổi mật khẩu.
-- **API:** `POST /api/v1/security/biometric/register`
-- **API:** `POST /api/v1/security/biometric/verify`
-- **API:** `POST /api/v1/account/2fa/enable` / `disable`
-- **API:** `POST /api/v1/account/password/change`
+```json
+{
+  "success": true,
+  "message": "...",
+  "data": { ... },
+  "timestamp": "2026-09-02T07:30:00Z",
+  "errorCode": null
+}
+```
 
-### 6. Màn hình Quản Lý Thiết Bị Đăng Nhập (Device Sessions)
-- Quản lý các thiết bị đang đăng nhập, cho phép đăng xuất từ xa.
-- **API:** `GET /api/v1/sessions` (Danh sách thiết bị)
-- **API:** `DELETE /api/v1/sessions/{deviceId}` (Đăng xuất từ xa)
-- **API:** `POST /api/v1/auth/logout/current` (Đăng xuất thiết bị hiện tại)
+Khi lỗi: `"success": false`, `"errorCode": "WALLET_NOT_FOUND"`, `"data": null`
 
 ---
 
-## 💳 GIAI ĐOẠN 3: LÕI VÍ ĐIỆN TỬ (WALLET CORE)
-*Hiển thị màn hình chính (Home Dashboard) và kiểm tra số dư.*
+## 1. AUTH `/api/v1/auth`
 
-### 7. Màn hình Trang Chủ (Home Dashboard)
-- Hiển thị số dư hiện tại, thông tin Ví.
-- Cần lấy `walletId` của người dùng đang đăng nhập thông qua Profile/Recipient.
-- **API:** `GET /api/v1/wallets/recipient-info?phoneNumber={myPhone}` (Lấy UUID của ví)
-- **API:** `GET /api/v1/wallets/{walletId}` (Lấy chi tiết số dư)
-- **API:** `GET /api/v1/users/me/qrcode` (Lấy mã QR nhận tiền của bản thân)
+| Method | Path | Body / Params | Response `data` | Notes |
+|--------|------|---------------|-----------------|-------|
+| POST | `/register` | `{phoneNumber*, fullName*, password*(min6), deviceId}` | `AuthResponse` | 201 Created |
+| POST | `/login` | `{phoneNumber*, password*, deviceId}` | `AuthResponse` | Rate limited 10/min |
+| POST | `/logout` | Header: `Authorization: Bearer {token}` | `null` | Blacklists access token |
+| POST | `/logout/current` | Header: `Authorization: Bearer {token}` | `null` | Alias của logout |
+| POST | `/refresh` | `?refreshToken={token}` | `AuthResponse` | Silent refresh |
+| POST | `/otp/send` | `?phoneNumber={phone}` | `null` | Rate limited 3/min |
+| POST | `/otp/verify` | `?phoneNumber={phone}&otp={6digits}` | `Boolean` | |
+| POST | `/forgot-password` | `?phoneNumber={phone}` | `null` | Rate limited 3/min |
+| POST | `/reset-password` | `?phoneNumber=&otp=&newPassword=` | `null` | |
 
----
-
-## 💸 GIAI ĐOẠN 4: LUỒNG GIAO DỊCH TÀI CHÍNH (TRANSACTIONS)
-*Giai đoạn phức tạp nhất: Nạp, Rút, và Chuyển tiền (yêu cầu mã PIN/OTP).*
-
-### 8. Màn hình Chuyển Tiền & Chọn Người Nhận
-- Nhập số điện thoại đối phương, tra cứu Tên người nhận (đã che mờ - Masking).
-- **API:** `GET /api/v1/wallets/recipient-info?phoneNumber={targetPhone}`
-
-### 9. Màn hình Nhập Số Tiền & Khởi Tạo Giao Dịch
-- Kiểm tra phí giao dịch trước khi chuyển, sau đó tạo giao dịch PENDING.
-- **API:** `GET /api/v1/wallets/fees/estimate` (Ước tính phí)
-- **API:** `POST /api/v1/wallets/transfer/init` (Khởi tạo, trả về `transactionId`)
-
-### 10. Màn hình Xác Thực Chuyển Tiền (Xác minh PIN/OTP)
-- Xác nhận giao dịch đã khởi tạo bằng mã PIN hoặc OTP.
-- **API:** `POST /api/v1/wallets/transfer/{transactionId}/confirm` (Hoàn tất giao dịch)
-
-### 11. Màn hình Nạp / Rút Tiền (Deposit/Withdraw)
-- Nạp tiền từ ngân hàng liên kết hoặc Rút tiền về ngân hàng.
-- **API:** `POST /api/v1/wallets/deposit`
-- **API:** `POST /api/v1/wallets/withdraw`
+**AuthResponse:**
+```json
+{
+  "userId": "uuid",
+  "phoneNumber": "0987...",
+  "accessToken": "jwt...",
+  "refreshToken": "jwt..."
+}
+```
 
 ---
 
-## 📱 GIAI ĐOẠN 5: THANH TOÁN QR & DỊCH VỤ (QR & BILL PAYMENT)
-*Các tính năng thanh toán mở rộng.*
+## 2. WALLET `/api/v1/wallets`
 
-### 12. Màn hình Quét Mã QR (QR Scanner)
-- Quét mã QR (EMVCo/VietQR), giải mã thông tin.
-- **API:** `POST /api/v1/payments/vietqr/decode` (Giải mã)
-- **API:** `POST /api/v1/wallets/transfer/qr/init` (Khởi tạo chuyển khoản qua QR)
+| Method | Path | Body / Params | Response `data` | Notes |
+|--------|------|---------------|-----------------|-------|
+| POST | `/` | `{ownerId*, currency*}` | `WalletResponse` | Tạo ví mới |
+| GET | `/{walletId}` | — | `WalletResponse` | Auth required, phải là owner |
+| GET | `/recipient-info` | `?walletId= hoặc ?phoneNumber=` | `RecipientInfoResponse` | Tra tên masked |
+| POST | `/deposit` | `{requestId, walletId*, amount*(>0), currency*}` | `TransferResponse` | Auth required |
+| POST | `/transfer/init` | `{requestId*, sourceWalletId*, targetWalletId*, amount*, currency*, bankCode*, note}` | `TransferResponse` (status=PENDING_CONFIRMATION) | Tạo OTP tự động |
+| POST | `/transfer/{transactionId}/confirm` | `?otp= hoặc ?pin=` | `TransferResponse` (status=SUCCESS) | Auth + verify OTP/PIN |
+| POST | `/transfer/qr/init` | `{requestId, sourceWalletId*, qrCode*, amount, currency*}` | `TransferResponse` | QR transfer |
+| POST | `/withdraw` | `{requestId, walletId*, bankAccountId*, amount*, currency*, pinToken*}` | `TransferResponse` | Cần pinToken từ verify PIN |
+| GET | `/fees/estimate` | `?type={TRANSFER\|WITHDRAWAL\|TOPUP}&amount=&currency=VND` | `FeeEstimateResponse` | Auth required |
+| POST | `/transactions/{transactionId}/reverse` | `?reason=` | `TransferResponse` | Admin/support only |
 
-### 13. Màn hình Thanh Toán Hóa Đơn & Nạp Tiền Điện Thoại
-- Tra cứu nợ cước (Điện, nước) và Thanh toán (hoặc Topup điện thoại).
-- **API:** `GET /api/v1/payments/bills/query` (Tra cứu cước)
-- **API:** `POST /api/v1/payments/bills/pay` (Thanh toán hóa đơn)
-- **API:** `POST /api/v1/payments/topup` (Nạp thẻ điện thoại)
+**WalletResponse:**
+```json
+{
+  "id": "uuid",
+  "ownerId": "userId",
+  "balance": 1500000.00,
+  "currency": "VND",
+  "createdAt": "...",
+  "updatedAt": "..."
+}
+```
+
+**RecipientInfoResponse:**
+```json
+{
+  "walletId": "uuid",
+  "phoneNumber": "0987...",
+  "maskedName": "NGUYEN V** AN",
+  "fullName": "NGUYEN VAN AN"
+}
+```
+
+**TransferResponse** (fields dùng `@JsonInclude(NON_NULL)` — null không xuất hiện trong JSON):
+```json
+{
+  "transactionId": "uuid",
+  "requestId": "client-uuid",
+  "sourceWalletId": "uuid",
+  "targetWalletId": "uuid",
+  "amount": 500000.00,
+  "currency": "VND",
+  "type": "TRANSFER_OUT",
+  "status": "SUCCESS",
+  "timestamp": "...",
+  "note": "Trả tiền ăn",
+  "bankCode": "SENHONG",
+  "isInternal": true,
+  "feeAmount": 0.00,
+  "balance": 4500000.00,
+  "runningBalance": 4500000.00,
+  "senderName": "TRAN THI BINH",
+  "senderAccount": "0987654321",
+  "recipientName": "NGUYEN VAN AN",
+  "recipientAccount": "0912345678",
+  "counterpartyName": "NGUYEN VAN AN",
+  "counterpartyAccount": "0912345678",
+  "counterpartyBankName": "SenHong",
+  "originalTransactionId": null
+}
+```
+
+**Enum `type`:** `TRANSFER_OUT` / `TRANSFER_IN` / `DEPOSIT` / `WITHDRAWAL` / `REVERSAL`
+**Enum `status`:** `PENDING_CONFIRMATION` / `SUCCESS` / `FAILED`
+
+> ⚠️ **FE cần biết:**
+> - `bankCode = "SENHONG"` = nội bộ, `bankCode = "VCB"/"BIDV"...` = ngoại
+> - `balance` là snapshot sender tại lúc commit — dùng để update UI ngay, không cần GET lại ví
+> - `balance` của **receiver** không có trong response này — receiver phải gọi `GET /wallets/{id}` riêng nếu cần hiển thị
+> - `type` trong history đã được enrich thành `TRANSFER_OUT`/`TRANSFER_IN` theo `walletId` người xem
 
 ---
 
-## 📊 GIAI ĐOẠN 6: LỊCH SỬ GIAO DỊCH & SAO KÊ
-*Phục vụ việc tra cứu và đối soát của khách hàng.*
+## 3. TRANSACTION HISTORY `/api/v1/transactions`
 
-### 14. Màn hình Lịch Sử Giao Dịch (Transaction History)
-- Hiển thị danh sách giao dịch có phân trang (Pagination).
-- **API:** `GET /api/v1/transactions` (Phân trang, bộ lọc)
-- **API:** `GET /api/v1/transactions/{id}` (Chi tiết 1 giao dịch)
+| Method | Path | Params | Response `data` | Notes |
+|--------|------|--------|-----------------|-------|
+| GET | `/` | `?walletId=*&type={enum}&page=0&size=20` | `List<TransferResponse>` | type tùy chọn: TRANSFER/DEPOSIT/WITHDRAWAL |
+| GET | `/{id}` | — | `TransferResponse` | Chi tiết 1 giao dịch |
+| GET | `/export/csv` | `?walletId=*&fromDate=&toDate=` | `byte[]` (text/csv) | File download |
+| GET | `/export/pdf` | `?walletId=*&fromDate=&toDate=` | `byte[]` (application/pdf) | File download |
+| GET | `/export/excel` | `?walletId=*&fromDate=&toDate=` | `byte[]` (.xlsx) | File download |
+| GET | `/{id}/receipt.pdf` | — | `byte[]` (application/pdf) | Auth, chỉ owner |
 
-### 15. Màn hình Xuất Sao Kê / Biên Lai
-- Tải file PDF biên lai điện tử hoặc file CSV/Excel thống kê.
-- **API:** `GET /api/v1/transactions/export/pdf?transactionId={id}`
-- **API:** `GET /api/v1/transactions/export/excel`
-- **API:** `GET /api/v1/transactions/export/csv`
-
----
-
-## 🔔 GIAI ĐOẠN 7: DANH BẠ & THÔNG BÁO (EXTRAS)
-
-### 16. Màn hình Danh Bạ Thụ Hưởng (Beneficiaries)
-- Lưu danh bạ để chuyển tiền nhanh.
-- **API:** `GET /api/v1/beneficiaries`
-- **API:** `POST /api/v1/beneficiaries`
-- **API:** `DELETE /api/v1/beneficiaries/{id}`
-
-### 17. Màn hình Thông Báo (Notifications)
-- Hiển thị danh sách thông báo biến động số dư.
-- Đăng ký FCM Token cho thiết bị để nhận Push.
-- **API:** `POST /api/v1/sessions/{deviceId}/fcm` (Gửi token đẩy thông báo về BE)
-- Cổng kết nối WebSockets: `ws://<domain>/ws` (Lắng nghe topic `/topic/wallets/{walletId}/notifications`)
+`fromDate`, `toDate` format: ISO-8601 Instant (`2026-01-01T00:00:00Z`)
 
 ---
 
-## 📌 TÓM TẮT THỨ TỰ ƯU TIÊN SPRINT (DÀNH CHO PM/DEV LEAD)
-- **Sprint 1:** Giai đoạn 1 + 3 (Auth & Wallet Core) -> Chạy được Dashboard, hiển thị số dư.
-- **Sprint 2:** Giai đoạn 4 (Transactions) -> Luồng tiền cốt lõi (Nạp, Chuyển tiền, Xác thực PIN).
-- **Sprint 3:** Giai đoạn 6 (History & Export) -> Xem lại lịch sử các luồng tiền đã chạy.
-- **Sprint 4:** Giai đoạn 5 (QR & Bills) -> Tiện ích mở rộng.
-- **Sprint 5:** Giai đoạn 2 & 7 (Security, Sessions, Notifications, Beneficiaries) -> Hoàn thiện trải nghiệm (Push notify, 2FA, Danh bạ).
+## 4. USER & PROFILE `/api/v1/users`
+
+| Method | Path | Body / Params | Response `data` | Notes |
+|--------|------|---------------|-----------------|-------|
+| GET | `/me` | — | `UserProfile` | Auth required |
+| PUT | `/me` | `?fullName=&email=&dob=` | `UserProfile` | @RequestParam, không phải JSON body |
+| POST | `/me/avatar` | `?avatarUrl=` | `UserProfile` | |
+| GET | `/{id}/public-info` | — | `UserProfile` | Thông tin public của người dùng |
+| GET | `/search` | `?phone={phoneNumber}` | `PublicUserProfile` | 404 nếu không tìm thấy |
+| POST | `/pin/set` | `{pin*}` (6 chữ số) | `null` | |
+| POST | `/pin/verify` | `{pin*}` (6 chữ số) | `String` (pinToken) | Dùng pinToken cho withdraw |
+| POST | `/kyc` | `{idCardNumber*, fullName*, dob*, frontCardUrl*, backCardUrl*, selfieUrl*}` | `KycResponse` | |
+| GET | `/kyc/status` | — | `KycResponse` | |
+| POST | `/kyc/webhook` | `?userId=&status=&reason=` | `KycResponse` | Internal webhook |
+| POST | `/change-password` | `?oldPassword=&newPassword=` | `null` | @RequestParam |
+| GET | `/me/qrcode` | — | `String` (EMVCo QR string) | QR cá nhân |
+
+**UserProfile:**
+```json
+{
+  "userId": "uuid",
+  "fullName": "...",
+  "email": "...",
+  "dob": "...",
+  "avatarUrl": "..."
+}
+```
+
+**KycResponse:**
+```json
+{
+  "id": "uuid",
+  "userId": "uuid",
+  "status": "PENDING|VERIFIED|REJECTED",
+  "fullName": "...",
+  "idCardNumber": "...",
+  "frontCardUrl": "...",
+  "backCardUrl": "...",
+  "selfieUrl": "...",
+  "createdAt": "..."
+}
+```
+
+---
+
+## 5. ACCOUNT `/api/v1/account`
+
+| Method | Path | Body / Params | Response `data` | Notes |
+|--------|------|---------------|-----------------|-------|
+| POST | `/password/change` | `{oldPassword*, newPassword*(min6)}` | `null` | Auth required |
+| POST | `/password/reset` | `?phoneNumber=&otp=&newPassword=` | `null` | Public |
+| POST | `/2fa/enable` | — | `null` | |
+| POST | `/2fa/disable` | — | `null` | |
+
+---
+
+## 6. SECURITY `/api/v1/security`
+
+| Method | Path | Params | Response `data` | Notes |
+|--------|------|--------|-----------------|-------|
+| POST | `/biometric/register` | `?biometricToken=` | `null` | Auth required |
+| POST | `/biometric/verify` | `?biometricToken=` | `String` (pinToken) | Trả pinToken để dùng cho withdraw |
+| GET | `/login-history` | — | `List<Map>` | Auth required |
+
+---
+
+## 7. SESSIONS `/api/v1/sessions`
+
+| Method | Path | Params | Response `data` | Notes |
+|--------|------|--------|-----------------|-------|
+| GET | `/` | — | `List<DeviceSession>` | Auth required |
+| DELETE | `/{deviceId}` | — | `null` | Remote logout thiết bị |
+| DELETE | `/` | — | `null` | Đăng xuất tất cả thiết bị |
+| POST | `/{deviceId}/fcm` | `?fcmToken=` | `null` | Đăng ký FCM token cho thiết bị |
+
+**DeviceSession:**
+```json
+{
+  "deviceId": "...",
+  "deviceName": "...",
+  "ipAddress": "...",
+  "userAgent": "...",
+  "lastActiveAt": "..."
+}
+```
+
+---
+
+## 7.1. DEVICE TOKENS & FCM PUSH `/api/v1/devices`
+
+| Method | Path | Body / Params | Response `data` | Notes |
+|--------|------|---------------|-----------------|-------|
+| POST | `/register` | `{fcmToken*, deviceType}` | `DeviceToken` | Auth required, lưu/cập nhật token FCM |
+| DELETE | `/unregister` | `?fcmToken=` hoặc body `{fcmToken}` | `null` | Gọi khi logout để xóa token khỏi DB |
+
+**Register Request:**
+```json
+{
+  "fcmToken": "c-N6Vq7...fcm_token_string",
+  "deviceType": "ANDROID" // "ANDROID" | "IOS"
+}
+```
+
+**Payload FCM Push (Mobile nhận khi app killed/background):**
+- **`notification`**: Hiển thị trên Notification Center của OS
+  - `title`: "Biến động số dư: Chuyển tiền"
+  - `body`: "TK 0987... GD thành công. PS: -50,000 VND. SD: 950,000 VND - Đến: NGUYEN VAN AN (0912...)"
+- **`data`** (Khớp 100% schema WebSocket `NotificationPayload` để FE parse chung 1 hàm):
+  ```json
+  {
+    "transactionId": "uuid",
+    "requestId": "client-uuid",
+    "type": "TRANSFER_OUT", // TRANSFER_OUT | TRANSFER_IN | DEPOSIT | WITHDRAWAL...
+    "status": "SUCCESS",
+    "walletId": "uuid",
+    "transactionAmount": "50000.00",
+    "amount": "50000.00",
+    "transactionCurrency": "VND",
+    "newBalance": "950000.00",
+    "currency": "VND",
+    "timestamp": "2026-09-03T03:30:00Z",
+    "note": "Trả tiền cà phê",
+    "title": "Biến động số dư: Chuyển tiền",
+    "body": "..."
+  }
+  ```
+
+---
+
+
+## 8. NOTIFICATIONS `/api/v1/notifications`
+
+| Method | Path | Params | Response `data` | Notes |
+|--------|------|--------|-----------------|-------|
+| GET | `/` | `?type={BALANCE\|PROMOTION\|SYSTEM}&page=0&size=20` | `PageResponse<NotificationInfo>` | Auth required |
+| PATCH | `/{id}/read` | — | `null` | Đánh dấu đã đọc |
+| PATCH | `/read-all` | `?type=` (optional) | `null` | Đọc tất cả |
+| PUT | `/settings` | `?transactionEnabled={bool}&promoEnabled={bool}` | `null` | Cài đặt thông báo |
+
+**PageResponse:**
+```json
+{
+  "content": [...],
+  "page": 0,
+  "size": 20,
+  "totalElements": 100,
+  "totalPages": 5,
+  "last": false
+}
+```
+
+---
+
+## 9. BANK ACCOUNTS `/api/v1/bank-accounts`
+
+| Method | Path | Body | Response `data` | Notes |
+|--------|------|------|-----------------|-------|
+| POST | `/link` | `{bankCode*, accountNumber*, accountHolderName*}` | `BankAccountResponse` | 201 Created |
+| GET | `/` | — | `List<BankAccountResponse>` | Auth required |
+| DELETE | `/{bankAccountId}` | — | `null` | |
+
+**BankAccountResponse:**
+```json
+{
+  "id": "uuid",
+  "bankCode": "VCB",
+  "accountNumber": "10****78",
+  "accountHolderName": "...",
+  "isDefault": false
+}
+```
+
+---
+
+## 10. FUNDING SOURCES `/api/v1/funding-sources`
+
+| Method | Path | Body | Response `data` | Notes |
+|--------|------|------|-----------------|-------|
+| GET | `/` | — | `List<FundingSourceResponse>` | Auth required |
+| POST | `/link` | `{type*(BANK_ACCOUNT\|CREDIT_CARD\|DEBIT_CARD), provider*, number*(4-20 chars), cardHolderName, expiryDate, cvv}` | `FundingSourceResponse` | Số bị mask khi lưu |
+| DELETE | `/{id}` | — | `null` | Soft delete |
+
+---
+
+## 11. BENEFICIARIES `/api/v1/beneficiaries`
+
+| Method | Path | Body | Response `data` | Notes |
+|--------|------|------|-----------------|-------|
+| POST | `/` | `{beneficiaryWalletId, nickname, bankCode, accountNumber}` | `Beneficiary` | 201 Created |
+| GET | `/` | — | `List<Beneficiary>` | Auth required |
+| DELETE | `/{id}` | — | `null` | |
+
+---
+
+## 12. BANKS `/api/v1/banks`
+
+| Method | Path | Params | Response `data` | Notes |
+|--------|------|--------|-----------------|-------|
+| GET | `/` | — | `List<BankResponse>` | Public, không cần auth |
+
+**BankResponse:**
+```json
+{
+  "bankCode": "VCB",
+  "bankName": "Vietcombank",
+  "logoUrl": "...",
+  "isInternal": false
+}
+```
+
+Có sẵn trong hệ thống: `SENHONG` (internal), `VCB`, `TCB`, `BIDV`
+
+---
+
+## 13. PAYMENTS `/api/v1/payments`
+
+| Method | Path | Body / Params | Response `data` | Notes |
+|--------|------|---------------|-----------------|-------|
+| POST | `/vietqr/generate` | `{bankBin*, accountNumber*, amount, purpose}` | `VietQrPayload` | Sinh QR |
+| POST | `/vietqr/decode` | `?qrString=` | `VietQrPayload` | Giải mã QR |
+| GET | `/bills/query` | `?billType={ELECTRICITY\|WATER\|INTERNET\|TUITION}&customerCode=` | `Bill` | Tra hóa đơn |
+| POST | `/bills/pay` | `{requestId, walletId*, billId*, amount*, currency*}` | `TransferResponse` | Auth required |
+| POST | `/topup` | `{requestId, walletId*, phoneNumber*, amount*, currency*}` | `TransferResponse` | Auth required |
+| POST | `/qr/scan` | `?qrString=` | `Map<String,Object>` | Parse QR, trả thông tin |
+
+---
+
+## 14. BILLS `/api/v1/bills`
+
+| Method | Path | Body / Params | Response `data` | Notes |
+|--------|------|---------------|-----------------|-------|
+| GET | `/lookup` | `?type={BillType}&customerCode=` | `Bill` | Public |
+| POST | `/pay` | `{requestId, walletId*, billId*, amount*, currency*}` | `Transaction` | Auth required |
+| POST | `/topup` | `{requestId, walletId*, phoneNumber*, amount*, currency*}` | `Transaction` | Auth required |
+
+> ⚠️ Trùng chức năng với `/api/v1/payments/bills/pay` và `/payments/topup`. FE nên dùng nhất quán **một** trong hai prefix. Khuyến nghị dùng `/api/v1/bills/`.
+
+---
+
+## 15. MONEY REQUESTS `/api/v1/money-requests`
+
+| Method | Path | Body | Response `data` | Notes |
+|--------|------|------|-----------------|-------|
+| POST | `/` | `{payerUserId*, amount*(>0), currency*, message}` | `MoneyRequestResponse` | 201 Created, auth required |
+| POST | `/{id}/accept` | — | `MoneyRequestResponse` | Payer chấp nhận → thực hiện transfer |
+| POST | `/{id}/reject` | — | `MoneyRequestResponse` | Payer từ chối |
+| POST | `/{id}/cancel` | — | `MoneyRequestResponse` | Requester hủy |
+| GET | `/received` | — | `List<MoneyRequestResponse>` | Yêu cầu nhận (mình là người trả) |
+| GET | `/sent` | — | `List<MoneyRequestResponse>` | Yêu cầu đã gửi (mình là người nhận tiền) |
+| GET | `/{id}` | — | `MoneyRequestResponse` | Chi tiết 1 request |
+
+---
+
+## 16. CONFIG & LEGAL
+
+| Method | Path | Params | Response `data` | Notes |
+|--------|------|--------|-----------------|-------|
+| GET | `/api/v1/config/limits` | — | `Map` (static limits) | Auth required |
+| GET | `/api/v1/config/limits/status` | — | `UserLimitStatus` | Auth required, tính thực tế đã tiêu |
+| GET | `/api/v1/legal/terms` | — | `String` | Public |
+| POST | `/api/v1/legal/consent` | `?termsVersion=` | `LegalConsent` | Auth required |
+
+**UserLimitStatus:**
+```json
+{
+  "dailyLimit": 100000000,
+  "dailySpent": 500000,
+  "dailyRemaining": 99500000,
+  "monthlyLimit": 500000000,
+  "monthlySpent": 2000000,
+  "monthlyRemaining": 498000000,
+  "kycLevel": "UNVERIFIED"
+}
+```
+
+---
+
+## 17. SUPPORT `/api/v1/support`
+
+| Method | Path | Params | Response `data` | Notes |
+|--------|------|--------|-----------------|-------|
+| POST | `/tickets` | `?subject=&category=GENERAL&initialMessage=` | `SupportTicket` | 201 Created |
+| GET | `/tickets` | — | `List<SupportTicket>` | Auth required |
+| GET | `/tickets/{id}` | — | `{ticket, messages}` | |
+| POST | `/tickets/{id}/messages` | `?content=` | `TicketMessage` | |
+| GET | `/faq` | — | `List<{question, answer}>` | Public |
+
+---
+
+## 18. MISC
+
+| Method | Path | Params | Response `data` | Notes |
+|--------|------|--------|-----------------|-------|
+| POST | `/api/v1/promotions/redeem` | `?code=` | `Voucher` | Auth required |
+| POST | `/api/v1/promotions/apply` | `?code=&orderAmount=` | `Voucher` | Auth required |
+| GET | `/api/v1/promotions` | — | `List<Voucher>` | Public |
+| GET | `/api/v1/promotions/my-vouchers` | — | `List<Voucher>` | Auth required |
+| GET | `/api/v1/referrals/code` | — | `ReferralInfo` | Auth required |
+| POST | `/api/v1/referrals/apply` | `?referralCode=` | `null` | Auth required |
+| GET | `/api/v1/referrals/history` | — | `List<Map>` | Auth required |
+| POST | `/api/v1/feedback` | `?rating={1-5}&comment=` | `AppFeedback` | Auth required |
+| POST | `/api/v1/merchants/payments/confirm` | `?walletId=&orderId=` | `TransferResponse` | Auth required |
+
+---
+
+## 19. LEDGER & RECONCILIATION (Internal / Admin)
+
+| Method | Path | Body | Response `data` | Notes |
+|--------|------|------|-----------------|-------|
+| POST | `/api/v1/ledger/accounts` | `{accountName*, accountType*(ASSET/LIABILITY/...), currency*}` | `LedgerAccount` | 201 Created |
+| GET | `/api/v1/ledger/accounts` | — | `List<LedgerAccount>` | |
+| GET | `/api/v1/ledger/entries` | — | `List<JournalEntry>` | |
+| POST | `/api/v1/reconciliation/run` | — | `Map` (report) | Trigger manual reconciliation |
+
+---
+
+## 20. WEBHOOKS `/api/v1/webhooks` (Public — BE nhận từ đối tác)
+
+| Method | Path | Body / Params | Notes |
+|--------|------|---------------|-------|
+| POST | `/napas/callback` | `@RequestBody Map` | NAPAS callback |
+| POST | `/bank/deposit-notify` | `?walletId=&amount=&bankTxRef=` | Ngân hàng thông báo nạp tiền |
+| POST | `/merchants/callback` | `@RequestBody Map` | Merchant callback (stub) |
+
+---
+
+## Luồng chuyển tiền nội bộ — Step-by-step
+
+```
+1. GET /api/v1/wallets/recipient-info?phoneNumber=0912345678
+   → lấy walletId người nhận + maskedName để hiển thị màn hình xác nhận
+
+2. GET /api/v1/wallets/fees/estimate?type=TRANSFER&amount=500000&currency=VND
+   → hiển thị phí (= 0 VND với chuyển khoản nội bộ SENHONG)
+
+3. POST /api/v1/wallets/transfer/init
+   Body: {
+     "requestId": "client-uuid-v4",
+     "sourceWalletId": "uuid",
+     "targetWalletId": "uuid",
+     "amount": 500000,
+     "currency": "VND",
+     "bankCode": "SENHONG",
+     "note": "Trả tiền ăn"
+   }
+   → nhận transactionId, status = "PENDING_CONFIRMATION"
+   → OTP 6 số được generate và log ra server (mock)
+
+4. POST /api/v1/wallets/transfer/{transactionId}/confirm?otp=123456
+   (hoặc ?pin=123456 nếu dùng PIN)
+   → nhận TransferResponse với status = "SUCCESS", balance mới của sender
+
+5. WebSocket nhận notification realtime:
+   Subscribe: /topic/users/{userId}/notifications
+   → cả sender và receiver đều nhận push ngay sau bước 4
+```
+
+> ⚠️ **OTP TTL = 5 phút.** Nếu user không confirm trong 5 phút → `/confirm` trả lỗi `INVALID_PIN`. FE phải restart flow từ `/init`.
+> ⚠️ **Sai OTP/PIN 3 lần** → user bị lock 15 phút. FE hiển thị thông báo có countdown.
+> ⚠️ **OTP là 1-time** (bị xóa sau khi dùng đúng). **PIN không phải 1-time** — có thể dùng lại trong cùng session.
+
+---
+
+## Error Codes chuẩn
+
+| errorCode | HTTP | Mô tả |
+|-----------|------|-------|
+| `WALLET_NOT_FOUND` | 404 | Ví không tồn tại |
+| `INVALID_PIN` | 400 | Sai PIN hoặc OTP |
+| `INSUFFICIENT_BALANCE` | 400 | Không đủ số dư |
+| `ACCOUNT_LOCKED` | 423 | Tài khoản bị khóa (sai PIN/OTP 3 lần) |
+| `LIMIT_EXCEEDED` | 400 | Vượt hạn mức ngày/tháng |
+| `VALIDATION_FAILED` | 400 | Dữ liệu đầu vào không hợp lệ |
+| `BAD_REQUEST` | 400 | Request không hợp lệ |
+| `USER_NOT_FOUND` | 404 | User không tồn tại |
+| `INTERNAL_SERVER_ERROR` | 500 | Lỗi server |
+| _(không có errorCode)_ | 409 | Optimistic lock conflict — FE retry với exponential backoff |
+| _(không có errorCode)_ | 401 | Token hết hạn → trigger silent refresh (`POST /auth/refresh`) |
+| _(không có errorCode)_ | 403 | Không có quyền truy cập |
+
+---
+
+## Thứ tự ưu tiên Sprint (dành cho PM/Dev Lead)
+
+| Sprint | Nội dung | Ghi chú |
+|--------|----------|---------|
+| **Sprint 1** | Auth (Mục 1) + Wallet Core (Mục 2 — GET balance, recipient-info) | Dashboard chạy được, hiển thị số dư |
+| **Sprint 2** | Transaction flow (Mục 2 — init/confirm/deposit/withdraw) | Luồng tiền cốt lõi với OTP/PIN |
+| **Sprint 3** | Transaction History (Mục 3) + Export | Xem lịch sử, tải sao kê |
+| **Sprint 4** | QR & Bills (Mục 12, 13, 14) | Tiện ích mở rộng |
+| **Sprint 5** | Security, Sessions, Notifications, Beneficiaries (Mục 6, 7, 8, 11) | Hoàn thiện UX |
+| **Sprint 6** | Money Requests, Promotions, Referrals, Support (Mục 15, 17, 18) | Nice-to-have |

@@ -40,7 +40,7 @@ public class WebSocketNotificationAdapter implements NotificationPort {
     }
 
     @Override
-    public void notifyTransactionCompleted(Transaction transaction, Wallet wallet) {
+    public void notifyTransactionCompleted(Transaction transaction, Wallet wallet, com.fintech.wallet.domain.model.User user, Wallet counterpartyWallet, com.fintech.wallet.domain.model.User counterpartyUser) {
         if (wallet == null || wallet.getId() == null) {
             return;
         }
@@ -48,13 +48,88 @@ public class WebSocketNotificationAdapter implements NotificationPort {
         String destination = "/topic/wallets/" + wallet.getId() + "/notifications";
 
         String payloadType = transaction.getType().name();
+        boolean isDeduct = false;
+        String operationType = "Giao dịch";
+        
         if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
             if (wallet.getId().equals(transaction.getSourceWalletId())) {
                 payloadType = "TRANSFER_OUT";
+                isDeduct = true;
+                operationType = "Chuyển tiền";
             } else if (wallet.getId().equals(transaction.getTargetWalletId())) {
                 payloadType = "TRANSFER_IN";
+                isDeduct = false;
+                operationType = "Nhận tiền";
+            }
+        } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.WITHDRAWAL) {
+            isDeduct = true;
+            operationType = "Rút tiền";
+        } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.DEPOSIT) {
+            isDeduct = false;
+            operationType = "Nạp tiền";
+        } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.REVERSAL) {
+            isDeduct = false;
+            operationType = "Hoàn tiền";
+        } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.BILL_PAYMENT) {
+            isDeduct = true;
+            operationType = "Thanh toán hoá đơn";
+        } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TOPUP) {
+            isDeduct = true; 
+            operationType = "Nạp tiền điện thoại";
+        }
+
+        String sign = isDeduct ? "-" : "+";
+        java.math.BigDecimal displayAmountValue = transaction.getAmount().getAmount();
+        if (isDeduct && transaction.getFeeAmount() != null) {
+            displayAmountValue = displayAmountValue.add(transaction.getFeeAmount().getAmount());
+        }
+
+        java.math.BigDecimal snapshotBalance = null;
+        if (isDeduct && transaction.getBalanceAfter() != null) {
+            snapshotBalance = transaction.getBalanceAfter().getAmount();
+        } else if (!isDeduct && transaction.getReceiverBalanceAfter() != null) {
+            snapshotBalance = transaction.getReceiverBalanceAfter().getAmount();
+        }
+        if (snapshotBalance == null) {
+            snapshotBalance = wallet.getBalance().getAmount(); // Fallback just in case
+        }
+
+        java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
+        String formattedAmount = formatter.format(displayAmountValue);
+        String formattedBalance = formatter.format(snapshotBalance);
+        String currency = transaction.getAmount().getCurrency();
+        
+        java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy").withZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        String formattedTime = dtf.format(transaction.getCreatedAt());
+
+        String myPhone = user != null ? user.getPhoneNumber() : wallet.getId();
+        
+        String counterpartyPhone = null;
+        String counterpartyName = null;
+        if (counterpartyUser != null) {
+            counterpartyPhone = counterpartyUser.getPhoneNumber();
+            counterpartyName = counterpartyUser.getFullName();
+        } else if (counterpartyWallet != null) {
+            counterpartyPhone = counterpartyWallet.getId();
+        }
+
+        String content = transaction.getNote() != null && !transaction.getNote().isBlank() ? transaction.getNote() : operationType + " thành công";
+        String title = "Biến động số dư: " + operationType;
+        
+        StringBuilder bodyBuilder = new StringBuilder();
+        bodyBuilder.append(String.format("Tài khoản: %s\nPS: %s%s %s\nSố dư cuối: %s %s\nThời gian: %s",
+                myPhone, sign, formattedAmount, currency, formattedBalance, currency, formattedTime));
+        
+        if (counterpartyPhone != null) {
+            String displayCounterparty = (counterpartyName != null && !counterpartyName.isBlank()) ? counterpartyName + " (" + counterpartyPhone + ")" : counterpartyPhone;
+            if (isDeduct) {
+                bodyBuilder.append("\nChuyển đến: ").append(displayCounterparty);
+            } else {
+                bodyBuilder.append("\nNhận từ: ").append(displayCounterparty);
             }
         }
+        bodyBuilder.append("\nNội dung: ").append(content);
+        String body = bodyBuilder.toString();
 
         // OPT #4: Type-safe DTO instead of raw HashMap
         NotificationPayload payload = new NotificationPayload(
@@ -65,10 +140,12 @@ public class WebSocketNotificationAdapter implements NotificationPort {
                 wallet.getId(),
                 transaction.getAmount().getAmount(),
                 transaction.getAmount().getCurrency(),
-                wallet.getBalance().getAmount(),
+                snapshotBalance,
                 wallet.getBalance().getCurrency(),
                 transaction.getCreatedAt().toString(),
-                transaction.getNote()
+                transaction.getNote(),
+                title,
+                body
         );
 
         try {
@@ -81,85 +158,6 @@ public class WebSocketNotificationAdapter implements NotificationPort {
         }
 
         try {
-            boolean isDeduct = false;
-            String operationType = "Giao dịch";
-            if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
-                if (wallet.getId().equals(transaction.getSourceWalletId())) {
-                    isDeduct = true;
-                    operationType = "Chuyển tiền";
-                } else if (wallet.getId().equals(transaction.getTargetWalletId())) {
-                    isDeduct = false;
-                    operationType = "Nhận tiền";
-                }
-            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.WITHDRAWAL) {
-                isDeduct = true;
-                operationType = "Rút tiền";
-            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.DEPOSIT) {
-                isDeduct = false;
-                operationType = "Nạp tiền";
-            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.REVERSAL) {
-                isDeduct = false;
-                operationType = "Hoàn tiền";
-            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.BILL_PAYMENT) {
-                isDeduct = true;
-                operationType = "Thanh toán hoá đơn";
-            } else if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TOPUP) {
-                isDeduct = true; // wait, topup is buying phone credit, so balance goes DOWN
-                operationType = "Nạp tiền điện thoại";
-            }
-
-            String sign = isDeduct ? "-" : "+";
-            java.math.BigDecimal displayAmountValue = transaction.getAmount().getAmount();
-            if (isDeduct && transaction.getFeeAmount() != null) {
-                displayAmountValue = displayAmountValue.add(transaction.getFeeAmount().getAmount());
-            }
-
-            java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
-            String formattedAmount = formatter.format(displayAmountValue);
-            String formattedBalance = formatter.format(wallet.getBalance().getAmount());
-            String currency = transaction.getAmount().getCurrency();
-            
-            java.time.format.DateTimeFormatter dtf = java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy").withZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
-            String formattedTime = dtf.format(transaction.getCreatedAt());
-
-            String myPhone = userPersistencePort.findUserById(wallet.getOwnerId())
-                    .map(com.fintech.wallet.domain.model.User::getPhoneNumber)
-                    .orElse(wallet.getId());
-
-            String counterpartyPhone = null;
-            String counterpartyName = null;
-            if (transaction.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
-                String counterpartyWalletId = isDeduct ? transaction.getTargetWalletId() : transaction.getSourceWalletId();
-                if (counterpartyWalletId != null) {
-                    com.fintech.wallet.domain.model.User counterparty = walletPersistencePort.findWalletById(counterpartyWalletId)
-                            .flatMap(w -> userPersistencePort.findUserById(w.getOwnerId())).orElse(null);
-                    if (counterparty != null) {
-                        counterpartyPhone = counterparty.getPhoneNumber();
-                        counterpartyName = counterparty.getFullName();
-                    } else {
-                        counterpartyPhone = counterpartyWalletId;
-                    }
-                }
-            }
-
-            String content = transaction.getNote() != null && !transaction.getNote().isBlank() ? transaction.getNote() : operationType + " thành công";
-            String title = "Biến động số dư: " + operationType;
-            
-            StringBuilder bodyBuilder = new StringBuilder();
-            bodyBuilder.append(String.format("Tài khoản: %s\nPS: %s%s %s\nSố dư cuối: %s %s\nThời gian: %s",
-                    myPhone, sign, formattedAmount, currency, formattedBalance, currency, formattedTime));
-            
-            if (counterpartyPhone != null) {
-                String displayCounterparty = (counterpartyName != null && !counterpartyName.isBlank()) ? counterpartyName + " (" + counterpartyPhone + ")" : counterpartyPhone;
-                if (isDeduct) {
-                    bodyBuilder.append("\nChuyển đến: ").append(displayCounterparty);
-                } else {
-                    bodyBuilder.append("\nNhận từ: ").append(displayCounterparty);
-                }
-            }
-            bodyBuilder.append("\nNội dung: ").append(content);
-            String body = bodyBuilder.toString();
-            
             String metadata = "{\"transactionId\":\"" + transaction.getId() + "\"}";
             
             com.fintech.wallet.domain.model.NotificationInfo notification = com.fintech.wallet.domain.model.NotificationInfo.createNew(

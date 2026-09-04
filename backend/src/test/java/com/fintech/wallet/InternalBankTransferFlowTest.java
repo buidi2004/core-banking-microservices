@@ -22,6 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@org.springframework.test.context.ActiveProfiles("test")
 public class InternalBankTransferFlowTest {
 
     @Autowired
@@ -42,7 +43,7 @@ public class InternalBankTransferFlowTest {
         MvcResult aliceRegResult = mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(aliceReq)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
         String aliceToken = JsonPath.read(aliceRegResult.getResponse().getContentAsString(), "$.data.accessToken");
 
@@ -56,28 +57,29 @@ public class InternalBankTransferFlowTest {
         MvcResult bobRegResult = mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(bobReq)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andReturn();
         String bobToken = JsonPath.read(bobRegResult.getResponse().getContentAsString(), "$.data.accessToken");
 
         // Get Alice Wallet ID
-        MvcResult aliceWalletRes = mockMvc.perform(get("/api/v1/wallets")
+        MvcResult aliceWalletRes = mockMvc.perform(get("/api/v1/wallets/recipient-info?phoneNumber=0988000111")
                 .header("Authorization", "Bearer " + aliceToken))
                 .andExpect(status().isOk())
                 .andReturn();
-        String aliceWalletId = JsonPath.read(aliceWalletRes.getResponse().getContentAsString(), "$.data.id");
+        String aliceWalletId = JsonPath.read(aliceWalletRes.getResponse().getContentAsString(), "$.data.walletId");
 
         // Get Bob Wallet ID
-        MvcResult bobWalletRes = mockMvc.perform(get("/api/v1/wallets")
+        MvcResult bobWalletRes = mockMvc.perform(get("/api/v1/wallets/recipient-info?phoneNumber=0988000222")
                 .header("Authorization", "Bearer " + bobToken))
                 .andExpect(status().isOk())
                 .andReturn();
-        String bobWalletId = JsonPath.read(bobWalletRes.getResponse().getContentAsString(), "$.data.id");
+        String bobWalletId = JsonPath.read(bobWalletRes.getResponse().getContentAsString(), "$.data.walletId");
 
         // 3. Deposit money to Alice
         DepositRequest depositRequest = new DepositRequest();
         depositRequest.setAmount(new BigDecimal("1000000")); // 1M
         depositRequest.setCurrency("VND");
+        depositRequest.setWalletId(aliceWalletId);
         
         mockMvc.perform(post("/api/v1/wallets/deposit")
                 .header("Authorization", "Bearer " + aliceToken)

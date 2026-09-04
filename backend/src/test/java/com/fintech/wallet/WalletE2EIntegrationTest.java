@@ -37,6 +37,7 @@ public class WalletE2EIntegrationTest {
         RegisterRequest reqA = new RegisterRequest();
         reqA.setPhoneNumber(phoneA);
         reqA.setPassword(password);
+        reqA.setFullName("User A");
 
         ResponseEntity<ApiResponse> regResA = restTemplate.postForEntity("/api/v1/auth/register", reqA, ApiResponse.class);
         assertEquals(HttpStatus.CREATED, regResA.getStatusCode());
@@ -49,6 +50,7 @@ public class WalletE2EIntegrationTest {
         RegisterRequest reqB = new RegisterRequest();
         reqB.setPhoneNumber(phoneB);
         reqB.setPassword(password);
+        reqB.setFullName("User B");
 
         ResponseEntity<ApiResponse> regResB = restTemplate.postForEntity("/api/v1/auth/register", reqB, ApiResponse.class);
         assertEquals(HttpStatus.CREATED, regResB.getStatusCode());
@@ -97,7 +99,7 @@ public class WalletE2EIntegrationTest {
         assertEquals(HttpStatus.OK, balanceResA.getStatusCode());
         Map<String, Object> walletDataA = (Map<String, Object>) balanceResA.getBody().getData();
         Number balanceA = (Number) walletDataA.get("balance");
-        assertEquals(1000000.0, balanceA.doubleValue());
+        assertEquals(51000000.0, balanceA.doubleValue());
 
         // 6. Initialize Transfer from A to B
         TransferRequest transferReq = new TransferRequest();
@@ -106,6 +108,7 @@ public class WalletE2EIntegrationTest {
         transferReq.setAmount(new BigDecimal("200000")); // 200,000 VND
         transferReq.setCurrency("VND");
         transferReq.setRequestId(UUID.randomUUID().toString());
+        transferReq.setBankCode("SENHONG");
         transferReq.setNote("E2E Transfer Test");
 
         HttpEntity<TransferRequest> transferEntity = new HttpEntity<>(transferReq, headersA);
@@ -124,12 +127,12 @@ public class WalletE2EIntegrationTest {
         // 8. Check User A balance again
         ResponseEntity<ApiResponse> finalBalanceResA = restTemplate.exchange("/api/v1/wallets/" + walletIdA, HttpMethod.GET, getEntityA, ApiResponse.class);
         Number finalBalanceA = (Number) ((Map<String, Object>) finalBalanceResA.getBody().getData()).get("balance");
-        assertTrue(finalBalanceA.doubleValue() <= 800000.0);
+        assertTrue(finalBalanceA.doubleValue() <= 50800000.0);
 
         // 9. Check User B balance
         HttpEntity<Void> getEntityB = new HttpEntity<>(headersB);
         ResponseEntity<ApiResponse> balanceResB = restTemplate.exchange("/api/v1/wallets/" + walletIdB, HttpMethod.GET, getEntityB, ApiResponse.class);
         Number balanceB = (Number) ((Map<String, Object>) balanceResB.getBody().getData()).get("balance");
-        assertEquals(200000.0, balanceB.doubleValue());
+        assertEquals(50200000.0, balanceB.doubleValue());
     }
 }

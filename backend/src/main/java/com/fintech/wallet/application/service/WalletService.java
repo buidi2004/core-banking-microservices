@@ -76,6 +76,9 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
     @Autowired(required = false)
     private com.fintech.wallet.domain.port.in.FeeEstimationUseCase feeEstimationUseCase;
 
+    @Autowired(required = false)
+    private OutboxHelper outboxHelper;
+
     @Autowired
     public WalletService(WalletPersistencePort walletPersistencePort,
                          TransactionPersistencePort transactionPersistencePort,
@@ -192,14 +195,15 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             throw new IllegalArgumentException("Either walletId or phoneNumber must be provided");
         }
 
-        String rawName = user.getFullName();
-        if (rawName == null || rawName.isBlank()) {
-            if (kycPersistencePort != null) {
-                var kycOpt = kycPersistencePort.findKycByUserId(user.getId());
-                if (kycOpt.isPresent() && kycOpt.get().getFullName() != null && !kycOpt.get().getFullName().isBlank()) {
-                    rawName = kycOpt.get().getFullName();
-                }
+        String rawName = null;
+        if (kycPersistencePort != null) {
+            var kycOpt = kycPersistencePort.findKycByUserId(user.getId());
+            if (kycOpt.isPresent() && kycOpt.get().getFullName() != null && !kycOpt.get().getFullName().isBlank()) {
+                rawName = kycOpt.get().getFullName();
             }
+        }
+        if (rawName == null || rawName.isBlank()) {
+            rawName = user.getFullName();
         }
         if (rawName == null || rawName.isBlank()) {
             String phone = user.getPhoneNumber();
@@ -248,8 +252,10 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
 
             Transaction transaction = Transaction.createDeposit(requestId, walletId, amount);
 
-            // Bug #1 fix: wrap all DB writes in a single transaction for atomicity
-            // Bug #4 fix: notification moved outside the business try-catch
+            // Wrap all DB writes + outbox event in a single transaction for full atomicity.
+            // outboxHelper.saveEvent() is called INSIDE executeInTransaction so the outbox row
+            // is committed together with the wallet balance and transaction record — no dual-write
+            // risk if the service crashes between commit and event publish.
             Transaction savedTx;
             try {
                 wallet.deposit(amount);
@@ -257,10 +263,28 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 savedTx = transactionalOperationPort.executeInTransaction(() -> {
                     walletPersistencePort.saveWallet(wallet);
                     transaction.markSuccess();
-                    return transactionPersistencePort.saveTransaction(transaction);
+                    Transaction tx = transactionPersistencePort.saveTransaction(transaction);
+
+                    TransactionEvent event = new TransactionEvent(
+                            tx.getId(),
+                            tx.getType().name(),
+                            tx.getStatus().name(),
+                            null,
+                            tx.getTargetWalletId(),
+                            tx.getAmount().getAmount(),
+                            tx.getAmount().getCurrency()
+                    );
+                    if (outboxHelper != null) {
+                        outboxHelper.saveEvent(event);
+                    } else if (transactionEventPublisherPort != null) {
+                        transactionEventPublisherPort.publishTransactionEvent(event);
+                    } else {
+                        safeNotify(tx, wallet);
+                    }
+                    return tx;
                 });
             } catch (Exception e) {
-                // Save FAILED record (outside the rolled-back transaction)
+                // Save FAILED record outside the rolled-back transaction
                 transaction.markFailed();
                 try {
                     transactionPersistencePort.saveTransaction(transaction);
@@ -268,21 +292,6 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     log.error("Failed to save FAILED transaction record for requestId={}", requestId, saveEx);
                 }
                 throw e;
-            }
-
-            // Publish Transaction Event instead of direct notify to trigger FCM pushes and async workflows
-            if (transactionEventPublisherPort != null) {
-                transactionEventPublisherPort.publishTransactionEvent(new TransactionEvent(
-                        savedTx.getId(),
-                        savedTx.getType().name(),
-                        savedTx.getStatus().name(),
-                        null,
-                        savedTx.getTargetWalletId(),
-                        savedTx.getAmount().getAmount(),
-                        savedTx.getAmount().getCurrency()
-                ));
-            } else {
-                safeNotify(savedTx, wallet);
             }
             return savedTx;
         });
@@ -359,7 +368,9 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     if (feeEstimate.getFeeAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
                         Money fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
                         totalDeduction = amount.add(fee);
-                        transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, note + " (Fee: " + feeEstimate.getFeeAmount() + " " + amount.getCurrency() + ")");
+                        // BUG-4 fix: guard against null note to avoid "null (Fee: ...)" in transaction history
+                        String noteWithFee = (note != null && !note.isBlank() ? note + " " : "") + "(Fee: " + feeEstimate.getFeeAmount() + " " + amount.getCurrency() + ")";
+                        transaction = Transaction.createTransfer(requestId, sourceWalletId, targetWalletId, amount, noteWithFee);
                         transaction.setBankCode(bankCode);
                         transaction.setFeeAmount(fee);
                     }
@@ -371,11 +382,37 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     sourceWallet.withdraw(totalDeduction);
                     targetWallet.deposit(amount);
 
+                    finalTransaction.setBalanceAfter(sourceWallet.getBalance());
+                    finalTransaction.setReceiverBalanceAfter(targetWallet.getBalance());
+
                     savedTx = transactionalOperationPort.executeInTransaction(() -> {
                         walletPersistencePort.saveWallet(sourceWallet);
                         walletPersistencePort.saveWallet(targetWallet);
                         finalTransaction.markSuccess();
-                        return transactionPersistencePort.saveTransaction(finalTransaction);
+                        Transaction tx = transactionPersistencePort.saveTransaction(finalTransaction);
+
+                        // BUG-3 fix: save outbox event INSIDE the DB transaction so the event
+                        // is atomic with the balance/transaction writes. No more dual-write risk.
+                        TransactionEvent event = new TransactionEvent(
+                                tx.getId(),
+                                tx.getType().name(),
+                                tx.getStatus().name(),
+                                tx.getSourceWalletId(),
+                                tx.getTargetWalletId(),
+                                tx.getAmount().getAmount(),
+                                tx.getAmount().getCurrency()
+                        );
+                        if (outboxHelper != null) {
+                            outboxHelper.saveEvent(event);
+                        } else if (transactionEventPublisherPort != null) {
+                            transactionEventPublisherPort.publishTransactionEvent(event);
+                        } else {
+                            safeNotify(tx, sourceWallet);
+                            safeNotify(tx, targetWallet);
+                            recordAuditLog(sourceWallet.getOwnerId(), "TRANSFER",
+                                    "txId:" + tx.getId() + ",amount:" + amount.getAmount());
+                        }
+                        return tx;
                     });
                 } catch (Exception e) {
                     finalTransaction.markFailed();
@@ -387,24 +424,6 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                     throw e;
                 }
 
-                // Publish Transaction Event instead of direct notify and audit
-                TransactionEvent event = new TransactionEvent(
-                        savedTx.getId(),
-                        savedTx.getType().name(),
-                        savedTx.getStatus().name(),
-                        savedTx.getSourceWalletId(),
-                        savedTx.getTargetWalletId(),
-                        savedTx.getAmount().getAmount(),
-                        savedTx.getAmount().getCurrency()
-                );
-                if (transactionEventPublisherPort != null) {
-                    transactionEventPublisherPort.publishTransactionEvent(event);
-                } else {
-                    safeNotify(savedTx, sourceWallet);
-                    safeNotify(savedTx, targetWallet);
-                    recordAuditLog(sourceWallet.getOwnerId(), "TRANSFER", "txId:" + savedTx.getId() + ",amount:" + amount.getAmount());
-                }
-                
                 return savedTx;
             })
         );
@@ -465,11 +484,32 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             Transaction savedTx;
             try {
                 wallet.withdraw(totalDeduction);
+                finalTransaction.setBalanceAfter(wallet.getBalance());
 
                 savedTx = transactionalOperationPort.executeInTransaction(() -> {
                     walletPersistencePort.saveWallet(wallet);
                     finalTransaction.markSuccess();
-                    return transactionPersistencePort.saveTransaction(finalTransaction);
+                    Transaction tx = transactionPersistencePort.saveTransaction(finalTransaction);
+                    
+                    TransactionEvent event = new TransactionEvent(
+                            tx.getId(),
+                            tx.getType().name(),
+                            tx.getStatus().name(),
+                            tx.getSourceWalletId(),
+                            tx.getTargetWalletId(),
+                            tx.getAmount().getAmount(),
+                            tx.getAmount().getCurrency()
+                    );
+                    
+                    if (outboxHelper != null) {
+                        outboxHelper.saveEvent(event);
+                    } else if (transactionEventPublisherPort != null) {
+                        transactionEventPublisherPort.publishTransactionEvent(event);
+                    } else {
+                        safeNotify(tx, wallet);
+                    }
+                    
+                    return tx;
                 });
             } catch (Exception e) {
                 finalTransaction.markFailed();
@@ -481,19 +521,6 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 throw e;
             }
 
-            if (transactionEventPublisherPort != null) {
-                transactionEventPublisherPort.publishTransactionEvent(new TransactionEvent(
-                        savedTx.getId(),
-                        savedTx.getType().name(),
-                        savedTx.getStatus().name(),
-                        savedTx.getSourceWalletId(),
-                        savedTx.getTargetWalletId(),
-                        savedTx.getAmount().getAmount(),
-                        savedTx.getAmount().getCurrency()
-                ));
-            } else {
-                safeNotify(savedTx, wallet);
-            }
             return savedTx;
         });
         
@@ -604,11 +631,32 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             Transaction savedTx;
             try {
                 wallet.withdraw(totalDeduction);
+                finalTransaction.setBalanceAfter(wallet.getBalance());
 
                 savedTx = transactionalOperationPort.executeInTransaction(() -> {
                     walletPersistencePort.saveWallet(wallet);
                     finalTransaction.markSuccess();
-                    return transactionPersistencePort.saveTransaction(finalTransaction);
+                    Transaction tx = transactionPersistencePort.saveTransaction(finalTransaction);
+                    
+                    TransactionEvent event = new TransactionEvent(
+                            tx.getId(),
+                            tx.getType().name(),
+                            tx.getStatus().name(),
+                            tx.getSourceWalletId(),
+                            tx.getTargetWalletId(),
+                            tx.getAmount().getAmount(),
+                            tx.getAmount().getCurrency()
+                    );
+                    
+                    if (outboxHelper != null) {
+                        outboxHelper.saveEvent(event);
+                    } else if (transactionEventPublisherPort != null) {
+                        transactionEventPublisherPort.publishTransactionEvent(event);
+                    } else {
+                        safeNotify(tx, wallet);
+                    }
+                    
+                    return tx;
                 });
             } catch (Exception e) {
                 finalTransaction.markFailed();
@@ -620,19 +668,6 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
                 throw e;
             }
 
-            if (transactionEventPublisherPort != null) {
-                transactionEventPublisherPort.publishTransactionEvent(new com.fintech.wallet.domain.model.TransactionEvent(
-                        savedTx.getId(),
-                        savedTx.getType().name(),
-                        savedTx.getStatus().name(),
-                        savedTx.getSourceWalletId(),
-                        savedTx.getTargetWalletId(),
-                        savedTx.getAmount().getAmount(),
-                        savedTx.getAmount().getCurrency()
-                ));
-            } else {
-                safeNotify(savedTx, wallet);
-            }
             return savedTx;
         });
     }
@@ -706,6 +741,19 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         String targetWalletId = transaction.getTargetWalletId();
         Money amount = transaction.getAmount();
 
+        // BUG-1 fix: determine internal/external BEFORE acquiring locks.
+        // For external transfers, targetWalletId is a bank account number string — not a real wallet UUID.
+        // Locking both keys would create a phantom Redis lock key and is semantically wrong.
+        boolean isExternalTransfer = transaction.getBankCode() != null
+                && !"SENHONG".equalsIgnoreCase(transaction.getBankCode());
+
+        if (isExternalTransfer) {
+            String lockKey = "lock:wallet:" + sourceWalletId;
+            return distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () ->
+                executeConfirmTransferCore(transactionId, sourceWalletId, targetWalletId, amount));
+        }
+
+        // Internal transfer: lock both wallets in ID order to prevent deadlocks
         String firstLockId = sourceWalletId.compareTo(targetWalletId) < 0 ? sourceWalletId : targetWalletId;
         String secondLockId = sourceWalletId.compareTo(targetWalletId) < 0 ? targetWalletId : sourceWalletId;
 
@@ -713,101 +761,117 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         String lockKey2 = "lock:wallet:" + secondLockId;
 
         return distributedLockPort.executeWithLock(lockKey1, LOCK_TIMEOUT_SECONDS, () ->
-            distributedLockPort.executeWithLock(lockKey2, LOCK_TIMEOUT_SECONDS, () -> {
-                // re-fetch to ensure no race condition
-                Transaction tx = transactionPersistencePort.findTransactionById(transactionId)
-                        .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
-                if (tx.getStatus() != TransactionStatus.PENDING && tx.getStatus() != TransactionStatus.PENDING_CONFIRMATION) {
-                    return tx;
-                }
-                
-                Wallet sourceWallet = getWalletById(sourceWalletId);
-                Wallet targetWallet = getWalletById(targetWalletId);
-
-                // Enforce daily & monthly limit for source wallet owner (only check inside lock to prevent TOCTOU)
-                validateDailyTransactionLimit(sourceWallet.getOwnerId(), sourceWalletId, amount);
-
-                if (!sourceWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
-                    throw new InvalidMoneyException("Currency mismatch");
-                }
-                boolean isInternalForCheck = tx.getBankCode() == null || "SENHONG".equalsIgnoreCase(tx.getBankCode());
-                if (isInternalForCheck && !targetWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
-                    throw new InvalidMoneyException("Currency mismatch");
-                }
-
-                boolean isInternal = tx.getBankCode() == null || "SENHONG".equalsIgnoreCase(tx.getBankCode());
-                
-                Money totalDeduction = amount;
-                Money fee = Money.of(java.math.BigDecimal.ZERO, amount.getCurrency());
-                if (feeEstimationUseCase != null) {
-                    com.fintech.wallet.domain.model.FeeEstimate feeEstimate = feeEstimationUseCase.estimateFee(
-                            sourceWallet.getOwnerId(),
-                            com.fintech.wallet.domain.model.TransactionType.TRANSFER,
-                            amount);
-                    if (feeEstimate.getFeeAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
-                        fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
-                        totalDeduction = amount.add(fee);
-                    }
-                }
-                
-                if (!isInternal) {
-                    // Mock NAPAS external transfer fee
-                    if (fee.getAmount().compareTo(java.math.BigDecimal.ZERO) == 0) {
-                        fee = Money.of(new java.math.BigDecimal("2000.00"), amount.getCurrency());
-                        totalDeduction = amount.add(fee);
-                    }
-                }
-
-                tx.setFeeAmount(fee);
-
-                // BUG-1 fix: wrap all DB writes in a single transaction for atomicity
-                Transaction savedTx;
-                try {
-                    sourceWallet.withdraw(totalDeduction);
-                    tx.setBalanceAfter(sourceWallet.getBalance());
-                    
-                    if (isInternal) {
-                        targetWallet.deposit(amount);
-                    } else {
-                        // Mock NAPAS integration
-                        log.info("Mocking external NAPAS transfer for tx {} to bank {}", tx.getId(), tx.getBankCode());
-                    }
-
-                    savedTx = transactionalOperationPort.executeInTransaction(() -> {
-                        walletPersistencePort.saveWallet(sourceWallet);
-                        if (isInternal) {
-                            walletPersistencePort.saveWallet(targetWallet);
-                        }
-                        tx.markSuccess();
-                        return transactionPersistencePort.saveTransaction(tx);
-                    });
-                } catch (Exception e) {
-                    tx.markFailed();
-                    try {
-                        transactionPersistencePort.saveTransaction(tx);
-                    } catch (Exception saveEx) {
-                        log.error("Failed to save FAILED transaction record for txId={}", transactionId, saveEx);
-                    }
-                    throw e;
-                }
-                if (transactionEventPublisherPort != null) {
-                    transactionEventPublisherPort.publishTransactionEvent(new TransactionEvent(
-                            savedTx.getId(),
-                            savedTx.getType().name(),
-                            savedTx.getStatus().name(),
-                            savedTx.getSourceWalletId(),
-                            savedTx.getTargetWalletId(),
-                            savedTx.getAmount().getAmount(),
-                            savedTx.getAmount().getCurrency()
-                    ));
-                } else {
-                    recordAuditLog(sourceWallet.getOwnerId(), "TRANSFER", tx.getId());
-                    safeNotify(savedTx, sourceWallet);
-                    safeNotify(savedTx, targetWallet);
-                }
-                return savedTx;
-            })
+            distributedLockPort.executeWithLock(lockKey2, LOCK_TIMEOUT_SECONDS, () ->
+                executeConfirmTransferCore(transactionId, sourceWalletId, targetWalletId, amount))
         );
+    }
+
+    /**
+     * Core confirm-transfer logic executed inside the appropriate distributed lock(s).
+     * Extracted to avoid duplication between the internal (2-lock) and external (1-lock) paths.
+     * BUG-2 fix: event is now saved to outbox INSIDE executeInTransaction so it is atomic
+     * with the wallet/transaction writes. No more dual-write risk after commit.
+     */
+    private Transaction executeConfirmTransferCore(String transactionId, String sourceWalletId, String targetWalletId, Money amount) {
+        // Re-fetch inside lock to prevent TOCTOU
+        Transaction tx = transactionPersistencePort.findTransactionById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Transaction not found: " + transactionId));
+        if (tx.getStatus() != TransactionStatus.PENDING && tx.getStatus() != TransactionStatus.PENDING_CONFIRMATION) {
+            return tx;
+        }
+
+        boolean isInternal = tx.getBankCode() == null || "SENHONG".equalsIgnoreCase(tx.getBankCode());
+        Wallet sourceWallet = getWalletById(sourceWalletId);
+        Wallet targetWallet = isInternal ? getWalletById(targetWalletId) : null;
+
+        // Enforce daily & monthly limit inside lock to prevent TOCTOU
+        validateDailyTransactionLimit(sourceWallet.getOwnerId(), sourceWalletId, amount);
+
+        if (!sourceWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
+            throw new InvalidMoneyException("Currency mismatch");
+        }
+        if (isInternal && !targetWallet.getBalance().getCurrency().equalsIgnoreCase(amount.getCurrency())) {
+            throw new InvalidMoneyException("Currency mismatch");
+        }
+
+        Money totalDeduction = amount;
+        Money fee = Money.of(java.math.BigDecimal.ZERO, amount.getCurrency());
+        if (feeEstimationUseCase != null) {
+            com.fintech.wallet.domain.model.FeeEstimate feeEstimate = feeEstimationUseCase.estimateFee(
+                    sourceWallet.getOwnerId(),
+                    com.fintech.wallet.domain.model.TransactionType.TRANSFER,
+                    amount);
+            if (feeEstimate.getFeeAmount().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                fee = Money.of(feeEstimate.getFeeAmount(), amount.getCurrency());
+                totalDeduction = amount.add(fee);
+            }
+        }
+
+        if (!isInternal) {
+            // Mock NAPAS external transfer fee fallback
+            if (fee.getAmount().compareTo(java.math.BigDecimal.ZERO) == 0) {
+                fee = Money.of(new java.math.BigDecimal("2000.00"), amount.getCurrency());
+                totalDeduction = amount.add(fee);
+            }
+        }
+
+        tx.setFeeAmount(fee);
+
+        final Wallet finalTargetWallet = targetWallet;
+        final Money finalTotalDeduction = totalDeduction;
+        Transaction savedTx;
+        try {
+            sourceWallet.withdraw(finalTotalDeduction);
+            tx.setBalanceAfter(sourceWallet.getBalance());
+
+            if (isInternal) {
+                finalTargetWallet.deposit(amount);
+                tx.setReceiverBalanceAfter(finalTargetWallet.getBalance());
+            } else {
+                log.info("Mocking external NAPAS transfer for tx {} to bank {}", tx.getId(), tx.getBankCode());
+            }
+
+            savedTx = transactionalOperationPort.executeInTransaction(() -> {
+                walletPersistencePort.saveWallet(sourceWallet);
+                if (isInternal) {
+                    walletPersistencePort.saveWallet(finalTargetWallet);
+                }
+                tx.markSuccess();
+                Transaction updatedTx = transactionPersistencePort.saveTransaction(tx);
+
+                // BUG-2 fix: save outbox event inside the DB transaction so the event
+                // is atomic with the balance/transaction writes. No dual-write risk.
+                TransactionEvent event = new TransactionEvent(
+                        updatedTx.getId(),
+                        updatedTx.getType().name(),
+                        updatedTx.getStatus().name(),
+                        updatedTx.getSourceWalletId(),
+                        updatedTx.getTargetWalletId(),
+                        updatedTx.getAmount().getAmount(),
+                        updatedTx.getAmount().getCurrency()
+                );
+                if (outboxHelper != null) {
+                    outboxHelper.saveEvent(event);
+                } else if (transactionEventPublisherPort != null) {
+                    transactionEventPublisherPort.publishTransactionEvent(event);
+                } else {
+                    safeNotify(updatedTx, sourceWallet);
+                    if (isInternal) {
+                        safeNotify(updatedTx, finalTargetWallet);
+                    }
+                }
+                return updatedTx;
+            });
+        } catch (Exception e) {
+            tx.markFailed();
+            try {
+                transactionPersistencePort.saveTransaction(tx);
+            } catch (Exception saveEx) {
+                log.error("Failed to save FAILED transaction record for txId={}", transactionId, saveEx);
+            }
+            throw e;
+        }
+        return savedTx;
     }
 
     
@@ -984,7 +1048,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
         if (auditLogPersistencePort != null) {
             try {
                 String ip = clientInfoPort != null ? clientInfoPort.getClientIp() : "127.0.0.1";
-                auditLogPersistencePort.saveAuditLog(AuditLog.record(callerId, ip, action, payloadHash));
+                auditLogPersistencePort.saveAuditLog(AuditLog.record(callerId, ip, action, payloadHash, null));
             } catch (Exception e) {
                 log.warn("Failed to record audit log action={}: {}", action, e.getMessage());
             }
@@ -1000,7 +1064,7 @@ public class WalletService implements TransferMoneyUseCase, GetWalletUseCase, De
             return;
         }
         try {
-            notificationPort.notifyTransactionCompleted(transaction, wallet);
+            notificationPort.notifyTransactionCompleted(transaction, wallet, null, null, null);
         } catch (Exception e) {
             log.warn("Notification failed for transaction={} wallet={}, but business transaction committed successfully",
                     transaction.getId(), wallet.getId(), e);

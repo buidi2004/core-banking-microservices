@@ -60,6 +60,9 @@ public class WalletMapper {
         if (entity.getBalanceAfter() != null) {
             tx.setBalanceAfter(Money.of(entity.getBalanceAfter(), entity.getCurrency()));
         }
+        if (entity.getReceiverBalanceAfter() != null) {
+            tx.setReceiverBalanceAfter(Money.of(entity.getReceiverBalanceAfter(), entity.getCurrency()));
+        }
         return tx;
     }
 
@@ -83,6 +86,9 @@ public class WalletMapper {
         }
         if (domain.getBalanceAfter() != null) {
             jpaEntity.setBalanceAfter(domain.getBalanceAfter().getAmount());
+        }
+        if (domain.getReceiverBalanceAfter() != null) {
+            jpaEntity.setReceiverBalanceAfter(domain.getReceiverBalanceAfter().getAmount());
         }
         return jpaEntity;
     }

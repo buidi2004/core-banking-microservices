@@ -53,7 +53,8 @@ public class LedgerConsumer {
             Optional<Transaction> txOpt = transactionPersistencePort.findTransactionById(event.getTransactionId());
             if (txOpt.isEmpty()) {
                 log.warn("Transaction {} not found for ledger posting", event.getTransactionId());
-                return;
+                redisTemplate.delete(idempotencyKey); // Delete key to allow retry
+                throw new RuntimeException("Transaction not found, forcing retry");
             }
             Transaction tx = txOpt.get();
 
@@ -64,40 +65,66 @@ public class LedgerConsumer {
                     .findFirst()
                     .orElseGet(() -> ledgerService.createAccount("BANK_SETTLEMENT", AccountType.ASSET, "VND"));
 
-            LedgerAccount customerLiabilityAccount = accounts.stream()
-                    .filter(a -> "CUSTOMER_DEPOSITS".equals(a.getAccountName()))
-                    .findFirst()
-                    .orElseGet(() -> ledgerService.createAccount("CUSTOMER_DEPOSITS", AccountType.LIABILITY, "VND"));
+
 
             List<LedgerPosting> postings = new ArrayList<>();
             String entryId = UUID.randomUUID().toString();
 
+            LedgerAccount sourceCustomerAccount = null;
+            LedgerAccount targetCustomerAccount = null;
+            if (tx.getSourceWalletId() != null) {
+                sourceCustomerAccount = accounts.stream()
+                        .filter(a -> ("CUSTOMER_DEPOSITS_" + tx.getSourceWalletId()).equals(a.getAccountName()))
+                        .findFirst()
+                        .orElseGet(() -> ledgerService.createAccount("CUSTOMER_DEPOSITS_" + tx.getSourceWalletId(), AccountType.LIABILITY, "VND"));
+            }
+            if (tx.getTargetWalletId() != null) {
+                targetCustomerAccount = accounts.stream()
+                        .filter(a -> ("CUSTOMER_DEPOSITS_" + tx.getTargetWalletId()).equals(a.getAccountName()))
+                        .findFirst()
+                        .orElseGet(() -> ledgerService.createAccount("CUSTOMER_DEPOSITS_" + tx.getTargetWalletId(), AccountType.LIABILITY, "VND"));
+            }
+
             switch (tx.getType()) {
                 case DEPOSIT:
-                    // Nạp tiền: Bank Asset (+) DEBIT, Customer Deposit Liability (+) CREDIT
+                    // Nạp tiền: Bank Asset (+) DEBIT, Target Customer Deposit Liability (+) CREDIT
                     postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, bankAssetAccount.getId(), EntryType.DEBIT, tx.getAmount().getAmount()));
-                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, customerLiabilityAccount.getId(), EntryType.CREDIT, tx.getAmount().getAmount()));
+                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, targetCustomerAccount.getId(), EntryType.CREDIT, tx.getAmount().getAmount()));
                     break;
                 case WITHDRAWAL:
-                    // Rút tiền: Customer Deposit Liability (-) DEBIT, Bank Asset (-) CREDIT
-                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, customerLiabilityAccount.getId(), EntryType.DEBIT, tx.getAmount().getAmount()));
+                    // Rút tiền: Source Customer Deposit Liability (-) DEBIT, Bank Asset (-) CREDIT
+                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, sourceCustomerAccount.getId(), EntryType.DEBIT, tx.getAmount().getAmount()));
                     postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, bankAssetAccount.getId(), EntryType.CREDIT, tx.getAmount().getAmount()));
                     break;
                 case TRANSFER:
-                    // Chuyển tiền nội bộ: Customer Liability DEBIT, Customer Liability CREDIT
-                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, customerLiabilityAccount.getId(), EntryType.DEBIT, tx.getAmount().getAmount()));
-                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, customerLiabilityAccount.getId(), EntryType.CREDIT, tx.getAmount().getAmount()));
+                    // Chuyển tiền nội bộ: Source Customer Liability DEBIT, Target Customer Liability CREDIT
+                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, sourceCustomerAccount.getId(), EntryType.DEBIT, tx.getAmount().getAmount()));
+                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, targetCustomerAccount.getId(), EntryType.CREDIT, tx.getAmount().getAmount()));
                     break;
                 case REVERSAL:
-                    // Hoàn tiền (đảo ngược): Customer Liability CREDIT, Customer Liability DEBIT
-                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, customerLiabilityAccount.getId(), EntryType.CREDIT, tx.getAmount().getAmount()));
-                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, customerLiabilityAccount.getId(), EntryType.DEBIT, tx.getAmount().getAmount()));
+                    // Hoàn tiền (đảo ngược): Target Customer Liability CREDIT, Source Customer Liability DEBIT (assuming reversal of transfer)
+                    // If it's reversal of withdrawal, it should credit source wallet and debit bank asset. 
+                    // Let's assume the reversal credits the source wallet and debits the bank asset for withdrawal reversal.
+                    // Wait, Reversal tx records sourceWalletId = wallet that is being refunded.
+                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, bankAssetAccount.getId(), EntryType.DEBIT, tx.getAmount().getAmount()));
+                    postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, sourceCustomerAccount.getId(), EntryType.CREDIT, tx.getAmount().getAmount()));
+                    break;
+                case BILL_PAYMENT:
+                case TOPUP:
+                    if (sourceCustomerAccount != null) {
+                        postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, sourceCustomerAccount.getId(), EntryType.DEBIT, tx.getAmount().getAmount()));
+                        postings.add(new LedgerPosting(UUID.randomUUID().toString(), entryId, bankAssetAccount.getId(), EntryType.CREDIT, tx.getAmount().getAmount()));
+                    }
                     break;
             }
 
             if (!postings.isEmpty()) {
                 String description = tx.getNote() != null && !tx.getNote().isBlank() ? tx.getNote() : "Automatic ledger posting for " + tx.getType();
-                ledgerService.recordJournalEntry(tx.getId(), description, postings);
+                try {
+                    ledgerService.recordJournalEntry(tx.getId(), description, event.getEventId(), postings);
+                } catch (org.springframework.dao.DataIntegrityViolationException dive) {
+                    log.info("Duplicate event ignored at DB level in LedgerConsumer: {}", event.getEventId());
+                }
             }
 
         } catch (Exception e) {

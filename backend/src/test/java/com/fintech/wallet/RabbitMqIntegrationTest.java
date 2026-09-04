@@ -83,7 +83,7 @@ public class RabbitMqIntegrationTest {
         Money amount = Money.of(new BigDecimal("100000"), "VND");
         
         // Execute transfer
-        Transaction tx = walletService.transfer(requestId, senderWallet.getId(), receiverWallet.getId(), amount);
+        Transaction tx = walletService.transfer(requestId, senderWallet.getId(), receiverWallet.getId(), "SENHONG", amount, null);
         
         assertNotNull(tx);
 

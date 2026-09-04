@@ -61,10 +61,23 @@ public class FeeEstimationService implements FeeEstimationUseCase {
             case WITHDRAWAL:
                 return calculateWithdrawalFee(type, amount, kycStatus);
 
+            case BILL_PAYMENT:
+                return calculateBillPaymentFee(type, amount, kycStatus);
+
             default:
-                // TOPUP, BILL_PAYMENT handled as generic fee
+                // TOPUP handled as generic fee
                 return calculateGenericFee(type, amount, kycStatus);
         }
+    }
+
+    private FeeEstimate calculateBillPaymentFee(TransactionType type, Money amount, KycStatus kycStatus) {
+        BigDecimal fee = BILL_FLAT_FEE;
+
+        if (kycStatus == KycStatus.VERIFIED) {
+            fee = BigDecimal.ZERO;
+        }
+
+        return FeeEstimate.withFee(type, amount.getAmount(), fee, amount.getCurrency());
     }
 
     private FeeEstimate calculateWithdrawalFee(TransactionType type, Money amount, KycStatus kycStatus) {

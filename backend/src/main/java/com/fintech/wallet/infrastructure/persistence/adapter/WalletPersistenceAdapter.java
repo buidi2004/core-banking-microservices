@@ -7,6 +7,7 @@ import com.fintech.wallet.infrastructure.persistence.mapper.WalletMapper;
 import com.fintech.wallet.infrastructure.persistence.repository.SpringDataWalletRepository;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 /**
@@ -45,5 +46,10 @@ public class WalletPersistenceAdapter implements WalletPersistencePort {
     @Override
     public Optional<Wallet> findWalletByOwnerId(String ownerId) {
         return walletRepository.findByOwnerId(ownerId).map(mapper::toDomain);
+    }
+
+    @Override
+    public BigDecimal sumAllBalances() {
+        return walletRepository.sumAllBalances();
     }
 }

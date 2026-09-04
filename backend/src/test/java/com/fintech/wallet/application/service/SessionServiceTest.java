@@ -22,6 +22,9 @@ class SessionServiceTest {
     @Mock
     private SessionPersistencePort sessionPersistencePort;
 
+    @Mock
+    private com.fintech.wallet.domain.port.out.DeviceTokenPersistencePort deviceTokenPersistencePort;
+
     @InjectMocks
     private SessionService target;
 

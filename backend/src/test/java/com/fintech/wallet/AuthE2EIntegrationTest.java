@@ -48,6 +48,7 @@ public class AuthE2EIntegrationTest {
         registerReq.setPhoneNumber(testPhone);
         registerReq.setPassword(testPassword);
         registerReq.setDeviceId(deviceId);
+        registerReq.setFullName("Test User");
 
         ResponseEntity<ApiResponse> registerRes = restTemplate.postForEntity(
                 "/api/v1/auth/register",

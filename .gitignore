@@ -32,3 +32,8 @@ target/
 ### Logs & Temp ###
 *.log
 tmp/
+
+### Firebase Credentials ###
+*firebase-service-account*.json
+*serviceAccount*.json
+*firebase-adminsdk*.json*

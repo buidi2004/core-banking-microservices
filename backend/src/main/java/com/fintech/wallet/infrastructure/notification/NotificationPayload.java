@@ -19,10 +19,13 @@ public class NotificationPayload {
     private final String currency;
     private final String timestamp;
     private final String note;
+    private final String title;
+    private final String body;
 
     public NotificationPayload(String transactionId, String requestId, String type, String status,
                                String walletId, BigDecimal transactionAmount, String transactionCurrency,
-                               BigDecimal newBalance, String currency, String timestamp, String note) {
+                               BigDecimal newBalance, String currency, String timestamp, String note,
+                               String title, String body) {
         this.transactionId = transactionId;
         this.requestId = requestId;
         this.type = type;
@@ -34,6 +37,8 @@ public class NotificationPayload {
         this.currency = currency;
         this.timestamp = timestamp;
         this.note = note;
+        this.title = title;
+        this.body = body;
     }
 
     public String getTransactionId() { return transactionId; }
@@ -47,6 +52,8 @@ public class NotificationPayload {
     public String getCurrency() { return currency; }
     public String getTimestamp() { return timestamp; }
     public String getNote() { return note; }
+    public String getTitle() { return title; }
+    public String getBody() { return body; }
 
     @Override
     public String toString() {

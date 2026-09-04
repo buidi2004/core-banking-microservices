@@ -25,5 +25,9 @@ public interface SpringDataTransactionRepository extends JpaRepository<Transacti
 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM TransactionJpaEntity t WHERE t.sourceWalletId = :walletId AND t.status = 'SUCCESS' AND t.createdAt >= :startOfMonth AND t.type IN ('TRANSFER', 'WITHDRAW', 'BILL_PAYMENT', 'TOPUP')")
     BigDecimal sumMonthlySpentByWalletId(@Param("walletId") String walletId, @Param("startOfMonth") Instant startOfMonth);
+    
+    List<TransactionJpaEntity> findByStatusAndCreatedAtBefore(String status, java.time.Instant createdAt);
+    
+    List<TransactionJpaEntity> findByStatusInAndCreatedAtBefore(List<String> statuses, java.time.Instant createdAt);
 }
 

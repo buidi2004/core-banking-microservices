@@ -51,7 +51,7 @@ class LedgerServiceTest {
         when(ledgerPersistencePort.findAccountById("a1")).thenReturn(Optional.of(assetAcc));
         when(ledgerPersistencePort.findAccountById("l1")).thenReturn(Optional.of(liabAcc));
 
-        ledgerService.recordJournalEntry("tx1", "tx1", List.of(
+        ledgerService.recordJournalEntry("tx1", "tx1", null, List.of(
             new LedgerPosting(null, null, "a1", EntryType.DEBIT, new BigDecimal("50")),
             new LedgerPosting(null, null, "l1", EntryType.CREDIT, new BigDecimal("50"))
         ));
@@ -66,7 +66,7 @@ class LedgerServiceTest {
     @Test
     void recordJournalEntry_accountNotFound_shouldThrow() {
         when(ledgerPersistencePort.findAccountById("a1")).thenReturn(Optional.empty());
-        assertThrows(IllegalArgumentException.class, () -> ledgerService.recordJournalEntry("tx1", "tx1", List.of(
+        assertThrows(IllegalArgumentException.class, () -> ledgerService.recordJournalEntry("tx1", "tx1", null, List.of(
             new LedgerPosting(null, null, "a1", EntryType.DEBIT, new BigDecimal("50")),
             new LedgerPosting(null, null, "l1", EntryType.CREDIT, new BigDecimal("50"))
         )));

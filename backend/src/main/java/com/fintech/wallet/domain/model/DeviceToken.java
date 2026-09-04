@@ -6,25 +6,41 @@ import java.util.UUID;
 public class DeviceToken {
     private final String id;
     private final String userId;
-    private final String deviceId;
     private final String fcmToken;
-    private final Instant registeredAt;
+    private final String deviceType;
+    private final Instant createdAt;
+    private final Instant updatedAt;
 
-    public DeviceToken(String id, String userId, String deviceId, String fcmToken, Instant registeredAt) {
+    public DeviceToken(String id, String userId, String fcmToken, String deviceType, Instant createdAt, Instant updatedAt) {
         this.id = id != null ? id : UUID.randomUUID().toString();
         this.userId = userId;
-        this.deviceId = deviceId;
         this.fcmToken = fcmToken;
-        this.registeredAt = registeredAt != null ? registeredAt : Instant.now();
+        this.deviceType = deviceType != null ? deviceType : "ANDROID";
+        this.createdAt = createdAt != null ? createdAt : Instant.now();
+        this.updatedAt = updatedAt != null ? updatedAt : Instant.now();
     }
 
-    public static DeviceToken createNew(String userId, String deviceId, String fcmToken) {
-        return new DeviceToken(UUID.randomUUID().toString(), userId, deviceId, fcmToken, Instant.now());
+    public static DeviceToken createNew(String userId, String fcmToken, String deviceType) {
+        Instant now = Instant.now();
+        return new DeviceToken(UUID.randomUUID().toString(), userId, fcmToken, deviceType, now, now);
+    }
+
+    public DeviceToken updateOwner(String newUserId, String newDeviceType) {
+        return new DeviceToken(
+                this.id,
+                newUserId,
+                this.fcmToken,
+                newDeviceType != null ? newDeviceType : this.deviceType,
+                this.createdAt,
+                Instant.now()
+        );
     }
 
     public String getId() { return id; }
     public String getUserId() { return userId; }
-    public String getDeviceId() { return deviceId; }
     public String getFcmToken() { return fcmToken; }
-    public Instant getRegisteredAt() { return registeredAt; }
+    public String getDeviceType() { return deviceType; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getUpdatedAt() { return updatedAt; }
 }
+

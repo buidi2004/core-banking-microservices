@@ -37,6 +37,7 @@ public class QrPaymentE2EIntegrationTest {
         RegisterRequest reqA = new RegisterRequest();
         reqA.setPhoneNumber(phoneA);
         reqA.setPassword(password);
+        reqA.setFullName("User A");
 
         ResponseEntity<ApiResponse> regResA = restTemplate.postForEntity("/api/v1/auth/register", reqA, ApiResponse.class);
         assertEquals(HttpStatus.CREATED, regResA.getStatusCode());
@@ -48,6 +49,7 @@ public class QrPaymentE2EIntegrationTest {
         RegisterRequest reqB = new RegisterRequest();
         reqB.setPhoneNumber(phoneB);
         reqB.setPassword(password);
+        reqB.setFullName("User B");
 
         ResponseEntity<ApiResponse> regResB = restTemplate.postForEntity("/api/v1/auth/register", reqB, ApiResponse.class);
         assertEquals(HttpStatus.CREATED, regResB.getStatusCode());
@@ -125,10 +127,10 @@ public class QrPaymentE2EIntegrationTest {
         HttpEntity<Void> getEntityA = new HttpEntity<>(headersA);
         ResponseEntity<ApiResponse> balanceResA = restTemplate.exchange("/api/v1/wallets/" + walletIdA, HttpMethod.GET, getEntityA, ApiResponse.class);
         Number finalBalanceA = (Number) ((Map<String, Object>) balanceResA.getBody().getData()).get("balance");
-        assertTrue(finalBalanceA.doubleValue() <= 350000.0); // 500000 - 150000 - fee
+        assertTrue(finalBalanceA.doubleValue() <= 50350000.0); // 50500000 - 150000 - fee
 
         ResponseEntity<ApiResponse> balanceResB = restTemplate.exchange("/api/v1/wallets/" + walletIdB, HttpMethod.GET, getEntityB, ApiResponse.class);
         Number finalBalanceB = (Number) ((Map<String, Object>) balanceResB.getBody().getData()).get("balance");
-        assertEquals(150000.0, finalBalanceB.doubleValue());
+        assertEquals(50150000.0, finalBalanceB.doubleValue());
     }
 }

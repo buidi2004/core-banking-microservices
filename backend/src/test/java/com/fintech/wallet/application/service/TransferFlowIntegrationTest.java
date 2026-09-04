@@ -113,7 +113,7 @@ public class TransferFlowIntegrationTest {
         Money transferAmount = Money.of(new BigDecimal("200000"), "VND");
 
         // Step 1: Init Transfer
-        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), transferAmount);
+        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), "SENHONG", transferAmount, null);
         
         assertNotNull(initTx);
         assertEquals(TransactionStatus.PENDING_CONFIRMATION, initTx.getStatus());
@@ -135,8 +135,8 @@ public class TransferFlowIntegrationTest {
         Wallet updatedSenderWallet = walletService.getWalletById(senderWallet.getId());
         Wallet updatedReceiverWallet = walletService.getWalletById(receiverWallet.getId());
 
-        assertEquals(new BigDecimal("800000").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
-        assertEquals(new BigDecimal("200000").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("50800000").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("50200000").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
     }
 
     @Test
@@ -145,7 +145,7 @@ public class TransferFlowIntegrationTest {
         Money transferAmount = Money.of(new BigDecimal("200000"), "VND");
 
         // Step 1: Init Transfer
-        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), transferAmount);
+        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), "SENHONG", transferAmount, null);
         
         assertNotNull(initTx);
         assertEquals(TransactionStatus.PENDING_CONFIRMATION, initTx.getStatus());
@@ -162,17 +162,22 @@ public class TransferFlowIntegrationTest {
         Wallet updatedSenderWallet = walletService.getWalletById(senderWallet.getId());
         Wallet updatedReceiverWallet = walletService.getWalletById(receiverWallet.getId());
 
-        assertEquals(new BigDecimal("1000000").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
-        assertEquals(new BigDecimal("0").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("51000000").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("50000000").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
     }
 
     @Test
     public void testCompleteTransferFlow_Failed_InsufficientBalance() {
-        String requestId = UUID.randomUUID().toString();
-        Money excessiveAmount = Money.of(new BigDecimal("2000000"), "VND"); // Balance is only 1,000,000
+        // Withdraw the 50M signup bonus so the balance is small enough to not hit limit
+        walletService.withdraw(UUID.randomUUID().toString(), sender.getId(), senderWallet.getId(), "dummy-bank", Money.of(new BigDecimal("50000000"), "VND"));
+        
+        Wallet updatedSenderWalletBefore = walletService.getWalletById(senderWallet.getId());
+        BigDecimal currentBalance = updatedSenderWalletBefore.getBalance().getAmount();
 
+        String requestId = UUID.randomUUID().toString();
+        Money excessiveAmount = Money.of(currentBalance.add(new BigDecimal("100000")), "VND"); // Slightly more than balance
         // Step 1: Init Transfer
-        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), excessiveAmount);
+        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), "SENHONG", excessiveAmount, null);
         assertNotNull(initTx);
 
         // Step 2: Confirm Transfer fails due to insufficient balance
@@ -187,8 +192,8 @@ public class TransferFlowIntegrationTest {
         Wallet updatedSenderWallet = walletService.getWalletById(senderWallet.getId());
         Wallet updatedReceiverWallet = walletService.getWalletById(receiverWallet.getId());
 
-        assertEquals(new BigDecimal("1000000").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
-        assertEquals(new BigDecimal("0").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(currentBalance.stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("50000000").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
     }
 
     @Test
@@ -198,7 +203,7 @@ public class TransferFlowIntegrationTest {
 
         // Step 1: Init Transfer fails immediately due to exceeding limit
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), overLimitAmount);
+            walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), "SENHONG", overLimitAmount, null);
         });
         assertTrue(ex.getMessage().toLowerCase().contains("limit") || ex.getMessage().toLowerCase().contains("hạn mức"));
 
@@ -206,8 +211,8 @@ public class TransferFlowIntegrationTest {
         Wallet updatedSenderWallet = walletService.getWalletById(senderWallet.getId());
         Wallet updatedReceiverWallet = walletService.getWalletById(receiverWallet.getId());
 
-        assertEquals(new BigDecimal("1000000").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
-        assertEquals(new BigDecimal("0").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("51000000").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("50000000").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
     }
 
     @Test
@@ -215,18 +220,18 @@ public class TransferFlowIntegrationTest {
         String requestId = UUID.randomUUID().toString();
         Money fractionalAmount = Money.of(new BigDecimal("1000.55"), "VND");
 
-        Transaction tx = walletService.transfer(requestId, senderWallet.getId(), receiverWallet.getId(), fractionalAmount);
+        Transaction tx = walletService.transfer(requestId, senderWallet.getId(), receiverWallet.getId(), "SENHONG", fractionalAmount, null);
 
         assertEquals(TransactionStatus.SUCCESS, tx.getStatus());
 
         Wallet updatedSenderWallet = walletService.getWalletById(senderWallet.getId());
         Wallet updatedReceiverWallet = walletService.getWalletById(receiverWallet.getId());
 
-        assertEquals(new BigDecimal("998999.45").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
-        assertEquals(new BigDecimal("1000.55").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("50998999.45").stripTrailingZeros(), updatedSenderWallet.getBalance().getAmount().stripTrailingZeros());
+        assertEquals(new BigDecimal("50001000.55").stripTrailingZeros(), updatedReceiverWallet.getBalance().getAmount().stripTrailingZeros());
         
         // System Total Balance
-        BigDecimal totalBefore = new BigDecimal("1000000"); // sender: 1M, receiver: 0
+        BigDecimal totalBefore = new BigDecimal("101000000"); // sender: 51M, receiver: 50M
         BigDecimal totalAfter = updatedSenderWallet.getBalance().getAmount().add(updatedReceiverWallet.getBalance().getAmount());
         assertEquals(totalBefore.stripTrailingZeros(), totalAfter.stripTrailingZeros());
     }
@@ -237,7 +242,7 @@ public class TransferFlowIntegrationTest {
         Money transferAmount = Money.of(new BigDecimal("200000"), "VND");
 
         // Init Transfer
-        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), transferAmount);
+        Transaction initTx = walletService.initTransfer(requestId, senderWallet.getId(), receiverWallet.getId(), "SENHONG", transferAmount, null);
         
         // Confirm Transfer
         if (!userService.verifyPin(sender.getId(), "123456")) {

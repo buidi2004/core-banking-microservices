@@ -30,9 +30,9 @@ public class LedgerService implements LedgerUseCase {
 
     @Override
     @Transactional
-    public JournalEntry recordJournalEntry(String transactionId, String description, List<LedgerPosting> postings) {
+    public JournalEntry recordJournalEntry(String transactionId, String description, String idempotencyKey, List<LedgerPosting> postings) {
         // JournalEntry constructor automatically validates Debit == Credit
-        JournalEntry entry = JournalEntry.create(transactionId, description, postings);
+        JournalEntry entry = JournalEntry.create(transactionId, description, idempotencyKey, postings);
 
         // Update account balances
         for (LedgerPosting posting : entry.getPostings()) {

@@ -8,7 +8,7 @@ import com.fintech.wallet.domain.port.out.TransactionPersistencePort;
 import com.fintech.wallet.domain.port.out.UserPersistencePort;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
 import com.fintech.wallet.infrastructure.config.RabbitMqConfig;
-import com.fintech.wallet.infrastructure.notification.MockFcmNotificationAdapter;
+import com.fintech.wallet.domain.port.out.FcmNotificationPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -28,14 +28,14 @@ public class NotificationConsumer {
     private final WalletPersistencePort walletPersistencePort;
     private final UserPersistencePort userPersistencePort;
     private final StringRedisTemplate redisTemplate;
-    private final MockFcmNotificationAdapter fcmNotificationAdapter;
+    private final FcmNotificationPort fcmNotificationAdapter;
 
     public NotificationConsumer(NotificationPort notificationPort, 
                               TransactionPersistencePort transactionPersistencePort, 
                               WalletPersistencePort walletPersistencePort, 
                               UserPersistencePort userPersistencePort,
                               StringRedisTemplate redisTemplate,
-                              MockFcmNotificationAdapter fcmNotificationAdapter) {
+                              FcmNotificationPort fcmNotificationAdapter) {
         this.notificationPort = notificationPort;
         this.transactionPersistencePort = transactionPersistencePort;
         this.walletPersistencePort = walletPersistencePort;
@@ -63,20 +63,36 @@ public class NotificationConsumer {
             }
             Transaction tx = txOpt.get();
 
-            if (event.getSourceWalletId() != null) {
-                walletPersistencePort.findWalletById(event.getSourceWalletId())
-                        .ifPresent(w -> {
-                            notificationPort.notifyTransactionCompleted(tx, w);
-                            sendFcmPushNotification(tx, w);
-                        });
+            Wallet sourceW = tx.getSourceWalletId() != null ? walletPersistencePort.findWalletById(tx.getSourceWalletId()).orElse(null) : null;
+            Wallet targetW = tx.getTargetWalletId() != null ? walletPersistencePort.findWalletById(tx.getTargetWalletId()).orElse(null) : null;
+            
+            com.fintech.wallet.domain.model.User sourceU = sourceW != null ? userPersistencePort.findUserById(sourceW.getOwnerId()).orElse(null) : null;
+            com.fintech.wallet.domain.model.User targetU = targetW != null ? userPersistencePort.findUserById(targetW.getOwnerId()).orElse(null) : null;
+
+            if (sourceW != null) {
+                try {
+                    notificationPort.notifyTransactionCompleted(tx, sourceW, sourceU, targetW, targetU);
+                } catch (Exception e) {
+                    log.error("Failed to send WebSocket notification for source wallet={}", sourceW.getId(), e);
+                }
+                try {
+                    sendFcmPushNotification(tx, sourceW, sourceU, targetW, targetU);
+                } catch (Exception e) {
+                    log.error("Failed to send FCM push notification for source wallet={}", sourceW.getId(), e);
+                }
             }
 
-            if (event.getTargetWalletId() != null && !event.getTargetWalletId().equals(event.getSourceWalletId())) {
-                walletPersistencePort.findWalletById(event.getTargetWalletId())
-                        .ifPresent(w -> {
-                            notificationPort.notifyTransactionCompleted(tx, w);
-                            sendFcmPushNotification(tx, w);
-                        });
+            if (targetW != null && !targetW.getId().equals(tx.getSourceWalletId())) {
+                try {
+                    notificationPort.notifyTransactionCompleted(tx, targetW, targetU, sourceW, sourceU);
+                } catch (Exception e) {
+                    log.error("Failed to send WebSocket notification for target wallet={}", targetW.getId(), e);
+                }
+                try {
+                    sendFcmPushNotification(tx, targetW, targetU, sourceW, sourceU);
+                } catch (Exception e) {
+                    log.error("Failed to send FCM push notification for target wallet={}", targetW.getId(), e);
+                }
             }
         } catch (Exception e) {
             log.error("Error processing notification for transaction {}", event.getTransactionId(), e);
@@ -88,28 +104,19 @@ public class NotificationConsumer {
         }
     }
 
-    private void sendFcmPushNotification(Transaction tx, Wallet wallet) {
-        boolean isDeduct = tx.getType() == com.fintech.wallet.domain.model.TransactionType.WITHDRAWAL ||
-                (tx.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER && wallet.getId().equals(tx.getSourceWalletId()));
+    private void sendFcmPushNotification(Transaction tx, Wallet wallet, com.fintech.wallet.domain.model.User user, Wallet counterpartyWallet, com.fintech.wallet.domain.model.User counterpartyUser) {
+        boolean isDeduct = wallet.getId().equals(tx.getSourceWalletId());
 
-        String myPhone = userPersistencePort.findUserById(wallet.getOwnerId())
-                .map(com.fintech.wallet.domain.model.User::getPhoneNumber)
-                .orElse(wallet.getId());
+        String myPhone = user != null ? user.getPhoneNumber() : wallet.getId();
 
         String counterpartyPhone = null;
         String counterpartyName = null;
-        if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
-            String counterpartyWalletId = isDeduct ? tx.getTargetWalletId() : tx.getSourceWalletId();
-            if (counterpartyWalletId != null) {
-                com.fintech.wallet.domain.model.User counterparty = walletPersistencePort.findWalletById(counterpartyWalletId)
-                        .flatMap(w -> userPersistencePort.findUserById(w.getOwnerId())).orElse(null);
-                if (counterparty != null) {
-                    counterpartyPhone = counterparty.getPhoneNumber();
-                    counterpartyName = counterparty.getFullName();
-                } else {
-                    counterpartyPhone = counterpartyWalletId;
-                }
-            }
+        
+        if (counterpartyUser != null) {
+            counterpartyPhone = counterpartyUser.getPhoneNumber();
+            counterpartyName = counterpartyUser.getFullName();
+        } else if (counterpartyWallet != null) {
+            counterpartyPhone = counterpartyWallet.getId();
         }
 
         java.math.BigDecimal displayAmountValue = tx.getAmount().getAmount();
@@ -117,20 +124,52 @@ public class NotificationConsumer {
             displayAmountValue = displayAmountValue.add(tx.getFeeAmount().getAmount());
         }
 
+        // Use the balance snapshot captured at commit time, not the live wallet balance.
+        // Live balance can differ if another transaction modified the wallet between commit and
+        // when this consumer runs (async via RabbitMQ). Snapshot is always correct for this tx.
+        boolean isDeductForBalance = wallet.getId().equals(tx.getSourceWalletId());
+        java.math.BigDecimal snapshotBalance;
+        if (isDeductForBalance) {
+            snapshotBalance = tx.getBalanceAfter() != null
+                    ? tx.getBalanceAfter().getAmount()
+                    : wallet.getBalance().getAmount(); // fallback only if snapshot missing
+        } else {
+            snapshotBalance = tx.getReceiverBalanceAfter() != null
+                    ? tx.getReceiverBalanceAfter().getAmount()
+                    : wallet.getBalance().getAmount(); // fallback only if snapshot missing
+        }
+
         java.text.NumberFormat formatter = java.text.NumberFormat.getInstance(new java.util.Locale("vi", "VN"));
         String formattedAmount = formatter.format(displayAmountValue);
-        String formattedBalance = formatter.format(wallet.getBalance().getAmount());
+        String formattedBalance = formatter.format(snapshotBalance);
 
-        String typeName = tx.getType().name();
+        String operationType = "Giao dịch";
+        String payloadType = tx.getType() != null ? tx.getType().name() : "TRANSACTION";
         if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.TRANSFER) {
-            typeName = isDeduct ? "TRANSFER_OUT" : "TRANSFER_IN";
+            if (isDeduct) {
+                operationType = "Chuyển tiền";
+                payloadType = "TRANSFER_OUT";
+            } else {
+                operationType = "Nhận tiền";
+                payloadType = "TRANSFER_IN";
+            }
+        } else if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.WITHDRAWAL) {
+            operationType = "Rút tiền";
+        } else if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.DEPOSIT) {
+            operationType = "Nạp tiền";
+        } else if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.REVERSAL) {
+            operationType = "Hoàn tiền";
+        } else if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.BILL_PAYMENT) {
+            operationType = "Thanh toán hoá đơn";
+        } else if (tx.getType() == com.fintech.wallet.domain.model.TransactionType.TOPUP) {
+            operationType = "Nạp tiền điện thoại";
         }
-        String title = "Biến động số dư: " + typeName;
+        String title = "Biến động số dư: " + operationType;
         StringBuilder bodyBuilder = new StringBuilder();
         String sign = isDeduct ? "-" : "+";
         bodyBuilder.append(String.format("TK %s GD thành công. PS: %s%s %s. SD: %s %s",
                 myPhone, sign, formattedAmount, tx.getAmount().getCurrency(),
-                formattedBalance, wallet.getBalance().getCurrency()));
+                formattedBalance, tx.getAmount().getCurrency()));
         
         if (counterpartyPhone != null) {
             String displayCounterparty = (counterpartyName != null && !counterpartyName.isBlank()) ? counterpartyName + " (" + counterpartyPhone + ")" : counterpartyPhone;
@@ -144,6 +183,24 @@ public class NotificationConsumer {
             bodyBuilder.append(" - ND: ").append(tx.getNote());
         }
 
-        fcmNotificationAdapter.sendPushNotification(wallet.getOwnerId(), title, bodyBuilder.toString());
+        String body = bodyBuilder.toString();
+
+        java.util.Map<String, String> data = new java.util.HashMap<>();
+        data.put("transactionId", tx.getId() != null ? tx.getId() : "");
+        data.put("requestId", tx.getRequestId() != null ? tx.getRequestId() : "");
+        data.put("type", payloadType);
+        data.put("status", tx.getStatus() != null ? tx.getStatus().name() : "SUCCESS");
+        data.put("walletId", wallet.getId() != null ? wallet.getId() : "");
+        data.put("transactionAmount", String.valueOf(tx.getAmount().getAmount()));
+        data.put("amount", String.valueOf(tx.getAmount().getAmount()));
+        data.put("transactionCurrency", tx.getAmount().getCurrency() != null ? tx.getAmount().getCurrency() : "VND");
+        data.put("newBalance", String.valueOf(snapshotBalance));
+        data.put("currency", wallet.getBalance() != null ? wallet.getBalance().getCurrency() : "VND");
+        data.put("timestamp", tx.getCreatedAt() != null ? tx.getCreatedAt().toString() : java.time.Instant.now().toString());
+        data.put("note", tx.getNote() != null ? tx.getNote() : "");
+        data.put("title", title);
+        data.put("body", body);
+
+        fcmNotificationAdapter.sendPushNotification(wallet.getOwnerId(), title, body, data);
     }
 }

@@ -92,5 +92,14 @@ public class TransactionPersistenceAdapter implements TransactionPersistencePort
         BigDecimal spent = transactionRepository.sumMonthlySpentByWalletId(walletId, startOfMonth);
         return spent != null ? spent : BigDecimal.ZERO;
     }
+
+    @Override
+    public List<Transaction> findExpiredPendingTransactions(Instant threshold) {
+        return transactionRepository.findByStatusInAndCreatedAtBefore(
+                List.of("PENDING", "PENDING_CONFIRMATION"), threshold)
+                .stream()
+                .map(mapper::toDomain)
+                .collect(Collectors.toList());
+    }
 }
 

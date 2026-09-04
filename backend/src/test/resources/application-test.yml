@@ -1,5 +1,38 @@
 spring:
+  # ─── In-memory H2 datasource for integration tests ────────────────────────
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false;MODE=PostgreSQL;NON_KEYWORDS=VALUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+  # ─── Disable RabbitMQ auto-startup (avoids connection refused during tests) ─
   rabbitmq:
     listener:
       simple:
         auto-startup: false
+
+  # ─── Disable Redis health indicator so missing Redis doesn't fail context ──
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# ─── Disable Actuator Redis/RabbitMQ health checks ────────────────────────
+management:
+  health:
+    redis:
+      enabled: false
+    rabbit:
+      enabled: false

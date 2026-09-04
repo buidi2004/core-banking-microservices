@@ -174,7 +174,7 @@ public class UserService implements PinUseCase, KycUseCase {
     private void recordAuditLog(String callerId, String action, String payloadHash) {
         if (auditLogPersistencePort != null) {
             try {
-                auditLogPersistencePort.saveAuditLog(AuditLog.record(callerId, "127.0.0.1", action, payloadHash));
+                auditLogPersistencePort.saveAuditLog(AuditLog.record(callerId, "127.0.0.1", action, payloadHash, java.util.UUID.randomUUID().toString()));
             } catch (Exception e) {
                 log.warn("Failed to record audit log action={}: {}", action, e.getMessage());
             }

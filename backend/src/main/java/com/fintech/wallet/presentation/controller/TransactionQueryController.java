@@ -50,10 +50,15 @@ public class TransactionQueryController {
         response.setIsInternal(isInternal);
         
         try {
-            com.fintech.wallet.domain.model.Wallet sourceWallet = getWalletUseCase.getWalletById(transaction.getSourceWalletId());
-            com.fintech.wallet.domain.model.User sourceUser = userService.getUserById(sourceWallet.getOwnerId());
-            response.setSenderName(getFullName(sourceUser));
-            response.setSenderAccount(sourceUser.getPhoneNumber());
+            com.fintech.wallet.domain.model.User sourceUser = null;
+            if (transaction.getSourceWalletId() != null) {
+                com.fintech.wallet.domain.model.Wallet sourceWallet = getWalletUseCase.getWalletById(transaction.getSourceWalletId());
+                sourceUser = userService.getUserById(sourceWallet.getOwnerId());
+                response.setSenderName(getFullName(sourceUser));
+                response.setSenderAccount(sourceUser.getPhoneNumber());
+            } else {
+                response.setSenderName("Hệ thống / Ngân hàng");
+            }
             
             if (isInternal && transaction.getTargetWalletId() != null) {
                 com.fintech.wallet.domain.model.Wallet targetWallet = getWalletUseCase.getWalletById(transaction.getTargetWalletId());
@@ -66,24 +71,36 @@ public class TransactionQueryController {
                     response.setCounterpartyAccount(targetUser.getPhoneNumber());
                     response.setCounterpartyBankName("SenHong");
                 } else if (queryWalletId != null && queryWalletId.equals(transaction.getTargetWalletId())) {
-                    response.setCounterpartyName(getFullName(sourceUser));
-                    response.setCounterpartyAccount(sourceUser.getPhoneNumber());
+                    response.setCounterpartyName(sourceUser != null ? getFullName(sourceUser) : "Hệ thống / Ngân hàng");
+                    response.setCounterpartyAccount(sourceUser != null ? sourceUser.getPhoneNumber() : "");
                     response.setCounterpartyBankName("SenHong");
-                    response.setBalance(null);
-                    response.setRunningBalance(null);
+                    
+                    if (transaction.getReceiverBalanceAfter() != null) {
+                        response.setBalance(transaction.getReceiverBalanceAfter().getAmount());
+                        response.setRunningBalance(transaction.getReceiverBalanceAfter().getAmount());
+                    } else {
+                        response.setBalance(null);
+                        response.setRunningBalance(null);
+                    }
                 }
             } else {
-                response.setRecipientName("External Recipient");
+                response.setRecipientName("Ngân hàng liên kết");
                 // For external, account number might be stored in a different way, but we don't have it natively in Transaction model yet, so leave blank or fallback
                 if (queryWalletId != null && queryWalletId.equals(transaction.getSourceWalletId())) {
-                    response.setCounterpartyName("External Recipient");
+                    response.setCounterpartyName("Ngân hàng liên kết");
                     response.setCounterpartyBankName(transaction.getBankCode());
                 } else if (queryWalletId != null && queryWalletId.equals(transaction.getTargetWalletId())) {
-                    response.setCounterpartyName(getFullName(sourceUser));
-                    response.setCounterpartyAccount(sourceUser.getPhoneNumber());
-                    response.setCounterpartyBankName("SenHong");
-                    response.setBalance(null);
-                    response.setRunningBalance(null);
+                    response.setCounterpartyName(sourceUser != null ? getFullName(sourceUser) : "Hệ thống / Ngân hàng");
+                    response.setCounterpartyAccount(sourceUser != null ? sourceUser.getPhoneNumber() : "");
+                    response.setCounterpartyBankName(transaction.getBankCode());
+                    
+                    if (transaction.getReceiverBalanceAfter() != null) {
+                        response.setBalance(transaction.getReceiverBalanceAfter().getAmount());
+                        response.setRunningBalance(transaction.getReceiverBalanceAfter().getAmount());
+                    } else {
+                        response.setBalance(null);
+                        response.setRunningBalance(null);
+                    }
                 }
             }
         } catch (Exception e) {

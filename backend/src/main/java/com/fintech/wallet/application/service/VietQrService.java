@@ -5,6 +5,7 @@ import com.fintech.wallet.domain.port.in.VietQrUseCase;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class VietQrService implements VietQrUseCase {
@@ -111,7 +112,7 @@ public class VietQrService implements VietQrUseCase {
      */
     public static String calculateCrc16(String str) {
         int crc = 0xFFFF;
-        byte[] bytes = str.getBytes();
+        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
         for (byte b : bytes) {
             for (int i = 0; i < 8; i++) {
                 boolean bit = ((b >> (7 - i) & 1) == 1);

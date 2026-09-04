@@ -194,8 +194,8 @@ class WalletServiceTest {
 
         // Verify
         assertEquals(com.fintech.wallet.domain.model.TransactionStatus.SUCCESS, confirmedTx.getStatus());
-        assertEquals(new BigDecimal("11000"), confirmedTx.getFeeAmount());
-        assertEquals(new BigDecimal("89000"), confirmedTx.getBalanceAfter());
+        assertEquals(new BigDecimal("2000.00"), confirmedTx.getFeeAmount().getAmount());
+        assertEquals(new BigDecimal("98000.00"), confirmedTx.getBalanceAfter().getAmount());
         verify(walletPersistencePort).saveWallet(any());
         verify(transactionPersistencePort).saveTransaction(any());
     }
