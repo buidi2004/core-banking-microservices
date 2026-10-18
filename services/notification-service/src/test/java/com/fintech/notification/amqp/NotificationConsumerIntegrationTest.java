@@ -31,6 +31,10 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class NotificationConsumerIntegrationTest {
 
+    static {
+        System.setProperty("api.version", System.getProperty("api.version", "1.44"));
+    }
+
     @Container
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16");
 
@@ -102,6 +106,7 @@ class NotificationConsumerIntegrationTest {
                 .extracting(Notification::getUserId)
                 .containsExactlyInAnyOrder("user-001", "user-002");
 
+        List<String> payloadTypes = new java.util.ArrayList<>();
         for (Notification notification : notifications) {
             assertThat(notification.getType()).isEqualTo("BALANCE");
             assertThat(notification.getChannel()).isEqualTo("FCM");
@@ -110,10 +115,10 @@ class NotificationConsumerIntegrationTest {
             Map<String, String> payload = objectMapper.readValue(
                     notification.getDataPayload(), new TypeReference<Map<String, String>>() { });
             assertThat(payload).containsEntry("transactionId", "tx-it-1");
+            payloadTypes.add(payload.get("type"));
         }
 
-        assertThat(notifications).anySatisfy(n -> assertThat(n.getDataPayload()).contains("\"type\":\"TRANSFER_OUT\""));
-        assertThat(notifications).anySatisfy(n -> assertThat(n.getDataPayload()).contains("\"type\":\"TRANSFER_IN\""));
+        assertThat(payloadTypes).containsExactlyInAnyOrder("TRANSFER_OUT", "TRANSFER_IN");
     }
 
     @Test
