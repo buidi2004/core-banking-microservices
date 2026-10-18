@@ -108,7 +108,7 @@ class LedgerBalanceCheckEndpointIT {
                 .andExpect(jsonPath("$.data.totalCredit").isNotEmpty())
                 .andReturn();
         String body = result.getResponse().getContentAsString();
-        assertThat(body).contains("\"balanced\": true");
+        assertThat(body).contains("\"balanced\":true");
 
         // Endpoint sao kê theo ví tồn tại dữ liệu bút toán
         mockMvc.perform(get("/api/v1/ledger/statement/{walletId}", walletA))
@@ -116,7 +116,7 @@ class LedgerBalanceCheckEndpointIT {
                 .andExpect(jsonPath("$.data").isArray())
                 .andExpect(jsonPath("$.data.length()").value(org.hamcrest.Matchers.greaterThan(0)));
 
-        // C chứng từ theo giao dịch
+        // Chứng từ ghi sổ tồn tại sau khi consumer ghi
         var entries = ledgerService.getJournalEntries();
         assertThat(entries).isNotEmpty();
     }
