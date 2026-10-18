@@ -17,11 +17,51 @@ spring:
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
 
       globalcors:
+        add-to-simple-url-handler-mapping: true
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
-            allowedMethods: "*"
-            allowedHeaders: "*"
+            allowedOrigins:
+              - "http://localhost:5173"
+              - "http://127.0.0.1:5173"
+              - "http://localhost:3000"
+              - "http://localhost:8080"
+            allowedOriginPatterns:
+              - "http://localhost:[*]"
+              - "http://127.0.0.1:[*]"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+              - HEAD
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - Accept
+              - Origin
+              - X-Requested-With
+              - X-Idempotency-Key
+              - X-Trace-Id
+              - X-User-Id
+              - X-User-Roles
+              - X-User-Role
+              - X-Branch-Id
+              - Cache-Control
+              - "*"
+            exposedHeaders:
+              - Authorization
+              - Content-Disposition
+              - X-Total-Count
+              - X-Trace-Id
+              - X-User-Id
+              - X-User-Roles
+              - X-User-Role
+              - X-Branch-Id
+              - X-Idempotency-Key
+            allowCredentials: true
+            maxAge: 3600
 
       routes:
         # ----------------------------------------------------------------------------
@@ -96,16 +136,14 @@ spring:
                 fallbackUri: forward:/fallback/notification
 
         # ----------------------------------------------------------------------------
-        # GIAI ĐOẠN 2 (OPTIONAL - CHẠY SONG SONG DUAL-RUN):
-        # Route Ledger khi bật切割 chuyển API (Bước 2.3) - giữ COMMENT cho tới
-        # khi báo cáo đối soát 3 ngày khớp 100%.
+        # GIAI ĐOẠN 2: TÁCH GENERAL LEDGER & AUDIT SERVICE -> ledger-service:8084
         # ----------------------------------------------------------------------------
-        # - id: ledger-service-api
-        #   uri: http://ledger-service:8084
-        #   predicates:
-        #     - Path=/api/v1/ledger/**
-        #   filters:
-        #     - name: JwtAuthenticationFilter
+        - id: ledger-service-api
+          uri: ${LEDGER_SERVICE_URI:http://ledger-service:8084}
+          predicates:
+            - Path=/api/v1/ledger/**
+          filters:
+            - name: JwtAuthenticationFilter
 
         # ----------------------------------------------------------------------------
         # GIAI ĐOẠN 3: TÁCH IDENTITY & AUTH SERVICE -> identity-service:8081
@@ -113,7 +151,7 @@ spring:
         # ----------------------------------------------------------------------------
 
         - id: identity-service-auth
-          uri: http://identity-service:8081
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
             - Path=/api/v1/auth/**
           filters:
@@ -124,7 +162,7 @@ spring:
                 fallbackUri: forward:/fallback/identity
 
         - id: identity-service-users
-          uri: http://identity-service:8081
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
             - Path=/api/v1/users/**
           filters:
@@ -135,7 +173,7 @@ spring:
                 fallbackUri: forward:/fallback/identity
 
         - id: identity-service-kyc
-          uri: http://identity-service:8081
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
             - Path=/api/v1/kyc/**
           filters:
@@ -146,7 +184,7 @@ spring:
                 fallbackUri: forward:/fallback/identity
 
         - id: identity-service-sessions
-          uri: http://identity-service:8081
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
             - Path=/api/v1/sessions/**
           filters:
@@ -156,13 +194,44 @@ spring:
                 name: identityServiceCb
                 fallbackUri: forward:/fallback/identity
 
+        - id: identity-service-staff
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
+          predicates:
+            - Path=/api/v1/staff/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        # ----------------------------------------------------------------------------
+        # WALLET SERVICE: QUẢN LÝ VÍ & SỐ DƯ -> wallet-service:8083
+        # ----------------------------------------------------------------------------
+        - id: wallet-service-wallets
+          uri: ${WALLET_SERVICE_URI:http://wallet-service:8083}
+          predicates:
+            - Path=/api/v1/wallets/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # CASH SERVICE: QUẦY GIAO DỊCH NẠP TIỀN (Maker-Checker & Cash Deposit) -> payment-service:8082
+        # ----------------------------------------------------------------------------
+        - id: cash-service-route
+          uri: ${CASH_SERVICE_URI:http://payment-service:8082}
+          predicates:
+            - Path=/api/v1/cash/**
+          filters:
+            - name: JwtAuthenticationFilter
+
         # ----------------------------------------------------------------------------
         # FALLBACK: TOÀN BỘ CÁC API CÒN LẠI -> MONOLITH CŨ (monolith:8080)
         # (Wallet Core, Payment, Transaction, Ledger query, QR, ...)
         # ----------------------------------------------------------------------------
 
         - id: monolith-fallback
-          uri: http://monolith:8080
+          uri: ${MONOLITH_URI:http://monolith:8080}
           predicates:
             - Path=/api/v1/**
           filters:

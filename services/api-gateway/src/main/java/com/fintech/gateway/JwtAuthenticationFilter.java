@@ -47,6 +47,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public static final String HEADER_USER_PHONE = "X-User-Phone";
     public static final String HEADER_USER_KYC_TIER = "X-User-Kyc-Tier";
     public static final String HEADER_USER_ROLE = "X-User-Role";
+    public static final String HEADER_USER_ROLES = "X-User-Roles";
+    public static final String HEADER_BRANCH_ID = "X-Branch-Id";
 
     private static final String BLACKLIST_KEY_PREFIX = "identity:blacklist:";
     private static final String TOKEN_TYPE_ACCESS = "ACCESS";
@@ -82,6 +84,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                     headers.remove(HEADER_USER_PHONE);
                     headers.remove(HEADER_USER_KYC_TIER);
                     headers.remove(HEADER_USER_ROLE);
+                    headers.remove(HEADER_USER_ROLES);
                 })
                 .build();
 
@@ -120,11 +123,31 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         String phone = claims.get("phone", String.class);
         String kycTier = claims.get("kycTier", String.class);
         String role = claims.get("role", String.class);
+        Object rolesClaim = claims.get("roles");
+        String userRoles;
+        if (rolesClaim instanceof List<?> list) {
+            userRoles = String.join(",", list.stream().map(Object::toString).toList());
+        } else if (rolesClaim instanceof String str && !str.isBlank()) {
+            userRoles = str;
+        } else {
+            userRoles = role != null ? role : DEFAULT_ROLE;
+        }
+        if (role == null) {
+            role = userRoles;
+        }
+
+        String branchIdClaim = claims.get("branchId", String.class);
+        if (branchIdClaim == null) {
+            branchIdClaim = claims.get("branch_id", String.class);
+        }
+
         String jti = claims.getId();
         // Fallback: hash token nếu không có jti (tương thích token phát hành trước Giai đoạn 3)
         String blacklistKey = BLACKLIST_KEY_PREFIX + (jti != null ? jti : Integer.toHexString(bearerToken.hashCode()));
 
         // Bước 2: Kiểm tra Redis blacklist (token vừa logout) - fail-closed nếu Redis lỗi
+        String finalRole = role;
+        String finalBranchIdClaim = branchIdClaim;
         return redisTemplate.hasKey(blacklistKey)
                 .defaultIfEmpty(Boolean.FALSE)
                 .onErrorResume(e -> {
@@ -138,12 +161,19 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                     }
 
                     // Bước 3: Inject header tin cậy xuống downstream microservices
-                    ServerHttpRequest authenticatedRequest = sanitizedRequest.mutate()
+                    var requestMutator = sanitizedRequest.mutate()
                             .header(HEADER_USER_ID, userId)
                             .header(HEADER_USER_PHONE, phone != null ? phone : "")
                             .header(HEADER_USER_KYC_TIER, kycTier != null ? kycTier : DEFAULT_KYC_TIER)
-                            .header(HEADER_USER_ROLE, role != null ? role : DEFAULT_ROLE)
-                            .build();
+                            .header(HEADER_USER_ROLE, finalRole)
+                            .header(HEADER_USER_ROLES, userRoles);
+
+                    if (finalBranchIdClaim != null && !finalBranchIdClaim.isBlank()
+                            && sanitizedRequest.getHeaders().getFirst(HEADER_BRANCH_ID) == null) {
+                        requestMutator.header(HEADER_BRANCH_ID, finalBranchIdClaim);
+                    }
+
+                    ServerHttpRequest authenticatedRequest = requestMutator.build();
 
                     log.debug("Gateway authenticated user={} path={} -> injecting trusted headers", userId, path);
                     return chain.filter(exchange.mutate().request(authenticatedRequest).build());

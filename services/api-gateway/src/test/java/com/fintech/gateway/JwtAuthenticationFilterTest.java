@@ -96,6 +96,7 @@ class JwtAuthenticationFilterTest {
         assertEquals(phone, downstreamHeaders.getFirst("X-User-Phone"));
         assertEquals(kycTier, downstreamHeaders.getFirst("X-User-Kyc-Tier"));
         assertEquals(role, downstreamHeaders.getFirst("X-User-Role"));
+        assertEquals(role, downstreamHeaders.getFirst("X-User-Roles"));
     }
 
     @Test
@@ -109,6 +110,7 @@ class JwtAuthenticationFilterTest {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                 .header("X-User-Id", "attacker-impersonated-id")
                 .header("X-User-Role", "ROLE_ADMIN")
+                .header("X-User-Roles", "ROLE_SUPERADMIN")
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
@@ -124,6 +126,7 @@ class JwtAuthenticationFilterTest {
         HttpHeaders downstreamHeaders = captor.getValue().getRequest().getHeaders();
         assertEquals(realUserId, downstreamHeaders.getFirst("X-User-Id"), "Header X-User-Id phải là user thực trong token");
         assertEquals("ROLE_USER", downstreamHeaders.getFirst("X-User-Role"), "Header X-User-Role giả mạo phải bị gỡ bỏ");
+        assertEquals("ROLE_USER", downstreamHeaders.getFirst("X-User-Roles"), "Header X-User-Roles giả mạo phải bị gỡ bỏ");
     }
 
     @Test
@@ -223,5 +226,33 @@ class JwtAuthenticationFilterTest {
 
         assertEquals(HttpStatus.UNAUTHORIZED, exchange.getResponse().getStatusCode());
         verify(filterChain, never()).filter(any());
+    }
+
+    @Test
+    @DisplayName("8. Forward header X-Branch-Id từ client request và inject X-User-Roles")
+    void shouldForwardBranchIdAndUserRoles() {
+        String userId = "teller-001";
+        String token = createToken(userId, "0911222333", "ROLE_TELLER", "VERIFIED", "ACCESS", 3600);
+
+        MockServerHttpRequest request = MockServerHttpRequest
+                .get("/api/v1/cash/deposit")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .header("X-Branch-Id", "BRANCH_HN_01")
+                .build();
+        MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+        when(redisTemplate.hasKey(anyString())).thenReturn(Mono.just(false));
+        when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
+
+        StepVerifier.create(filter.filter(exchange, filterChain))
+                .verifyComplete();
+
+        ArgumentCaptor<ServerWebExchange> captor = ArgumentCaptor.forClass(ServerWebExchange.class);
+        verify(filterChain).filter(captor.capture());
+
+        HttpHeaders downstreamHeaders = captor.getValue().getRequest().getHeaders();
+        assertEquals(userId, downstreamHeaders.getFirst("X-User-Id"));
+        assertEquals("ROLE_TELLER", downstreamHeaders.getFirst("X-User-Roles"));
+        assertEquals("BRANCH_HN_01", downstreamHeaders.getFirst("X-Branch-Id"), "Header X-Branch-Id phải được forward xuống downstream");
     }
 }
