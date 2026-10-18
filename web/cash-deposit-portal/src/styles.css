@@ -1,0 +1,710 @@
+/* ==============================================================================
+   🏦 CORE BANKING TELLER PORTAL - ENTERPRISE LIGHT THEME (CHUẨN GIAO DIỆN NGÂN HÀNG)
+   QUY TẮC THIẾT KẾ:
+   1. KHÔNG BO TRÒN: Tất cả Card, Modal, Input, Table, Container đều giữ GÓC VUÔNG PHẲNG SẮC NÉT (radius: 0px / 2px).
+   2. BO VIÊN THUỐC (PILL): Chỉ duy nhất Nút bấm (Buttons) và Huy hiệu (Badges/Pills) được bo viên thuốc (radius: 9999px).
+   3. SỬ DỤNG THƯ VIỆN ICON CHUẨN (lucide-react), KHÔNG DÙNG EMOJI, KHÔNG VẼ TAY.
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Bảng màu Giao diện Sáng Ngân Hàng (Mặc định) */
+  --bg-app: #f4f6f9;
+  --bg-card: #ffffff;
+  --bg-card-subtle: #f8fafc;
+  --border-color: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --border-focus: #0284c7;
+
+  /* Thương hiệu Ngân hàng */
+  --primary-navy: #0c2340;
+  --primary-blue: #0284c7;
+  --primary-blue-hover: #0369a1;
+  --accent-gold: #b45309;
+  --success-green: #15803d;
+  --danger-red: #b91c1c;
+  --warning-amber: #b45309;
+
+  /* Typography */
+  --text-main: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-light: #94a3b8;
+
+  /* Đổ bóng sắc sảo */
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  /* QUY TẮC: KHÔNG BO TRÒN CHO CONTAINER / CARD / INPUT */
+  --radius-box: 0px; 
+  /* QUY TẮC: CHỈ NÚT BẤM VÀ BADGE ĐƯỢC BO VIÊN THUỐC */
+  --radius-pill: 9999px;
+}
+
+/* Chế độ Tối Tùy Chọn */
+.theme-dark {
+  --bg-app: #090d16;
+  --bg-card: #111827;
+  --bg-card-subtle: #1f2937;
+  --border-color: #374151;
+  --border-strong: #4b5563;
+  --text-main: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-muted: #9ca3af;
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Banner Đầu Trang - Góc Vuông Tuyệt Đối */
+.demo-banner {
+  background: var(--primary-navy);
+  color: #ffffff;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-bottom: 2px solid var(--accent-gold);
+  border-radius: var(--radius-box) !important;
+}
+
+/* Badge Viên Thuốc */
+.badge-pill {
+  background: #f59e0b;
+  color: #0f172a;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill) !important;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Navbar - Vuông vức, phẳng tinh tế */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 28px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.theme-dark .navbar {
+  background: #111827;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon-box {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-navy);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-box) !important;
+  border-left: 3px solid var(--primary-blue);
+}
+
+.brand-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--primary-navy);
+  letter-spacing: -0.2px;
+}
+
+.theme-dark .brand-title {
+  color: #f9fafb;
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Container */
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+.grid-layout {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+}
+
+@media (max-width: 1080px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card - GÓC VUÔNG PHẲNG CHUẨN NGÂN HÀNG */
+.card, .glass-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-box) !important;
+  padding: 20px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 20px;
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover, .glass-card:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+.card-header, .card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-navy);
+}
+
+.theme-dark .card-header, .theme-dark .card-title {
+  color: #f9fafb;
+}
+
+.card-title-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tabs Container - Vuông vức */
+.search-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-card-subtle);
+  padding: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-box) !important;
+  margin-bottom: 16px;
+}
+
+/* Nút Tabs - Bo Viên Thuốc */
+.search-tab-btn {
+  flex: 1;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-pill) !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.search-tab-btn.active {
+  background: var(--primary-blue);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+}
+
+/* Form Inputs - GÓC VUÔNG SẮC NÉT */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.input-with-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px 10px 38px;
+  font-size: 14.5px;
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-box) !important;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.theme-dark .form-input {
+  background: #1f2937;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+.form-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px var(--border-focus);
+}
+
+/* Customer KYC Profile - GÓC VUÔNG */
+.customer-kyc-card {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--primary-blue);
+  border-radius: var(--radius-box) !important;
+  padding: 16px;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.customer-kyc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.customer-avatar-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.customer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-box) !important;
+  background: #e0f2fe;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  border: 1px solid #bae6fd;
+}
+
+.customer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+  font-size: 13px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.customer-grid-item span:first-child {
+  color: var(--text-muted);
+}
+
+.customer-grid-item span:last-child {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+/* NÚT CHỌN MỆNH GIÁ NHANH - BO VIÊN THUỐC (PILL) */
+.quick-amounts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.amount-btn {
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill) !important;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.amount-btn:hover {
+  background: #f0f9ff;
+  border-color: var(--primary-blue);
+  color: var(--primary-blue);
+}
+
+.amount-btn.active {
+  background: var(--primary-navy);
+  color: #ffffff;
+  border-color: var(--primary-navy);
+}
+
+/* Hộp đọc tiền thành chữ - Vuông vức */
+.amount-words-box {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-box) !important;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 6px;
+}
+
+/* Callout Cảnh Báo Quy Chuẩn - Vuông vức */
+.rule-callout {
+  padding: 12px 16px;
+  border-radius: var(--radius-box) !important;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.rule-callout.auto {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-left: 4px solid #16a34a;
+  color: #14532d;
+}
+
+.rule-callout.maker-checker {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #d97706;
+  color: #78350f;
+}
+
+/* ==============================================================================
+   NÚT BẤM (BUTTONS) & HUY HIỆU (BADGES): DUY NHẤT ĐƯỢC BO VIÊN THUỐC (PILL)
+   ============================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: var(--radius-pill) !important;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: none;
+}
+
+.btn-primary {
+  background: var(--primary-blue);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.25);
+}
+
+.btn-primary:hover {
+  background: var(--primary-blue-hover);
+}
+
+.btn-primary:disabled {
+  background: #cbd5e1;
+  color: #64748b;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-success {
+  background: var(--success-green);
+  color: #ffffff;
+}
+
+.btn-danger {
+  background: var(--danger-red);
+  color: #ffffff;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  color: var(--text-main);
+  border-radius: var(--radius-pill) !important;
+}
+
+.btn-outline:hover {
+  background: var(--bg-card-subtle);
+}
+
+/* Nút chuyển đổi vai trò (Role Switcher) - Bo Viên Thuốc */
+.role-switcher-box {
+  display: flex;
+  background: var(--bg-card-subtle);
+  padding: 3px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill) !important;
+  gap: 4px;
+}
+
+.role-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: var(--radius-pill) !important;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.role-btn.active {
+  background: var(--primary-navy);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+/* HUY HIỆU TRẠNG THÁI (BADGES) - BO VIÊN THUỐC */
+.status-badge, .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill) !important;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.badge-completed, .badge-emerald {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-pending, .badge-amber {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  animation: pulse-badge 2s infinite;
+}
+
+.badge-rejected, .badge-rose {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecdd3;
+}
+
+.badge-verified, .badge-cyan {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+.badge-blocked {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecdd3;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+/* BẢNG BIỂU (TABLES) - GÓC VUÔNG PHẲNG SẮC NÉT */
+.table-responsive, .table-container {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-box) !important;
+}
+
+table, .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+  border-radius: var(--radius-box) !important;
+}
+
+th, .data-table th {
+  background: #f8fafc;
+  color: var(--text-secondary);
+  font-weight: 700;
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--border-color);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.theme-dark th {
+  background: #1f2937;
+}
+
+td, .data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-main);
+}
+
+tr:hover, .data-table tr:hover {
+  background: #f8fafc;
+}
+
+.theme-dark tr:hover {
+  background: #1f2937;
+}
+
+/* Vault Widget - GÓC VUÔNG */
+.vault-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.vault-metric {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-box) !important;
+  padding: 12px 14px;
+}
+
+.vault-metric-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.vault-metric-value {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.progress-bar-container {
+  background: #e2e8f0;
+  height: 8px;
+  border-radius: var(--radius-pill) !important;
+  overflow: hidden;
+  margin: 10px 0;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill) !important;
+  transition: width 0.3s ease;
+}
+
+.vault-footer-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 12px;
+}
+
+/* MODAL BIÊN LAI - GÓC VUÔNG CHUẨN VĂN BẢN KẾ TOÁN */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  padding: 20px;
+}
+
+.modal-content {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: var(--radius-box) !important;
+  width: 100%;
+  max-width: 580px;
+  padding: 32px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  border: 1px solid #cbd5e1;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-receipt, .printable-receipt * {
+    visibility: visible;
+  }
+  .printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}

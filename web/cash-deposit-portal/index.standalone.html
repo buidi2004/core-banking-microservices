@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cổng Quản Lý Nạp Tiền Quầy | Core Banking Teller Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #121826;
+      --bg-card: rgba(26, 34, 53, 0.7);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-blue: #2563eb;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; overflow-x: hidden; }
+    
+    /* Top Banner */
+    .demo-banner {
+      background: linear-gradient(90deg, #d97706, #b45309);
+      color: #fff;
+      text-align: center;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: white;
+    }
+    .role-switcher-box {
+      display: flex;
+      align-items: center;
+      background: rgba(0,0,0,0.3);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+    .role-btn {
+      padding: 8px 16px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .role-btn.active {
+      background: var(--accent-blue);
+      color: white;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    /* Layout */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+    }
+
+    /* Glass Card */
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-rose { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-blue { background: rgba(37, 99, 235, 0.15); color: var(--accent-cyan); border: 1px solid rgba(37, 99, 235, 0.3); }
+
+    /* Form */
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+    .form-control {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(10, 14, 23, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: white;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .form-control:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2); }
+    .quick-chips { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .chip {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip:hover { background: rgba(37, 99, 235, 0.2); color: white; border-color: var(--accent-blue); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-blue), #1d4ed8);
+      color: white;
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
+    .btn-success { background: var(--accent-emerald); color: white; }
+    .btn-danger { background: var(--accent-rose); color: white; }
+
+    /* Table */
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 12px 14px; color: var(--text-muted); font-weight: 600; border-bottom: 1px solid var(--border-color); }
+    td { padding: 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .modal-box {
+      background: #111827;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 540px;
+      padding: 30px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    .receipt-header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px dashed rgba(255,255,255,0.15);
+      padding-bottom: 16px;
+    }
+    .receipt-bank-name {
+      font-size: 16px;
+      font-weight: 800;
+      color: white;
+      letter-spacing: 0.5px;
+    }
+    .receipt-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-top: 4px;
+      letter-spacing: 0.8px;
+    }
+    .receipt-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .receipt-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .receipt-label { color: var(--text-muted); }
+    .receipt-val { font-weight: 600; color: var(--text-primary); text-align: right; }
+    .receipt-box-amount {
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px dashed rgba(37, 99, 235, 0.4);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 14px 0;
+    }
+    .receipt-total { font-size: 20px; font-weight: 800; color: var(--accent-cyan); }
+    .receipt-words { font-size: 12px; font-style: italic; color: var(--text-secondary); margin-top: 4px; }
+    .receipt-signatures {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 20px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border-color);
+      text-align: center;
+      position: relative;
+    }
+    .sig-col-title { font-size: 12px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; }
+    .sig-sub { font-size: 10px; color: var(--text-muted); font-style: italic; margin-top: 2px; }
+    .sig-space { height: 85px; position: relative; display: flex; align-items: center; justify-content: center; }
+    .sig-name { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+
+    /* Dấu Mộc Điện Tử (Digital Stamp) */
+    .stamp-container {
+      position: absolute;
+      top: -12px;
+      right: 6px;
+      transform: rotate(-12deg);
+      pointer-events: none;
+      filter: drop-shadow(0 2px 8px rgba(220, 38, 38, 0.25));
+    }
+    .stamp-svg { width: 120px; height: 120px; }
+    .receipt-security-footer {
+      margin-top: 16px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .btn-actions-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    /* Cash Vault Summary Widget Styles */
+    .vault-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .vault-metric {
+      background: rgba(10, 14, 23, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .vault-metric-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .vault-metric-value {
+      font-size: 15px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 11%;
+      background: linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan));
+      border-radius: 4px;
+      transition: width 0.4s ease, background 0.4s ease;
+    }
+    .vault-footer-info {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Print Stylesheet (window.print) */
+    @media print {
+      @page {
+        size: A5 portrait;
+        margin: 8mm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #111827 !important;
+        font-family: 'Inter', sans-serif !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .demo-banner, .navbar, .container, .btn-actions-row, .no-print {
+        display: none !important;
+      }
+      .modal-backdrop {
+        display: block !important;
+        position: static !important;
+        background: transparent !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      .modal-box {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        color: #111827 !important;
+        border: 2px solid #0f172a !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 20px !important;
+      }
+      .receipt-header {
+        border-bottom: 2px solid #0f172a !important;
+      }
+      .receipt-bank-name {
+        color: #0f172a !important;
+        font-size: 15pt !important;
+      }
+      .receipt-title {
+        color: #0f172a !important;
+        font-size: 13pt !important;
+      }
+      .receipt-subtitle {
+        color: #475569 !important;
+      }
+      .receipt-row {
+        color: #1e293b !important;
+        border-bottom: 1px dotted #cbd5e1 !important;
+        padding-bottom: 3px !important;
+      }
+      .receipt-label { color: #475569 !important; }
+      .receipt-val { color: #0f172a !important; font-weight: 700 !important; }
+      .receipt-box-amount {
+        background: #f8fafc !important;
+        border: 2px solid #0f172a !important;
+      }
+      .receipt-total {
+        color: #0f172a !important;
+        font-size: 18pt !important;
+      }
+      .receipt-words {
+        color: #1e293b !important;
+        font-weight: 600 !important;
+      }
+      .receipt-signatures {
+        border-top: 1px solid #0f172a !important;
+      }
+      .sig-col-title { color: #0f172a !important; }
+      .sig-name { color: #0f172a !important; }
+      .stamp-container {
+        filter: none !important;
+      }
+      .stamp-svg {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .receipt-security-footer {
+        border-top: 1px solid #cbd5e1 !important;
+        color: #64748b !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Banner -->
+  <div class="demo-banner">
+    ⚠️ MÔI TRƯỜNG THỰC NGHIỆM DEMO CORE BANKING — MAKER-CHECKER & BẢO TOÀN SỔ CÁI KÉP
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="brand">
+      <div class="brand-icon">CB</div>
+      <div>
+        <div>CORE BANKING TELLER PORTAL</div>
+        <div style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Phiên bản Demo Public 2026</div>
+      </div>
+    </div>
+
+    <!-- 1-Click Role Switcher -->
+    <div class="role-switcher-box">
+      <button class="role-btn active" id="btn-teller" onclick="switchRole('TELLER')">
+        👨‍💼 Teller (Giao dịch viên)
+      </button>
+      <button class="role-btn" id="btn-manager" onclick="switchRole('MANAGER')">
+        🛡️ Manager (Kiểm soát viên)
+      </button>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="grid-layout">
+      
+      <!-- CỘT TRÁI: FORM NẠP TIỀN / MÀN HÌNH DUYỆT -->
+      <div>
+        <!-- Màn hình Teller -->
+        <div id="teller-view" class="glass-card">
+          <div class="card-title">
+            <span>💵 Lập Lệnh Nạp Tiền Mặt Vào Ví</span>
+            <span class="badge badge-blue">Quầy BR_Q1</span>
+          </div>
+
+          <form id="deposit-form" onsubmit="handleCreateDeposit(event)">
+            <div class="form-group">
+              <label class="form-label">Tài khoản / SĐT Khách hàng</label>
+              <select class="form-control" id="target-account" onchange="autoFillCustomer()">
+                <option value="0901234567" data-name="Alice Nguyen" data-balance="4,500,000">0901234567 - Alice Nguyen (Số dư: 4.5M VND)</option>
+                <option value="0909876543" data-name="Bob Tran" data-balance="1,500,000">0909876543 - Bob Tran (Số dư: 1.5M VND)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Số tiền nạp (VND)</label>
+              <input type="number" class="form-control mono" id="deposit-amount" value="5000000" min="50000" step="50000" required>
+              <div class="quick-chips">
+                <span class="chip" onclick="setAmount(1000000)">1 Triệu</span>
+                <span class="chip" onclick="setAmount(5000000)">5 Triệu (Tự duyệt)</span>
+                <span class="chip" onclick="setAmount(20000000)">20 Triệu</span>
+                <span class="chip" onclick="setAmount(60000000)" style="border-color: var(--accent-amber); color: var(--accent-amber);">60 Triệu (Cần duyệt)</span>
+                <span class="chip" onclick="setAmount(200000000)" style="border-color: var(--accent-rose); color: var(--accent-rose);">200 Triệu (Hạn mức cao)</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nội dung nộp tiền</label>
+              <input type="text" class="form-control" id="deposit-note" value="Nộp tiền mặt tại quầy chi nhánh Quận 1">
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 12px; color: var(--text-secondary);">
+              💡 <b>Quy tắc Kiểm soát Rủi ro:</b> Số tiền $\le 50.000.000$ VND sẽ tự động duyệt & hạch toán ngay. Số tiền $> 50.000.000$ VND chuyển sang hàng đợi Manager phê duyệt.
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="btn-submit-deposit">
+              🚀 Tạo Lệnh Nạp Tiền
+            </button>
+          </form>
+        </div>
+
+        <!-- Màn hình Manager Approval Queue -->
+        <div id="manager-view" class="glass-card" style="display: none;">
+          <div class="card-title">
+            <span>🛡️ Hàng Đợi Phê Duyệt Của Kiểm Soát Viên (Maker-Checker)</span>
+            <span class="badge badge-amber" id="pending-count">1 Đang Chờ</span>
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã Lệnh</th>
+                  <th>Khách Hàng</th>
+                  <th>Số Tiền</th>
+                  <th>Giao Dịch Viên</th>
+                  <th>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="manager-table-body">
+                <!-- Dynamic rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CỘT PHẢI: TỔNG KẾT QUỸ TIỀN MẶT, LỊCH SỬ GIAO DỊCH & SỔ CÁI ĐỐI SOÁT -->
+      <div>
+        <!-- WIDGET TỔNG KẾT QUỸ TIỀN MẶT TRONG NGÀY -->
+        <div class="glass-card" style="margin-bottom: 24px;">
+          <div class="card-title">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>💼 Tổng Kết Quỹ Tiền Mặt Trong Ngày</span>
+            </div>
+            <span class="badge badge-emerald" id="vault-status-badge">● KÉT QUẦY AN TOÀN</span>
+          </div>
+
+          <!-- 4 Khối Chỉ Số Quỹ Quầy -->
+          <div class="vault-grid">
+            <div class="vault-metric">
+              <span class="vault-metric-label">🏦 Tồn Quỹ Đầu Ngày</span>
+              <span class="vault-metric-value" id="vault-opening" style="color: var(--text-secondary);">50,000,000 VND</span>
+            </div>
+            <div class="vault-metric">
+              <span class="vault-metric-label">📥 Tổng Thu Hôm Nay</span>
+              <span class="vault-metric-value" id="vault-cash-in" style="color: var(--accent-emerald);">+5,000,000 VND</span>
+            </div>
+            <div class="vault-metric">
+              <span class="vault-metric-label">💰 Tồn Quỹ Thực Tế Quầy</span>
+              <span class="vault-metric-value" id="vault-current" style="color: var(--accent-cyan);">55,000,000 VND</span>
+            </div>
+            <div class="vault-metric">
+              <span class="vault-metric-label">🛡️ Hạn Mức Tồn Quỹ</span>
+              <span class="vault-metric-value" id="vault-limit" style="color: var(--accent-amber);">500,000,000 VND</span>
+            </div>
+          </div>
+
+          <!-- Gauge Hạn Mức Tồn Quỹ -->
+          <div style="margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
+              <span style="color: var(--text-secondary);">Hạn mức sử dụng quỹ an toàn quầy:</span>
+              <span class="mono" id="vault-progress-pct" style="font-weight: 700; color: var(--accent-cyan);">11.0%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="vault-progress-bar" style="width: 11%;"></div>
+            </div>
+          </div>
+
+          <!-- Audit & Transaction Counts -->
+          <div class="vault-footer-info">
+            <div>
+              <span>Giao dịch: </span>
+              <b id="vault-success-count" style="color: var(--accent-emerald);">1 Thành công</b>
+              <span style="color: var(--text-muted); margin: 0 4px;">|</span>
+              <b id="vault-pending-count" style="color: var(--accent-amber);">1 Chờ duyệt</b>
+            </div>
+            <div>
+              <span style="color: var(--accent-emerald); font-weight: 600;">✓ Khớp 100% Sổ cái TK 1011</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card" style="margin-bottom: 24px;">
+          <div class="card-title">
+            <span>📜 Lịch Sử Giao Dịch Gần Nhất</span>
+            <span class="badge badge-emerald">Realtime Outbox</span>
+          </div>
+          
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã GD</th>
+                  <th>Số Tiền</th>
+                  <th>Trạng Thái</th>
+                  <th>Biên Lai</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <!-- Dynamic rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sổ cái kép Double-Entry Preview -->
+        <div class="glass-card">
+          <div class="card-title">
+            <span>⚖️ Hạch Toán Sổ Cái Kép (Double-Entry Balance)</span>
+            <span class="badge badge-cyan" id="ledger-delta-badge">Delta = 0.00 VND</span>
+          </div>
+          
+          <div style="font-size: 13px; line-height: 1.8;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 8px 0;">
+              <span style="color: var(--accent-emerald);">● NỢ (Debit) TK 1011 - Quỹ tiền mặt mặt đất:</span>
+              <span class="mono" id="ledger-debit">+5,000,000 VND</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 8px 0;">
+              <span style="color: var(--accent-cyan);">● CÓ (Credit) TK 4211 - Tiền gửi ví khách hàng:</span>
+              <span class="mono" id="ledger-credit">+5,000,000 VND</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; font-weight: 700;">
+              <span>Định lý bảo toàn tiền tệ ($\Delta$):</span>
+              <span class="mono" id="ledger-balance-status" style="color: var(--accent-emerald);">0.00 VND (CÂN BẰNG 100%)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal In Biên Lai -->
+  <div class="modal-backdrop" id="receipt-modal">
+    <div class="modal-box">
+      <!-- Receipt Header -->
+      <div class="receipt-header">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
+          <div style="width: 28px; height: 28px; background: #2563eb; color: white; font-weight: 900; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px;">CB</div>
+          <div class="receipt-bank-name">NGÂN HÀNG SỐ FINTECH CORE</div>
+        </div>
+        <div class="receipt-title">BIÊN LAI NỘP TIỀN MẶT ĐIỆN TỬ</div>
+        <div class="receipt-subtitle">Chi nhánh Quận 1 (BR_Q1) — Quầy giao dịch Teller #03</div>
+        <div style="font-size: 10px; color: var(--text-muted); margin-top: 3px;">(Bản thể hiện điện tử theo chuẩn Kế toán Ngân hàng Nhà nước)</div>
+      </div>
+
+      <!-- Receipt Meta -->
+      <div class="receipt-row">
+        <span class="receipt-label">Mã Giao Dịch (Ref No):</span>
+        <span class="mono receipt-val" id="rcpt-code" style="font-size: 14px; color: var(--accent-cyan);">DEP-20261018-001</span>
+      </div>
+      <div class="receipt-row">
+        <span class="receipt-label">Thời Gian Hạch Toán:</span>
+        <span class="mono receipt-val" id="rcpt-time">18/10/2026 14:15:20</span>
+      </div>
+      <div class="receipt-row">
+        <span class="receipt-label">Khách Hàng Nộp:</span>
+        <span class="receipt-val" id="rcpt-cust">Alice Nguyen</span>
+      </div>
+      <div class="receipt-row">
+        <span class="receipt-label">Số Tài Khoản Ví Đích:</span>
+        <span class="mono receipt-val" id="rcpt-acc">0901234567</span>
+      </div>
+      <div class="receipt-row">
+        <span class="receipt-label">Nội Dung Giao Dịch:</span>
+        <span class="receipt-val" id="rcpt-note" style="max-width: 60%;">Nộp tiền mặt tại quầy BR_Q1</span>
+      </div>
+      <div class="receipt-row">
+        <span class="receipt-label">Giao Dịch Viên (Maker):</span>
+        <span class="receipt-val" id="rcpt-teller">Teller Nguyễn Văn A</span>
+      </div>
+      <div class="receipt-row">
+        <span class="receipt-label">Kiểm Soát Viên (Checker):</span>
+        <span class="receipt-val" id="rcpt-checker" style="color: var(--accent-emerald);">Hệ thống tự duyệt (&le; 50M)</span>
+      </div>
+
+      <!-- Amount Box -->
+      <div class="receipt-box-amount">
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <span style="font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Số Tiền Thực Thu:</span>
+          <span class="mono receipt-total" id="rcpt-amount">5,000,000 VND</span>
+        </div>
+        <div class="receipt-words" id="rcpt-words">
+          Bằng chữ: Năm triệu đồng chẵn.
+        </div>
+      </div>
+
+      <!-- Double-entry Info -->
+      <div style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 8px 12px; font-size: 11px; margin-bottom: 12px; display: flex; justify-content: space-between;">
+        <span>Định khoản: <b style="color: var(--accent-emerald);">NỢ TK 1011</b> (Tiền mặt)</span>
+        <span>⇌</span>
+        <span><b style="color: var(--accent-cyan);">CÓ TK 4211</b> (Tiền gửi ví KH)</span>
+      </div>
+
+      <!-- Signatures & Electronic Stamp -->
+      <div class="receipt-signatures">
+        <div>
+          <div class="sig-col-title">Khách Hàng Nộp Tiền</div>
+          <div class="sig-sub">(Ký và xác nhận nộp đủ tiền)</div>
+          <div class="sig-space">
+            <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">(Đã ký xác nhận)</span>
+          </div>
+          <div class="sig-name" id="rcpt-sig-cust">Alice Nguyen</div>
+        </div>
+
+        <div style="position: relative;">
+          <div class="sig-col-title">Ngân Hàng / Giao Dịch Viên</div>
+          <div class="sig-sub">(Ký số &amp; Đã thu tiền mặt)</div>
+          
+          <div class="sig-space">
+            <!-- DẤU MỘC ĐIỆN TỬ (DIGITAL BANK OFFICIAL SEAL) -->
+            <div class="stamp-container">
+              <svg viewBox="0 0 160 160" class="stamp-svg">
+                <!-- Vòng tròn kép đỏ chuẩn mộc ngân hàng -->
+                <circle cx="80" cy="80" r="75" stroke="#dc2626" stroke-width="3" fill="none" />
+                <circle cx="80" cy="80" r="69" stroke="#dc2626" stroke-width="1.5" fill="none" />
+                
+                <!-- Cung chữ tròn phía trên -->
+                <path id="curve-top" d="M 18,80 A 62,62 0 0,1 142,80" fill="none" />
+                <path id="curve-bot" d="M 142,80 A 62,62 0 0,1 18,80" fill="none" />
+                
+                <text fill="#dc2626" font-size="8.5" font-weight="900" letter-spacing="1">
+                  <textPath href="#curve-top" startOffset="50%" text-anchor="middle">
+                    ★ NGÂN HÀNG SỐ FINTECH CORE ★
+                  </textPath>
+                </text>
+                
+                <text fill="#dc2626" font-size="8" font-weight="800" letter-spacing="0.5">
+                  <textPath href="#curve-bot" startOffset="50%" text-anchor="middle">
+                    CHI NHÁNH QUẬN 1 - TP.HCM
+                  </textPath>
+                </text>
+                
+                <!-- Ngôi sao trung tâm -->
+                <polygon points="80,48 83,55 90,55 84,60 86,67 80,63 74,67 76,60 70,55 77,55" fill="#dc2626" />
+                
+                <!-- Khung ĐÃ THU TIỀN -->
+                <rect x="22" y="70" width="116" height="23" rx="4" fill="rgba(220, 38, 38, 0.08)" stroke="#dc2626" stroke-width="1.8"/>
+                <text x="80" y="86" fill="#dc2626" font-size="12.5" font-weight="900" text-anchor="middle" letter-spacing="1.5">ĐÃ THU TIỀN</text>
+                
+                <!-- Chứng thực điện tử & ngày -->
+                <text x="80" y="103" fill="#dc2626" font-size="7.5" font-weight="800" text-anchor="middle" letter-spacing="0.5">E-STAMP VERIFIED</text>
+                <text x="80" y="113" fill="#dc2626" font-size="7" font-weight="700" text-anchor="middle" id="stamp-date">18-10-2026</text>
+              </svg>
+            </div>
+          </div>
+          <div class="sig-name" id="rcpt-sig-teller">Teller Nguyễn Văn A</div>
+        </div>
+      </div>
+
+      <!-- Security / Audit Footer -->
+      <div class="receipt-security-footer">
+        <div>
+          <span>Mã băm SHA-256: </span>
+          <span class="mono" id="rcpt-hash" style="color: var(--accent-cyan);">a49f8c...12bc9e</span>
+        </div>
+        <div>
+          <span>Chứng thư số: </span>
+          <span class="mono">VN-CA:CORE-0921</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons (No-print) -->
+      <div class="btn-actions-row no-print">
+        <button class="btn btn-primary" onclick="printReceipt()" style="flex: 1.4;">
+          🖨️ In Biên Lai (Print)
+        </button>
+        <button class="btn" onclick="closeReceipt()" style="flex: 1; background: rgba(255,255,255,0.1); color: white;">
+          ✕ Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentRole = 'TELLER';
+    let currentUserId = 't0000001-0000-0000-0000-000000000001';
+    let currentUserName = 'Teller Nguyễn Văn A';
+
+    const OPENING_VAULT_BALANCE = 50000000; // 50,000,000 VND tồn đầu ngày
+    const MAX_VAULT_LIMIT = 500000000;      // 500,000,000 VND hạn mức két quầy
+
+    const sampleDeposits = [
+      {
+        id: '1',
+        code: 'DEP-20261018-001',
+        cust: 'Alice Nguyen',
+        acc: '0901234567',
+        amount: 5000000,
+        maker: 'Teller Nguyễn Văn A',
+        makerId: 't0000001-0000-0000-0000-000000000001',
+        checker: 'Hệ thống tự duyệt (Auto-rule)',
+        status: 'COMPLETED',
+        time: '18/10/2026 14:15:20',
+        note: 'Nộp tiền mặt tại quầy BR_Q1',
+        hash: 'e82b7c4a1f9a3e6d8c90b21a4f7832bc9e'
+      },
+      {
+        id: '2',
+        code: 'DEP-20261018-002',
+        cust: 'Bob Tran',
+        acc: '0909876543',
+        amount: 200000000,
+        maker: 'Teller Nguyễn Văn A',
+        makerId: 't0000001-0000-0000-0000-000000000001',
+        checker: null,
+        status: 'PENDING_APPROVAL',
+        time: '18/10/2026 14:22:00',
+        note: 'Nộp tiền mặt nạp ví doanh nghiệp',
+        hash: null
+      }
+    ];
+
+    function switchRole(role) {
+      currentRole = role;
+      document.getElementById('btn-teller').classList.toggle('active', role === 'TELLER');
+      document.getElementById('btn-manager').classList.toggle('active', role === 'MANAGER');
+      
+      if (role === 'TELLER') {
+        currentUserId = 't0000001-0000-0000-0000-000000000001';
+        currentUserName = 'Teller Nguyễn Văn A';
+        document.getElementById('teller-view').style.display = 'block';
+        document.getElementById('manager-view').style.display = 'none';
+      } else {
+        currentUserId = 'm0000001-0000-0000-0000-000000000001';
+        currentUserName = 'Manager Lê Hoàng C';
+        document.getElementById('teller-view').style.display = 'none';
+        document.getElementById('manager-view').style.display = 'block';
+      }
+      render();
+    }
+
+    function setAmount(val) {
+      document.getElementById('deposit-amount').value = val;
+    }
+
+    function generateReceiptHash(code, amount, acc) {
+      const seed = code + '-' + amount + '-' + acc + '-' + Date.now();
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) {
+        h = ((h << 5) - h) + seed.charCodeAt(i);
+        h |= 0;
+      }
+      const hex = Math.abs(h).toString(16).padStart(8, '0');
+      return 'f8a' + hex + 'e49b2c710d8a9e';
+    }
+
+    function numberToVietnameseWords(n) {
+      if (n === 0) return 'Không đồng';
+      const chuSo = ['không', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+      const tien = ['', 'nghìn', 'triệu', 'tỷ', 'nghìn tỷ', 'triệu tỷ'];
+
+      function docBaSo(baso, showZeroHundred) {
+        let tram = Math.floor(baso / 100);
+        let chuc = Math.floor((baso % 100) / 10);
+        let donvi = baso % 10;
+        let ketQua = '';
+
+        if (tram > 0 || showZeroHundred) {
+          ketQua += ' ' + chuSo[tram] + ' trăm';
+        }
+
+        if (chuc > 1) {
+          ketQua += ' ' + chuSo[chuc] + ' mươi';
+          if (donvi === 1) ketQua += ' mốt';
+          else if (donvi === 5) ketQua += ' lăm';
+          else if (donvi > 0) ketQua += ' ' + chuSo[donvi];
+        } else if (chuc === 1) {
+          ketQua += ' mười';
+          if (donvi === 1) ketQua += ' một';
+          else if (donvi === 5) ketQua += ' lăm';
+          else if (donvi > 0) ketQua += ' ' + chuSo[donvi];
+        } else if (chuc === 0 && donvi > 0) {
+          if (tram > 0 || showZeroHundred) ketQua += ' lẻ ' + chuSo[donvi];
+          else ketQua += ' ' + chuSo[donvi];
+        }
+        return ketQua.trim();
+      }
+
+      let str = n.toString();
+      let groups = [];
+      while (str.length > 0) {
+        groups.unshift(parseInt(str.slice(-3), 10));
+        str = str.slice(0, -3);
+      }
+
+      let kq = '';
+      for (let i = 0; i < groups.length; i++) {
+        let g = groups[i];
+        let pos = groups.length - 1 - i;
+        if (g > 0) {
+          let gStr = docBaSo(g, i > 0);
+          kq += ' ' + gStr + ' ' + tien[pos];
+        }
+      }
+
+      kq = kq.trim();
+      if (!kq) return 'Không đồng';
+      return kq.charAt(0).toUpperCase() + kq.slice(1) + ' đồng chẵn.';
+    }
+
+    function handleCreateDeposit(e) {
+      e.preventDefault();
+      const accSelect = document.getElementById('target-account');
+      const acc = accSelect.value;
+      const custName = accSelect.options[accSelect.selectedIndex].getAttribute('data-name');
+      const amount = parseInt(document.getElementById('deposit-amount').value);
+      const note = document.getElementById('deposit-note').value || 'Nộp tiền mặt tại quầy BR_Q1';
+      
+      const newCode = 'DEP-' + Math.floor(Math.random() * 899999 + 100000);
+      const isAutoApprove = amount <= 50000000;
+      const status = isAutoApprove ? 'COMPLETED' : 'PENDING_APPROVAL';
+      const nowStr = new Date().toLocaleDateString('vi-VN') + ' ' + new Date().toLocaleTimeString('vi-VN');
+      const hashStr = isAutoApprove ? generateReceiptHash(newCode, amount, acc) : null;
+
+      const newDeposit = {
+        id: Date.now().toString(),
+        code: newCode,
+        cust: custName,
+        acc: acc,
+        amount: amount,
+        maker: currentUserName,
+        makerId: currentUserId,
+        checker: isAutoApprove ? 'Hệ thống tự duyệt (&le; 50M)' : null,
+        status: status,
+        time: nowStr,
+        note: note,
+        hash: hashStr
+      };
+
+      sampleDeposits.unshift(newDeposit);
+      render();
+
+      if (isAutoApprove) {
+        openReceipt(newDeposit);
+      } else {
+        alert('⚠️ Giao dịch ' + amount.toLocaleString() + ' VND vượt hạn mức 50,000,000 VND! Lệnh đã được đưa vào hàng đợi phê duyệt của Kiểm soát viên (Manager).');
+      }
+    }
+
+    function approveDeposit(id, makerId) {
+      // CHECK MAKER != CHECKER
+      if (currentUserId === makerId) {
+        alert('⛔ LỖI 403 FORBIDDEN: Quy chuẩn Maker-Checker! Bạn là người tạo lệnh (Maker) nên KHÔNG ĐƯỢC PHÉP tự phê duyệt lệnh của chính mình.');
+        return;
+      }
+      const dep = sampleDeposits.find(d => d.id === id);
+      if (dep) {
+        dep.status = 'COMPLETED';
+        dep.checker = currentUserName;
+        dep.hash = generateReceiptHash(dep.code, dep.amount, dep.acc);
+        render();
+        alert('✅ Phê duyệt thành công! Tiền đã được nạp vào ví khách hàng và hạch toán Sổ cái kép.');
+        openReceipt(dep);
+      }
+    }
+
+    function render() {
+      // 1. Calculate Cash Vault Metrics
+      const completedList = sampleDeposits.filter(d => d.status === 'COMPLETED');
+      const pendingList = sampleDeposits.filter(d => d.status === 'PENDING_APPROVAL');
+      const totalCashIn = completedList.reduce((sum, d) => sum + d.amount, 0);
+      const currentVault = OPENING_VAULT_BALANCE + totalCashIn;
+      const usagePct = ((currentVault / MAX_VAULT_LIMIT) * 100).toFixed(1);
+
+      document.getElementById('vault-opening').innerText = OPENING_VAULT_BALANCE.toLocaleString() + ' VND';
+      document.getElementById('vault-cash-in').innerText = '+' + totalCashIn.toLocaleString() + ' VND';
+      document.getElementById('vault-current').innerText = currentVault.toLocaleString() + ' VND';
+      document.getElementById('vault-limit').innerText = MAX_VAULT_LIMIT.toLocaleString() + ' VND';
+      document.getElementById('vault-progress-pct').innerText = usagePct + '%';
+
+      const progressBar = document.getElementById('vault-progress-bar');
+      progressBar.style.width = Math.min(100, usagePct) + '%';
+
+      const badge = document.getElementById('vault-status-badge');
+      if (usagePct > 90) {
+        badge.className = 'badge badge-rose';
+        badge.innerText = '⚠️ NGUY HIỂM: VƯỢT HẠN MỨC';
+        progressBar.style.background = 'linear-gradient(90deg, #f59e0b, #f43f5e)';
+      } else if (usagePct > 70) {
+        badge.className = 'badge badge-amber';
+        badge.innerText = '▲ CẢNH BÁO: TỒN CAO';
+        progressBar.style.background = 'linear-gradient(90deg, #10b981, #f59e0b)';
+      } else {
+        badge.className = 'badge badge-emerald';
+        badge.innerText = '● KÉT QUẦY AN TOÀN';
+        progressBar.style.background = 'linear-gradient(90deg, #10b981, #06b6d4)';
+      }
+
+      document.getElementById('vault-success-count').innerText = completedList.length + ' Thành công';
+      document.getElementById('vault-pending-count').innerText = pendingList.length + ' Chờ duyệt';
+
+      // 2. Double-Entry Balance Preview
+      document.getElementById('ledger-debit').innerText = '+' + totalCashIn.toLocaleString() + ' VND';
+      document.getElementById('ledger-credit').innerText = '+' + totalCashIn.toLocaleString() + ' VND';
+      document.getElementById('ledger-delta-badge').innerText = 'Delta = 0.00 VND';
+      document.getElementById('ledger-balance-status').innerText = '0.00 VND (CÂN BẰNG 100%)';
+
+      // 3. Render Manager Table
+      const mTable = document.getElementById('manager-table-body');
+      document.getElementById('pending-count').innerText = pendingList.length + ' Đang Chờ';
+
+      mTable.innerHTML = pendingList.map(d => `
+        <tr>
+          <td class="mono" style="font-weight: 700; color: var(--accent-cyan);">${d.code}</td>
+          <td><b>${d.cust}</b><br><span style="color: var(--text-muted); font-size: 11px;">${d.acc}</span></td>
+          <td class="mono" style="font-weight: 700; color: var(--accent-amber);">${d.amount.toLocaleString()} VND</td>
+          <td>${d.maker}</td>
+          <td>
+            <button class="btn btn-success" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="approveDeposit('${d.id}', '${d.makerId}')">
+              ✓ Duyệt
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      // 4. Render History
+      const hTable = document.getElementById('history-table-body');
+      hTable.innerHTML = sampleDeposits.map(d => `
+        <tr>
+          <td class="mono">${d.code}</td>
+          <td class="mono font-bold">${d.amount.toLocaleString()} VND</td>
+          <td>
+            <span class="badge ${d.status === 'COMPLETED' ? 'badge-emerald' : 'badge-amber'}">
+              ${d.status === 'COMPLETED' ? 'Thành công' : 'Chờ duyệt'}
+            </span>
+          </td>
+          <td>
+            ${d.status === 'COMPLETED' ? `<button onclick="openReceiptById('${d.id}')" style="background:none; border:none; color:var(--accent-cyan); cursor:pointer; font-weight:600; text-decoration:underline;">Xem &amp; In</button>` : '-'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openReceiptById(id) {
+      const dep = sampleDeposits.find(d => d.id === id);
+      if (dep) openReceipt(dep);
+    }
+
+    function openReceipt(dep) {
+      document.getElementById('rcpt-code').innerText = dep.code;
+      document.getElementById('rcpt-time').innerText = dep.time || new Date().toLocaleString('vi-VN');
+      document.getElementById('rcpt-cust').innerText = dep.cust;
+      document.getElementById('rcpt-acc').innerText = dep.acc;
+      document.getElementById('rcpt-note').innerText = dep.note || 'Nộp tiền mặt tại quầy BR_Q1';
+      document.getElementById('rcpt-teller').innerText = dep.maker || currentUserName;
+      document.getElementById('rcpt-checker').innerText = dep.checker || 'Hệ thống tự duyệt (&le; 50M)';
+      document.getElementById('rcpt-amount').innerText = dep.amount.toLocaleString() + ' VND';
+      document.getElementById('rcpt-words').innerText = 'Bằng chữ: ' + numberToVietnameseWords(dep.amount);
+      document.getElementById('rcpt-sig-cust').innerText = dep.cust;
+      document.getElementById('rcpt-sig-teller').innerText = dep.maker || currentUserName;
+      
+      const stampDate = new Date().toLocaleDateString('vi-VN').replace(/\//g, '-');
+      document.getElementById('stamp-date').innerText = stampDate;
+
+      const hash = dep.hash || generateReceiptHash(dep.code, dep.amount, dep.acc);
+      document.getElementById('rcpt-hash').innerText = hash;
+
+      document.getElementById('receipt-modal').style.display = 'flex';
+    }
+
+    function printReceipt() {
+      window.print();
+    }
+
+    function closeReceipt() {
+      document.getElementById('receipt-modal').style.display = 'none';
+    }
+
+    // Init
+    render();
+  </script>
+</body>
+</html>
