@@ -19,8 +19,8 @@ public class WalletJpaEntity {
     @Column(name = "user_id", nullable = false, unique = true)
     private String ownerId;
 
-    @Column(name = "balance_amount", nullable = false)
-    private BigDecimal balanceAmount;
+    @Column(name = "balance", nullable = false)
+    private BigDecimal balance;
 
     @Column(name = "reserved_balance", nullable = false)
     private BigDecimal reservedBalance;
@@ -60,11 +60,11 @@ public class WalletJpaEntity {
         this.ownerId = ownerId;
     }
 
-    public BigDecimal getBalanceAmount() {
-        return balanceAmount;
+    public BigDecimal getBalance() {
+        return balance;
     }
-    public void setBalanceAmount(BigDecimal balanceAmount) {
-        this.balanceAmount = balanceAmount;
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
     }
 
     public BigDecimal getReservedBalance() {
@@ -125,12 +125,12 @@ public class WalletJpaEntity {
 
     public WalletJpaEntity() {}
 
-    public WalletJpaEntity(String id, String ownerId, BigDecimal balanceAmount, BigDecimal reservedBalance,
+    public WalletJpaEntity(String id, String ownerId, BigDecimal balance, BigDecimal reservedBalance,
                            String currency, String status, Long dailyLimit, Long dailySpent,
                            Instant createdAt, Instant updatedAt, Long version) {
         this.id = id;
         this.ownerId = ownerId;
-        this.balanceAmount = balanceAmount;
+        this.balance = balance;
         this.reservedBalance = reservedBalance;
         this.currency = currency;
         this.status = status;

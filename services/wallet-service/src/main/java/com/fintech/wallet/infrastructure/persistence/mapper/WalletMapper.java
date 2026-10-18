@@ -15,7 +15,7 @@ public class WalletMapper {
 
     public Wallet toDomain(WalletJpaEntity entity) {
         if (entity == null) return null;
-        Money balance = Money.of(entity.getBalanceAmount(), entity.getCurrency());
+        Money balance = Money.of(entity.getBalance(), entity.getCurrency());
         WalletStatus status = entity.getStatus() != null ? WalletStatus.valueOf(entity.getStatus()) : WalletStatus.ACTIVE;
         return new Wallet(
                 entity.getId(),
@@ -36,7 +36,7 @@ public class WalletMapper {
         WalletJpaEntity entity = new WalletJpaEntity();
         entity.setId(domain.getId());
         entity.setOwnerId(domain.getOwnerId());
-        entity.setBalanceAmount(domain.getBalance().getAmount());
+        entity.setBalance(domain.getBalance().getAmount());
         entity.setReservedBalance(domain.getReservedBalance() != null ? domain.getReservedBalance() : java.math.BigDecimal.ZERO);
         entity.setCurrency(domain.getBalance().getCurrency());
         entity.setStatus(domain.getStatus() != null ? domain.getStatus().name() : WalletStatus.ACTIVE.name());

@@ -7,10 +7,11 @@ import com.fintech.wallet.domain.model.Money;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.port.out.DistributedLockPort;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
+import com.fintech.wallet.infrastructure.kafka.WalletBalanceChangedKafkaProducer;
+import com.fintech.wallet.kafka.WalletBalanceChangedPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -22,6 +23,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Application Service cho WalletInternalService gRPC.
  * Cung cấp các nghiệp vụ nội bộ: Debit, Credit, Reserve, Release, CheckLimit, GetWalletByUserId.
  * Sử dụng Pessimistic Lock (SELECT ... FOR UPDATE) kết hợp Redis Lock để đảm bảo concurrency an toàn.
+ *
+ * Mỗi lần số dư thay đổi (Debit/Credit/Reserve/Release) → tự động publish event
+ * vào Kafka topic {@code banking.wallet.balance-changed.v1} với Partition Key = walletId.
  */
 @Service
 public class WalletInternalApplicationService {
@@ -30,17 +34,18 @@ public class WalletInternalApplicationService {
 
     private static final long LOCK_TIMEOUT_SECONDS = 30;
     private static final long RESERVE_DEFAULT_DURATION_SECONDS = 3600L;
-    private static final BigDecimal DAILY_LIMIT_VND = new BigDecimal("100000000");
-    private static final BigDecimal UNVERIFIED_DAILY_LIMIT_VND = new BigDecimal("5000000");
 
     private final WalletPersistencePort walletPersistencePort;
     private final DistributedLockPort distributedLockPort;
+    private final WalletBalanceChangedKafkaProducer kafkaProducer;
     private final Map<String, Reservation> reservations = new ConcurrentHashMap<>();
 
     public WalletInternalApplicationService(WalletPersistencePort walletPersistencePort,
-                                            DistributedLockPort distributedLockPort) {
+                                            DistributedLockPort distributedLockPort,
+                                            WalletBalanceChangedKafkaProducer kafkaProducer) {
         this.walletPersistencePort = walletPersistencePort;
         this.distributedLockPort = distributedLockPort;
+        this.kafkaProducer = kafkaProducer;
     }
 
     // ======================== DEBIT ========================
@@ -76,11 +81,17 @@ public class WalletInternalApplicationService {
                             "Balance " + locked.getBalance() + " < " + moneyAmount);
                 }
 
+                BigDecimal previousBalance = locked.getBalance().getAmount();
                 locked.withdraw(moneyAmount);
                 walletPersistencePort.saveWallet(locked);
 
+                // Publish Kafka event — Partition Key = walletId (Strict Ordering)
+                publishBalanceChange(locked.getId(), previousBalance, amount,
+                        locked.getBalance().getAmount(), locked.getBalance().getCurrency(),
+                        transactionId, WalletBalanceChangedPayload.ChangeType.WITHDRAWAL);
+
                 log.info("Debit success: walletId={}, amount={}, balanceAfter={}", walletId, amount, locked.getBalance());
-                return DebitResult.success(locked.getBalance().getAmount(), null, null);
+                return DebitResult.success(locked.getBalance().getAmount().longValue(), null, null);
             });
         } catch (WalletNotFoundException e) {
             return DebitResult.failure("WALLET_NOT_FOUND", e.getMessage());
@@ -118,11 +129,17 @@ public class WalletInternalApplicationService {
                         .orElseThrow(() -> new WalletNotFoundException("Wallet not found: " + walletId));
 
                 Money moneyAmount = Money.of(new BigDecimal(amount), locked.getBalance().getCurrency());
+                BigDecimal previousBalance = locked.getBalance().getAmount();
                 locked.deposit(moneyAmount);
                 walletPersistencePort.saveWallet(locked);
 
+                // Publish Kafka event
+                publishBalanceChange(locked.getId(), previousBalance, amount,
+                        locked.getBalance().getAmount(), locked.getBalance().getCurrency(),
+                        transactionId, WalletBalanceChangedPayload.ChangeType.DEPOSIT);
+
                 log.info("Credit success: walletId={}, amount={}, balanceAfter={}", walletId, amount, locked.getBalance());
-                return CreditResult.success(locked.getBalance().getAmount(), null, null);
+                return CreditResult.success(locked.getBalance().getAmount().longValue(), null, null);
             });
         } catch (WalletNotFoundException e) {
             return CreditResult.failure("WALLET_NOT_FOUND", e.getMessage());
@@ -166,8 +183,8 @@ public class WalletInternalApplicationService {
                             "Available " + available + " < " + moneyAmount.getAmount());
                 }
 
-                BigDecimal newReserved = (locked.getReservedBalance() != null ? locked.getReservedBalance() : BigDecimal.ZERO)
-                        .add(moneyAmount.getAmount());
+                BigDecimal previousReserved = locked.getReservedBalance() != null ? locked.getReservedBalance() : BigDecimal.ZERO;
+                BigDecimal newReserved = previousReserved.add(moneyAmount.getAmount());
                 locked.setReservedBalance(newReserved);
                 walletPersistencePort.saveWallet(locked);
 
@@ -175,6 +192,11 @@ public class WalletInternalApplicationService {
                 Reservation reservation = new Reservation(reservationId, walletId, amount,
                         transactionId, Duration.ofSeconds(reserveDurationSeconds > 0 ? reserveDurationSeconds : RESERVE_DEFAULT_DURATION_SECONDS));
                 reservations.put(reservationId, reservation);
+
+                // Publish Kafka event — reserve không làm thay đổi balance thực
+                publishBalanceChange(locked.getId(), locked.getBalance().getAmount(), 0L,
+                        locked.getBalance().getAmount(), locked.getBalance().getCurrency(),
+                        reservationId, WalletBalanceChangedPayload.ChangeType.RESERVE);
 
                 log.info("Reserve success: reservationId={}, walletId={}, amount={}", reservationId, walletId, amount);
                 return ReserveResult.success(amount, reservationId, null, null);
@@ -217,6 +239,11 @@ public class WalletInternalApplicationService {
                 }
                 locked.setReservedBalance(newReserved);
                 walletPersistencePort.saveWallet(locked);
+
+                // Publish Kafka event — release không làm thay đổi balance thực
+                publishBalanceChange(locked.getId(), locked.getBalance().getAmount(), 0L,
+                        locked.getBalance().getAmount(), locked.getBalance().getCurrency(),
+                        reservationId, WalletBalanceChangedPayload.ChangeType.RELEASE);
 
                 log.info("Release success: reservationId={}, walletId={}, released={}", reservationId, reservation.walletId(), reservation.amount());
                 return ReleaseResult.success(null, null);
@@ -277,6 +304,34 @@ public class WalletInternalApplicationService {
                         wallet.getId(), wallet.getOwnerId(), wallet.getBalance().getAmount().longValue(),
                         wallet.getBalance().getCurrency(), wallet.getStatus().name()))
                 .orElse(GetWalletResult.notFound());
+    }
+
+    // ======================== KAFKA HELPERS ========================
+
+    /**
+     * Publish balance change event vào Kafka topic.
+     * Partition Key = walletId → Strict Chronological Ordering per wallet.
+     */
+    private void publishBalanceChange(String walletId, BigDecimal previousBalance,
+                                       long changeAmount, BigDecimal newBalance,
+                                       String currency, String transactionId,
+                                       WalletBalanceChangedPayload.ChangeType changeType) {
+        try {
+            WalletBalanceChangedPayload payload = new WalletBalanceChangedPayload(
+                    walletId,
+                    previousBalance,
+                    new BigDecimal(changeAmount),
+                    newBalance,
+                    currency,
+                    transactionId,
+                    changeType.name()
+            );
+            kafkaProducer.publishBalanceChanged(payload);
+        } catch (Exception e) {
+            // Không ảnh hưởng giao dịch chính — log và tiếp tục
+            log.warn("Kafka publish failed (non-fatal): walletId={}, txId={}, error={}",
+                    walletId, transactionId, e.getMessage());
+        }
     }
 
     // ======================== INNER CLASSES ========================
