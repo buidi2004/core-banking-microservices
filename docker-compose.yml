@@ -16,6 +16,8 @@ services:
     image: postgres:15-alpine
     container_name: ewallet-postgres-identity
     restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=16MB", "-c", "work_mem=2MB", "-c", "max_connections=30"]
+    mem_limit: 100m
     ports:
       - "5433:5432"
     environment:
@@ -40,6 +42,8 @@ services:
     image: postgres:15-alpine
     container_name: ewallet-postgres-wallet
     restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=16MB", "-c", "work_mem=2MB", "-c", "max_connections=30"]
+    mem_limit: 100m
     ports:
       - "5434:5432"
     environment:
@@ -64,6 +68,8 @@ services:
     image: postgres:15-alpine
     container_name: ewallet-postgres-payment
     restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=16MB", "-c", "work_mem=2MB", "-c", "max_connections=30"]
+    mem_limit: 100m
     ports:
       - "5435:5432"
     environment:
@@ -88,6 +94,8 @@ services:
     image: postgres:15-alpine
     container_name: ewallet-postgres-ledger
     restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=16MB", "-c", "work_mem=2MB", "-c", "max_connections=30"]
+    mem_limit: 100m
     ports:
       - "5436:5432"
     environment:
@@ -112,6 +120,8 @@ services:
     image: postgres:15-alpine
     container_name: ewallet-postgres-notification
     restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=16MB", "-c", "work_mem=2MB", "-c", "max_connections=30"]
+    mem_limit: 100m
     ports:
       - "5437:5432"
     environment:
@@ -136,10 +146,11 @@ services:
     image: redis:7-alpine
     container_name: ewallet-redis
     restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "48mb", "--maxmemory-policy", "allkeys-lru"]
+    mem_limit: 64m
     ports:
       - "6379:6379"
       - "6381:6379"
-    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis-microservices-data:/data
     healthcheck:
@@ -157,6 +168,7 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: ewallet-rabbitmq
     restart: unless-stopped
+    mem_limit: 200m
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -180,11 +192,13 @@ services:
     image: confluentinc/cp-kafka:7.6.0
     container_name: ewallet-kafka
     restart: unless-stopped
+    mem_limit: 420m
     ports:
       - "9092:9092"
       - "29092:29092"
     environment:
       KAFKA_NODE_ID: 1
+      KAFKA_JVM_PERFORMANCE_OPTS: "-Xms160m -Xmx256m -XX:+UseSerialGC"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -209,15 +223,18 @@ services:
       - microservices-network
 
   # ----------------------------------------------------------------------------
-  # KAFKA-UI (Web Dashboard - Monitoring Topics & Consumer Lag)
+  # KAFKA-UI (Optional Monitoring - Profiling enabled on demand)
   # ----------------------------------------------------------------------------
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: ewallet-kafka-ui
+    profiles: ["monitoring"]
     restart: unless-stopped
+    mem_limit: 220m
     ports:
       - "8090:8080"
     environment:
+      JAVA_OPTS: "-Xms64m -Xmx160m -XX:+UseSerialGC"
       KAFKA_CLUSTERS_0_NAME: ewallet-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       DYNAMIC_CONFIG_ENABLED: 'true'
@@ -233,9 +250,11 @@ services:
     build: ./services/api-gateway
     container_name: ewallet-api-gateway
     restart: unless-stopped
+    mem_limit: 300m
     ports:
       - "8080:8080"
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=96m -Xss256k"
       SPRING_PROFILES_ACTIVE: docker
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -254,9 +273,11 @@ services:
     build: ./services/identity-service
     container_name: ewallet-identity-service
     restart: unless-stopped
+    mem_limit: 300m
     ports:
       - "8081:8081"
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=96m -Xss256k"
       DB_HOST: postgres-identity
       DB_PORT: 5432
       REDIS_HOST: redis
@@ -271,10 +292,12 @@ services:
     build: ./services/wallet-service
     container_name: ewallet-wallet-service
     restart: unless-stopped
+    mem_limit: 300m
     ports:
       - "8082:8082"
       - "9090:9090"
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=96m -Xss256k"
       DB_HOST: postgres-wallet
       DB_PORT: 5432
       REDIS_HOST: redis
@@ -290,9 +313,11 @@ services:
     build: ./services/payment-service
     container_name: ewallet-payment-service
     restart: unless-stopped
+    mem_limit: 300m
     ports:
       - "8083:8083"
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=96m -Xss256k"
       DB_HOST: postgres-payment
       DB_PORT: 5432
       WALLET_GRPC_HOST: wallet-service
@@ -309,9 +334,11 @@ services:
     build: ./services/ledger-service
     container_name: ewallet-ledger-service
     restart: unless-stopped
+    mem_limit: 300m
     ports:
       - "8084:8084"
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=96m -Xss256k"
       DB_HOST: postgres-ledger
       DB_PORT: 5432
       RABBITMQ_HOST: rabbitmq
@@ -326,9 +353,11 @@ services:
     build: ./services/notification-service
     container_name: ewallet-notification-service
     restart: unless-stopped
+    mem_limit: 300m
     ports:
       - "8085:8085"
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=96m -Xss256k"
       DB_HOST: postgres-notification
       DB_PORT: 5432
       RABBITMQ_HOST: rabbitmq
