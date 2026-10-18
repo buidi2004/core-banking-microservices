@@ -18,4 +18,6 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, String
     List<OutboxEvent> findPendingRetryable(@Param("maxRetry") Integer maxRetry);
 
     boolean existsByAggregateTypeAndAggregateIdAndEventType(String aggregateType, String aggregateId, String eventType);
+
+    List<OutboxEvent> findByAggregateId(String aggregateId);
 }

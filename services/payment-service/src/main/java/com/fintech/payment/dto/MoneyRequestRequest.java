@@ -18,5 +18,5 @@ public class MoneyRequestRequest {
 
     private String note;
 
-    private String expiresInHours;
+    private Integer expiresInHours;
 }

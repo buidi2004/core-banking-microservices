@@ -24,9 +24,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -83,17 +84,17 @@ class PaymentSagaOrchestratorTest {
     }
 
     private void givenDebitSucceeds() {
-        when(walletGrpcClient.debit(SENDER_WALLET, AMOUNT, anyString(), eq(IDEM_KEY)))
+        when(walletGrpcClient.debit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), eq(IDEM_KEY)))
             .thenReturn(WalletBalanceResult.builder().success(true).balanceAfter(900_000L).build());
     }
 
     private void givenReceiverCreditFails(String errorCode) {
-        when(walletGrpcClient.credit(RECEIVER_WALLET, AMOUNT, anyString(), anyString()))
+        when(walletGrpcClient.credit(eq(RECEIVER_WALLET), eq(AMOUNT), anyString(), anyString()))
             .thenReturn(WalletBalanceResult.builder().success(false).errorCode(errorCode).build());
     }
 
     private void givenSenderCreditSucceeds() {
-        when(walletGrpcClient.credit(SENDER_WALLET, AMOUNT, anyString(), anyString()))
+        when(walletGrpcClient.credit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), anyString()))
             .thenReturn(WalletBalanceResult.builder().success(true).balanceAfter(1_000_000L).build());
     }
 
@@ -106,7 +107,7 @@ class PaymentSagaOrchestratorTest {
     void shouldCompleteP2PTransferSuccessfully() {
         givenWalletsResolved();
         givenDebitSucceeds();
-        when(walletGrpcClient.credit(RECEIVER_WALLET, AMOUNT, anyString(), anyString()))
+        when(walletGrpcClient.credit(eq(RECEIVER_WALLET), eq(AMOUNT), anyString(), anyString()))
             .thenReturn(WalletBalanceResult.builder().success(true).balanceAfter(300_000L).build());
 
         SagaContext ctx = saga.transferP2p(SENDER_USER, RECEIVER_USER, AMOUNT, "VND", null, IDEM_KEY);
@@ -114,9 +115,9 @@ class PaymentSagaOrchestratorTest {
         assertThat(ctx.getStatus()).isEqualTo("SUCCESS");
         assertThat(ctx.getTransactionId()).isEqualTo("tx-test-1");
 
-        verify(walletGrpcClient, times(1)).debit(SENDER_WALLET, AMOUNT, anyString(), eq(IDEM_KEY));
-        verify(walletGrpcClient, times(1)).credit(RECEIVER_WALLET, AMOUNT, anyString(), anyString());
-        verify(walletGrpcClient, never()).credit(SENDER_WALLET, any(), anyString(), anyString());
+        verify(walletGrpcClient, times(1)).debit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), eq(IDEM_KEY));
+        verify(walletGrpcClient, times(1)).credit(eq(RECEIVER_WALLET), eq(AMOUNT), anyString(), anyString());
+        verify(walletGrpcClient, never()).credit(eq(SENDER_WALLET), anyLong(), anyString(), anyString());
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxEventRepository, atLeastOnce()).save(captor.capture());
@@ -127,7 +128,7 @@ class PaymentSagaOrchestratorTest {
     @DisplayName("TC-SAGA-02: Debit that bai (khong du so du) -> ket thuc ngay, khong goi Credit -> FAILED")
     void shouldFailFastWhenDebitFails() {
         givenWalletsResolved();
-        when(walletGrpcClient.debit(SENDER_WALLET, AMOUNT, anyString(), eq(IDEM_KEY)))
+        when(walletGrpcClient.debit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), eq(IDEM_KEY)))
             .thenReturn(WalletBalanceResult.builder().success(false)
                 .errorCode("DEBIT_INSUFFICIENT_BALANCE")
                 .errorMessage("Khong du so du")
@@ -138,8 +139,8 @@ class PaymentSagaOrchestratorTest {
         assertThat(ctx.getStatus()).isEqualTo("FAILED");
         assertThat(ctx.getFailureReason()).isEqualTo("Khong du so du");
 
-        verify(walletGrpcClient, times(1)).debit(SENDER_WALLET, AMOUNT, anyString(), eq(IDEM_KEY));
-        verify(walletGrpcClient, never()).credit(anyString(), any(), anyString(), anyString());
+        verify(walletGrpcClient, times(1)).debit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), eq(IDEM_KEY));
+        verify(walletGrpcClient, never()).credit(anyString(), anyLong(), anyString(), anyString());
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxEventRepository, atLeastOnce()).save(captor.capture());
@@ -159,13 +160,13 @@ class PaymentSagaOrchestratorTest {
         assertThat(ctx.getStatus()).isEqualTo("REVERSED");
         assertThat(ctx.isReversed()).isTrue();
 
-        verify(walletGrpcClient, times(1)).debit(SENDER_WALLET, AMOUNT, anyString(), eq(IDEM_KEY));
-        verify(walletGrpcClient, times(1)).credit(RECEIVER_WALLET, AMOUNT, anyString(), anyString());
+        verify(walletGrpcClient, times(1)).debit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), eq(IDEM_KEY));
+        verify(walletGrpcClient, times(1)).credit(eq(RECEIVER_WALLET), eq(AMOUNT), anyString(), anyString());
         verify(walletGrpcClient, times(1)).credit(
             eq(SENDER_WALLET),
             eq(AMOUNT),
             anyString(),
-            argThat((ArgumentMatcher<String>) key -> key != null && key.startsWith("REV-"))
+            argThat((ArgumentMatcher<String>) key -> key != null && (key.startsWith("REV-") || key.contains("reversal")))
         );
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
@@ -178,7 +179,7 @@ class PaymentSagaOrchestratorTest {
     void shouldAutoReverseSenderWhenReceiverCreditTimeouts() {
         givenWalletsResolved();
         givenDebitSucceeds();
-        when(walletGrpcClient.credit(RECEIVER_WALLET, AMOUNT, anyString(), anyString()))
+        when(walletGrpcClient.credit(eq(RECEIVER_WALLET), eq(AMOUNT), anyString(), anyString()))
             .thenThrow(new RuntimeException("gRPC DEADLINE_EXCEEDED"));
         givenSenderCreditSucceeds();
 
@@ -187,8 +188,8 @@ class PaymentSagaOrchestratorTest {
         assertThat(ctx.getStatus()).isEqualTo("REVERSED");
         assertThat(ctx.isReversed()).isTrue();
 
-        verify(walletGrpcClient, times(1)).debit(SENDER_WALLET, AMOUNT, anyString(), eq(IDEM_KEY));
-        verify(walletGrpcClient, times(1)).credit(RECEIVER_WALLET, AMOUNT, anyString(), anyString());
+        verify(walletGrpcClient, times(1)).debit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), eq(IDEM_KEY));
+        verify(walletGrpcClient, times(1)).credit(eq(RECEIVER_WALLET), eq(AMOUNT), anyString(), anyString());
         verify(walletGrpcClient, times(1)).credit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), anyString());
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);

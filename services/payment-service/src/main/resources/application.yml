@@ -44,6 +44,30 @@ spring:
     listener:
       simple:
         acknowledge-mode: manual
+
+# ==============================================================================
+# KAFKA PRODUCER (AGENT 3) - Stream Saga Transaction Lifecycle
+# Dual-Broker: RabbitMQ (task queue) + Kafka (event stream)
+# ==============================================================================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      enable-idempotence: true
+      retries: 2147483647
+      max-in-flight-requests-per-connection: 1
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.trusted.packages: "*"
+    consumer:
+      group-id: payment-service-group
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+    topic:
+      payment-transaction-lifecycle: banking.payment.transaction-lifecycle.v1
   task:
     scheduling:
       pool-size: 2
