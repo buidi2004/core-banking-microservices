@@ -59,13 +59,13 @@ public class LedgerDomainMapper {
     }
 
     /** DB dùng TIMESTAMP (không timezone), domain dùng Instant — quy đổi theo zone hệ thống */
-    static java.time.Instant toInstant(java.time.LocalDateTime localDateTime) {
+    public static java.time.Instant toInstant(java.time.LocalDateTime localDateTime) {
         return localDateTime != null
                 ? localDateTime.atZone(java.time.ZoneId.systemDefault()).toInstant()
                 : null;
     }
 
-    static java.time.LocalDateTime toLocalDateTime(java.time.Instant instant) {
+    public static java.time.LocalDateTime toLocalDateTime(java.time.Instant instant) {
         return instant != null
                 ? java.time.LocalDateTime.ofInstant(instant, java.time.ZoneId.systemDefault())
                 : null;

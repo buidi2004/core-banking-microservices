@@ -117,7 +117,7 @@ class LedgerServiceTest {
     @Test
     void duplicateEventIdIsIgnoredIdempotently() {
         // Given: sự kiện đã được ghi sổ trước đó
-        when(persistencePort.existsJournalEntryByReference("event-dup", "tx-dup")).thenReturn(true);
+        when(persistencePort.existsJournalEntryByReference("event-dup")).thenReturn(true);
 
         // When
         JournalEntry result = ledgerService.recordTransactionPosting(event(

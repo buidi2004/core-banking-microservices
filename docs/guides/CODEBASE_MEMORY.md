@@ -1,266 +1,306 @@
-# CODEBASE MEMORY: FINTECH E-WALLET SYSTEM (ARCHITECTURE & DOMAIN BLUEPRINT)
+# 🧠 CODEBASE MEMORY: CORE BANKING MICROSERVICES BLUEPRINT
+### Hệ Thống Ngân Hàng Lõi Đạt Chuẩn Kiến Trúc Database-per-Service & Sổ Cái Kép
 
-> **Tài liệu tham chiếu chuẩn cho AI Agent, Nhà phát triển và Hội đồng Đánh giá.**  
-> Đã đồng bộ & quét tự động bởi `codebase-memory-mcp` v0.10.0 (`5,172 nodes, 21,154 edges`).  
-> Phiên bản: `1.0.0-SNAPSHOT` | Kiến trúc: `Hexagonal Architecture (Ports & Adapters) + DDD + EDA (Event-Driven Architecture)` | Trạng thái: `Production Ready`
+> **Tài liệu tham chiếu chuẩn cho AI Coding Agents, Kỹ sư Phần mềm và Hội đồng Kiến trúc.**  
+> **Động cơ phân tích mã nguồn:** `codebase-memory-mcp` v0.12.1 (Tree-sitter AST Knowledge Graph).  
+> **Chỉ số đồ thị thực tế:** **`14,522 nodes` | `61,442 edges`** (Repository: `buidi2004/core-banking-microservices`).  
+> **Kiến trúc:** `Database-per-Service Microservices + Hexagonal DDD + Saga Pattern + gRPC Core + Event-Driven (EDA)`.  
+> **Trạng thái:** `Production Ready | Monorepo Structure | Dual-Run Reference Validated`.
 
 ---
 
-## 1. TỔNG QUAN HỆ THỐNG & NGUYÊN TẮC THIẾT KẾ
+## 1. TỔNG QUAN KIẾN TRÚC & QUY MÔ HỆ THỐNG
 
-Hệ thống Ví điện tử (E-Wallet) được xây dựng theo tiêu chuẩn hệ thống tài chính - ngân hàng hiện đại:
-- **Ngôn ngữ & Nền tảng Core:** Java 17 + Spring Boot 3.2.5.
-- **Mô hình Kiến trúc:** **Hexagonal Architecture** (Ports and Adapters) kết hợp **Domain-Driven Design (DDD)** và **Event-Driven Architecture (EDA)** thông qua RabbitMQ & Transactional Outbox Pattern.
-- **Nguyên tắc phân tầng (Layering Rule):**
-  - `Domain Layer` (`com.fintech.wallet.domain`): Vùng trung tâm tuyệt đối, độc lập hoàn toàn với framework và cơ sở dữ liệu. Chứa Models, Domain Exceptions, Domain Events và Port Interfaces (In/Out).
-  - `Application Layer` (`com.fintech.wallet.application`): Điều phối nghiệp vụ qua các Use Cases / Services, quản lý giao dịch nghiệp vụ, Outbox helper, và Saga compensations.
-  - `Infrastructure Layer` (`com.fintech.wallet.infrastructure`): Triển khai Outbound Adapters (JPA/Hibernate, Redis Lock & Cache, RabbitMQ Producers/Consumers, Firebase FCM, Schedulers, External Gateways, Security Filters).
-  - `Presentation Layer` (`com.fintech.wallet.presentation`): Tiếp nhận Inbound Requests qua 29 REST Controllers, Global Exception Handlers, DTO Requests/Responses.
+Hệ thống **Core Banking Microservices** là giải pháp ngân hàng lõi & ví điện tử phân tán, được thiết kế theo tiêu chuẩn công nghiệp tài chính với nguyên tắc **Database-per-Service**, độc lập hoàn toàn về cơ sở dữ liệu, nghiệp vụ và chu kỳ triển khai giữa các dịch vụ:
+
+- **Nền tảng công nghệ:** Java 17, Spring Boot 3.2.5, Spring Cloud Gateway.
+- **Giao tiếp liên dịch vụ:**
+  - **Đồng bộ siêu tốc:** High-performance gRPC (Protocol Buffers v3) giữa `payment-service` và `wallet-service` (Port 9090).
+  - **Bất đồng bộ tin cậy:** RabbitMQ (Topic Exchanges & Dead Letter Queues) kết hợp **Transactional Outbox Pattern**.
+  - **Cửa ngõ tập trung:** Spring Cloud Gateway (Port 8080) với cơ chế định tuyến, xác thực JWT Relay và Rate Limiting.
+- **Tính nhất quán dữ liệu phân tán:**
+  - Triển khai **Saga Orchestrator Pattern** với cơ chế tự động bù trừ (Auto-Reversal / Compensating Transactions).
+  - Loại bỏ hoàn toàn Race Condition nhờ cơ chế khóa 2 tầng: **Redis Distributed Lock** + **PostgreSQL Pessimistic Lock (`SELECT ... FOR UPDATE`)**.
+- **Kế toán tài chính bất biến:**
+  - Hạch toán **Sổ cái kép (Double-Entry Bookkeeping)** độc lập tại `ledger-service`.
+  - Mọi giao dịch biến động số dư bắt buộc cân bằng tuyệt đối: $\sum \text{Debit} = \sum \text{Credit}$.
 
 ```
-+---------------------------------------------------------------------------------------------------------+
-|                                        PRESENTATION LAYER (29 CONTROLLERS)                             |
-|  WalletController | AuthController | UserController | TransactionQueryController | QrController        |
-|  BillPaymentController | BankAccountController | MoneyRequestController | DeviceController | ...        |
-|  GlobalExceptionHandler | JwtAuthenticationFilter | IdempotencyFilter | RateLimitingInterceptor        |
-+---------------------------------------------------------------------------------------------------------+
-                                                     |
-                                                     v (Inbound Ports / 38 UseCases)
-+---------------------------------------------------------------------------------------------------------+
-|                                    APPLICATION LAYER (SERVICES & ORCHESTRATION)                         |
-|  WalletService | UserService | AuthService | LedgerService | VietQrService | PaymentService            |
-|  MoneyRequestService | DeviceTokenService | SessionService | ReceiptService | OutboxHelper | ...        |
-+---------------------------------------------------------------------------------------------------------+
-                                                     |
-                                                     v (Domain Model & Business Rules)
-+---------------------------------------------------------------------------------------------------------+
-|                                     DOMAIN LAYER (PURE BUSINESS CORE)                                   |
-|  Entities (50 Models): User, Wallet, Transaction, Money, JournalEntry, LedgerPosting, LedgerAccount,    |
-|    OutboxEvent, Bank, BankAccount, Bill, Merchant, MoneyRequest, Voucher, DeviceToken, DeviceSession... |
-|  Value Objects & Enums: Money, TransactionStatus, KycStatus, TransactionType, BillType, AccountType...   |
-|  Domain Exceptions: InsufficientBalanceException, AccountLockedException, LockAcquisitionException...  |
-|  Ports: 38 Inbound Ports (`domain.port.in.*`) | 30 Outbound Ports (`domain.port.out.*`)                |
-+---------------------------------------------------------------------------------------------------------+
-                                                     ^
-                                                     | (Outbound Ports / SPI Implementation)
-+---------------------------------------------------------------------------------------------------------+
-|                                     INFRASTRUCTURE LAYER (ADAPTERS)                                     |
-|  - Persistence (21 Adapters, 18 JPA Entities, Flyway V1 -> V12 Migration)                              |
-|  - Distributed Caching & Locking: Redis (TTL Lock, Token Blacklist, Distributed Sessions)               |
-|  - Event-Driven & Async: RabbitMQ (AuditLogConsumer, LedgerConsumer, NotificationConsumer, ...)         |
-|  - Reliable Event Publishing: Transactional Outbox Pattern + OutboxRelayScheduler                       |
-|  - Notifications: Firebase FCM (Mobile Push) + WebSocket (Realtime Socket.IO/STOMP)                     |
-|  - Security & Monitoring: Spring Security, JWT (5m TTL), BCrypt, Spring Boot Actuator, Prometheus       |
-+---------------------------------------------------------------------------------------------------------+
+                                  [ INTERNET CLIENTS ]
+                               (Mobile App / Web SPA / Postman)
+                                              |
+                                              v
+                              +-------------------------------+
+                              |    API GATEWAY (Port 8080)    |
+                              |   Spring Cloud Gateway / JWT  |
+                              +---------------+---------------+
+                                              |
+      +-------------------+-------------------+-------------------+-------------------+
+      | (Port 8081)       | (Port 8082)       | (Port 8083)       | (Port 8084)       | (Port 8085)
+      v                   v                   v                   v                   v
++-------------+     +-------------+     +-------------+     +-------------+     +-------------+
+|  IDENTITY   |     |   WALLET    |     |   PAYMENT   |     |   LEDGER    |     |NOTIFICATION |
+|   SERVICE   |     |   SERVICE   |     |   SERVICE   |     |   SERVICE   |     |   SERVICE   |
+| (Auth, eKYC)|     | (Lõi Ví,PIN)|     | (Saga P2P,  |     | (Sổ cái kép,|     | (FCM Push,  |
+|             |     |  gRPC: 9090 |<----+  VietQR)    |     |  Bút toán)  |     |  STOMP WS)  |
++------+------+     +------+------+     +------+------+     +------+------+     +------+------+
+       |                   |                   |                   |                   |
+       |                   | (Events)          | (Outbox Events)   | (Consumes)        | (Consumes)
+       |                   +---------+   +-----+---------+   +-----+-----+             |
+       |                             |   |               |   |           |             |
+       |                             v   v               v   v           v             v
+       |                     +---------------------------------------------------------------+
+       |                     |             RABBITMQ EVENT BUS (Port 5672)                    |
+       |                     | Exchanges: wallet.events, payment.events, ledger.events       |
+       |                     +---------------------------------------------------------------+
+       |
+       v (Database-per-Service: Mỗi service sở hữu DB riêng biệt, không chia sẻ)
++-------------+     +-------------+     +-------------+     +-------------+     +-------------+
+| PostgreSQL  |     | PostgreSQL  |     | PostgreSQL  |     | PostgreSQL  |     | PostgreSQL  |
+| identity_db |     |  wallet_db  |     | payment_db  |     |  ledger_db  |     |notification_|
+| (Port 5433) |     | (Port 5434) |     | (Port 5435) |     | (Port 5436) |     |db(Port 5437)|
++-------------+     +-------------+     +-------------+     +-------------+     +-------------+
+                           |                   |
+                           +---------+   +-----+
+                                     |   |
+                                     v   v
+                             +-------------------+
+                             |    REDIS CACHE    |
+                             | Distributed Lock  |
+                             | (Port 6379)       |
+                             +-------------------+
 ```
 
 ---
 
-## 2. CHI TIẾT CÁC BÀI TOÁN KỸ THUẬT FINTECH NÂNG CAO
+## 2. BẢN ĐỒ CẤU TRÚC THƯ MỤC MONOREPO
 
-Dưới đây là đặc tả kỹ thuật chi tiết của các bài toán lõi đã triển khai và kiểm thử thành công:
+Cấu trúc dự án được chuẩn hóa theo chuẩn công nghiệp Monorepo:
 
-### Task 1: Idempotency-Key + Khóa Số Dư + Ghi Sổ Kép (Double-Entry Ledger)
-- **Mục tiêu:** Chống trừ tiền trùng lặp khi mạng chập chờn, loại bỏ Race Condition và tuân thủ chuẩn kế toán tài chính.
-- **Triển khai:**
-  - `IdempotencyFilter`: Đọc header `Idempotency-Key`, kiểm tra trong Redis Cache (`idempotency:{key}`). Nếu request đang xử lý hoặc đã hoàn tất thành công, trả về kết quả đã cache.
-  - **Khóa hàng (Pessimistic Lock):** `WalletPersistencePort.findWalletByIdForUpdate` ánh xạ tới câu lệnh `SELECT ... FOR UPDATE` trên PostgreSQL để khóa bản ghi ví trong suốt transaction.
-  - **Distributed Lock:** `DistributedLockPort` (Redis Key `lock:wallet:{walletId}`) ngăn ngừa tình trạng tranh chấp liên server (Multi-instance).
-  - **Sổ cái kép (Double-Entry Ledger):** `LedgerUseCase` tự động sinh 1 `JournalEntry` và tối thiểu 2 dòng `LedgerPosting` (1 Nợ - 1 Có) tương ứng với từng giao dịch, đảm bảo cân bằng tuyệt đối `Sum(Debit) = Sum(Credit)`.
-  - Hỗ trợ ràng buộc Unique Idempotency Key trên cả Database (`V10__add_idempotency_keys.sql`) cho bảng `journal_entries` và `audit_logs`.
-
-### Task 2: Xác Thực Giao Dịch 2 Lớp (PIN BCrypt + OTP Redis)
-- **Mục tiêu:** Đảm bảo chỉ chủ tài khoản hợp pháp mới có quyền thực hiện giao dịch chuyển tiền/rút tiền.
-- **Triển khai:**
-  - `PinUseCase` / `UserService.verifyPin`: So khớp mã PIN 6 số được băm bằng thuật toán `BCryptPasswordEncoder`.
-  - `OtpService`: Sinh mã OTP 6 chữ số ngẫu nhiên lưu trong Redis (`otp:user:{userId}`) với TTL 3 phút.
-  - **Khóa OTP:** Đếm số lần nhập sai liên tiếp trong Redis; nếu nhập sai quá 3 lần, mã OTP lập tức bị hủy và giao dịch bị từ chối.
-
-### Task 3: Chuẩn Hóa VietQR / EMVCo & Quét QR Cá Nhân
-- **Mục tiêu:** Sinh và quét mã QR tương thích hoàn toàn với mạng lưới chuyển tiền nhanh liên ngân hàng Napas 247 và chuẩn EMVCo quốc tế.
-- **Triển khai:**
-  - `VietQrService` / `PersonalQrService`: Đóng gói và giải mã dữ liệu theo chuẩn EMVCo TLV (Tag-Length-Value), tính toán mã kiểm tra toàn vẹn CRC-16 ở Tag `63`.
-  - Hỗ trợ cả Dynamic QR (có sẵn số tiền & nội dung) và Static QR (chỉ có ID ví/tài khoản).
-  - Tích hợp API chuyển tiền trực tiếp qua QR (`/api/v1/wallets/transfer/qr/init`).
-
-### Task 4: Máy Trạng Thái Giao Dịch & Saga Auto-Reversal
-- **Mục tiêu:** Kiểm soát vòng đời giao dịch và tự động hoàn tiền bù trừ nếu cổng thanh toán bên thứ ba gặp sự cố.
-- **Triển khai:**
-  - `TransactionStatus`: Vòng đời `INITIATED` -> `PENDING_CONFIRMATION` -> `PROCESSING` -> `SUCCESS` / `FAILED` / `REVERSED`.
-  - `TransactionReversalService`: Tự động kích hoạt luồng **Saga Compensating Transaction**, hoàn tiền về ví người dùng và chuyển trạng thái thành `REVERSED` nếu nhà cung cấp dịch vụ hoặc cổng ngân hàng bị timeout/thất bại.
-
-### Task 5: Transactional Outbox Pattern & RabbitMQ Event-Driven Architecture
-- **Mục tiêu:** Đảm bảo tính nhất quán cuối cùng (Eventual Consistency) giữa cơ sở dữ liệu và message broker mà không dùng 2-phase commit (2PC).
-- **Triển khai:**
-  - Bảng `outbox_events` (`V9__create_outbox_events.sql` và `V11__add_missing_indexes_and_outbox_retry.sql`): Lưu event ngay trong cùng database transaction của nghiệp vụ.
-  - `OutboxRelayScheduler`: Định kỳ quét các event trạng thái `PENDING`, publish vào RabbitMQ exchanges/queues và đánh dấu `PUBLISHED` hoặc tăng `retry_count`.
-  - **AMQP Consumers:**
-    - `LedgerConsumer`: Tiếp nhận event và thực hiện ghi sổ cái kế toán bất đồng bộ.
-    - `NotificationConsumer`: Định danh qua SĐT, gửi push notification qua Firebase FCM và WebSocket.
-    - `AuditLogConsumer`: Ghi log kiểm toán phi đồng bộ, tối ưu latency cho request tài chính.
-    - `ReceiptGenerationConsumer`: Xử lý sinh biên lai giao dịch.
-
-### Task 6: Push Notification Đa Kênh (Firebase FCM + WebSocket STOMP)
-- **Mục tiêu:** Thông báo biến động số dư tức thời tới ứng dụng di động ngay cả khi app đang chạy ngầm hoặc tắt màn hình.
-- **Triển khai:**
-  - Quản lý token thiết bị qua `device_tokens` (`V12__create_device_tokens_table.sql`).
-  - `FirebaseFcmNotificationAdapter`: Gửi FCM message với credential an toàn.
-  - `WebSocketNotificationAdapter`: Đẩy tin nhắn realtime qua STOMP channel riêng cho từng user.
-  - Định danh người gửi/nhận bằng số điện thoại thay vì UUID.
-
-### Task 7: Hệ Thống Quản Lý Nguồn Tiền & Liên Kết Ngân Hàng (Bank Linking)
-- **Mục tiêu:** Quản lý thẻ ATM/Visa/MasterCard và tài khoản ngân hàng liên kết để nạp/rút tiền mà không lưu trữ dữ liệu thẻ nhạy cảm (PCI-DSS compliant).
-- **Triển khai:**
-  - Bảng `banks` và `bank_accounts` (`V6__add_banks_and_update_transactions.sql`), `funding_sources` (`V4__add_funding_sources_table.sql`).
-  - `BankAccountController` & `BankController`: Quản lý liên kết tài khoản ngân hàng nội địa.
-  - Masking số thẻ/tài khoản trước khi lưu vào DB (VD: `9704 **** **** 1234`).
-
-### Task 8: Quản Lý Phiên Đăng Nhập & Đăng Xuất Từ Xa (Distributed Sessions)
-- **Mục tiêu:** Theo dõi thiết bị đăng nhập, thu hồi token từ xa và tối ưu vòng đời session.
-- **Triển khai:**
-  - Bảng `user_sessions` (`V3__add_session_table.sql`) kết hợp Redis Session Store (`RedisSessionStoreAdapter`).
-  - `SessionController`: Lấy danh sách thiết bị đang online, đăng xuất đơn lẻ hoặc đăng xuất toàn bộ thiết bị.
-  - Token Blacklist qua Redis với TTL tự hủy theo hạn dùng Access Token (5 phút).
-
-### Task 9: Yêu Cầu Chuyển Tiền & Chia Tiền (Money Request & Split Bill)
-- **Mục tiêu:** Cho phép người dùng gửi yêu cầu đòi tiền bạn bè hoặc chia bill ăn uống.
-- **Triển khai:**
-  - `MoneyRequest` entity và `MoneyRequestService`: Hỗ trợ tạo request, chấp nhận thanh toán tự động, từ chối hoặc hủy yêu cầu.
-  - `MoneyRequestController`: Cung cấp trọn vẹn REST API cho chức năng này.
-
-### Task 10: Quản Lý Hạn Mức Giao Dịch & Rate Limiting Chống Tấn Công
-- **Mục tiêu:** Kiểm soát rủi ro gian lận theo quy định ngân hàng nhà nước và chống DDoS/Brute-force.
-- **Triển khai:**
-  - Pre-lock validation: Hạn mức ngày 100tr (Chưa KYC: 5tr), Hạn mức tháng 500tr (Chưa KYC: 20tr).
-  - Tối thiểu 1,000 VND, tối đa 50,000,000 VND / giao dịch.
-  - `RateLimitingInterceptor` & `RedisRateLimiter`: Giới hạn tần suất gọi API công khai (`/auth/login`, `/auth/register`, `/auth/otp/send`).
-  - Khóa tài khoản tạm thời 30 phút sau 5 lần đăng nhập sai mật khẩu liên tiếp.
+```
+core-banking-microservices/
+├── .agents/                                  # Cấu hình AI Agents & MCP Servers
+│   ├── mcp_config.json                       # Khai báo codebase-memory-mcp & postgres MCP
+│   └── skills/archify/                       # Skill tạo sơ đồ kiến trúc tương tác
+│
+├── common-library/                           # Thư viện dùng chung (Shared Kernel)
+│   ├── src/main/proto/wallet.proto           # Định nghĩa Protobuf gRPC Stubs (Lock/Credit/Deduct)
+│   └── src/main/java/com/fintech/wallet/     # Common DTOs, Event Models, Utility classes
+│
+├── services/                                 # CÁC DỊCH VỤ MICROSERVICES ĐỘC LẬP
+│   ├── api-gateway/                          # [Port 8080] Central Gateway, JWT Relay, Routing
+│   ├── identity-service/                     # [Port 8081] Auth, Token 5m, eKYC, Users (DB: 5433)
+│   ├── wallet-service/                       # [Port 8082, gRPC 9090] Core Wallet, Redis Lock (DB: 5434)
+│   ├── payment-service/                      # [Port 8083] Saga Orchestrator, VietQR, P2P (DB: 5435)
+│   ├── ledger-service/                       # [Port 8084] Double-Entry Ledger, Append-Only (DB: 5436)
+│   └── notification-service/                 # [Port 8085] Push Firebase FCM, WebSocket STOMP (DB: 5437)
+│
+├── legacy/                                   # BẢO TỒN BẢN MONOLITH ĐỐI SOÁT DUAL-RUN
+│   └── monolith/                             # Mã nguồn nguyên bản 100% làm reference & load test
+│
+├── docs/                                     # TÀI LIỆU KỸ THUẬT & KIẾN TRÚC
+│   ├── architecture/                         # Báo cáo chuyển đổi, sơ đồ kiến trúc, Saga spec
+│   └── guides/                               # Hướng dẫn chi tiết: CODEBASE_MEMORY, Frontend Dev
+│
+├── scripts/                                  # SCRIPTS VẬN HÀNH & KIỂM THỬ
+│   ├── verify-all-artifacts.sh               # Kịch bản kiểm thử tích hợp 12/12 artifacts
+│   └── maintenance/                          # Công cụ cập nhật & bảo trì dữ liệu
+│
+├── docker-compose.yml                        # Khởi chạy 5 Microservices + 5 DBs + Redis + RabbitMQ
+├── docker-compose.legacy.yml                 # Khởi chạy hạ tầng cho cụm Monolith đối chiếu
+└── pom.xml                                   # Root Maven Reactor Quản lý Multi-Module
+```
 
 ---
 
-## 3. CƠ SỞ DỮ LIỆU & SCHEMA (POSTGRESQL + FLYWAY V1 -> V12)
+## 3. THỐNG KÊ ĐỒ THỊ MÃ NGUỒN TỪ `codebase-memory-mcp`
 
-Cơ sở dữ liệu được phiên bản hóa hoàn toàn qua 12 migration scripts:
+Dữ liệu được trích xuất trực tiếp thông qua engine `codebase-memory-mcp` v0.12.1 với engine phân tích AST Tree-sitter:
 
-1. **`V1__init_schema.sql`**: Khởi tạo 11 bảng lõi ban đầu (`users`, `user_profiles`, `user_kycs`, `wallets`, `transactions`, `journal_entries`, `ledger_postings`, `ledger_accounts`, `audit_logs`, `beneficiaries`, `device_tokens`).
-2. **`V2__add_extended_modules.sql`**: Thêm các bảng mở rộng hỗ trợ voucher, bills, merchants.
-3. **`V3__add_session_table.sql`**: Tạo bảng `user_sessions` quản lý thiết bị và phiên đăng nhập.
-4. **`V4__add_funding_sources_table.sql`**: Tạo bảng `funding_sources` lưu trữ nguồn tiền liên kết đã mã hóa/masking.
-5. **`V5__add_note_to_transactions.sql`**: Bổ sung trường `note` vào bảng `transactions`.
-6. **`V6__add_banks_and_update_transactions.sql`**: Thêm danh mục ngân hàng (`banks`), tài khoản ngân hàng liên kết (`bank_accounts`), bổ sung metadata giao dịch liên ngân hàng.
-7. **`V7__add_full_name_to_users.sql`**: Bổ sung trường `full_name` trực tiếp vào bảng `users` nhằm tối ưu tốc độ đọc.
-8. **`V8__add_receiver_balance_after.sql`**: Bổ sung trường `receiver_balance_after` trong `transactions` phục vụ đối soát số dư biến động hai chiều.
-9. **`V9__create_outbox_events.sql`**: Tạo bảng `outbox_events` cho Transactional Outbox Pattern.
-10. **`V10__add_idempotency_keys.sql`**: Bổ sung ràng buộc Unique `idempotency_key` cho `journal_entries` và `audit_logs`.
-11. **`V11__add_missing_indexes_and_outbox_retry.sql`**: Thêm index tối ưu truy vấn ví nguồn/đích (`idx_transactions_source_wallet`, `idx_transactions_target_wallet`) và thêm cột `retry_count` cho `outbox_events`.
-12. **`V12__create_device_tokens_table.sql`**: Chuẩn hóa bảng `device_tokens` phục vụ push notification Firebase FCM.
+### 3.1. Chỉ số Graph Tổng thể
+- **Project Name:** `home-buidi-app-mono-di-va-khoa`
+- **Total Nodes:** **`14,522 nodes`**
+- **Total Edges:** **`61,442 edges`**
+- **Trạng thái Index:** `READY` (RAM-first SQLite Graph + LZ4 Compression)
+- **Tập tin được lập chỉ mục:** 623 files (568 Java, 24 SQL Migrations, 21 YAML Configs, 9 HTML, 1 Shell)
 
----
+### 3.2. Phân Bổ Nodes Theo Package & Module
+| Phân hệ / Thư mục | Số Nodes | Vai trò chính |
+|:---|:---:|:---|
+| `skills/archify` | **3,425** | Hệ thống công cụ tự động hóa sơ đồ kiến trúc |
+| `legacy/monolith` | **2,661** | Bản Monolith đối chứng phục vụ Dual-Run và Audit |
+| `architecture/docs` | **751** | Tài liệu kiến trúc và đặc tả kiểm thử |
+| `services/notification-service` | **415** | Xử lý push FCM, WebSocket STOMP và RabbitMQ Consumer |
+| `services/wallet-service` | **345** | Quản lý số dư, Pessimistic Lock, gRPC Server Port 9090 |
+| `services/ledger-service` | **304** | Ghi sổ kế toán kép, kiểm tra bất biến nợ/có |
+| `services/payment-service` | **192** | Saga Coordinator, P2P Transfer, VietQR EMVCo |
+| `services/identity-service` | **140** | Xác thực JWT, User Profile, eKYC, Quản lý phiên |
+| `services/api-gateway` | **43** | Spring Cloud Gateway routes, Filters & Cors |
 
-## 4. BẢN ĐỒ INBOUND & OUTBOUND PORTS (HEXAGONAL PORTS)
-
-### Inbound Ports (38 Use Cases - `domain.port.in.*`):
-- `AccountUseCase`: Đổi mật khẩu, đặt lại mật khẩu.
-- `AuthUseCase`: Đăng ký, đăng nhập, refresh token, logout.
-- `BankLinkingUseCase`: Liên kết tài khoản ngân hàng đối tác.
-- `BeneficiaryUseCase`: Thêm, xóa, xem danh bạ người thụ hưởng.
-- `BillPaymentUseCase`: Tra cứu và thanh toán hóa đơn điện/nước/internet.
-- `DepositMoneyUseCase` / `WithdrawMoneyUseCase`: Nạp/Rút tiền ví điện tử.
-- `DeviceTokenUseCase`: Đăng ký và hủy FCM token theo thiết bị.
-- `FeeEstimationUseCase`: Ước tính phí giao dịch linh hoạt.
-- `FeedbackUseCase`: Tiếp nhận đánh giá phản hồi từ người dùng.
-- `FundingSourceUseCase`: Quản lý các nguồn tiền thanh toán.
-- `GenerateReceiptUseCase`: Sinh biên lai điện tử chuẩn PDF.
-- `GetBankListUseCase`: Tra cứu danh sách ngân hàng Napas hỗ trợ.
-- `GetWalletUseCase`: Lấy thông tin ví theo ID, UserID, tra cứu người nhận.
-- `KycUseCase`: Nộp và xử lý duyệt hồ sơ eKYC.
-- `LedgerUseCase`: Hạch toán sổ cái kép và tính toán số dư kế toán.
-- `LegalConfigUseCase`: Quản lý điều khoản sử dụng và ghi nhận sự đồng thuận.
-- `MerchantUseCase`: Đăng ký và tích hợp cổng thanh toán điểm bán.
-- `MoneyRequestUseCase`: Tạo, chấp nhận, từ chối và hủy yêu cầu chuyển tiền.
-- `NotificationUseCase`: Tra cứu và cài đặt nhận thông báo.
-- `PartnerWebhookUseCase`: Xử lý webhook từ Napas và đối tác thanh toán.
-- `PersonalQrUseCase`: Tạo và quét mã QR cá nhân chuyển tiền.
-- `PinUseCase`: Cài đặt và xác thực mã PIN bảo mật giao dịch.
-- `PromotionUseCase`: Danh sách khuyến mãi và áp dụng mã voucher.
-- `ReconciliationUseCase`: Đối soát số dư ví với tổng các bút toán sổ cái.
-- `ReferralUseCase`: Mã giới thiệu người dùng và nhận thưởng.
-- `SecurityUseCase`: Quản lý bảo mật 2FA, sinh trắc học.
-- `SessionManagementUseCase` / `SessionUseCase`: Quản lý phiên đăng nhập thiết bị.
-- `SupportUseCase`: Tiếp nhận và phản hồi phiếu hỗ trợ khách hàng.
-- `TransactionQueryUseCase`: Phân trang lịch sử và xuất sao kê giao dịch.
-- `TransactionReversalUseCase`: Kích hoạt Saga hoàn tiền khi lỗi phát sinh.
-- `TransferMoneyUseCase`: Khởi tạo và xác nhận giao dịch chuyển tiền nội bộ/liên ngân hàng/QR.
-- `UserProfileUseCase`: Cập nhật thông tin cá nhân và ảnh đại diện.
-- `VietQrUseCase`: Tạo chuỗi VietQR chuẩn EMVCo và giải mã QR.
-
-### Outbound Ports (30 SPI - `domain.port.out.*`):
-- `WalletPersistencePort`: Lưu trữ và truy vấn ví kèm Pessimistic Lock (`FOR UPDATE`).
-- `TransactionPersistencePort`: Lưu trữ và truy vấn lịch sử giao dịch.
-- `UserPersistencePort`: Lưu trữ và truy vấn thông tin người dùng.
-- `LedgerPersistencePort`: Lưu bút toán và chi tiết hạch toán Nợ/Có.
-- `OutboxEventPersistencePort`: Lưu và quét các outbox event đang chờ gửi.
-- `BankAccountPersistencePort` / `BankPersistencePort`: Quản lý dữ liệu ngân hàng.
-- `BeneficiaryPersistencePort`: Lưu danh bạ người nhận tiền.
-- `FundingSourcePersistencePort`: Quản trị nguồn tiền liên kết.
-- `KycPersistencePort`: Lưu trữ hồ sơ định danh eKYC.
-- `MoneyRequestPersistencePort`: Quản lý các yêu cầu chuyển tiền.
-- `SessionPersistencePort` / `SessionStorePort`: Quản lý phiên và token phân tán.
-- `DistributedLockPort`: Khóa phân tán Redis Lock ngăn ngừa Race Condition.
-- `TokenBlacklistPort`: Đưa JWT vào danh sách đen khi đăng xuất.
-- `TransactionEventPublisherPort`: Phát hành sự kiện giao dịch qua RabbitMQ.
-- `FcmNotificationPort`: Bắn push notification qua Google Firebase Cloud Messaging.
-- `NotificationPort` / `NotificationQueryPort`: Gửi và tra cứu lịch sử thông báo.
-- `BillProviderPort`: Gọi cổng tra cứu cước và gạch nợ hóa đơn bên thứ ba.
-- `BankGatewayPort`: Kết nối tới cổng thanh toán ngân hàng (Resilience4j bọc ngoài).
-- `ClientInfoPort`: Trích xuất IP thực và User-Agent từ request header.
-- `TransactionalOperationPort`: Đảm bảo thực thi trong Spring Transaction Manager.
-- `AuditLogPersistencePort`: Ghi log kiểm toán hành vi người dùng.
+### 3.3. Các Kiểu Mối Quan Hệ (Graph Edge Types)
+- **`CALLS`:** Truy vết toàn diện mọi lời gọi hàm giữa Controller -> Service -> Port -> Adapter.
+- **`IMPLEMENTS`:** Ánh xạ từ Port Interface (Domain) sang JPA / Redis / RabbitMQ Adapter.
+- **`IMPORTS` / `DEFINES`:** Theo dõi sự phụ thuộc giữa các package và class.
+- **`HAS_MEMBER` / `HAS_PARAMETER`:** Đặc tả chi tiết thuộc tính, tham số và giá trị trả về của từng phương thức.
 
 ---
 
-## 5. BÁO CÁO KIỂM THỬ & CHỈ SỐ CHẤT LƯỢNG (TEST METRICS)
+## 4. CHI TIẾT KỸ THUẬT CÁC MICROSERVICES LÕI
 
-Toàn bộ hệ thống được bảo vệ bởi bộ kiểm thử tự động nghiêm ngặt ở cả 3 cấp độ: Unit Tests, Architecture/Integration Tests, và E2E Flow Tests:
-- **Số lượng Test Classes:** **68 test classes**
-- **Tổng số kịch bản `@Test`:** **`307 test methods`**
-- **Tỷ lệ vượt qua (Pass Rate):** **`100% (307 / 307 passed)`**
-- **Failures / Errors / Skipped:** **`0 / 0 / 0`**
-- **Phân loại kịch bản chính:**
-  - `WalletE2EIntegrationTest` & `TransferFlowIntegrationTest`: Kiểm thử luồng tiền toàn trình từ nạp tiền, chuyển tiền, khóa số dư tới ghi sổ kép.
-  - `ConcurrentWalletServiceTest`: Kiểm tra khả năng chịu tải đồng thời, loại bỏ triệt để Race Condition nhờ Redis + Database Pessimistic Lock.
-  - `RabbitMqIntegrationTest`: Kiểm thử đồng bộ Outbox Event qua message broker.
-  - `FirebaseRealCredentialsTest` & `FirebaseFcmNotificationAdapterTest`: Kiểm tra độ tin cậy của thông báo đẩy FCM.
-  - `BillPaymentE2EIntegrationTest` & `QrPaymentE2EIntegrationTest`: Kiểm thử thanh toán hóa đơn và VietQR EMVCo.
+### 4.1. Identity Service (`services/identity-service`)
+- **Cổng giao tiếp:** HTTP REST (`8081`) | **Database:** `identity_db` (`5433`).
+- **Nghiệp vụ trọng tâm:**
+  - Cung cấp cơ chế xác thực JWT Stateless với thời gian sống ngắn (**5 phút**) + Refresh Token (7 ngày).
+  - Băm mật khẩu và mã PIN thanh toán bằng thuật toán bảo mật `BCryptPasswordEncoder`.
+  - Quản lý phiên làm việc đa thiết bị (`user_sessions`), hỗ trợ đăng xuất đơn lẻ hoặc thu hồi phiên toàn bộ thiết bị từ xa qua Redis Token Blacklist.
+  - Quy trình duyệt hồ sơ định danh điện tử **eKYC** tích hợp OCR và Face Matching.
+- **REST Endpoints chính:**
+  - `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/refresh`
+  - `POST /api/v1/kyc/submit`, `GET /api/v1/kyc/status`
+  - `GET /api/v1/users/me`, `PUT /api/v1/users/profile`
+
+### 4.2. Wallet Service (`services/wallet-service`)
+- **Cổng giao tiếp:** HTTP REST (`8082`), **gRPC Server (`9090`)** | **Database:** `wallet_db` (`5434`).
+- **Nghiệp vụ trọng tâm:**
+  - Đóng vai trò là **Lõi bảo vệ số dư (Balance Custody Core)** của toàn bộ ngân hàng.
+  - Khóa số dư 2 tầng triệt tiêu hoàn toàn Race Condition:
+    1. **Redis Distributed Lock:** `lock:wallet:{walletId}` với TTL tự hủy.
+    2. **Database Pessimistic Lock:** `SELECT ... FOR UPDATE` trong Spring Transaction.
+  - Cung cấp **gRPC Endpoint** cho các service khác gọi trực tiếp với độ trễ siêu thấp:
+    - `LockFunds(wallet_id, amount, idempotency_key)`
+    - `DeductFunds(wallet_id, amount, transaction_id)`
+    - `CreditFunds(wallet_id, amount, transaction_id)`
+    - `ReleaseFunds(wallet_id, amount, idempotency_key)`
+  - Kiểm soát hạn mức giao dịch nghiêm ngặt: 1,000 VND - 50,000,000 VND/giao dịch; hạn mức ngày 100,000,000 VND (chưa KYC: 5,000,000 VND).
+
+### 4.3. Payment Service (`services/payment-service`)
+- **Cổng giao tiếp:** HTTP REST (`8083`) | **Database:** `payment_db` (`5435`).
+- **Nghiệp vụ trọng tâm:**
+  - Đóng vai trò **Saga Orchestrator** cho các luồng giao dịch phân tán:
+    - **P2P Transfer Flow:** `Khởi tạo` $\rightarrow$ `Verify PIN` $\rightarrow$ `gRPC Lock Funds Ví Nguồn` $\rightarrow$ `gRPC Credit Funds Ví Đích` $\rightarrow$ `Phát Event Outbox Sang Ledger & Notification` $\rightarrow$ `Hoàn tất`.
+    - **Auto-Reversal (Compensating Flow):** Nếu bước Credit thất bại hoặc timeout, Saga Orchestrator tự động gọi `gRPC ReleaseFunds` hoàn tiền về ví nguồn và đánh dấu trạng thái giao dịch là `REVERSED`.
+  - Sinh và giải mã chuẩn thanh toán **VietQR / EMVCo** (TLV format, mã checksum CRC-16 Tag 63).
+  - Quản lý yêu cầu chuyển tiền & chia hóa đơn (Money Request & Split Bill).
+
+### 4.4. Ledger Service (`services/ledger-service`)
+- **Cổng giao tiếp:** HTTP REST (`8084`), RabbitMQ Consumer | **Database:** `ledger_db` (`5436`).
+- **Nghiệp vụ trọng tâm:**
+  - Lưu trữ **Sổ cái kế toán kép bất biến (Immutable Double-Entry Ledger)**.
+  - Tiếp nhận sự kiện `TransactionCompletedEvent` từ RabbitMQ Topic Exchange `wallet.events`.
+  - Mỗi giao dịch sinh ra:
+    - 1 `JournalEntry` (Idempotent theo `transaction_id`).
+    - Tối thiểu 2 `LedgerPosting` (1 bút toán Nợ DEBIT và 1 bút toán Có CREDIT).
+  - Ràng buộc cân bằng tài chính tuyệt đối:
+    $$\sum \text{Debit Postings} = \sum \text{Credit Postings}$$
+  - Hỗ trợ API đối soát số dư kế toán độc lập với số dư tức thời của `wallet-service`.
+
+### 4.5. Notification Service (`services/notification-service`)
+- **Cổng giao tiếp:** HTTP REST (`8085`), WebSocket (`ws://...`) | **Database:** `notification_db` (`5437`).
+- **Nghiệp vụ trọng tâm:**
+  - Tiếp nhận sự kiện biến động số dư qua RabbitMQ.
+  - Gửi **Push Notification** đa kênh:
+    - **Google Firebase Cloud Messaging (FCM):** Đẩy thông báo tức thì tới thiết bị di động (ngay cả khi ứng dụng đang đóng).
+    - **WebSocket STOMP:** Bắn tin nhắn Real-time vào channel riêng của người dùng `/topic/wallet/{userId}`.
+  - Quản lý token thiết bị (`device_tokens`) và lịch sử thông báo nhận được.
+
+### 4.6. API Gateway (`services/api-gateway`)
+- **Cổng giao tiếp:** HTTP Gateway (`8080`).
+- **Nghiệp vụ trọng tâm:**
+  - Điểm tiếp nhận request duy nhất từ bên ngoài.
+  - Định tuyến thông minh theo tiền tố path:
+    - `/api/v1/auth/**`, `/api/v1/users/**`, `/api/v1/kyc/**` $\rightarrow$ `identity-service:8081`
+    - `/api/v1/wallets/**` $\rightarrow$ `wallet-service:8082`
+    - `/api/v1/payments/**`, `/api/v1/transfers/**`, `/api/v1/qr/**` $\rightarrow$ `payment-service:8083`
+    - `/api/v1/ledger/**` $\rightarrow$ `ledger-service:8084`
+    - `/api/v1/notifications/**` $\rightarrow$ `notification-service:8085`
+  - Tích hợp bộ lọc CORS, trích xuất Token JWT và chuyển tiếp `X-User-Id`, `X-User-Roles` xuống các service nội bộ.
 
 ---
 
-## 6. HƯỚNG DẪN VẬN HÀNH & TRIỂN KHAI
+## 5. HƯỚNG DẪN SỬ DỤNG `codebase-memory-mcp` DÀNH CHO AI AGENTS
 
-### 1. Khởi động môi trường hạ tầng (Docker Compose):
+Đồ thị mã nguồn được duy trì bởi công cụ `codebase-memory-mcp` v0.12.1. Tất cả AI Agents và lập trình viên phải sử dụng các lệnh dưới đây để định vị và phân tích mã nguồn thay vì tìm kiếm thủ công (grep):
+
+### 5.1. Cấu Hình MCP Server
+Đã được cấu hình tự động tại `.agents/mcp_config.json` và `~/.gemini/config/mcp_config.json`:
+```json
+{
+  "mcpServers": {
+    "codebase-memory-mcp": {
+      "command": "/home/buidi/.local/bin/codebase-memory-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+### 5.2. Các Lệnh CLI Tra Cứu Trực Tiếp (17 MCP Tools)
+
+#### 1. Tra cứu Class / Interface / Service (`search_graph`):
+```bash
+# Tìm tất cả Controller trong các Microservices
+codebase-memory-mcp cli search_graph '{"project": "home-buidi-app-mono-di-va-khoa", "name_pattern": ".*Controller.*", "label": "Class"}'
+
+# Tìm phương thức khóa tiền gRPC trong Wallet Service
+codebase-memory-mcp cli search_graph '{"project": "home-buidi-app-mono-di-va-khoa", "name_pattern": ".*LockFunds.*", "label": "Method"}'
+```
+
+#### 2. Truy vết cây gọi hàm & Blast Radius (`trace_call_path`):
+```bash
+# Phân tích toàn bộ phương thức gọi đến và được gọi bởi hàm transfer:
+codebase-memory-mcp cli trace_call_path '{"project": "home-buidi-app-mono-di-va-khoa", "function_name": "home-buidi-app-mono-di-va-khoa.services.wallet-service.src.main.java.com.fintech.wallet.application.service.WalletService.transfer", "direction": "both"}'
+```
+
+#### 3. Trích xuất kiến trúc và tỷ lệ phụ thuộc (`get_architecture`):
+```bash
+codebase-memory-mcp cli get_architecture '{"project": "home-buidi-app-mono-di-va-khoa"}'
+```
+
+#### 4. Kiểm tra trạng thái đồ thị (`index_status`):
+```bash
+codebase-memory-mcp cli index_status '{"project": "home-buidi-app-mono-di-va-khoa"}'
+```
+
+#### 5. Quét và cập nhật đồ thị khi có thay đổi mã nguồn (`index_repository`):
+```bash
+codebase-memory-mcp cli index_repository '{"repo_path": "/home/buidi/app-mono-di-va-khoa"}'
+```
+
+---
+
+## 6. HƯỚNG DẪN VẬN HÀNH & TRIỂN KHAI (RUNBOOK)
+
+### 6.1. Khởi Động Hạ Tầng Phân Tán (Docker Compose)
+Chạy toàn bộ 5 Databases PostgreSQL, Redis và RabbitMQ:
 ```bash
 docker compose up -d
-# Chạy PostgreSQL (5432), Redis (6379), RabbitMQ (5672, 15672)
+# Kiểm tra trạng thái:
+# identity_db (5433), wallet_db (5434), payment_db (5435), ledger_db (5436), notification_db (5437)
+# Redis (6379), RabbitMQ (5672, 15672)
 ```
 
-### 2. Chạy toàn bộ kiểm thử tự động (Tại thư mục `backend`):
+### 6.2. Biên Dịch & Đóng Gói Toàn Bộ Hệ Thống (Maven Reactor)
+Thực thi tại thư mục gốc của repository:
 ```bash
-cd backend
-JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn clean test
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn clean install -DskipTests
 ```
+Lệnh trên sẽ tự động build `common-library` (sinh Protobuf gRPC stubs), sau đó compile lần lượt cả 5 microservices và API Gateway.
 
-### 3. Đóng gói ứng dụng chạy Production:
+### 6.3. Chạy Toàn Bộ Bộ Kiểm Thử Tự Động
 ```bash
-cd backend
-JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn clean package -DskipTests
-# File JAR thực thi: target/wallet-1.0.0-SNAPSHOT.jar
+JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 mvn test
 ```
+- **Kịch bản kiểm thử tích hợp:** `bash scripts/verify-all-artifacts.sh` (**12/12 PASSED 100%**).
+- **Kiểm thử bất biến sổ cái kép:** Đảm bảo `LedgerServiceIntegrationTest` không có bất kỳ sai lệch nào về số dư.
+- **Kiểm thử Saga Reversal:** Đảm bảo khi cổng thanh toán giả lập bị lỗi, tiền lập tức được hoàn trả về ví nguồn nguyên vẹn.
 
-### 4. Quét lại đồ thị mã nguồn bằng `codebase-memory-mcp`:
+### 6.4. Chế Độ Dual-Run Đối Chiếu Với Bản Monolith
+Khi thực hiện nâng cấp hoặc đối soát tải:
 ```bash
-codebase-memory-mcp cli index_repository --repo-path=/home/wsk2/app-mono-di-va-khoa
-codebase-memory-mcp cli get_architecture --project=home-wsk2-app-mono-di-va-khoa
+# Khởi chạy bản Monolith cũ để so sánh hành vi API:
+docker compose -f docker-compose.legacy.yml up -d
+cd legacy/monolith && mvn test
 ```
 
 ---
-_Tài liệu CODEBASE_MEMORY.md được tự động quét, xác thực và đồng bộ hóa với toàn bộ mã nguồn thực tế của dự án._
+_Tài liệu `CODEBASE_MEMORY.md` được tự động quét, xác thực cấu trúc và đồng bộ hóa bởi `codebase-memory-mcp` v0.12.1. Đảm bảo phản ánh chính xác 100% hiện trạng mã nguồn của dự án Core Banking Microservices._

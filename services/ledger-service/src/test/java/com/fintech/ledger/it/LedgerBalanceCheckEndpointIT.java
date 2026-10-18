@@ -50,8 +50,7 @@ class LedgerBalanceCheckEndpointIT {
         registry.add("spring.datasource.username", LedgerItDatabase::user);
         registry.add("spring.datasource.password", LedgerItDatabase::password);
         registry.add("spring.flyway.enabled", () -> "false"); // migration đã áp bởi LedgerItDatabase
-        registry.add("spring.autoconfigure.exclude",
-                () -> "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration");
+        registry.add("spring.rabbitmq.listener.simple.auto-startup", () -> "false"); // không kết nối broker khi test
     }
 
     @BeforeAll

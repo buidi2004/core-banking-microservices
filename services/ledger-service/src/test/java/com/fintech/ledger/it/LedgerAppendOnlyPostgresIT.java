@@ -80,9 +80,10 @@ class LedgerAppendOnlyPostgresIT {
             }).isInstanceOf(SQLException.class)
                     .hasMessageContaining("permission denied");
 
-            // Chứng từ sổ cái cũng bất biến: không xóa được
-            UUID entry = insertEntry(limited, "tx-append-" + UUID.randomUUID().toString().substring(0, 8),
-                    "ref-" + UUID.randomUUID());
+            // Chứng từ sổ cái cũng bất biến: không xóa được (fixture là chứng từ hoàn chỉnh, cân Nợ/Có)
+            BalancesAndEntry fixture = postBalancedEntry(limited,
+                    "tx-append-" + UUID.randomUUID().toString().substring(0, 8), "ref-" + UUID.randomUUID());
+            UUID entry = fixture.entryId();
             assertThatThrownBy(() -> {
                 PreparedStatement ps = limited.prepareStatement(
                         "DELETE FROM journal_entries WHERE id = ?");
@@ -106,15 +107,11 @@ class LedgerAppendOnlyPostgresIT {
     void balanceIsMaintainedByTriggerEvenWithRestrictedRole() throws SQLException {
         // Trigger SECURITY DEFINER cho phép role append-only INSERT posting mà không cần quyền UPDATE
         try (Connection limited = limitedConnection()) {
-            UUID bank = insertAccount(limited, "ASSET");
-            UUID wallet = insertAccount(limited, "LIABILITY");
-            UUID entry = insertEntry(limited, "tx-bal-" + UUID.randomUUID().toString().substring(0, 8),
-                    "ref-" + UUID.randomUUID());
-            insertPosting(limited, entry, bank, "DEBIT", "150000.00");
-            insertPosting(limited, entry, wallet, "CREDIT", "150000.00");
+            BalancesAndEntry fixture = postBalancedEntry(limited,
+                    "tx-bal-" + UUID.randomUUID().toString().substring(0, 8), "ref-" + UUID.randomUUID());
 
-            assertThat(queryBalance(limited, bank)).isEqualByComparingTo("150000.00");
-            assertThat(queryBalance(limited, wallet)).isEqualByComparingTo("150000.00");
+            assertThat(queryBalance(limited, fixture.bankId())).isEqualByComparingTo("150000.00");
+            assertThat(queryBalance(limited, fixture.walletId())).isEqualByComparingTo("150000.00");
         }
     }
 
@@ -122,16 +119,13 @@ class LedgerAppendOnlyPostgresIT {
     void debitMustEqualCreditAtSqlLevel() throws SQLException {
         String txId = "tx-sum-" + UUID.randomUUID().toString().substring(0, 8);
         try (Connection limited = limitedConnection()) {
-            UUID bank = insertAccount(limited, "ASSET");
-            UUID wallet = insertAccount(limited, "LIABILITY");
-            UUID entry = insertEntry(limited, txId, "ref-" + UUID.randomUUID());
-            insertPosting(limited, entry, bank, "DEBIT", "420000.50");
-            insertPosting(limited, entry, wallet, "CREDIT", "420000.50");
+            BalancesAndEntry small = postBalancedEntry(limited, txId, "ref-" + UUID.randomUUID());
 
             BigDecimal debit = sumByTransactionAndSide(limited, txId, "DEBIT");
             BigDecimal credit = sumByTransactionAndSide(limited, txId, "CREDIT");
             assertThat(debit).isEqualByComparingTo(credit);
-            assertThat(debit).isEqualByComparingTo("420000.50");
+            assertThat(debit).isEqualByComparingTo("150000.00")
+                    .isEqualByComparingTo(queryBalance(limited, small.bankId()).abs());
         }
     }
 
@@ -139,11 +133,11 @@ class LedgerAppendOnlyPostgresIT {
     void duplicateEventIdIsRejectedByUniqueIndex() throws SQLException {
         String reference = "dup-" + UUID.randomUUID();
         try (Connection limited = limitedConnection()) {
-            insertEntry(limited, "tx-dup-a-" + UUID.randomUUID().toString().substring(0, 8), reference);
+            postBalancedEntry(limited, "tx-dup-a-" + UUID.randomUUID().toString().substring(0, 8), reference);
 
             // Idempotency: ghi trùng eventId phải bị unique index chặn
             assertThatThrownBy(() ->
-                    insertEntry(limited, "tx-dup-b-" + UUID.randomUUID().toString().substring(0, 8), reference))
+                    postBalancedEntry(limited, "tx-dup-b-" + UUID.randomUUID().toString().substring(0, 8), reference))
                     .isInstanceOf(SQLException.class)
                     .hasMessageContaining("uq_journal_entries_reference");
         }
@@ -153,17 +147,31 @@ class LedgerAppendOnlyPostgresIT {
     void secondPostedEntryForSameTransactionIsRejected() throws SQLException {
         String txId = "tx-2nd-" + UUID.randomUUID().toString().substring(0, 8);
         try (Connection limited = limitedConnection()) {
-            insertEntry(limited, txId, "ref-a-" + UUID.randomUUID());
+            postBalancedEntry(limited, txId, "ref-a-" + UUID.randomUUID());
 
             // Chống double-posting: 1 giao dịch chỉ được 1 chứng từ status POSTED
             assertThatThrownBy(() ->
-                    insertEntry(limited, txId, "ref-b-" + UUID.randomUUID()))
+                    postBalancedEntry(limited, txId, "ref-b-" + UUID.randomUUID()))
                     .isInstanceOf(SQLException.class)
                     .hasMessageContaining("uq_journal_entries_transaction_posted");
         }
     }
 
     // ---------------------------------------------------------------------------
+
+    /** Chứng từ hoàn chỉnh: 1 tài khoản ASSET + 1 LIABILITY + entry + 2 bút toán balanced */
+    private static BalancesAndEntry postBalancedEntry(Connection limited, String txId, String reference)
+            throws SQLException {
+        UUID bankId = insertAccount(limited, "ASSET");
+        UUID walletId = insertAccount(limited, "LIABILITY");
+        UUID entryId = insertEntry(limited, txId, reference);
+        insertPosting(limited, entryId, bankId, "DEBIT", "150000.00");
+        insertPosting(limited, entryId, walletId, "CREDIT", "150000.00");
+        return new BalancesAndEntry(bankId, walletId, entryId);
+    }
+
+    private record BalancesAndEntry(UUID bankId, UUID walletId, UUID entryId) {
+    }
 
     private static Connection limitedConnection() throws SQLException {
         String url = LedgerItDatabase.jdbcUrl();
