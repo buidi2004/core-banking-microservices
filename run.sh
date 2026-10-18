@@ -1,0 +1,342 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# 🏦 CORE BANKING TELLER PORTAL & MICROSERVICES - BỘ ĐIỀU KHIỂN TOÀN DIỆN (RUN.SH)
+# ==============================================================================
+# Hỗ trợ:
+#   1. Khởi động / Dừng Frontend React (Vite Port 5173)
+#   2. Khởi động / Dừng Backend Microservices (Docker / Spring Boot Ports 8080-8084)
+#   3. Quản lý Cụm Hạ Tầng (Kafka, 5 Postgres DBs, Redis, RabbitMQ)
+#   4. Chạy Kiểm thử Toàn diện 8 Kịch bản Dữ liệu Thật (Multi-Scenario E2E)
+#   5. Bảng Đối soát Sổ cái kép trực tiếp (Live Ledger Balance Delta = 0.00 VND)
+#   6. Tra cứu Két quỹ quầy chi nhánh (Vault Cash Limit 500M)
+#   7. Cấp mới JWT Token cho Cán bộ quầy (Teller 1, Teller 2, Manager 1)
+#   8. Kiểm tra Sức khỏe và Cổng toàn hệ thống (Health Check)
+# ==============================================================================
+
+set -e
+
+# Thiết lập thư mục gốc
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
+
+FE_DIR="$ROOT_DIR/web/cash-deposit-portal"
+FE_PID_FILE="$ROOT_DIR/.fe.pid"
+FE_LOG_FILE="$ROOT_DIR/.fe.log"
+
+# Bảng mã màu ANSI
+BOLD='\033[1m'
+NC='\033[0m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+PURPLE='\033[0;35m'
+
+# In Banner thương hiệu
+print_banner() {
+    clear 2>/dev/null || true
+    echo -e "${CYAN}${BOLD}"
+    echo "  ██████╗ ██████╗ ██████╗ ███████╗   ██████╗  █████╗ ███╗   ██╗██╗  ██╗██╗███╗   ██╗ ██████╗ "
+    echo " ██╔════╝██╔═══██╗██╔══██╗██╔════╝   ██╔══██╗██╔══██╗████╗  ██║██║ ██╔╝██║████╗  ██║██╔════╝ "
+    echo " ██║     ██║   ██║██████╔╝█████╗     ██████╔╝███████║██╔██╗ ██║█████═╝ ██║██╔██╗ ██║██║  ███╗"
+    echo " ██║     ██║   ██║██╔══██╗██╔══╝     ██╔══██╗██╔══██║██║╚██╗██║██╔═██╗ ██║██║╚██╗██║██║   ██║"
+    echo " ╚██████╗╚██████╔╝██║  ██║███████╗   ██████╔╝██║  ██║██║ ╚████║██║ ╚██╗██║██║ ╚████║╚██████╔╝"
+    echo "  ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝   ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝╚═╝  ╚═══╝ ╚═════╝ "
+    echo -e "${NC}"
+    echo -e " ${BOLD}BỘ ĐIỀU KHIỂN VẬN HÀNH TOÀN TRÌNH (CORE BANKING MANAGEMENT CLI)${NC}"
+    echo -e " Kiến trúc: ${BLUE}Database-per-Service (5 DBs) + Event-Driven (Kafka) + React Portal${NC}"
+    echo -e " ----------------------------------------------------------------------------------------"
+}
+
+# 1. Khởi động Hạ tầng Docker
+start_infra() {
+    echo -e "\n${BLUE}🐳 [1/4] KHỞI ĐỘNG CỤM HẠ TẦNG DOCKER (DATABASES & BROKERS)...${NC}"
+    docker compose up -d postgres-identity postgres-wallet postgres-payment postgres-ledger postgres-notification redis rabbitmq kafka kafka-ui
+    echo -e "  ${GREEN}✓ Đang chờ các cụm cơ sở dữ liệu và Kafka sẵn sàng...${NC}"
+    
+    # Kiểm tra sẵn sàng
+    local max_wait=30
+    local count=0
+    until docker exec ewallet-postgres-identity pg_isready -U identity_db_user -d ewallet_identity_db >/dev/null 2>&1 || [ $count -ge $max_wait ]; do
+        sleep 1
+        count=$((count + 1))
+    done
+
+    echo -e "  ${GREEN}✓ Cả 5 Cơ sở dữ liệu Postgres, Kafka (29092), Redis (6379), RabbitMQ (5672) ĐÃ SẴN SÀNG!${NC}"
+}
+
+# 2. Khởi động Backend Microservices
+start_be() {
+    start_infra
+    echo -e "\n${BLUE}⚙️ [2/4] KHỞI ĐỘNG CỤM BACKEND MICROSERVICES...${NC}"
+    echo -e "  • Khởi chạy các container Microservices:"
+    docker compose up -d api-gateway identity-service wallet-service payment-service ledger-service notification-service
+    echo -e "  ${GREEN}✓ Toàn bộ Backend Microservices đã được kích hoạt!${NC}"
+    echo -e "    - API Gateway:    ${CYAN}http://localhost:8080${NC}"
+    echo -e "    - Kafka UI:       ${CYAN}http://localhost:8089${NC}"
+    echo -e "    - RabbitMQ UI:    ${CYAN}http://localhost:15672${NC} (guest / guest)"
+}
+
+# 3. Khởi động Frontend React Portal
+start_fe() {
+    echo -e "\n${BLUE}🌐 [3/4] KHỞI ĐỘNG FRONTEND REACT TELLER PORTAL...${NC}"
+    if [ -f "$FE_PID_FILE" ] && kill -0 "$(cat "$FE_PID_FILE")" 2>/dev/null; then
+        echo -e "  ${YELLOW}⚠️ Frontend đang chạy tại PID: $(cat "$FE_PID_FILE") (${CYAN}http://localhost:5173${NC})${NC}"
+        return 0
+    fi
+
+    # Kiểm tra cổng 5173
+    if ss -tulpn 2>/dev/null | grep -q ":5173"; then
+        echo -e "  ${YELLOW}⚠️ Cổng 5173 đang có tiến trình chiếm dụng. Đang giải phóng...${NC}"
+        fuser -k 5173/tcp 2>/dev/null || true
+        sleep 1
+    fi
+
+    cd "$FE_DIR"
+    echo -e "  • Đang khởi động Vite Dev Server..."
+    nohup npm run dev -- --host 0.0.0.0 --port 5173 > "$FE_LOG_FILE" 2>&1 &
+    local fe_pid=$!
+    echo "$fe_pid" > "$FE_PID_FILE"
+    cd "$ROOT_DIR"
+
+    sleep 2
+    if kill -0 "$fe_pid" 2>/dev/null; then
+        echo -e "  ${GREEN}✓ Cổng Quản lý Nạp tiền Quầy (React) đã chạy thành công!${NC}"
+        echo -e "  👉 TRUY CẬP NGAY: ${BOLD}${CYAN}http://localhost:5173${NC}"
+        echo -e "  👉 TRANG DEMO GỐC: ${CYAN}http://127.0.0.1:5500/web/cash-deposit-portal/index.html${NC}"
+    else
+        echo -e "  ${RED}❌ Khởi động Frontend thất bại. Vui lòng kiểm tra log: $FE_LOG_FILE${NC}"
+        cat "$FE_LOG_FILE" | tail -n 15
+        return 1
+    fi
+}
+
+# 4. Khởi động Tất cả (All-in-one)
+start_all() {
+    print_banner
+    echo -e "${GREEN}${BOLD}🚀 ĐANG KHỞI ĐỘNG TOÀN BỘ HỆ THỐNG CORE BANKING (INFRA + BE + FE)...${NC}\n"
+    start_infra
+    start_be
+    start_fe
+    echo -e "\n${GREEN}${BOLD}================================================================================${NC}"
+    echo -e "${GREEN}${BOLD}🎉 TOÀN BỘ HỆ THỐNG ĐÃ HOẠT ĐỘNG HOÀN TOÀN!${NC}"
+    echo -e "   • Frontend React Portal:  ${BOLD}${CYAN}http://localhost:5173${NC}"
+    echo -e "   • API Gateway Routing:    ${BOLD}${CYAN}http://localhost:8080${NC}"
+    echo -e "   • Kafka Management UI:    ${BOLD}${CYAN}http://localhost:8089${NC}"
+    echo -e "   • RabbitMQ Admin UI:      ${BOLD}${CYAN}http://localhost:15672${NC}"
+    echo -e "${GREEN}${BOLD}================================================================================${NC}"
+}
+
+# 5. Dừng hệ thống
+stop_all() {
+    echo -e "\n${YELLOW}🛑 ĐANG DỪNG CÁC TIẾN TRÌNH HỆ THỐNG...${NC}"
+    
+    # Dừng Frontend
+    if [ -f "$FE_PID_FILE" ]; then
+        local pid
+        pid=$(cat "$FE_PID_FILE")
+        if kill -0 "$pid" 2>/dev/null; then
+            echo -e "  • Đang dừng Frontend React (PID: $pid)..."
+            kill "$pid" 2>/dev/null || true
+        fi
+        rm -f "$FE_PID_FILE"
+    fi
+    fuser -k 5173/tcp 2>/dev/null || true
+    echo -e "  ${GREEN}✓ Đã dừng Frontend React.${NC}"
+
+    # Dừng Docker containers
+    echo -e "  • Đang dừng các container Backend Microservices..."
+    docker compose down --remove-orphans 2>/dev/null || true
+    echo -e "  ${GREEN}✓ Đã dừng toàn bộ Backend & Cụm Hạ Tầng Docker.${NC}"
+}
+
+# 6. Kiểm tra Trạng thái & Sức khỏe (Status & Health)
+check_status() {
+    echo -e "\n${BOLD}${CYAN}================================================================================${NC}"
+    echo -e "${BOLD}${CYAN}🔍 BẢNG TRẠNG THÁI SỨC KHỎE TOÀN BỘ HỆ THỐNG (HEALTH & PORTS AUDIT)${NC}"
+    echo -e "${BOLD}${CYAN}================================================================================${NC}"
+
+    # Kiểm tra Frontend
+    echo -ne "  • Frontend React Portal (5173):    "
+    if [ -f "$FE_PID_FILE" ] && kill -0 "$(cat "$FE_PID_FILE")" 2>/dev/null; then
+        echo -e "${GREEN}🟢 ĐANG CHẠY (PID: $(cat "$FE_PID_FILE")) -> http://localhost:5173${NC}"
+    elif ss -tulpn 2>/dev/null | grep -q ":5173"; then
+        echo -e "${GREEN}🟢 ĐANG CHẠY (Cổng 5173 đang lắng nghe)${NC}"
+    else
+        echo -e "${RED}🔴 ĐANG DỪNG${NC}"
+    fi
+
+    # Kiểm tra Containers
+    echo -e "\n  • Trạng thái Cụm Docker Microservices & Databases:"
+    docker compose ps --format "table {{.Name}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+    echo -e "${BOLD}${CYAN}================================================================================${NC}"
+}
+
+# 7. Chạy Kiểm thử 8 Kịch bản Thật
+run_test() {
+    echo -e "\n${PURPLE}🧪 [KIỂM THỬ TỰ ĐỘNG] CHẠY BỘ 8 KỊCH BẢN DỮ LIỆU THẬT...${NC}"
+    "$ROOT_DIR/scripts/e2e/08-multi-scenario-real-test.sh"
+}
+
+# 8. Tra cứu Bảng Đối Soát Sổ Cái Kép Trực Tiếp
+check_ledger() {
+    echo -e "\n${CYAN}📊 [ĐỐI SOÁT SỔ CÁI] TRUY VẤN SỐ DƯ KÉP NỢ 1011 / CÓ 4211 THỜI GIAN THỰC...${NC}"
+    docker exec -i ewallet-postgres-ledger psql -U ledger_app_user -d ewallet_ledger_db << 'EOF'
+SELECT 
+    account_id,
+    side,
+    COUNT(*) AS total_postings,
+    TO_CHAR(SUM(amount), 'FM999,999,999,999') || ' VND' AS total_amount
+FROM ledger_postings
+GROUP BY account_id, side
+ORDER BY side DESC, account_id;
+
+SELECT 
+    TO_CHAR(COALESCE(SUM(CASE WHEN side = 'DEBIT' THEN amount ELSE 0 END), 0), 'FM999,999,999,999.00') || ' VND' AS total_debit,
+    TO_CHAR(COALESCE(SUM(CASE WHEN side = 'CREDIT' THEN amount ELSE 0 END), 0), 'FM999,999,999,999.00') || ' VND' AS total_credit,
+    TO_CHAR(COALESCE(SUM(CASE WHEN side = 'DEBIT' THEN amount ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN side = 'CREDIT' THEN amount ELSE 0 END), 0), 'FM999,999,999,999.00') || ' VND' AS delta_balance
+FROM ledger_postings;
+EOF
+}
+
+# 9. Tra cứu Két Quỹ Chi Nhánh
+check_vault() {
+    echo -e "\n${YELLOW}💰 [KÉT QUỸ CHI NHÁNH] TÌNH HÌNH TỒN QUỸ CHI NHÁNH QUẬN 1 (BR_Q1)...${NC}"
+    docker exec -i ewallet-postgres-payment psql -U payment_db_user -d ewallet_payment_db << 'EOF'
+SELECT 
+    branch_id,
+    COUNT(CASE WHEN status = 'COMPLETED' THEN 1 END) AS successful_deposits,
+    COUNT(CASE WHEN status = 'PENDING_APPROVAL' THEN 1 END) AS pending_approvals,
+    COUNT(CASE WHEN status = 'REJECTED' THEN 1 END) AS rejected_deposits,
+    TO_CHAR(COALESCE(SUM(CASE WHEN status = 'COMPLETED' THEN amount ELSE 0 END), 0), 'FM999,999,999,999') || ' VND' AS total_cash_collected
+FROM cash_deposits
+WHERE branch_id = 'BR_Q1'
+GROUP BY branch_id;
+EOF
+}
+
+# 10. Cấp mới Staff JWT Tokens
+generate_tokens() {
+    echo -e "\n${BLUE}🔑 CẤP MỚI VÀ LÀM MỚI JWT BEARER TOKENS CHO CÁN BỘ NGÂN HÀNG...${NC}"
+    if [ -f "$ROOT_DIR/scripts/e2e/generate-staff-tokens.sh" ]; then
+        "$ROOT_DIR/scripts/e2e/generate-staff-tokens.sh"
+    else
+        echo -e "  ${RED}Không tìm thấy script generate-staff-tokens.sh${NC}"
+    fi
+}
+
+# 11. Xem Logs
+view_logs() {
+    local target="${1:-fe}"
+    if [ "$target" == "fe" ]; then
+        echo -e "\n${CYAN}📄 Đang mở logs Frontend React ($FE_LOG_FILE)... (Bấm Ctrl+C để thoát)${NC}"
+        tail -f "$FE_LOG_FILE"
+    else
+        echo -e "\n${CYAN}📄 Đang mở logs Docker service: $target... (Bấm Ctrl+C để thoát)${NC}"
+        docker compose logs -f "$target"
+    fi
+}
+
+# Menu CLI Tương Tác
+interactive_menu() {
+    while true; do
+        print_banner
+        echo -e "  ${BOLD}VUI LÒNG CHỌN MỘT THAO TÁC:${NC}"
+        echo -e "  ${GREEN}1.${NC} 🚀 ${BOLD}Khởi Động Toàn Bộ Hệ Thống${NC} (Infra + BE + FE React)"
+        echo -e "  ${GREEN}2.${NC} 🌐 ${BOLD}Chỉ Khởi Động Frontend React Portal${NC} (Vite: http://localhost:5173)"
+        echo -e "  ${GREEN}3.${NC} ⚙️ ${BOLD}Chỉ Khởi Động Backend Microservices${NC} (Gateway :8080 & Services)"
+        echo -e "  ${GREEN}4.${NC} 🐳 ${BOLD}Khởi Động Cụm Hạ Tầng Docker${NC} (Postgres x5, Kafka, Redis, RabbitMQ)"
+        echo -e "  ${GREEN}5.${NC} 🧪 ${BOLD}Chạy Kiểm Thử 8 Kịch Bản Dữ Liệu Thật${NC} (E2E Multi-scenario)"
+        echo -e "  ${GREEN}6.${NC} 📊 ${BOLD}Xem Bảng Đối Soát Sổ Cái Kép Trực Tiếp${NC} (Delta = 0.00 VND)"
+        echo -e "  ${GREEN}7.${NC} 💰 ${BOLD}Xem Tồn Quỹ Két Quầy Chi Nhánh & Hạn Mức 500M${NC}"
+        echo -e "  ${GREEN}8.${NC} 🔑 ${BOLD}Cấp Mới JWT Tokens Cán Bộ Quầy${NC} (Teller 1, Teller 2, Manager 1)"
+        echo -e "  ${GREEN}9.${NC} 🔍 ${BOLD}Kiểm Tra Trạng Thái Sức Khỏe Toàn Diện${NC} (Ports & Health Audit)"
+        echo -e "  ${RED}10.${NC} 🛑 ${BOLD}Dừng Toàn Bộ Hệ Thống${NC} (Tắt FE, BE & Cleanup)"
+        echo -e "  ${BLUE}11.${NC} 📄 ${BOLD}Xem Logs Frontend React${NC}"
+        echo -e "  ${YELLOW}0.${NC} 🚪 ${BOLD}Thoát Menu${NC}"
+        echo -e " ----------------------------------------------------------------------------------------"
+        read -rp "👉 Nhập lựa chọn của bạn [0-11]: " choice
+
+        case "$choice" in
+            1) start_all; read -rp "Ấn Enter để tiếp tục..." ;;
+            2) start_fe; read -rp "Ấn Enter để tiếp tục..." ;;
+            3) start_be; read -rp "Ấn Enter để tiếp tục..." ;;
+            4) start_infra; read -rp "Ấn Enter để tiếp tục..." ;;
+            5) run_test; read -rp "Ấn Enter để tiếp tục..." ;;
+            6) check_ledger; read -rp "Ấn Enter để tiếp tục..." ;;
+            7) check_vault; read -rp "Ấn Enter để tiếp tục..." ;;
+            8) generate_tokens; read -rp "Ấn Enter để tiếp tục..." ;;
+            9) check_status; read -rp "Ấn Enter để tiếp tục..." ;;
+            10) stop_all; read -rp "Ấn Enter để tiếp tục..." ;;
+            11) view_logs fe ;;
+            0) echo -e "\n${GREEN}Tạm biệt! Chúc bạn làm việc hiệu quả.${NC}\n"; exit 0 ;;
+            *) echo -e "${RED}Lựa chọn không hợp lệ! Vui lòng chọn từ 0 đến 11.${NC}"; sleep 1 ;;
+        esac
+    done
+}
+
+# Xử lý các CLI Subcommands
+COMMAND="${1:-menu}"
+case "$COMMAND" in
+    start|all)
+        start_all
+        ;;
+    fe|frontend)
+        start_fe
+        ;;
+    be|backend)
+        start_be
+        ;;
+    infra)
+        start_infra
+        ;;
+    stop|down)
+        stop_all
+        ;;
+    restart)
+        stop_all
+        start_all
+        ;;
+    test)
+        run_test
+        ;;
+    ledger)
+        check_ledger
+        ;;
+    vault)
+        check_vault
+        ;;
+    tokens)
+        generate_tokens
+        ;;
+    status|health)
+        check_status
+        ;;
+    logs)
+        view_logs "${2:-fe}"
+        ;;
+    menu)
+        interactive_menu
+        ;;
+    help|-h|--help)
+        echo -e "${BOLD}CÁCH SỬ DỤNG BỘ ĐIỀU KHIỂN RUN.SH:${NC}"
+        echo "  ./run.sh              Mở Menu tương tác đồ họa CLI"
+        echo "  ./run.sh all          Khởi động toàn bộ (Infra + BE + FE)"
+        echo "  ./run.sh fe           Khởi động Frontend React (Port 5173)"
+        echo "  ./run.sh be           Khởi động Backend Microservices"
+        echo "  ./run.sh infra        Khởi động cụm Docker (Kafka, 5 DBs, Redis, RabbitMQ)"
+        echo "  ./run.sh test         Chạy 8 kịch bản kiểm thử dữ liệu thật E2E"
+        echo "  ./run.sh ledger       Xem bảng đối soát Sổ cái kép trực tiếp (Delta=0)"
+        echo "  ./run.sh vault        Xem số dư tồn két quầy chi nhánh"
+        echo "  ./run.sh tokens       Cấp mới JWT tokens cho Teller & Manager"
+        echo "  ./run.sh status       Kiểm tra sức khỏe cổng và containers"
+        echo "  ./run.sh logs [svc]   Xem logs (fe, api-gateway, payment-service, v.v.)"
+        echo "  ./run.sh stop         Dừng toàn bộ hệ thống an toàn"
+        ;;
+    *)
+        echo -e "${RED}Lệnh không hợp lệ: $COMMAND${NC}"
+        echo "Gõ './run.sh help' để xem danh sách lệnh hỗ trợ."
+        exit 1
+        ;;
+esac

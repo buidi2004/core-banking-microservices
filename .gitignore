@@ -34,6 +34,7 @@ target/
 tmp/
 *.pid
 .fe.pid
+.staff_tokens.env
 
 ### Node / Frontend ###
 node_modules/
