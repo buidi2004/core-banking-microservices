@@ -119,6 +119,42 @@ class AuthControllerTest {
     }
 
     @Test
+    @DisplayName("API POST /api/v1/auth/login - Đăng nhập bằng username teller1 trả về đầy đủ roles, branchId, token")
+    void shouldReturn200WhenLoginWithUsernameSuccessfully() throws Exception {
+        LoginRequest request = LoginRequest.builder()
+                .username("teller1")
+                .password("DemoPass#2026!")
+                .build();
+
+        AuthResponse mockResponse = AuthResponse.builder()
+                .token("mock-jwt-teller-token")
+                .userId("t0000001-0000-0000-0000-000000000001")
+                .username("teller1")
+                .fullName("Teller Nguyễn Văn A")
+                .phoneNumber("0911000001")
+                .email("teller1@banking.example.com")
+                .role("ROLE_TELLER")
+                .roles(java.util.List.of("ROLE_TELLER"))
+                .branchId("BR_Q1")
+                .kycTier("VERIFIED")
+                .build();
+
+        when(authService.login(any(LoginRequest.class), any(), any())).thenReturn(mockResponse);
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.token", is("mock-jwt-teller-token")))
+                .andExpect(jsonPath("$.data.username", is("teller1")))
+                .andExpect(jsonPath("$.data.fullName", is("Teller Nguyễn Văn A")))
+                .andExpect(jsonPath("$.data.role", is("ROLE_TELLER")))
+                .andExpect(jsonPath("$.data.roles[0]", is("ROLE_TELLER")))
+                .andExpect(jsonPath("$.data.branchId", is("BR_Q1")));
+    }
+
+    @Test
     @DisplayName("API POST /api/v1/auth/refresh - Refresh token thành công trả về HTTP 200 OK")
     void shouldReturn200WhenRefreshTokenSuccessfully() throws Exception {
         RefreshTokenRequest request = RefreshTokenRequest.builder()

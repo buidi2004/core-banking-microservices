@@ -41,17 +41,35 @@ public class JwtTokenProvider {
     }
 
     public String generateAccessToken(String userId, String phoneNumber, String role, String kycTier) {
+        return generateAccessToken(userId, phoneNumber, role, kycTier, "BR_MAIN", null);
+    }
+
+    public String generateAccessToken(String userId, String phoneNumber, String role, String kycTier, String branchId, String fullName) {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(accessTokenExpirationSeconds);
         String jti = UUID.randomUUID().toString();
 
-        return Jwts.builder()
+        String resolvedRole = (role != null && !role.isBlank()) ? role : "ROLE_USER";
+        String resolvedBranchId = (branchId != null && !branchId.isBlank()) ? branchId : "BR_MAIN";
+        java.util.List<String> rolesList = java.util.List.of(resolvedRole);
+
+        var builder = Jwts.builder()
                 .id(jti)
                 .subject(userId)
                 .claim("phone", phoneNumber)
-                .claim("role", role != null ? role : "ROLE_USER")
+                .claim("role", resolvedRole)
+                .claim("roles", rolesList)
                 .claim("kycTier", kycTier != null ? kycTier : "UNVERIFIED")
-                .claim("type", TOKEN_TYPE_ACCESS)
+                .claim("branch_id", resolvedBranchId)
+                .claim("branchId", resolvedBranchId)
+                .claim("type", TOKEN_TYPE_ACCESS);
+
+        if (fullName != null && !fullName.isBlank()) {
+            builder.claim("full_name", fullName)
+                   .claim("name", fullName);
+        }
+
+        return builder
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(secretKey)

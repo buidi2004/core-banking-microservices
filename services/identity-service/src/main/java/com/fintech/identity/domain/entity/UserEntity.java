@@ -13,7 +13,9 @@ import java.time.Instant;
 @Entity
 @Table(name = "users", indexes = {
     @Index(name = "idx_users_phone", columnList = "phone_number"),
-    @Index(name = "idx_users_status", columnList = "status")
+    @Index(name = "idx_users_status", columnList = "status"),
+    @Index(name = "idx_users_branch", columnList = "branch_id"),
+    @Index(name = "idx_users_username", columnList = "username")
 })
 @Getter
 @Setter
@@ -25,6 +27,9 @@ public class UserEntity {
     @Id
     @Column(length = 36, nullable = false)
     private String id;
+
+    @Column(length = 50, unique = true)
+    private String username;
 
     @Column(name = "phone_number", length = 15, nullable = false, unique = true)
     private String phoneNumber;
@@ -49,6 +54,10 @@ public class UserEntity {
     @Column(name = "kyc_tier", length = 20, nullable = false)
     @Builder.Default
     private String kycTier = "UNVERIFIED"; // UNVERIFIED, BASIC, VERIFIED, ENTERPRISE
+
+    @Column(name = "branch_id", length = 50)
+    @Builder.Default
+    private String branchId = "BR_MAIN";
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

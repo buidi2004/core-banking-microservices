@@ -59,6 +59,36 @@ class JwtTokenProviderTest {
     }
 
     @Test
+    @DisplayName("Sinh JWT Access Token cho cán bộ chứa đầy đủ roles, branch_id, full_name")
+    void shouldGenerateValidStaffAccessTokenWithRolesBranchIdAndFullName() {
+        String userId = "t0000001-0000-0000-0000-000000000001";
+        String phone = "0911000001";
+        String role = "ROLE_TELLER";
+        String kycTier = "VERIFIED";
+        String branchId = "BR_Q1";
+        String fullName = "Teller Nguyễn Văn A";
+
+        when(redisTemplate.hasKey(anyString())).thenReturn(false);
+
+        String token = tokenProvider.generateAccessToken(userId, phone, role, kycTier, branchId, fullName);
+        assertNotNull(token);
+
+        Claims claims = tokenProvider.parseAndValidateToken(token);
+        assertEquals(userId, claims.getSubject());
+        assertEquals(phone, claims.get("phone", String.class));
+        assertEquals(role, claims.get("role", String.class));
+        assertEquals("BR_Q1", claims.get("branch_id", String.class));
+        assertEquals("BR_Q1", claims.get("branchId", String.class));
+        assertEquals("Teller Nguyễn Văn A", claims.get("full_name", String.class));
+        assertEquals("Teller Nguyễn Văn A", claims.get("name", String.class));
+
+        @SuppressWarnings("unchecked")
+        java.util.List<String> roles = claims.get("roles", java.util.List.class);
+        assertNotNull(roles);
+        assertTrue(roles.contains("ROLE_TELLER"));
+    }
+
+    @Test
     @DisplayName("Sinh JWT Refresh Token với type=REFRESH")
     void shouldGenerateValidRefreshToken() {
         String userId = "usr-002";

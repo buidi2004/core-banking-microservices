@@ -76,7 +76,7 @@ class AuthServiceTest {
         when(userRepository.existsByPhoneNumber("0987654321")).thenReturn(false);
         when(userRepository.existsByEmail("nguyenvana@gmail.com")).thenReturn(false);
         when(passwordEncoder.encode("Password123!")).thenReturn("$2a$10$encodedPasswordHash");
-        when(tokenProvider.generateAccessToken(anyString(), eq("0987654321"), eq("ROLE_USER"), eq("UNVERIFIED")))
+        when(tokenProvider.generateAccessToken(anyString(), eq("0987654321"), eq("ROLE_USER"), eq("UNVERIFIED"), any(), any()))
                 .thenReturn("mock-access-token-jwt");
         when(tokenProvider.generateRefreshToken(anyString()))
                 .thenReturn("mock-refresh-token-jwt");
@@ -165,5 +165,88 @@ class AuthServiceTest {
         assertThrows(IllegalArgumentException.class, () -> authService.register(request));
         verify(userRepository, never()).save(any());
         verify(eventPublisher, never()).publishUserRegistered(any());
+    }
+
+    @Test
+    @DisplayName("Đăng nhập thành công bằng username teller1, trả về token, roles, branchId")
+    void shouldLoginSuccessfullyWithUsername() {
+        // Arrange
+        com.fintech.identity.dto.LoginRequest loginRequest = com.fintech.identity.dto.LoginRequest.builder()
+                .username("teller1")
+                .password("DemoPass#2026!")
+                .build();
+
+        UserEntity mockUser = UserEntity.builder()
+                .id("t0000001-0000-0000-0000-000000000001")
+                .username("teller1")
+                .phoneNumber("0911000001")
+                .fullName("Teller Nguyễn Văn A")
+                .email("teller1@banking.example.com")
+                .passwordHash("$2a$10$encodedHash")
+                .role("ROLE_TELLER")
+                .branchId("BR_Q1")
+                .status("ACTIVE")
+                .kycTier("VERIFIED")
+                .build();
+
+        when(userRepository.findByIdentifier("teller1")).thenReturn(java.util.Optional.of(mockUser));
+        when(passwordEncoder.matches("DemoPass#2026!", "$2a$10$encodedHash")).thenReturn(true);
+        when(tokenProvider.generateAccessToken("t0000001-0000-0000-0000-000000000001", "0911000001", "ROLE_TELLER", "VERIFIED", "BR_Q1", "Teller Nguyễn Văn A"))
+                .thenReturn("mock-access-token-teller");
+        when(tokenProvider.generateRefreshToken("t0000001-0000-0000-0000-000000000001"))
+                .thenReturn("mock-refresh-token-teller");
+
+        // Act
+        AuthResponse response = authService.login(loginRequest, "127.0.0.1", "Mozilla/5.0");
+
+        // Assert
+        assertNotNull(response);
+        assertEquals("mock-access-token-teller", response.getToken());
+        assertEquals("teller1", response.getUsername());
+        assertEquals("Teller Nguyễn Văn A", response.getFullName());
+        assertEquals("ROLE_TELLER", response.getRole());
+        assertEquals("BR_Q1", response.getBranchId());
+        assertTrue(response.getRoles().contains("ROLE_TELLER"));
+    }
+
+    @Test
+    @DisplayName("Đăng nhập bằng số điện thoại trả về thông tin đăng nhập thành công")
+    void shouldLoginSuccessfullyWithPhoneNumber() {
+        // Arrange
+        com.fintech.identity.dto.LoginRequest loginRequest = com.fintech.identity.dto.LoginRequest.builder()
+                .phoneNumber("0911000003")
+                .password("DemoPass#2026!")
+                .build();
+
+        UserEntity mockUser = UserEntity.builder()
+                .id("m0000001-0000-0000-0000-000000000001")
+                .username("manager1")
+                .phoneNumber("0911000003")
+                .fullName("Manager Lê Hoàng C")
+                .email("manager1@banking.example.com")
+                .passwordHash("$2a$10$encodedHash")
+                .role("ROLE_MANAGER")
+                .branchId("BR_Q1")
+                .status("ACTIVE")
+                .kycTier("VERIFIED")
+                .build();
+
+        when(userRepository.findByIdentifier("0911000003")).thenReturn(java.util.Optional.of(mockUser));
+        when(passwordEncoder.matches("DemoPass#2026!", "$2a$10$encodedHash")).thenReturn(true);
+        when(tokenProvider.generateAccessToken("m0000001-0000-0000-0000-000000000001", "0911000003", "ROLE_MANAGER", "VERIFIED", "BR_Q1", "Manager Lê Hoàng C"))
+                .thenReturn("mock-access-token-manager");
+        when(tokenProvider.generateRefreshToken("m0000001-0000-0000-0000-000000000001"))
+                .thenReturn("mock-refresh-token-manager");
+
+        // Act
+        AuthResponse response = authService.login(loginRequest, "127.0.0.1", "Mozilla/5.0");
+
+        // Assert
+        assertNotNull(response);
+        assertEquals("mock-access-token-manager", response.getToken());
+        assertEquals("manager1", response.getUsername());
+        assertEquals("Manager Lê Hoàng C", response.getFullName());
+        assertEquals("ROLE_MANAGER", response.getRole());
+        assertEquals("BR_Q1", response.getBranchId());
     }
 }

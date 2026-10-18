@@ -33,7 +33,7 @@ public class AuthController {
         String ipAddress = getClientIp(httpRequest);
         String userAgent = httpRequest.getHeader(HttpHeaders.USER_AGENT);
 
-        log.info("Nhận yêu cầu đăng nhập từ SĐT: {}, IP: {}", request.getPhoneNumber(), ipAddress);
+        log.info("Nhận yêu cầu đăng nhập từ tài khoản: {}, IP: {}", request.getIdentifier(), ipAddress);
         AuthResponse response = authService.login(request, ipAddress, userAgent);
         return ResponseEntity.ok(ApiResponse.ok(response, "Đăng nhập thành công"));
     }

@@ -37,7 +37,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/users/**",
                                 "/api/v1/kyc/**",
-                                "/api/v1/sessions/**"
+                                "/api/v1/sessions/**",
+                                "/api/v1/staff/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
