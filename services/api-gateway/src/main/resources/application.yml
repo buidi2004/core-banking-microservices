@@ -1,0 +1,187 @@
+# ==============================================================================
+# API GATEWAY ROUTES - GIAI ĐOẠN 1: TÁCH NOTIFICATION SERVICE (Strangler Fig)
+# File: gateway/gateway-routes.yml
+# Mục tiêu: Định tuyến 6 prefix Notification sang notification-service:8085,
+#           toàn bộ request còn lại fallback về Monolith monolith:8080.
+# Rollback (< 30s): Đổi uri các route notification về http://monolith:8080
+#                   (các controller này vẫn còn nguyên trong Monolith).
+# ==============================================================================
+
+spring:
+  application:
+    name: ewallet-api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        # Gỡ header giả mạo từ client trước khi xác thực/route (chống spoofing X-User-*)
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+
+      routes:
+        # ----------------------------------------------------------------------------
+        # GIAI ĐOẠN 1: 6 ROUTE CỦA NOTIFICATION SERVICE -> notification-service:8085
+        # (Dịch vụ mới sở hữu ewallet_notification_db)
+        # ----------------------------------------------------------------------------
+
+        - id: notification-service-notifications
+          uri: http://notification-service:8085
+          predicates:
+            - Path=/api/v1/notifications/**
+          filters:
+            - name: JwtAuthenticationFilter   # Tự kiểm tra blacklist: route này bắt buộc JWT
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCb
+                fallbackUri: forward:/fallback/notification
+
+        - id: notification-service-devices
+          uri: http://notification-service:8085
+          predicates:
+            - Path=/api/v1/devices/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCb
+                fallbackUri: forward:/fallback/notification
+
+        - id: notification-service-support
+          uri: http://notification-service:8085
+          predicates:
+            - Path=/api/v1/support/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCb
+                fallbackUri: forward:/fallback/notification
+
+        - id: notification-service-feedback
+          uri: http://notification-service:8085
+          predicates:
+            - Path=/api/v1/feedback/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCb
+                fallbackUri: forward:/fallback/notification
+
+        - id: notification-service-promotions
+          uri: http://notification-service:8085
+          predicates:
+            - Path=/api/v1/promotions/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCb
+                fallbackUri: forward:/fallback/notification
+
+        - id: notification-service-referrals
+          uri: http://notification-service:8085
+          predicates:
+            - Path=/api/v1/referrals/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: notificationServiceCb
+                fallbackUri: forward:/fallback/notification
+
+        # ----------------------------------------------------------------------------
+        # GIAI ĐOẠN 2 (OPTIONAL - CHẠY SONG SONG DUAL-RUN):
+        # Route Ledger khi bật切割 chuyển API (Bước 2.3) - giữ COMMENT cho tới
+        # khi báo cáo đối soát 3 ngày khớp 100%.
+        # ----------------------------------------------------------------------------
+        # - id: ledger-service-api
+        #   uri: http://ledger-service:8084
+        #   predicates:
+        #     - Path=/api/v1/ledger/**
+        #   filters:
+        #     - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # GIAI ĐOẠN 3: TÁCH IDENTITY & AUTH SERVICE -> identity-service:8081
+        # (Dịch vụ sở hữu ewallet_identity_db)
+        # ----------------------------------------------------------------------------
+
+        - id: identity-service-auth
+          uri: http://identity-service:8081
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        - id: identity-service-users
+          uri: http://identity-service:8081
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        - id: identity-service-kyc
+          uri: http://identity-service:8081
+          predicates:
+            - Path=/api/v1/kyc/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        - id: identity-service-sessions
+          uri: http://identity-service:8081
+          predicates:
+            - Path=/api/v1/sessions/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        # ----------------------------------------------------------------------------
+        # FALLBACK: TOÀN BỘ CÁC API CÒN LẠI -> MONOLITH CŨ (monolith:8080)
+        # (Wallet Core, Payment, Transaction, Ledger query, QR, ...)
+        # ----------------------------------------------------------------------------
+
+        - id: monolith-fallback
+          uri: http://monolith:8080
+          predicates:
+            - Path=/api/v1/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - StripPrefix=0
+
+# ------------------------------------------------------------------------------
+# CIRCUIT BREAKER (Resilience4j): Nếu microservice downstream sập, chuyển về fallback
+# ------------------------------------------------------------------------------
+resilience4j:
+  circuitbreaker:
+    instances:
+      notificationServiceCb:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 5
+      identityServiceCb:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 5

@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: ewallet-api-gateway-test
+  cloud:
+    gateway:
+      routes: []
+
+wallet:
+  jwt:
+    secret: SuperSecretKeyForFintechWalletAppShouldBeAtLeast32BytesLong!

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Fintech E-Wallet 5-Microservices Architecture",
+    "quality_profile": "showcase",
+    "viewBox": [1320, 780],
+    "views": [
+      {
+        "id": "core-transfer-saga",
+        "label": "P2P transfer saga orchestrator",
+        "focus": ["client_app", "api_gateway", "svc_payment", "svc_wallet", "event_bus", "svc_ledger", "svc_notification"],
+        "note": "Payment orchestrator reserves balance in Wallet Core, publishes outbox event, and notifies consumers."
+      },
+      {
+        "id": "auth-session-flow",
+        "label": "Identity, eKYC & session management",
+        "focus": ["client_app", "api_gateway", "svc_identity", "redis_cluster"],
+        "note": "Auth service manages user identity, eKYC tier limits, and Redis session blacklist."
+      },
+      {
+        "id": "accounting-audit",
+        "label": "Double-entry ledger & audit stream",
+        "focus": ["event_bus", "svc_ledger"],
+        "note": "Ledger service consumes outbox events asynchronously to record double-entry balanced postings."
+      }
+    ]
+  },
+  "components": [
+    { "id": "client_app", "type": "frontend", "label": "Client Apps", "sublabel": "Mobile (RN) & Web", "pos": [40, 350], "size": [140, 64] },
+    { "id": "api_gateway", "type": "security", "label": "API Gateway", "sublabel": "Routing & Rate Limit", "pos": [240, 350], "size": [140, 64], "tag": ":443 HTTPS" },
+    { "id": "svc_identity", "type": "backend", "label": "Identity Service", "sublabel": "Auth, eKYC & Session", "brand": "spring", "pos": [490, 80], "size": [160, 64], "tag": "Port :8081" },
+    { "id": "svc_wallet", "type": "backend", "label": "Wallet Core", "sublabel": "Balance & Concurrency", "brand": "spring", "pos": [490, 215], "size": [160, 64], "tag": "Port :8082" },
+    { "id": "svc_payment", "type": "backend", "label": "Payment Engine", "sublabel": "Saga, QR & Transfers", "brand": "spring", "pos": [490, 350], "size": [160, 64], "tag": "Port :8083" },
+    { "id": "svc_ledger", "type": "backend", "label": "Ledger Service", "sublabel": "Double-Entry Bookkeeping", "brand": "spring", "pos": [490, 485], "size": [160, 64], "tag": "Port :8084" },
+    { "id": "svc_notification", "type": "backend", "label": "Notification Svc", "sublabel": "FCM & WebSocket Alert", "brand": "spring", "pos": [490, 620], "size": [160, 64], "tag": "Port :8085" },
+    { "id": "redis_cluster", "type": "database", "label": "Redis Cluster", "sublabel": "Locks & Token Blacklist", "brand": "redis", "pos": [770, 150], "size": [150, 64], "tag": ":6379" },
+    { "id": "event_bus", "type": "messagebus", "label": "RabbitMQ Broker", "sublabel": "Outbox Event Exchange", "brand": "rabbitmq", "pos": [770, 420], "size": [150, 64], "tag": ":5672 AMQP" },
+    { "id": "banking_gw", "type": "external", "label": "Banking Gateways", "sublabel": "NAPAS 247 & VietQR", "pos": [1040, 350], "size": [150, 64], "tag": "REST / ISO8583" },
+    { "id": "fcm_cloud", "type": "cloud", "label": "Firebase FCM", "sublabel": "Mobile Push Notification", "pos": [1040, 620], "size": [150, 64], "tag": "Google Cloud" }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Decoupled Microservices Ecosystem", "wraps": ["svc_identity", "svc_wallet", "svc_payment", "svc_ledger", "svc_notification", "redis_cluster", "event_bus"] }
+  ],
+  "connections": [
+    { "id": "conn-client-gw", "from": "client_app", "to": "api_gateway", "label": "HTTPS REST", "variant": "emphasis" },
+    { "id": "conn-gw-auth", "from": "api_gateway", "to": "svc_identity", "label": "Auth API", "fromSide": "top", "toSide": "left" },
+    { "id": "conn-gw-wallet", "from": "api_gateway", "to": "svc_wallet", "label": "Wallet API", "fromSide": "top", "toSide": "left" },
+    { "id": "conn-gw-payment", "from": "api_gateway", "to": "svc_payment", "label": "Transfer API", "variant": "emphasis" },
+    { "id": "conn-gw-ledger", "from": "api_gateway", "to": "svc_ledger", "label": "Audit Query", "fromSide": "bottom", "toSide": "left" },
+    { "id": "conn-gw-notify", "from": "api_gateway", "to": "svc_notification", "label": "Inbox API", "fromSide": "bottom", "toSide": "left" },
+    { "id": "conn-payment-wallet", "from": "svc_payment", "to": "svc_wallet", "label": "gRPC Balance", "variant": "emphasis", "fromSide": "top", "toSide": "bottom" },
+    { "id": "conn-wallet-redis", "from": "svc_wallet", "to": "redis_cluster", "label": "Redis Lock", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-identity-redis", "from": "svc_identity", "to": "redis_cluster", "label": "Session TTL", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-payment-mq", "from": "svc_payment", "to": "event_bus", "label": "Outbox Events", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-payment-bank", "from": "svc_payment", "to": "banking_gw", "label": "EMVCo VietQR", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-mq-ledger", "from": "event_bus", "to": "svc_ledger", "label": "Ledger Consumer", "fromSide": "left", "toSide": "right" },
+    { "id": "conn-mq-notify", "from": "event_bus", "to": "svc_notification", "label": "Notify Consumer", "fromSide": "bottom", "toSide": "right" },
+    { "id": "conn-notify-fcm", "from": "svc_notification", "to": "fcm_cloud", "label": "FCM Push Alert", "fromSide": "right", "toSide": "left" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Domain-Driven Microservices",
+      "items": [
+        "Separation into 5 autonomous services with isolated databases",
+        "Hexagonal domain layer preserved per service boundary"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Saga & Concurrency Strategy",
+      "items": [
+        "Payment Engine coordinates P2P transfers via gRPC and Outbox",
+        "Pessimistic DB lock and Redis distributed lock isolate balances"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Zero-Loss Event-Driven Accounting",
+      "items": [
+        "Double-entry bookkeeping decoupled via RabbitMQ consumer",
+        "Transactional outbox guarantees eventual consistency"
+      ]
+    }
+  ]
+}

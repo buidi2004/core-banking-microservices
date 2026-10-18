@@ -1,4 +1,4 @@
-# 🚀 Fintech E-Wallet: Hệ Thống Ví Điện Tử Đạt Chuẩn Ngân Hàng
+# 🚀 Core Banking Microservices: Hệ Thống Ngân Hàng Lõi Đạt Chuẩn Kiến Trúc Database-per-Service
 
 [![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot 3](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen.svg)](https://spring.io/projects/spring-boot)

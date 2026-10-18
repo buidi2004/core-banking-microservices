@@ -1,0 +1,125 @@
+package com.fintech.identity.security;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.UUID;
+
+@Slf4j
+@Component
+public class JwtTokenProvider {
+
+    private final SecretKey secretKey;
+    private final long accessTokenExpirationSeconds;
+    private final long refreshTokenExpirationSeconds;
+    private final StringRedisTemplate redisTemplate;
+
+    public static final String TOKEN_TYPE_ACCESS = "ACCESS";
+    public static final String TOKEN_TYPE_REFRESH = "REFRESH";
+    private static final String BLACKLIST_KEY_PREFIX = "identity:blacklist:";
+
+    public JwtTokenProvider(
+            @Value("${wallet.jwt.secret:SuperSecretKeyForFintechWalletAppShouldBeAtLeast32BytesLong!}") String secret,
+            @Value("${wallet.jwt.access-token-expiration-seconds:3600}") long accessTokenExpirationSeconds,
+            @Value("${wallet.jwt.refresh-token-expiration-seconds:604800}") long refreshTokenExpirationSeconds,
+            StringRedisTemplate redisTemplate) {
+        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.accessTokenExpirationSeconds = accessTokenExpirationSeconds;
+        this.refreshTokenExpirationSeconds = refreshTokenExpirationSeconds;
+        this.redisTemplate = redisTemplate;
+    }
+
+    public String generateAccessToken(String userId, String phoneNumber, String role, String kycTier) {
+        Instant now = Instant.now();
+        Instant expiry = now.plusSeconds(accessTokenExpirationSeconds);
+        String jti = UUID.randomUUID().toString();
+
+        return Jwts.builder()
+                .id(jti)
+                .subject(userId)
+                .claim("phone", phoneNumber)
+                .claim("role", role != null ? role : "ROLE_USER")
+                .claim("kycTier", kycTier != null ? kycTier : "UNVERIFIED")
+                .claim("type", TOKEN_TYPE_ACCESS)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String generateRefreshToken(String userId) {
+        Instant now = Instant.now();
+        Instant expiry = now.plusSeconds(refreshTokenExpirationSeconds);
+        String jti = UUID.randomUUID().toString();
+
+        return Jwts.builder()
+                .id(jti)
+                .subject(userId)
+                .claim("type", TOKEN_TYPE_REFRESH)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public Claims parseAndValidateToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            String jti = claims.getId();
+            if (isBlacklisted(jti, token)) {
+                throw new JwtException("Token đã bị thu hồi (đăng xuất)");
+            }
+            return claims;
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("Token không hợp lệ hoặc hết hạn: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public void blacklistToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            String jti = claims.getId();
+            Date expiration = claims.getExpiration();
+            long remainingSeconds = (expiration.getTime() - System.currentTimeMillis()) / 1000;
+
+            if (remainingSeconds > 0) {
+                String key = BLACKLIST_KEY_PREFIX + (jti != null ? jti : Integer.toHexString(token.hashCode()));
+                redisTemplate.opsForValue().set(key, "REVOKED", Duration.ofSeconds(remainingSeconds));
+                log.info("Đã đưa token jti={} vào Redis Blacklist trong {} giây", jti, remainingSeconds);
+            }
+        } catch (Exception e) {
+            log.error("Không thể blacklist token: {}", e.getMessage());
+        }
+    }
+
+    public boolean isBlacklisted(String jti, String token) {
+        String key = BLACKLIST_KEY_PREFIX + (jti != null ? jti : Integer.toHexString(token.hashCode()));
+        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    public long getAccessTokenExpirationSeconds() {
+        return accessTokenExpirationSeconds;
+    }
+}

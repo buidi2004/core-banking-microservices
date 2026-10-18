@@ -1,0 +1,40 @@
+# ==============================================================================
+# NOTIFICATION & ENGAGEMENT SERVICE CONFIGURATION
+# Profile: notification
+# ==============================================================================
+server:
+  port: 8085
+
+spring:
+  application:
+    name: notification-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5437}/ewallet_notification_db
+    username: ${DB_USER:notification_db_user}
+    password: ${DB_PASS:NotificationDb#Secure2025!}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: NotificationHikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:wallet}
+    password: ${RABBITMQ_PASS:wallet123}
+
+firebase:
+  credential:
+    path: ${FIREBASE_CREDENTIAL_PATH:classpath:firebase-service-account.json}

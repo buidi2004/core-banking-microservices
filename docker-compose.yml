@@ -1,55 +1,162 @@
-version: '3.8'
+# ==============================================================================
+# HỆ THỐNG MICROSERVICES VÍ ĐIỆN TỬ (DATABASE-PER-SERVICE)
+# Bao gồm:
+#   1. 5 Postgres instances/databases độc lập (Identity, Wallet, Payment, Ledger, Notification)
+#   2. Cụm Redis tập trung (Distributed Lock, Blacklist JWT, Idempotency)
+#   3. Message Broker RabbitMQ (Exchange topic, Dead Letter Exchange)
+#   4. API Gateway (Spring Cloud Gateway / Route Dispatcher / JWT Filter)
+#   5. 5 Microservices riêng biệt (Identity, Wallet, Payment, Ledger, Notification)
+# ==============================================================================
 
 services:
-  wallet-service:
-    build: ./backend
-    container_name: wallet-service
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      rabbitmq:
-        condition: service_started
-    networks:
-      - wallet-network
-
-  postgres:
+  # ----------------------------------------------------------------------------
+  # 1. DATABASE 1: IDENTITY & AUTH SERVICE DB
+  # ----------------------------------------------------------------------------
+  postgres-identity:
     image: postgres:15-alpine
-    container_name: wallet-postgres
+    container_name: ewallet-postgres-identity
+    restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
-      POSTGRES_DB: walletdb
-      POSTGRES_USER: walletuser
-      POSTGRES_PASSWORD: walletpassword
+      POSTGRES_DB: ewallet_identity_db
+      POSTGRES_USER: identity_db_user
+      POSTGRES_PASSWORD: IdentityDb#Secure2025!
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-identity-data:/var/lib/postgresql/data
+      - ./services/identity-service/src/main/resources/db/migration/V1__init_identity_db.sql:/docker-entrypoint-initdb.d/01-init-identity.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U walletuser -d walletdb"]
+      test: ["CMD-SHELL", "pg_isready -U identity_db_user -d ewallet_identity_db"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - wallet-network
+      - microservices-network
 
+  # ----------------------------------------------------------------------------
+  # 2. DATABASE 2: WALLET CORE SERVICE DB (High-speed balance locks)
+  # ----------------------------------------------------------------------------
+  postgres-wallet:
+    image: postgres:15-alpine
+    container_name: ewallet-postgres-wallet
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: ewallet_wallet_db
+      POSTGRES_USER: wallet_db_user
+      POSTGRES_PASSWORD: WalletDb#Secure2025!
+    volumes:
+      - postgres-wallet-data:/var/lib/postgresql/data
+      - ./services/wallet-service/src/main/resources/db/migration/V1__init_wallet_db.sql:/docker-entrypoint-initdb.d/01-init-wallet.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wallet_db_user -d ewallet_wallet_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  # ----------------------------------------------------------------------------
+  # 3. DATABASE 3: PAYMENT & TRANSACTION SAGA DB
+  # ----------------------------------------------------------------------------
+  postgres-payment:
+    image: postgres:15-alpine
+    container_name: ewallet-postgres-payment
+    restart: unless-stopped
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: ewallet_payment_db
+      POSTGRES_USER: payment_db_user
+      POSTGRES_PASSWORD: PaymentDb#Secure2025!
+    volumes:
+      - postgres-payment-data:/var/lib/postgresql/data
+      - ./services/payment-service/src/main/resources/db/migration/V1__init_payment_db.sql:/docker-entrypoint-initdb.d/01-init-payment.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_db_user -d ewallet_payment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  # ----------------------------------------------------------------------------
+  # 4. DATABASE 4: GENERAL LEDGER & AUDIT DB (Append-Only)
+  # ----------------------------------------------------------------------------
+  postgres-ledger:
+    image: postgres:15-alpine
+    container_name: ewallet-postgres-ledger
+    restart: unless-stopped
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: ewallet_ledger_db
+      POSTGRES_USER: ledger_app_user
+      POSTGRES_PASSWORD: LedgerApp#Secure2025!
+    volumes:
+      - postgres-ledger-data:/var/lib/postgresql/data
+      - ./services/ledger-service/src/main/resources/db/migration/V1__init_ledger_db.sql:/docker-entrypoint-initdb.d/01-init-ledger.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger_app_user -d ewallet_ledger_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  # ----------------------------------------------------------------------------
+  # 5. DATABASE 5: NOTIFICATION & ENGAGEMENT SERVICE DB
+  # ----------------------------------------------------------------------------
+  postgres-notification:
+    image: postgres:15-alpine
+    container_name: ewallet-postgres-notification
+    restart: unless-stopped
+    ports:
+      - "5437:5432"
+    environment:
+      POSTGRES_DB: ewallet_notification_db
+      POSTGRES_USER: notification_db_user
+      POSTGRES_PASSWORD: NotificationDb#Secure2025!
+    volumes:
+      - postgres-notification-data:/var/lib/postgresql/data
+      - ./services/notification-service/src/main/resources/db/migration/V1__init_notification_db.sql:/docker-entrypoint-initdb.d/01-init-notification.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notification_db_user -d ewallet_notification_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  # ----------------------------------------------------------------------------
+  # REDIS DISTRIBUTED CACHE & LOCK
+  # ----------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
-    container_name: wallet-redis
+    container_name: ewallet-redis
+    restart: unless-stopped
     ports:
+      - "6379:6379"
       - "6381:6379"
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
-      - redis-data:/data
+      - redis-microservices-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
-      - wallet-network
+      - microservices-network
 
+  # ----------------------------------------------------------------------------
+  # RABBITMQ MESSAGE BROKER (Topic Exchanges, Dead Letter, DLQ)
+  # ----------------------------------------------------------------------------
   rabbitmq:
-    image: rabbitmq:3-management
-    container_name: wallet-rabbitmq
+    image: rabbitmq:3-management-alpine
+    container_name: ewallet-rabbitmq
+    restart: unless-stopped
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -57,15 +164,134 @@ services:
       RABBITMQ_DEFAULT_USER: wallet
       RABBITMQ_DEFAULT_PASS: wallet123
     volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
+      - rabbitmq-microservices-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - wallet-network
+      - microservices-network
+
+  # ----------------------------------------------------------------------------
+  # API GATEWAY (Spring Cloud Gateway)
+  # ----------------------------------------------------------------------------
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: ewallet-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - microservices-network
+
+  # ----------------------------------------------------------------------------
+  # 5 MICROSERVICES CONTAINERS
+  # ----------------------------------------------------------------------------
+  identity-service:
+    build: ./services/identity-service
+    container_name: ewallet-identity-service
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: postgres-identity
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      postgres-identity:
+        condition: service_healthy
+    networks:
+      - microservices-network
+
+  wallet-service:
+    build: ./services/wallet-service
+    container_name: ewallet-wallet-service
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+      - "9090:9090"
+    environment:
+      DB_HOST: postgres-wallet
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      postgres-wallet:
+        condition: service_healthy
+    networks:
+      - microservices-network
+
+  payment-service:
+    build: ./services/payment-service
+    container_name: ewallet-payment-service
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      DB_HOST: postgres-payment
+      DB_PORT: 5432
+      WALLET_GRPC_HOST: wallet-service
+      WALLET_GRPC_PORT: 9090
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+    networks:
+      - microservices-network
+
+  ledger-service:
+    build: ./services/ledger-service
+    container_name: ewallet-ledger-service
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      DB_HOST: postgres-ledger
+      DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      postgres-ledger:
+        condition: service_healthy
+    networks:
+      - microservices-network
+
+  notification-service:
+    build: ./services/notification-service
+    container_name: ewallet-notification-service
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      DB_HOST: postgres-notification
+      DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+    networks:
+      - microservices-network
 
 volumes:
-  postgres-data:
-  redis-data:
-  rabbitmq-data:
+  postgres-identity-data:
+  postgres-wallet-data:
+  postgres-payment-data:
+  postgres-ledger-data:
+  postgres-notification-data:
+  redis-microservices-data:
+  rabbitmq-microservices-data:
 
 networks:
-  wallet-network:
+  microservices-network:
+    name: ewallet-microservices-net
     driver: bridge
