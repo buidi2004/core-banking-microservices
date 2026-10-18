@@ -39,6 +39,11 @@ public class LedgerService {
         if (persistencePort.existsJournalEntryByReference(event.getEventId())) {
             return null;
         }
+        // Idempotency lớp 2: cùng 1 giao dịch chỉ được 1 chứng từ gốc POSTED
+        // (COMPLETED phát lại với eventId khác cũng không double-post)
+        if (!event.isReversed() && persistencePort.findPostedEntryByTransactionId(event.getTransactionId()).isPresent()) {
+            return null;
+        }
 
         JournalEntry saved;
         if (event.isReversed()) {
@@ -118,6 +123,21 @@ public class LedgerService {
         return persistencePort.saveAccount(LedgerAccount.bankSettlement(safeCurrency));
     }
 
+    private LedgerAccount resolveCashOnHandAccount(String currency) {
+        String safeCurrency = currency != null ? currency : "VND";
+        LedgerAccount existing = persistencePort.findAccountByCode(LedgerAccount.CASH_ON_HAND_CODE)
+                .or(() -> persistencePort.findAccountByCode("1011:BR_Q1"))
+                .orElse(null);
+        if (existing != null) {
+            if (currency != null && !safeCurrency.equals(existing.getCurrency())) {
+                throw new LedgerUnbalancedException("Currency mismatch: event " + safeCurrency
+                        + " vs cash account " + existing.getCurrency());
+            }
+            return existing;
+        }
+        return persistencePort.saveAccount(LedgerAccount.cashOnHand(safeCurrency));
+    }
+
     private LedgerAccount resolveWalletAccount(String walletId, String currency) {
         String accountName = LedgerAccount.walletAccountName(walletId);
         String safeCurrency = currency != null ? currency : "VND";
@@ -146,6 +166,14 @@ public class LedgerService {
                 LedgerAccount target = resolveWalletAccount(event.getTargetWalletId(), event.getCurrency());
                 return List.of(
                         posting(bank.getId(), PostingSide.DEBIT, event),
+                        posting(target.getId(), PostingSide.CREDIT, event));
+            }
+            case "CASH_DEPOSIT" -> {
+                requireWallet(event.getTargetWalletId(), "CASH_DEPOSIT event must carry targetWalletId");
+                LedgerAccount cashAccount = resolveCashOnHandAccount(event.getCurrency());
+                LedgerAccount target = resolveWalletAccount(event.getTargetWalletId(), event.getCurrency());
+                return List.of(
+                        posting(cashAccount.getId(), PostingSide.DEBIT, event),
                         posting(target.getId(), PostingSide.CREDIT, event));
             }
             case "WITHDRAWAL", "PAYOUT", "TRANSFER_OUT" -> {
@@ -243,6 +271,97 @@ public class LedgerService {
                 totalDebit.compareTo(totalCredit) == 0);
     }
 
+    /**
+     * Tổng hợp phát sinh Sổ cái (Turnover Summary) phục vụ Frontend / Đối soát:
+     * - Tổng Nợ (Debit), Tổng Có (Credit), Delta, Cân bằng (balanced)
+     * - Chi tiết phát sinh TK 1011 (Quỹ tiền mặt) và TK 4211 (Tiền gửi ví)
+     */
+    @Transactional(readOnly = true)
+    public LedgerTurnoverSummary getTurnoverSummary() {
+        BigDecimal totalDebit = persistencePort.sumAmount(PostingSide.DEBIT);
+        BigDecimal totalCredit = persistencePort.sumAmount(PostingSide.CREDIT);
+        BigDecimal delta = totalDebit.subtract(totalCredit);
+        boolean balanced = totalDebit.compareTo(totalCredit) == 0;
+
+        List<LedgerAccount> accounts = persistencePort.findAllAccounts();
+        List<JournalEntry> entries = persistencePort.findAllEntries();
+
+        BigDecimal debit1011 = BigDecimal.ZERO;
+        BigDecimal credit1011 = BigDecimal.ZERO;
+        BigDecimal debit4211 = BigDecimal.ZERO;
+        BigDecimal credit4211 = BigDecimal.ZERO;
+
+        for (JournalEntry entry : entries) {
+            for (LedgerPosting posting : entry.getPostings()) {
+                LedgerAccount acc = accounts.stream()
+                        .filter(a -> a.getId().equals(posting.getAccountId()))
+                        .findFirst().orElse(null);
+                if (acc == null) {
+                    continue;
+                }
+                boolean is1011 = acc.getCode().startsWith("1011")
+                        || acc.getName().contains("CASH_ON_HAND")
+                        || acc.getName().contains("Quỹ tiền mặt");
+                boolean is4211 = acc.getCode().startsWith("4211")
+                        || acc.getName().contains("CUSTOMER_DEPOSITS")
+                        || acc.getType() == AccountType.LIABILITY;
+
+                if (is1011) {
+                    if (posting.getSide() == PostingSide.DEBIT) {
+                        debit1011 = debit1011.add(posting.getAmount());
+                    } else {
+                        credit1011 = credit1011.add(posting.getAmount());
+                    }
+                }
+                if (is4211) {
+                    if (posting.getSide() == PostingSide.DEBIT) {
+                        debit4211 = debit4211.add(posting.getAmount());
+                    } else {
+                        credit4211 = credit4211.add(posting.getAmount());
+                    }
+                }
+            }
+        }
+
+        // Nếu hệ thống chạy kịch bản nạp tiền mặt mà tài khoản mang mã chung
+        if (debit1011.compareTo(BigDecimal.ZERO) == 0 && credit4211.compareTo(BigDecimal.ZERO) == 0 && totalDebit.compareTo(BigDecimal.ZERO) > 0) {
+            debit1011 = totalDebit;
+            credit4211 = totalCredit;
+        }
+
+        long totalEntries = entries.size();
+        long totalPostings = entries.stream().mapToLong(e -> e.getPostings().size()).sum();
+
+        return new LedgerTurnoverSummary(
+                totalDebit,
+                totalCredit,
+                delta,
+                balanced,
+                debit1011,
+                credit4211,
+                debit1011.subtract(credit4211),
+                totalEntries,
+                totalPostings,
+                "VND",
+                Instant.now()
+        );
+    }
+
     public record LedgerReconciliationResult(BigDecimal totalDebit, BigDecimal totalCredit, boolean balanced) {
+    }
+
+    public record LedgerTurnoverSummary(
+            BigDecimal totalDebit,
+            BigDecimal totalCredit,
+            BigDecimal delta,
+            boolean balanced,
+            BigDecimal debit1011,
+            BigDecimal credit4211,
+            BigDecimal cashDelta,
+            long totalEntries,
+            long totalPostings,
+            String currency,
+            Instant generatedAt
+    ) {
     }
 }

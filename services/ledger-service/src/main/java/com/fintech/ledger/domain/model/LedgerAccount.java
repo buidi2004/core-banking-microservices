@@ -40,12 +40,20 @@ public class LedgerAccount {
         return new LedgerAccount(UUID.randomUUID().toString(), code, name, type, BigDecimal.ZERO, currency);
     }
 
+    public static final String CASH_ON_HAND_CODE = "1011";
+    public static final String CASH_ON_HAND_NAME = "1011 - Quỹ tiền mặt mặt đất";
+
     public static LedgerAccount bankSettlement(String currency) {
         return create(BANK_SETTLEMENT_CODE, "Bank Settlement Account", AccountType.ASSET, currency);
     }
 
+    public static LedgerAccount cashOnHand(String currency) {
+        return create(CASH_ON_HAND_CODE, CASH_ON_HAND_NAME, AccountType.ASSET, currency);
+    }
+
     public static String walletAccountCode(String walletId) {
-        return "W" + walletId.replace("-", "").substring(0, 12);
+        String cleaned = walletId.replace("-", "");
+        return "W" + cleaned.substring(0, Math.min(12, cleaned.length()));
     }
 
     public static String walletAccountName(String walletId) {

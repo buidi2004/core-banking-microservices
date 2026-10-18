@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/ledger")
 public class LedgerController {
@@ -30,8 +32,19 @@ public class LedgerController {
     }
 
     // ---------------------------------------------------------------------------
-    // Tra cứu tài khoản
+    // Tra cứu tài khoản & Tổng phát sinh Sổ cái (Frontend / Dashboard)
     // ---------------------------------------------------------------------------
+
+    /**
+     * API trả về tổng phát sinh Sổ cái kép cho Frontend:
+     * - Tổng Nợ (Debit), Tổng Có (Credit), Delta = 0, Cân bằng (balanced)
+     * - Chi tiết Nợ TK 1011 (Quỹ tiền mặt mặt đất) và Có TK 4211 (Tiền gửi ví khách hàng)
+     */
+    @GetMapping({"/summary", "/turnover-summary"})
+    public ResponseEntity<ApiResponse<LedgerService.LedgerTurnoverSummary>> getTurnoverSummary() {
+        return ResponseEntity.ok(ApiResponse.ok("Ledger turnover summary retrieved",
+                ledgerService.getTurnoverSummary()));
+    }
 
     @GetMapping("/accounts")
     public ResponseEntity<ApiResponse<List<LedgerAccount>>> getAccounts() {

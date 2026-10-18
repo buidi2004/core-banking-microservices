@@ -34,6 +34,17 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USER:wallet}
     password: ${RABBITMQ_PASS:wallet123}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      auto-offset-reset: earliest
+      max-poll-records: 50
+
+notification:
+  kafka:
+    concurrency: ${KAFKA_CONSUMER_CONCURRENCY:3}
+    retry-max-attempts: 3
+    retry-backoff-ms: 1000
 
 firebase:
   credential:
