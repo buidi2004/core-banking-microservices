@@ -1,0 +1,48 @@
+# ==============================================================================
+# CADDYFILE - REVERSE PROXY FOR PUBLIC DEMO
+# Domain: demo.banking.example.com (hoặc IP / localhost)
+# ==============================================================================
+
+:80 {
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+
+    # Security Headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Public Demo Banner & Static Frontend Portal
+    handle /portal* {
+        root * /usr/share/caddy
+        file_server
+        try_files {path} /index.html
+    }
+
+    # Root redirect to Web Portal
+    handle / {
+        redir /portal/ 301
+    }
+
+    # API Gateway Reverse Proxy
+    handle /api/* {
+        reverse_proxy ewallet-api-gateway:8080 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Fallback 404
+    handle {
+        respond "Not Found - Core Banking Demo Portal" 404
+    }
+}

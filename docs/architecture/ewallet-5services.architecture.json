@@ -2,45 +2,63 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Fintech E-Wallet 5-Microservices Architecture",
+    "title": "Fintech E-Wallet 5-Microservices Architecture & Event Streaming",
     "quality_profile": "showcase",
-    "viewBox": [1320, 780],
+    "viewBox": [1320, 880],
     "views": [
       {
-        "id": "core-transfer-saga",
-        "label": "P2P transfer saga orchestrator",
-        "focus": ["client_app", "api_gateway", "svc_payment", "svc_wallet", "event_bus", "svc_ledger", "svc_notification"],
-        "note": "Payment orchestrator reserves balance in Wallet Core, publishes outbox event, and notifies consumers."
+        "id": "overview",
+        "label": "Toàn cảnh 5 Microservices & Database-per-Service",
+        "focus": ["client_app", "api_gateway", "svc_identity", "svc_wallet", "svc_payment", "svc_ledger", "svc_notification", "kafka_stream", "postgres_dbs"],
+        "note": "Kiến trúc 5 microservices phân rã độc lập với Database-per-Service, giao tiếp gRPC đồng bộ và Kafka KRaft streaming."
       },
       {
-        "id": "auth-session-flow",
-        "label": "Identity, eKYC & session management",
-        "focus": ["client_app", "api_gateway", "svc_identity", "redis_cluster"],
-        "note": "Auth service manages user identity, eKYC tier limits, and Redis session blacklist."
+        "id": "flow-auth-onboarding",
+        "label": "Luồng 1: Đăng ký & Xác thực JWT",
+        "focus": ["client_app", "api_gateway", "svc_identity", "redis_cluster", "rabbitmq_bus", "svc_wallet", "postgres_dbs"],
+        "note": "Gateway tra cứu Redis blacklist. Khi đăng ký user mới, Identity phát sự kiện RabbitMQ để Wallet Core tự động cấp ví."
       },
       {
-        "id": "accounting-audit",
-        "label": "Double-entry ledger & audit stream",
-        "focus": ["event_bus", "svc_ledger"],
-        "note": "Ledger service consumes outbox events asynchronously to record double-entry balanced postings."
+        "id": "flow-p2p-transfer",
+        "label": "Luồng 2: Chuyển tiền P2P & Saga gRPC",
+        "focus": ["client_app", "api_gateway", "svc_payment", "svc_wallet", "redis_cluster", "kafka_stream", "banking_gw", "postgres_dbs"],
+        "note": "Payment điều phối Saga qua gRPC khóa số dư người gửi (Pessimistic lock), lưu Outbox và stream lên Kafka 6 partitions."
+      },
+      {
+        "id": "flow-ledger-accounting",
+        "label": "Luồng 3: Định khoản Sổ cái kép Bất đồng bộ",
+        "focus": ["kafka_stream", "svc_ledger", "postgres_dbs"],
+        "note": "Ledger Service tiêu thụ stream biến động số dư từ Kafka để ghi bút toán nợ/có (Debit/Credit) vào Sổ cái Append-Only."
+      },
+      {
+        "id": "flow-notification-push",
+        "label": "Luồng 4: Bắn thông báo Đa kênh Thời gian thực",
+        "focus": ["kafka_stream", "svc_notification", "fcm_cloud", "client_app", "postgres_dbs"],
+        "note": "Notification Service tiêu thụ vòng đời giao dịch từ Kafka, lưu Notification DB và đẩy FCM push alert đến Client App."
       }
     ]
   },
   "components": [
     { "id": "client_app", "type": "frontend", "label": "Client Apps", "sublabel": "Mobile (RN) & Web", "pos": [40, 350], "size": [140, 64] },
-    { "id": "api_gateway", "type": "security", "label": "API Gateway", "sublabel": "Routing & Rate Limit", "pos": [240, 350], "size": [140, 64], "tag": ":443 HTTPS" },
-    { "id": "svc_identity", "type": "backend", "label": "Identity Service", "sublabel": "Auth, eKYC & Session", "brand": "spring", "pos": [490, 80], "size": [160, 64], "tag": "Port :8081" },
-    { "id": "svc_wallet", "type": "backend", "label": "Wallet Core", "sublabel": "Balance & Concurrency", "brand": "spring", "pos": [490, 215], "size": [160, 64], "tag": "Port :8082" },
-    { "id": "svc_payment", "type": "backend", "label": "Payment Engine", "sublabel": "Saga, QR & Transfers", "brand": "spring", "pos": [490, 350], "size": [160, 64], "tag": "Port :8083" },
+    { "id": "api_gateway", "type": "security", "label": "Caddy & Gateway", "sublabel": "Caddy Reverse Proxy & JWT", "brand": "spring", "pos": [240, 350], "size": [140, 64], "tag": "Ports :80/:443/:8080" },
+
+    { "id": "svc_identity", "type": "backend", "label": "Identity Service", "sublabel": "Auth, eKYC & Sessions", "brand": "spring", "pos": [490, 80], "size": [160, 64], "tag": "Port :8081" },
+    { "id": "svc_wallet", "type": "backend", "label": "Wallet Core", "sublabel": "Balance & gRPC Engine", "brand": "spring", "pos": [490, 215], "size": [160, 64], "tag": "Port :8082" },
+    { "id": "svc_payment", "type": "backend", "label": "Payment Service", "sublabel": "Saga, QR & Transfers", "brand": "spring", "pos": [490, 350], "size": [160, 64], "tag": "Port :8083" },
     { "id": "svc_ledger", "type": "backend", "label": "Ledger Service", "sublabel": "Double-Entry Bookkeeping", "brand": "spring", "pos": [490, 485], "size": [160, 64], "tag": "Port :8084" },
-    { "id": "svc_notification", "type": "backend", "label": "Notification Svc", "sublabel": "FCM & WebSocket Alert", "brand": "spring", "pos": [490, 620], "size": [160, 64], "tag": "Port :8085" },
-    { "id": "redis_cluster", "type": "database", "label": "Redis Cluster", "sublabel": "Locks & Token Blacklist", "brand": "redis", "pos": [770, 150], "size": [150, 64], "tag": ":6379" },
-    { "id": "event_bus", "type": "messagebus", "label": "RabbitMQ Broker", "sublabel": "Outbox Event Exchange", "brand": "rabbitmq", "pos": [770, 420], "size": [150, 64], "tag": ":5672 AMQP" },
+    { "id": "svc_notification", "type": "backend", "label": "Notification Svc", "sublabel": "Push, SMS & Promotions", "brand": "spring", "pos": [490, 620], "size": [160, 64], "tag": "Port :8085" },
+
+    { "id": "postgres_dbs", "type": "database", "label": "5 Postgres DBs", "sublabel": "Database-per-Service", "brand": "postgresql", "pos": [490, 755], "size": [160, 64], "tag": "Ports :5433-:5437" },
+
+    { "id": "redis_cluster", "type": "database", "label": "Redis Cluster", "sublabel": "Locks & Token Blacklist", "brand": "redis", "pos": [770, 150], "size": [150, 64], "tag": "Port :6379" },
+    { "id": "kafka_stream", "type": "messagebus", "label": "Kafka KRaft", "sublabel": "6-Partition Event Stream", "brand": "apache-kafka", "pos": [770, 420], "size": [160, 64], "tag": "Port :9092" },
+
+    { "id": "rabbitmq_bus", "type": "messagebus", "label": "RabbitMQ Broker", "sublabel": "Onboarding Exchange", "brand": "rabbitmq", "pos": [1040, 80], "size": [150, 64], "tag": "Port :5672" },
     { "id": "banking_gw", "type": "external", "label": "Banking Gateways", "sublabel": "NAPAS 247 & VietQR", "pos": [1040, 350], "size": [150, 64], "tag": "REST / ISO8583" },
-    { "id": "fcm_cloud", "type": "cloud", "label": "Firebase FCM", "sublabel": "Mobile Push Notification", "pos": [1040, 620], "size": [150, 64], "tag": "Google Cloud" }
+    { "id": "fcm_cloud", "type": "cloud", "label": "Firebase FCM", "sublabel": "Mobile Push Cloud", "pos": [1040, 620], "size": [150, 64], "tag": "Google Cloud" }
   ],
   "boundaries": [
-    { "kind": "region", "label": "Decoupled Microservices Ecosystem", "wraps": ["svc_identity", "svc_wallet", "svc_payment", "svc_ledger", "svc_notification", "redis_cluster", "event_bus"] }
+    { "kind": "region", "label": "5-Microservices Core Ecosystem (Database-per-Service)", "wraps": ["svc_identity", "svc_wallet", "svc_payment", "svc_ledger", "svc_notification", "postgres_dbs", "redis_cluster", "kafka_stream", "rabbitmq_bus"] }
   ],
   "connections": [
     { "id": "conn-client-gw", "from": "client_app", "to": "api_gateway", "label": "HTTPS REST", "variant": "emphasis" },
@@ -49,38 +67,47 @@
     { "id": "conn-gw-payment", "from": "api_gateway", "to": "svc_payment", "label": "Transfer API", "variant": "emphasis" },
     { "id": "conn-gw-ledger", "from": "api_gateway", "to": "svc_ledger", "label": "Audit Query", "fromSide": "bottom", "toSide": "left" },
     { "id": "conn-gw-notify", "from": "api_gateway", "to": "svc_notification", "label": "Inbox API", "fromSide": "bottom", "toSide": "left" },
+
     { "id": "conn-payment-wallet", "from": "svc_payment", "to": "svc_wallet", "label": "gRPC Balance", "variant": "emphasis", "fromSide": "top", "toSide": "bottom" },
-    { "id": "conn-wallet-redis", "from": "svc_wallet", "to": "redis_cluster", "label": "Redis Lock", "fromSide": "right", "toSide": "left" },
+
     { "id": "conn-identity-redis", "from": "svc_identity", "to": "redis_cluster", "label": "Session TTL", "fromSide": "right", "toSide": "left" },
-    { "id": "conn-payment-mq", "from": "svc_payment", "to": "event_bus", "label": "Outbox Events", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-wallet-redis", "from": "svc_wallet", "to": "redis_cluster", "label": "Redis Lock", "fromSide": "right", "toSide": "left" },
+
+    { "id": "conn-auth-mq", "from": "svc_identity", "to": "rabbitmq_bus", "label": "UserRegistered", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-mq-wallet", "from": "rabbitmq_bus", "to": "svc_wallet", "label": "AutoCreateWallet", "variant": "dashed", "fromSide": "bottom", "toSide": "right" },
+
+    { "id": "conn-payment-kafka", "from": "svc_payment", "to": "kafka_stream", "label": "Outbox Events", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
     { "id": "conn-payment-bank", "from": "svc_payment", "to": "banking_gw", "label": "EMVCo VietQR", "variant": "dashed", "fromSide": "right", "toSide": "left" },
-    { "id": "conn-mq-ledger", "from": "event_bus", "to": "svc_ledger", "label": "Ledger Consumer", "fromSide": "left", "toSide": "right" },
-    { "id": "conn-mq-notify", "from": "event_bus", "to": "svc_notification", "label": "Notify Consumer", "fromSide": "bottom", "toSide": "right" },
-    { "id": "conn-notify-fcm", "from": "svc_notification", "to": "fcm_cloud", "label": "FCM Push Alert", "fromSide": "right", "toSide": "left" }
+
+    { "id": "conn-kafka-ledger", "from": "kafka_stream", "to": "svc_ledger", "label": "Ledger Consumer", "variant": "emphasis", "fromSide": "left", "toSide": "right" },
+    { "id": "conn-kafka-notify", "from": "kafka_stream", "to": "svc_notification", "label": "Notify Consumer", "variant": "emphasis", "fromSide": "bottom", "toSide": "right" },
+
+    { "id": "conn-notify-fcm", "from": "svc_notification", "to": "fcm_cloud", "label": "FCM Push Alert", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-notify-db", "from": "svc_notification", "to": "postgres_dbs", "label": "DB-per-Service", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 24 }
   ],
   "cards": [
     {
       "dot": "emerald",
-      "title": "Domain-Driven Microservices",
+      "title": "Kiến trúc Database-per-Service 100%",
       "items": [
-        "Separation into 5 autonomous services with isolated databases",
-        "Hexagonal domain layer preserved per service boundary"
+        "Phân rã 5 cơ sở dữ liệu Postgres độc lập (:5433-:5437), cô lập schema và user roles hoàn toàn",
+        "Sổ cái General Ledger áp dụng phân quyền Append-Only chống sửa/xóa bút toán tài chính"
       ]
     },
     {
       "dot": "cyan",
-      "title": "Saga & Concurrency Strategy",
+      "title": "Dual-Engine: gRPC Đồng bộ & Kafka KRaft Streaming",
       "items": [
-        "Payment Engine coordinates P2P transfers via gRPC and Outbox",
-        "Pessimistic DB lock and Redis distributed lock isolate balances"
+        "Payment Engine gọi gRPC Wallet Internal để Lock/Debit/Credit số dư với độ trễ thấp",
+        "Event Stream 6 partitions trên Kafka KRaft đảm bảo thứ tự giao dịch tuyệt đối theo walletId"
       ]
     },
     {
       "dot": "amber",
-      "title": "Zero-Loss Event-Driven Accounting",
+      "title": "Đảm bảo Nhất quán & Zero-Loss Accounting",
       "items": [
-        "Double-entry bookkeeping decoupled via RabbitMQ consumer",
-        "Transactional outbox guarantees eventual consistency"
+        "Transactional Outbox Pattern bảo đảm không mất mát sự kiện khi ghi nhận giao dịch",
+        "Ledger Service và Notification Service tiêu thụ sự kiện bất đồng bộ qua Kafka topics"
       ]
     }
   ]

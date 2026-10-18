@@ -1,0 +1,95 @@
+# ==============================================================================
+# DOCKER COMPOSE PUBLIC DEMO PROFILE (Hardened Security)
+# Tất cả port nội bộ (PostgreSQL, Kafka, Redis, RabbitMQ) đều BỊ GỠ BỎ
+# CHỈ MỞ DUY NHẤT PORT 80 & 443 QUA CADDY REVERSE PROXY
+# ==============================================================================
+version: "3.8"
+
+networks:
+  ewallet-microservices-net:
+    driver: bridge
+
+volumes:
+  postgres-all-data:
+  caddy_data:
+  caddy_config:
+
+services:
+  # ----------------------------------------------------------------------------
+  # CADDY REVERSE PROXY (Đón đầu Internet)
+  # ----------------------------------------------------------------------------
+  caddy:
+    image: caddy:2.7-alpine
+    container_name: ewallet-caddy-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../web/cash-deposit-portal:/usr/share/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - ewallet-microservices-net
+    depends_on:
+      - api-gateway
+
+  # ----------------------------------------------------------------------------
+  # API GATEWAY (Internal port 8080, NO HOST PORTS)
+  # ----------------------------------------------------------------------------
+  api-gateway:
+    image: openjdk:17-slim
+    container_name: ewallet-api-gateway
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8080
+    networks:
+      - ewallet-microservices-net
+
+  # ----------------------------------------------------------------------------
+  # 1 POSTGRESQL CHUNG CHO CẢ 5-6 DATABASES (Tiết kiệm RAM: < 500MB)
+  # Không expose port ra ngoài host, chỉ truy cập trong bridge network
+  # ----------------------------------------------------------------------------
+  postgres-core:
+    image: postgres:15-alpine
+    container_name: ewallet-postgres-core
+    restart: unless-stopped
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: ewallet_master_db
+      POSTGRES_USER: ${POSTGRES_USER:-banking_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Banking#ProdSec2026!}
+    volumes:
+      - postgres-all-data:/var/lib/postgresql/data
+    networks:
+      - ewallet-microservices-net
+
+  # ----------------------------------------------------------------------------
+  # REDIS & RABBITMQ & KAFKA (Hoàn toàn đóng port bên ngoài)
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: ewallet-redis-public
+    restart: unless-stopped
+    expose:
+      - "6379"
+    command: redis-server --requirepass "${REDIS_PASSWORD:-RedisSecure2026!}"
+    networks:
+      - ewallet-microservices-net
+
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: ewallet-rabbitmq-public
+    restart: unless-stopped
+    expose:
+      - "5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-rabbit_prod}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-RabbitSecure2026!}
+    networks:
+      - ewallet-microservices-net

@@ -32,6 +32,13 @@ target/
 ### Logs & Temp ###
 *.log
 tmp/
+*.pid
+.fe.pid
+
+### Node / Frontend ###
+node_modules/
+dist/
+.vite/
 
 ### Firebase Credentials ###
 *firebase-service-account*.json
