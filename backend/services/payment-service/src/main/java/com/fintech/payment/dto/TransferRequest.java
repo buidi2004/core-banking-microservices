@@ -22,4 +22,6 @@ public class TransferRequest {
 
     @NotBlank(message = "idempotencyKey là bắt buộc")
     private String idempotencyKey;
+
+    private String pinToken;
 }

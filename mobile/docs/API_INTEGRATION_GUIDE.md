@@ -6,6 +6,19 @@
 
 ---
 
+## 🚨 ĐÍNH CHÍNH VÒNG 2 (2026-10-21 — Con 1, Lead)
+
+| Nội dung | Sự thật hiện tại |
+|---|---|
+| Hợp đồng API mà tài liệu này mô tả | **LỊCH SỬ (05/09/2026)** — không còn khớp backend. Nguồn sự thật: `mobile/README.md` (đã đính chính) + `.agents_workspace/05_MOBILE_BE_AUDIT_FINAL.md` |
+| Trạng thái backend | 🔴 **ĐÃ BỊ SỬA** — checksum `backend` = `b1338db0…c50e` ≠ baseline `eb378711…003` (vi phạm bất biến dự án). Chi tiết: `.agents_workspace/06_BAO_CAO_VI_PHAM_BACKEND_GUARD.md` |
+| Mobile có dùng API backend mới không | ❌ **Chưa** — mọi cờ `BackendCapabilities` vẫn `false` ⇒ 25 màn hình vẫn được gate `showFeatureUnavailable` ⇒ **an toàn cho người dùng** |
+| Lệnh kiểm chứng (chỉ đọc) | `bash scripts/check_backend_guard.sh` (exit 0 = sạch, exit 2 = vi phạm) |
+
+> Tài liệu này được giữ lại **chỉ để tham chiếu lịch sử**. **Không dùng làm căn cứ thiết kế hay nghiệm thu.**
+
+---
+
 > **VPS Base URL (Staging):** `http://180.93.120.246:8080`  
 > **Local Base URL (Dev):** `http://localhost:8080`  
 > **Auth:** `Authorization: Bearer {accessToken}` (JWT)  

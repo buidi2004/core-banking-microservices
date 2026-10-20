@@ -63,15 +63,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
     _scrollToBottom();
 
-    // Auto agent reply simulation
-    Future.delayed(const Duration(milliseconds: 1200), () {
+    // Auto assistant reply notice
+    Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
       setState(() {
         _isAgentTyping = false;
         _messages.add({
           'sender': 'agent',
-          'name': 'CSKH Sen Hồng (Thu Hằng)',
-          'text': 'Cảm ơn quý khách đã gửi thông tin. Em đã tiếp nhận và đang tiến hành kiểm tra trên hệ thống xử lý giao dịch. Quý khách vui lòng đợi trong giây lát nhé ạ!',
+          'name': 'Trợ Lý Tự Động',
+          'text': 'Cảm ơn quý khách đã gửi thông tin. Kênh Live Chat trực tiếp với chuyên viên CSKH đang trong giai đoạn nâng cấp. Quý khách vui lòng tạo Ticket hỗ trợ hoặc gọi Hotline 1900 8888 để được hỗ trợ 24/7.',
           'time': 'Vừa xong',
         });
       });
@@ -127,6 +127,23 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       body: SafeArea(
         child: Column(
           children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: AppColors.primary.withOpacity(0.08),
+              child: const Row(
+                children: [
+                  Icon(CupertinoIcons.info_circle_fill, size: 16, color: AppColors.primary),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Kênh Trợ Lý Tự Động. Kênh kết nối trực tiếp chuyên viên CSKH đang được phát triển.',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             Expanded(
               child: ListView.builder(
                 controller: _scrollCtrl,

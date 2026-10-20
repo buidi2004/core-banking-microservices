@@ -10,7 +10,10 @@ import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
 import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
+import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/savings_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class SavingsScreen extends StatefulWidget {
@@ -61,6 +64,44 @@ class _SavingsScreenState extends State<SavingsScreen> {
         });
       }
     } catch (_) {}
+    await _loadPassbooks();
+  }
+
+  List<Map<String, dynamic>> _myPassbooks = [];
+  bool _isLoadingPassbooks = false;
+
+  Future<void> _loadPassbooks() async {
+    if (!BackendCapabilities.savings) return;
+    setState(() => _isLoadingPassbooks = true);
+    try {
+      final res = await SavingsRemoteDataSource().getUserSavings();
+      if (mounted) {
+        setState(() {
+          _myPassbooks = res.map((pb) {
+            return {
+              'id': pb['id']?.toString() ?? '',
+              'code': (pb['accountNumber'] ?? pb['code'] ?? 'STK-ONLINE').toString(),
+              'product': (pb['productName'] ?? pb['productType'] ?? 'Tiết Kiệm Online').toString(),
+              'principal': (pb['principal'] as num?)?.toDouble() ?? 0.0,
+              'term': '${pb['termMonths'] ?? 12} tháng (${pb['interestRate'] ?? 7.2}%/năm)',
+              'rate': (pb['interestRate'] as num?)?.toDouble() ?? 7.2,
+              'months': (pb['termMonths'] as num?)?.toInt() ?? 12,
+              'openDate': pb['startDate']?.toString() ?? '',
+              'maturityDate': pb['maturityDate']?.toString() ?? '',
+              'expectedInterest': (pb['expectedInterest'] as num?)?.toDouble() ?? 0.0,
+              'accruedInterest': (pb['accruedInterest'] as num?)?.toDouble() ?? 0.0,
+              'rollover': pb['rolloverType']?.toString() ?? 'Tự động tái tục Gốc + Lãi',
+              'status': pb['status']?.toString() ?? 'ACTIVE',
+              'canWithdrawPart': true,
+            };
+          }).toList();
+        });
+      }
+    } catch (_) {
+      // Giữ danh sách rỗng nếu chưa có dữ liệu
+    } finally {
+      if (mounted) setState(() => _isLoadingPassbooks = false);
+    }
   }
 
   final List<Map<String, dynamic>> _savingsProducts = [
@@ -99,39 +140,6 @@ class _SavingsScreenState extends State<SavingsScreen> {
     {'months': 24, 'rate': 7.4, 'tag': 'Dài hạn'},
   ];
 
-  List<Map<String, dynamic>> get _myPassbooks => [
-    {
-      'code': 'STK2026-088192',
-      'product': 'Tiết Kiệm Phát Lộc Online',
-      'principal': 50000000.0,
-      'term': '12 tháng (7.2%/năm)',
-      'rate': 7.2,
-      'months': 12,
-      'openDate': '15/01/2026',
-      'maturityDate': '15/01/2027',
-      'expectedInterest': 3600000.0,
-      'accruedInterest': 591780.0, // Lai luy ke den nay
-      'rollover': 'Tự động tái tục Gốc + Lãi',
-      'status': 'ĐANG SINH LỜI',
-      'canWithdrawPart': true,
-    },
-    {
-      'code': 'STK2026-012944',
-      'product': 'Tiết Kiệm Trả Lãi Tháng',
-      'principal': 20000000.0,
-      'term': '6 tháng (5.8%/năm)',
-      'rate': 5.8,
-      'months': 6,
-      'openDate': '01/06/2026',
-      'maturityDate': '01/12/2026',
-      'expectedInterest': 580000.0,
-      'accruedInterest': 286027.0,
-      'rollover': 'Nhận lãi hàng tháng về TK ${_userPhone.isNotEmpty ? _userPhone : "chính"}',
-      'status': 'ĐANG SINH LỜI',
-      'canWithdrawPart': true,
-    },
-  ];
-
   @override
   void dispose() {
     _amountCtrl.dispose();
@@ -157,12 +165,11 @@ class _SavingsScreenState extends State<SavingsScreen> {
   Future<void> _handleOpenSavings() async {
     if (_isSubmitting) return;
 
-    // MOB-007: BE chưa có API sổ tiết kiệm (BE-REQ-06) => chặn mở sổ.
-    if (!BackendCapabilities.bills) {
+    if (!BackendCapabilities.savings) {
       await showFeatureUnavailable(
         context,
         feature: 'Mở sổ tiết kiệm',
-        reason: 'Backend chưa cung cấp API sổ tiết kiệm (BE-REQ-06).',
+        reason: 'Hệ thống sổ tiết kiệm đang trong quá trình bảo trì.',
       );
       return;
     }
@@ -183,12 +190,44 @@ class _SavingsScreenState extends State<SavingsScreen> {
     setState(() => _isSubmitting = true);
     HapticFeedback.mediumImpact();
 
-    final prodTitle = _savingsProducts[_selectedProductIdx]['title'];
-    final rateStr = _currentRate.toStringAsFixed(2);
-    await context.push(
-      '/transfer/confirm?recipient=$prodTitle ($_currentMonths tháng - $rateStr%/năm)&amount=$depositAmount&note=Mo so tiet kiem $prodTitle $_currentMonths thang',
-    );
-    if (mounted) setState(() => _isSubmitting = false);
+    try {
+      final wallet = await WalletRemoteDataSource().getMyWallet();
+      final prodCode = switch (_selectedProductIdx) {
+        1 => 'TIET_KIEM_TRA_LAI_THANG',
+        2 => 'TICH_LUY_GUI_GOP',
+        _ => 'TIET_KIEM_PHAT_LOC',
+      };
+      final res = await SavingsRemoteDataSource().openSavings(
+        walletId: wallet.walletId,
+        productType: prodCode,
+        termMonths: _currentMonths,
+        depositAmount: depositAmount,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Mở sổ ${res['accountNumber'] ?? ''} thành công!'),
+            backgroundColor: AppColors.emeraldGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        _amountCtrl.clear();
+        await _loadPassbooks();
+        setState(() => _tabIndex = 1);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(extractErrorMessage(e)),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   void _showWithdrawPartialModal(Map<String, dynamic> pb) {
@@ -202,7 +241,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
         padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
         child: Container(
           decoration: const BoxDecoration(
-            color: Colors.white,
+            color: AppColors.surfaceLight,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.all(24),
@@ -312,7 +351,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: const BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surfaceLight,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
@@ -342,6 +381,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 children: [
                   _buildCertRow('Chủ sở hữu:', _userName.isNotEmpty ? _userName.toUpperCase() : 'KHÁCH HÀNG SEN HỒNG'),
                   _buildCertRow('Số CCCD:', _userCccd.isNotEmpty ? '$_userCccd (Đã xác thực eKYC)' : 'Đã xác thực eKYC'),
+                  _buildCertRow('Số điện thoại:', _userPhone.isNotEmpty ? _userPhone : 'Chưa cập nhật'),
                   _buildCertRow('Mã sổ tiết kiệm:', pb['code']),
                   _buildCertRow('Sản phẩm:', pb['product']),
                   _buildCertRow('Tiền gửi gốc:', CurrencyFormatter.formatVND(pb['principal'] as double), isBold: true),
@@ -683,7 +723,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                               child: Text(
                                 tag,
                                 style: TextStyle(
-                                  fontSize: 9,
+                                  fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
                                   color: isSelected ? Colors.white : AppColors.bottomBarCyan,
                                 ),
@@ -891,11 +931,11 @@ class _SavingsScreenState extends State<SavingsScreen> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.bottomBarCyan, size: 12),
+                      Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.bottomBarCyan, size: 14),
                       SizedBox(width: 4),
                       Text(
                         'TIẾT KIỆM BẢO CHỨNG NHNN',
-                        style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -980,6 +1020,54 @@ class _SavingsScreenState extends State<SavingsScreen> {
   }
 
   Widget _buildMyPassbooksTab() {
+    if (_isLoadingPassbooks) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(40),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
+    if (_myPassbooks.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(CupertinoIcons.archivebox_fill, size: 36, color: AppColors.primary),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Chưa có sổ tiết kiệm nào',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Quý khách chưa mở sổ tiết kiệm online nào. Hãy bắt đầu tích lũy sinh lời an toàn cùng SenBank ngay hôm nay!',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: () => setState(() => _tabIndex = 0),
+                icon: const Icon(CupertinoIcons.plus_circle_fill, size: 18),
+                label: const Text('Mở sổ tiết kiệm ngay'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return ListView.builder(
       physics: const AlwaysScrollableScrollPhysics(),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -1092,6 +1180,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       Expanded(
                         child: TextButton(
                           onPressed: () {
+                            final messenger = ScaffoldMessenger.of(context);
                             showDialog(
                               context: context,
                               builder: (ctx) => AlertDialog(
@@ -1104,18 +1193,35 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
                                     onPressed: () async {
                                       Navigator.pop(ctx);
-                                      // MOB-007: BE chưa có API sổ tiết kiệm (BE-REQ-06).
-                                      if (!BackendCapabilities.bills) {
+                                      if (!BackendCapabilities.savings) {
                                         await showFeatureUnavailable(
                                           context,
                                           feature: 'Tất toán sổ tiết kiệm',
-                                          reason: 'Backend chưa cung cấp API sổ tiết kiệm (BE-REQ-06).',
+                                          reason: 'Hệ thống sổ tiết kiệm đang bảo trì.',
                                         );
                                         return;
                                       }
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Đã gửi yêu cầu tất toán sổ ${pb['code']}')),
-                                      );
+                                      try {
+                                        final res = await SavingsRemoteDataSource().settleSavings(pb['id']?.toString() ?? '');
+                                        if (mounted) {
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(res['message']?.toString() ?? 'Đã tất toán sổ ${pb['code']} thành công!'),
+                                              backgroundColor: AppColors.emeraldGreen,
+                                            ),
+                                          );
+                                          await _loadPassbooks();
+                                        }
+                                      } catch (e) {
+                                        if (mounted) {
+                                          messenger.showSnackBar(
+                                            SnackBar(
+                                              content: Text(extractErrorMessage(e)),
+                                              backgroundColor: AppColors.error,
+                                            ),
+                                          );
+                                        }
+                                      }
                                     },
                                     child: const Text('Xác nhận tất toán'),
                                   ),

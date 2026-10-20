@@ -12,5 +12,7 @@ public interface BankRepository extends JpaRepository<Bank, String> {
 
     Optional<Bank> findByCode(String code);
 
+    Optional<Bank> findByBin(String bin);
+
     List<Bank> findByActiveTrue();
 }

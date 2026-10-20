@@ -224,7 +224,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
             onPressed: () {
               showModalBottomSheet(
                 context: context,
-                backgroundColor: Colors.white,
+                backgroundColor: AppColors.surfaceLight,
                 useSafeArea: true,
                 showDragHandle: true,
                 shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),

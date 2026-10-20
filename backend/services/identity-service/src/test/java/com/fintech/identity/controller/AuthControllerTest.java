@@ -37,6 +37,9 @@ class AuthControllerTest {
     @MockBean
     private AuthService authService;
 
+    @MockBean
+    private com.fintech.identity.service.OtpService otpService;
+
     @Test
     @DisplayName("API POST /api/v1/auth/register - Đăng ký thành công trả về HTTP 201 Created")
     void shouldReturn201WhenRegisterSuccessfully() throws Exception {

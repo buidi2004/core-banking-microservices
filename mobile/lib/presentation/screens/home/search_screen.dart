@@ -367,7 +367,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(CupertinoIcons.clock, size: 12, color: AppColors.textSecondaryLight),
+                    const Icon(CupertinoIcons.clock, size: 14, color: AppColors.textSecondaryLight),
                     const SizedBox(width: 6),
                     Text(item, style: const TextStyle(fontSize: 12, color: AppColors.textPrimaryLight)),
                   ],
@@ -398,7 +398,7 @@ class _SearchScreenState extends State<SearchScreen> {
           children: _trendingKeywords.map((kw) {
             return ActionChip(
               label: Text(kw, style: const TextStyle(fontSize: 12, color: AppColors.primaryDark, fontWeight: FontWeight.w500)),
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.surfaceLight,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: const BorderSide(color: AppColors.borderSubtle)),
               onPressed: () => _applyKeyword(kw),
             );
@@ -455,7 +455,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     color: AppColors.dividerLight,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(f['category'] as String, style: const TextStyle(fontSize: 9.5, color: AppColors.textSecondaryLight)),
+                  child: Text(f['category'] as String, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondaryLight)),
                 ),
               ],
             ),

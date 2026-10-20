@@ -46,12 +46,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class WalletPostgresIntegrationTest {
 
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine")
-            .withDatabaseName("ewallet_wallet_db_test")
-            .withUsername("postgres")
-            .withPassword("postgres")
-            .withReuse(true);
+    static final PostgreSQLContainer<?> POSTGRES;
+
+    static {
+        POSTGRES = new PostgreSQLContainer<>("postgres:15-alpine")
+                .withDatabaseName("ewallet_wallet_db_test")
+                .withUsername("postgres")
+                .withPassword("postgres")
+                .withReuse(true);
+        POSTGRES.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -59,7 +63,7 @@ class WalletPostgresIntegrationTest {
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
         registry.add("spring.datasource.driver-class-name",
-                () -> "org.testcontainers.jdbc.ContainerDatabaseDriver");
+                () -> "org.postgresql.Driver");
     }
 
     @Autowired
@@ -67,6 +71,9 @@ class WalletPostgresIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
 
     // ─── Helper ─────────────────────────────────────────────────────────────────
 
@@ -84,7 +91,7 @@ class WalletPostgresIntegrationTest {
 
     private Wallet saveWallet(String userId, long balance) {
         Wallet w = buildWallet(userId, balance);
-        return walletRepository.save(w);
+        return walletRepository.saveAndFlush(w);
     }
 
     private long rawBalance(String walletId) {
@@ -143,7 +150,7 @@ class WalletPostgresIntegrationTest {
             saveWallet("user-dup-1", 0L);
 
             Wallet second = buildWallet("user-dup-1", 0L);
-            assertThatThrownBy(() -> walletRepository.save(second))
+            assertThatThrownBy(() -> walletRepository.saveAndFlush(second))
                     .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
         }
     }
@@ -174,7 +181,7 @@ class WalletPostgresIntegrationTest {
         @DisplayName("findByIdForUpdate — PESSIMISTIC_WRITE lock active")
         void findByIdForUpdate_acquiresPessimisticLock() {
             Wallet saved = saveWallet("user-lock-1", 10000L);
-            Optional<Wallet> locked = walletRepository.findByIdForUpdate(saved.getId());
+            Optional<Wallet> locked = transactionTemplate.execute(status -> walletRepository.findByIdForUpdate(saved.getId()));
 
             assertThat(locked).isPresent();
             assertThat(locked.get().getId()).isEqualTo(saved.getId());
@@ -218,11 +225,13 @@ class WalletPostgresIntegrationTest {
             long before = rawBalance(wallet.getId());
 
             // Lock + update
-            Optional<Wallet> locked = walletRepository.findByIdForUpdate(wallet.getId());
-            assertThat(locked).isPresent();
-            Wallet w = locked.get();
-            w.setBalance(80000L);
-            walletRepository.save(w);
+            transactionTemplate.executeWithoutResult(status -> {
+                Optional<Wallet> locked = walletRepository.findByIdForUpdate(wallet.getId());
+                assertThat(locked).isPresent();
+                Wallet w = locked.get();
+                w.setBalance(80000L);
+                walletRepository.saveAndFlush(w);
+            });
 
             long after = rawBalance(wallet.getId());
             assertThat(after).isEqualTo(80000L);
@@ -234,13 +243,15 @@ class WalletPostgresIntegrationTest {
         void update_negativeBalance_blockedByCheckConstraint() {
             Wallet wallet = saveWallet("user-check-1", 10000L);
 
-            Wallet w = walletRepository.findByIdForUpdate(wallet.getId()).orElseThrow();
-            w.setBalance(-1L);
-
             // CHECK constraint (balance >= 0) phải chặn ở cấp DB
-            assertThatThrownBy(() -> walletRepository.saveAndFlush(w))
-                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
-                    .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("balance"));
+            assertThatThrownBy(() -> {
+                transactionTemplate.executeWithoutResult(status -> {
+                    Wallet w = walletRepository.findByIdForUpdate(wallet.getId()).orElseThrow();
+                    w.setBalance(-1L);
+                    walletRepository.saveAndFlush(w);
+                });
+            }).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
+              .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("balance"));
         }
 
         @Test
@@ -248,13 +259,15 @@ class WalletPostgresIntegrationTest {
         void update_negativeReservedBalance_blockedByCheckConstraint() {
             Wallet wallet = saveWallet("user-reserve-check", 100000L);
 
-            Wallet w = walletRepository.findByIdForUpdate(wallet.getId()).orElseThrow();
-            w.setReservedBalance(-1L);
-
             // CHECK constraint (reserved_balance >= 0) phải chặn ở cấp DB
-            assertThatThrownBy(() -> walletRepository.saveAndFlush(w))
-                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
-                    .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("reserved_balance"));
+            assertThatThrownBy(() -> {
+                transactionTemplate.executeWithoutResult(status -> {
+                    Wallet w = walletRepository.findByIdForUpdate(wallet.getId()).orElseThrow();
+                    w.setReservedBalance(-1L);
+                    walletRepository.saveAndFlush(w);
+                });
+            }).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
+              .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("reserved_balance"));
         }
 
         @Test
@@ -262,9 +275,11 @@ class WalletPostgresIntegrationTest {
         void update_statusToLocked_persisted() {
             Wallet wallet = saveWallet("user-status-1", 50000L);
 
-            Wallet w = walletRepository.findByIdForUpdate(wallet.getId()).orElseThrow();
-            w.setStatus("LOCKED");
-            walletRepository.save(w);
+            transactionTemplate.executeWithoutResult(status -> {
+                Wallet w = walletRepository.findByIdForUpdate(wallet.getId()).orElseThrow();
+                w.setStatus("LOCKED");
+                walletRepository.saveAndFlush(w);
+            });
 
             assertThat(rawStatus(wallet.getId())).isEqualTo("LOCKED");
         }
@@ -289,7 +304,7 @@ class WalletPostgresIntegrationTest {
                     .dailySpent(0L)
                     .build();
 
-            assertThatThrownBy(() -> walletRepository.save(wallet))
+            assertThatThrownBy(() -> walletRepository.saveAndFlush(wallet))
                     .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
                     .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("balance"));
         }
@@ -307,7 +322,7 @@ class WalletPostgresIntegrationTest {
                     .dailySpent(0L)
                     .build();
 
-            assertThatThrownBy(() -> walletRepository.save(wallet))
+            assertThatThrownBy(() -> walletRepository.saveAndFlush(wallet))
                     .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
                     .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("reserved_balance"));
         }
@@ -341,12 +356,14 @@ class WalletPostgresIntegrationTest {
                 executor.submit(() -> {
                     try {
                         start.await();
-                        walletRepository.findByIdForUpdate(walletId).ifPresent(w -> {
-                            if (w.getBalance() >= 500L) {
-                                w.setBalance(w.getBalance() - 500L);
-                                walletRepository.save(w);
-                                successCount.incrementAndGet();
-                            }
+                        transactionTemplate.executeWithoutResult(status -> {
+                            walletRepository.findByIdForUpdate(walletId).ifPresent(w -> {
+                                if (w.getBalance() >= 500L) {
+                                    w.setBalance(w.getBalance() - 500L);
+                                    walletRepository.saveAndFlush(w);
+                                    successCount.incrementAndGet();
+                                }
+                            });
                         });
                     } catch (Exception e) {
                         // lock contention hoặc deadlock — vẫn chấp nhận được
@@ -395,7 +412,7 @@ class WalletPostgresIntegrationTest {
 
             Wallet w = walletRepository.findById(walletId).orElseThrow();
             w.setBalance(9000L);
-            walletRepository.save(w);
+            walletRepository.saveAndFlush(w);
 
             Timestamp after = jdbcTemplate.queryForObject(
                     "SELECT updated_at FROM wallets WHERE id = ?", Timestamp.class, walletId);

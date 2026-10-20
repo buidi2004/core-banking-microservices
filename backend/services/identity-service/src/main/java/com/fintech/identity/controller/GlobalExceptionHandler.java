@@ -1,6 +1,9 @@
 package com.fintech.identity.controller;
 
 import com.fintech.identity.dto.ApiResponse;
+import com.fintech.identity.exception.InvalidPinException;
+import com.fintech.identity.exception.PinLockedException;
+import com.fintech.identity.exception.PinNotSetException;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,27 @@ import java.util.Map;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(InvalidPinException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidPin(InvalidPinException e) {
+        log.warn("Mã PIN không chính xác: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("INVALID_PIN", e.getMessage()));
+    }
+
+    @ExceptionHandler(PinLockedException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePinLocked(PinLockedException e) {
+        log.warn("Mã PIN bị khóa: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("PIN_LOCKED", e.getMessage()));
+    }
+
+    @ExceptionHandler(PinNotSetException.class)
+    public ResponseEntity<ApiResponse<Void>> handlePinNotSet(PinNotSetException e) {
+        log.warn("Mã PIN chưa được thiết lập: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("PIN_NOT_SET", e.getMessage()));
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException e) {

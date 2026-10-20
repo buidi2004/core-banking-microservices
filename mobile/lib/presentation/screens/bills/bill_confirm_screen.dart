@@ -151,7 +151,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
   void _showVoucherPicker() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
@@ -240,7 +240,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.surfaceLight,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [

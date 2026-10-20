@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.fintech.identity.service.OtpService otpService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
@@ -51,6 +52,66 @@ public class AuthController {
             @RequestParam(value = "deviceId", required = false) String deviceId) {
         authService.logout(authHeader, userId, deviceId);
         return ResponseEntity.ok(ApiResponse.ok(null, "Đăng xuất thành công"));
+    }
+
+    @PostMapping("/otp/send")
+    public ResponseEntity<ApiResponse<OtpSendResponse>> sendOtp(
+            @RequestBody(required = false) OtpSendRequest request,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String purpose) {
+        String phone = (request != null && request.getPhoneNumber() != null) ? request.getPhoneNumber() : phoneNumber;
+        String purp = (request != null && request.getPurpose() != null) ? request.getPurpose() : purpose;
+        if (phone == null || phone.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Số điện thoại không được để trống"));
+        }
+        OtpSendResponse response = otpService.sendOtp(phone, purp);
+        return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
+    }
+
+    @PostMapping("/otp/verify")
+    public ResponseEntity<ApiResponse<OtpVerifyResponse>> verifyOtp(
+            @RequestBody(required = false) OtpVerifyRequest request,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String otp,
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String purpose) {
+        String phone = (request != null && request.getPhoneNumber() != null) ? request.getPhoneNumber() : phoneNumber;
+        String otpCode = (request != null && request.getCode() != null) ? request.getCode() : (otp != null ? otp : code);
+        String purp = (request != null && request.getPurpose() != null) ? request.getPurpose() : purpose;
+        if (phone == null || otpCode == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Thiếu số điện thoại hoặc mã OTP"));
+        }
+        OtpVerifyResponse response = otpService.verifyOtp(phone, otpCode, purp);
+        return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<OtpSendResponse>> forgotPassword(
+            @RequestBody(required = false) ForgotPasswordRequest request,
+            @RequestParam(required = false) String phoneNumber) {
+        String phone = (request != null && request.getPhoneNumber() != null) ? request.getPhoneNumber() : phoneNumber;
+        if (phone == null || phone.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Số điện thoại không được để trống"));
+        }
+        OtpSendResponse response = otpService.forgotPassword(phone);
+        return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @RequestBody(required = false) ResetPasswordRequest request,
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String otp,
+            @RequestParam(required = false) String otpToken,
+            @RequestParam(required = false) String newPassword) {
+        String phone = (request != null && request.getPhoneNumber() != null) ? request.getPhoneNumber() : phoneNumber;
+        String token = (request != null && request.getOtpToken() != null) ? request.getOtpToken() : (otpToken != null ? otpToken : otp);
+        String newPass = (request != null && request.getNewPassword() != null) ? request.getNewPassword() : newPassword;
+        if (phone == null || token == null || newPass == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Thiếu thông tin đặt lại mật khẩu"));
+        }
+        otpService.resetPassword(phone, token, newPass);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại."));
     }
 
     private String getClientIp(HttpServletRequest request) {

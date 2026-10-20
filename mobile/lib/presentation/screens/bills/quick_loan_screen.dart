@@ -7,6 +7,9 @@ import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
+import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
+import 'package:sen_hong_bank/data/datasources/remote/loan_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class QuickLoanScreen extends StatefulWidget {
@@ -53,12 +56,11 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
   ];
 
   Future<void> _submitApplication() async {
-    // MOB-007: BE chưa có API vay (BE-REQ-06) => chặn nộp hồ sơ, không giả vờ thành công.
-    if (!BackendCapabilities.bills) {
+    if (!BackendCapabilities.loans) {
       await showFeatureUnavailable(
         context,
         feature: 'Vay tiêu dùng',
-        reason: 'Backend chưa cung cấp API vay (BE-REQ-06).',
+        reason: 'Hệ thống tín dụng tiêu dùng đang bảo trì.',
       );
       return;
     }
@@ -75,40 +77,58 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
     }
 
     setState(() => _isLoading = true);
-    Future.delayed(const Duration(milliseconds: 800), () {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 28),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text('Nộp Hồ Sơ Thành Công!', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold)),
+    try {
+      final wallet = await WalletRemoteDataSource().getMyWallet();
+      final res = await LoanRemoteDataSource().applyLoan(
+        walletId: wallet.walletId,
+        productType: 'VAY_TIEU_DUNG_NHANH',
+        amount: _loanAmount,
+        termMonths: _loanMonths,
+        purpose: 'Vay tiêu dùng cá nhân',
+      );
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surfaceLight,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Row(
+              children: [
+                Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 28),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text('Giải Ngân Thành Công!', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            content: Text(
+              'Hợp đồng số ${res['contractNumber'] ?? ''} với số tiền ${CurrencyFormatter.formatVND(_loanAmount)} (kỳ hạn $_loanMonths tháng) đã được phê duyệt và giải ngân trực tiếp vào Ví Sen Hồng của bạn.',
+              style: const TextStyle(color: AppColors.textSecondaryLight, height: 1.4),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.go('/');
+                },
+                child: const Text('Về màn hình chính'),
               ),
             ],
           ),
-          content: Text(
-            'Hồ sơ vay tiêu dùng nhanh ${CurrencyFormatter.formatVND(_loanAmount)} (Kỳ hạn $_loanMonths tháng) của bạn đã được tiếp nhận. Hệ thống AI chấm điểm tín dụng tự động phê duyệt và giải ngân vào ví Sen Hồng trong vòng 15 phút.',
-            style: const TextStyle(color: AppColors.textSecondaryLight, height: 1.4),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(extractErrorMessage(e)),
+            backgroundColor: AppColors.error,
           ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.go('/');
-              },
-              child: const Text('Về màn hình chính'),
-            ),
-          ],
-        ),
-      );
-    });
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

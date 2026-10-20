@@ -157,28 +157,28 @@ class AuthRemoteDataSource {
   }
 
   Future<void> sendOtp(String phoneNumber) async {
-    final response = await _dio.post(ApiConstants.otpSend, queryParameters: {'phoneNumber': phoneNumber});
+    final response = await _dio.post(ApiConstants.otpSend, data: {'phoneNumber': phoneNumber});
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
   }
 
   Future<bool> verifyOtp({required String phoneNumber, required String otp}) async {
-    final response = await _dio.post(ApiConstants.otpVerify, queryParameters: {'phoneNumber': phoneNumber, 'otp': otp});
+    final response = await _dio.post(ApiConstants.otpVerify, data: {'phoneNumber': phoneNumber, 'code': otp});
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
-    return json['data'] == true;
+    return json['data']?['verified'] == true || json['data'] == true;
   }
 
   Future<void> forgotPassword(String phoneNumber) async {
-    final response = await _dio.post(ApiConstants.forgotPassword, queryParameters: {'phoneNumber': phoneNumber});
+    final response = await _dio.post(ApiConstants.forgotPassword, data: {'phoneNumber': phoneNumber});
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
   }
 
   Future<void> resetPassword({required String phoneNumber, required String otp, required String newPassword}) async {
-    final response = await _dio.post(ApiConstants.resetPassword, queryParameters: {
+    final response = await _dio.post(ApiConstants.resetPassword, data: {
       'phoneNumber': phoneNumber,
-      'otp': otp,
+      'otpToken': otp,
       'newPassword': newPassword,
     });
     final json = Map<String, dynamic>.from(response.data as Map);

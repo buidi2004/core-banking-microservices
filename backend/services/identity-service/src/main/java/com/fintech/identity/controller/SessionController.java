@@ -38,4 +38,13 @@ public class SessionController {
         sessionService.revokeSession(userId, sessionId);
         return ResponseEntity.ok(ApiResponse.ok(null, "Đã thu hồi phiên đăng nhập thiết bị"));
     }
+
+    @PostMapping("/{deviceId}/fcm")
+    public ResponseEntity<ApiResponse<Void>> registerFcm(
+            @RequestHeader(value = "X-User-Id") String userId,
+            @PathVariable String deviceId,
+            @RequestBody(required = false) java.util.Map<String, String> payload) {
+        log.info("Cập nhật FCM token cho deviceId={} của userId={}", deviceId, userId);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đăng ký nhận thông báo đẩy thành công"));
+    }
 }

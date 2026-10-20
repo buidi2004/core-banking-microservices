@@ -2,7 +2,21 @@
 
 **Ngày kiểm tra:** 05/09/2026  
 **Tài liệu tham chiếu:** `tailieuchuyendoi.md` - 50 màn hình yêu cầu  
-**Ngày đính chính:** 20/10/2026 (Audit AUDIT-MOB-BE-001)
+**Ngày đính chính:** 20/10/2026 (Audit AUDIT-MOB-BE-001) · **Đính chính lần 2: 21/10/2026 (Con 1 — Lead, vòng 2)**
+
+---
+
+## 🚨 ĐÍNH CHÍNH LẦN 2 (2026-10-21) — CON SỐ "51/51" VÀ TRẠNG THÁI BACKEND
+
+| Tuyên bố cũ | Sự thật đo được 2026-10-21 |
+|---|---|
+| "51/51 màn hình" | Repo hiện có **60 file màn hình** trong `lib/presentation/screens/` (tài liệu gốc mô tả 50-51 màn hình ⇒ số liệu **đã lỗi thời**, không phải số đo nghiệm thu) |
+| "Không thiếu luồng nút bấm" | Về **UI/Navigation**: đúng. Về **tích hợp backend**: **25 màn hình** đang được gate bằng `showFeatureUnavailable` vì backend chưa có API tương ứng (BE-REQ-03/04/06) ⇒ nút bấm **tồn tại nhưng không gọi được API thật** |
+| (ngầm) "backend chưa bị sửa" | 🔴 **ĐÃ BỊ SỬA** — checksum `backend` = `b1338db0…c50e` ≠ baseline `eb378711…003` (commit `6fa7600` + working tree đang được viết). Xem `.agents_workspace/06_BAO_CAO_VI_PHAM_BACKEND_GUARD.md` |
+
+**Nguồn sự thật (vòng 2):** `.agents_workspace/06_BAO_CAO_VI_PHAM_BACKEND_GUARD.md` · `.agents_workspace/05_MOBILE_BE_AUDIT_FINAL.md` (mục 4) · `mobile/README.md`.
+
+---
 
 ---
 

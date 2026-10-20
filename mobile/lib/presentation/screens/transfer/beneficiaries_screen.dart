@@ -82,7 +82,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) {
         bool isSubmitting = false;
@@ -124,7 +124,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedBank,
-                        dropdownColor: Colors.white,
+                        dropdownColor: AppColors.surfaceLight,
                         isExpanded: true,
                         style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 14),
                         items: const [
@@ -273,11 +273,19 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
   }
 
   void _editNickname(Map<String, String> b) {
+    if (!BackendCapabilities.beneficiaries) {
+      showFeatureUnavailable(
+        context,
+        feature: 'Đổi biệt danh thụ hưởng',
+        reason: 'Tính năng quản lý danh bạ thụ hưởng đang được hoàn thiện.',
+      );
+      return;
+    }
     final nickCtrl = TextEditingController(text: b['nickname']);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surfaceLight,
         title: const Text('Đổi Biệt Danh', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: nickCtrl,
@@ -306,10 +314,18 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
   }
 
   void _deleteBeneficiary(Map<String, String> b) {
+    if (!BackendCapabilities.beneficiaries) {
+      showFeatureUnavailable(
+        context,
+        feature: 'Xóa người thụ hưởng',
+        reason: 'Tính năng quản lý danh bạ thụ hưởng đang được hoàn thiện.',
+      );
+      return;
+    }
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Row(
           children: [
@@ -472,7 +488,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                                   ),
                                   child: CircleAvatar(
                                     radius: 20,
-                                    backgroundColor: Colors.white,
+                                    backgroundColor: AppColors.surfaceLight,
                                     child: Text(
                                       (b['name'] != null && b['name']!.trim().isNotEmpty)
                                           ? b['name']!.trim().split(' ').last[0].toUpperCase()

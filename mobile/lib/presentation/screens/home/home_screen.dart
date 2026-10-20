@@ -35,14 +35,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _refreshTimer;
 
   final List<Map<String, dynamic>> _quickServices = const [
-    {'icon': Icons.send_outlined, 'label': 'Chuyển tiền', 'route': '/transfer'},
-    {'icon': Icons.phone_android_outlined, 'label': 'Nạp ĐT', 'route': '/bills/phone-recharge'},
-    {'icon': Icons.receipt_long_outlined, 'label': 'Điện nước', 'route': '/bills'},
-    {'icon': Icons.account_balance_outlined, 'label': 'Tiết kiệm', 'route': '/bills/savings'},
-    {'icon': Icons.trending_up_rounded, 'label': 'Vay nhanh', 'route': '/bills/quick-loan'},
-    {'icon': Icons.confirmation_number_outlined, 'label': 'Vietlott', 'route': '/bills/lottery'},
-    {'icon': Icons.credit_card_outlined, 'label': 'Quản lý thẻ', 'route': '/cards'},
-    {'icon': Icons.grid_view_outlined, 'label': 'Xem thêm', 'route': '/more'},
+    {'icon': CupertinoIcons.paperplane_fill, 'label': 'Chuyển tiền', 'route': '/transfer'},
+    {'icon': CupertinoIcons.device_phone_portrait, 'label': 'Nạp ĐT', 'route': '/bills/phone-recharge'},
+    {'icon': CupertinoIcons.doc_text_fill, 'label': 'Điện nước', 'route': '/bills'},
+    {'icon': CupertinoIcons.money_dollar_circle_fill, 'label': 'Tiết kiệm', 'route': '/bills/savings'},
+    {'icon': CupertinoIcons.chart_bar_alt_fill, 'label': 'Vay nhanh', 'route': '/bills/quick-loan'},
+    {'icon': CupertinoIcons.tickets_fill, 'label': 'Vietlott', 'route': '/bills/lottery'},
+    {'icon': CupertinoIcons.creditcard_fill, 'label': 'Quản lý thẻ', 'route': '/cards'},
+    {'icon': CupertinoIcons.square_grid_2x2_fill, 'label': 'Xem thêm', 'route': '/more'},
   ];
 
   @override
@@ -257,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             setState(() => _hideBalance = !_hideBalance);
                           },
                           child: AppMorphIcon(
-                            icon: _hideBalance ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                            icon: _hideBalance ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
                             size: 19,
                             color: AppColors.textMutedLight,
                           ),

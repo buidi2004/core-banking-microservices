@@ -17,6 +17,7 @@ public class ApiResponse<T> {
     private String message;
     private T data;
     private String error;
+    private String errorCode;
     @Builder.Default
     private Instant timestamp = Instant.now();
 
@@ -37,8 +38,13 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
                 .success(false)
                 .error(error)
+                .errorCode(error)
                 .message(message)
                 .timestamp(Instant.now())
                 .build();
+    }
+
+    public static <T> ApiResponse<T> error(String message) {
+        return error("BAD_REQUEST", message);
     }
 }

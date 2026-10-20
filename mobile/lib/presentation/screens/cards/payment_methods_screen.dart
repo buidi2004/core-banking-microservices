@@ -88,7 +88,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) {
         bool isSubmitting = false;
@@ -426,7 +426,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   void _showOptionSheet(Map<String, dynamic> item) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),

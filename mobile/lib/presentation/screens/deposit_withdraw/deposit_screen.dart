@@ -333,8 +333,9 @@ class _DepositScreenState extends State<DepositScreen> {
                     m['sub'] as String,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: isSelected ? AppColors.bottomBarCyan : Colors.white38,
-                      fontSize: 9.5,
+                      color: isSelected ? AppColors.bottomBarCyan : AppColors.textSecondaryDark,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -372,7 +373,7 @@ class _DepositScreenState extends State<DepositScreen> {
                 suffixIcon: _amountCtrl.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(CupertinoIcons.clear_circled_solid,
-                            color: Colors.white38, size: 20),
+                            color: AppColors.textSecondaryDark, size: 20),
                         onPressed: () {
                           HapticFeedback.selectionClick();
                           setState(() => _amountCtrl.clear());

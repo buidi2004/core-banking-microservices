@@ -80,6 +80,47 @@ public class MoneyRequestController {
         return ResponseEntity.ok(ApiResponse.success("Đã từ chối yêu cầu tiền", toResponse(mr)));
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<MoneyRequestResponse>> getDetail(@PathVariable String id) {
+        MoneyRequest mr = moneyRequestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tiền không tìm thấy: " + id));
+        return ResponseEntity.ok(ApiResponse.success("Chi tiết yêu cầu tiền", toResponse(mr)));
+    }
+
+    @PostMapping("/{id}/cancel")
+    @Transactional
+    public ResponseEntity<ApiResponse<MoneyRequestResponse>> cancel(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", defaultValue = "test-user") String userId) {
+        MoneyRequest mr = moneyRequestRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tiền không tìm thấy: " + id));
+        if (!mr.getRequesterId().equals(userId)) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Chỉ người tạo mới có thể hủy yêu cầu tiền"));
+        }
+        if (!"PENDING".equalsIgnoreCase(mr.getStatus())) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Chỉ có thể hủy yêu cầu đang ở trạng thái PENDING"));
+        }
+        mr.setStatus("CANCELLED");
+        mr = moneyRequestRepository.save(mr);
+        return ResponseEntity.ok(ApiResponse.success("Đã hủy yêu cầu tiền", toResponse(mr)));
+    }
+
+    @GetMapping("/received")
+    public ResponseEntity<ApiResponse<List<MoneyRequestResponse>>> getReceived(
+            @RequestHeader(value = "X-User-Id", defaultValue = "test-user") String userId) {
+        List<MoneyRequestResponse> list = moneyRequestRepository.findByTargetUserId(userId).stream()
+                .map(this::toResponse).collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success("Danh sách yêu cầu tiền nhận được", list));
+    }
+
+    @GetMapping("/sent")
+    public ResponseEntity<ApiResponse<List<MoneyRequestResponse>>> getSent(
+            @RequestHeader(value = "X-User-Id", defaultValue = "test-user") String userId) {
+        List<MoneyRequestResponse> list = moneyRequestRepository.findByRequesterId(userId).stream()
+                .map(this::toResponse).collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success("Danh sách yêu cầu tiền đã gửi đi", list));
+    }
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<ApiResponse<List<MoneyRequestResponse>>> list(@PathVariable String userId) {
         List<MoneyRequestResponse> list = moneyRequestRepository.findByTargetUserId(userId).stream()

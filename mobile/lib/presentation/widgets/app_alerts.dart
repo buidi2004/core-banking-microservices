@@ -250,7 +250,7 @@ class AppAlerts {
       builder: (dialogCtx) => PopScope(
         canPop: true,
         child: AlertDialog(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.surfaceLight,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
           contentPadding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
           title: Row(

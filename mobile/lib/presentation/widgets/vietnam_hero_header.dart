@@ -213,7 +213,7 @@ class VietnamHeroHeader extends StatelessWidget {
                                 ),
                                 Text(
                                   displayName.isEmpty ? 'Chưa có thông tin' : displayName,
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.inter(
                                     color: Colors.white,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
@@ -296,7 +296,7 @@ class VietnamHeroHeader extends StatelessWidget {
                             const SizedBox(width: 5),
                             Text(
                               'SenBank Premier',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 color: AppColors.bottomBarCyan,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w700,
@@ -343,7 +343,7 @@ class VietnamHeroHeader extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               AppMorphIcon(
-                                icon: isHidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                icon: isHidden ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
                                 size: 16,
                                 color: Colors.white,
                                 spring: MorphSprings.snappy,
@@ -364,7 +364,7 @@ class VietnamHeroHeader extends StatelessWidget {
                     children: [
                       Text(
                         displayAmount,
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.outfit(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -381,7 +381,7 @@ class VietnamHeroHeader extends StatelessWidget {
                       const SizedBox(width: 7),
                       Text(
                         'VND',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.outfit(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF26E5DC), // Cyan highlight
@@ -428,7 +428,7 @@ class _CopyStkChipState extends State<_CopyStkChip> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
+            const Icon(CupertinoIcons.checkmark_circle_fill, color: Colors.white),
             const SizedBox(width: 8),
             Text(
               'Đã sao chép STK: ${widget.accountNumber}',
@@ -468,7 +468,7 @@ class _CopyStkChipState extends State<_CopyStkChip> {
           children: [
             Text(
               widget.accountNumber.isEmpty ? 'Chưa có số tài khoản' : widget.accountNumber,
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.outfit(
                 color: Colors.white,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -477,7 +477,7 @@ class _CopyStkChipState extends State<_CopyStkChip> {
             ),
             const SizedBox(width: 5),
             AppMorphIcon(
-              icon: _copied ? Icons.check_circle_rounded : Icons.content_copy_rounded,
+              icon: _copied ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.doc_on_doc_fill,
               color: _copied ? const Color(0xFF26E5DC) : Colors.white70,
               size: 13,
               spring: MorphSprings.snappy,

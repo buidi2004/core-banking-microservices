@@ -2,11 +2,15 @@ package com.fintech.payment.e2e;
 
 import com.fintech.payment.domain.entity.OutboxEvent;
 import com.fintech.payment.domain.entity.Transaction;
+import com.fintech.payment.grpc.WalletGrpcClient;
+import com.fintech.payment.grpc.dto.WalletBalanceResult;
+import com.fintech.payment.grpc.dto.WalletInfoResult;
 import com.fintech.payment.repository.OutboxEventRepository;
 import com.fintech.payment.repository.TransactionRepository;
 import com.fintech.payment.saga.PaymentSagaOrchestrator;
 import com.fintech.payment.saga.SagaContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -14,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -25,6 +30,11 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 /**
  * Kiểm thử E2E Saga P2P Transfer trên dữ liệu thật:
@@ -62,15 +72,45 @@ public class SagaP2pE2eTest {
         registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
         registry.add("WALLET_GRPC_HOST", () -> "localhost");
         registry.add("WALLET_GRPC_PORT", () -> "9090");
+        registry.add("grpc.server.port", () -> "-1");
     }
 
     @Autowired private PaymentSagaOrchestrator saga;
     @Autowired private TransactionRepository transactionRepository;
     @Autowired private OutboxEventRepository outboxEventRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired(required = false) private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     private static final String SENDER_USER = "e2e-user-sender";
     private static final String RECEIVER_USER = "e2e-user-receiver";
+
+    @MockBean private WalletGrpcClient walletGrpcClient;
+
+    @BeforeEach
+    void setUpGrpc() {
+        if (redisTemplate != null) {
+            redisTemplate.delete("saga:p2p:idempotency:idem-e2e-completed-001");
+            redisTemplate.delete("saga:p2p:idempotency:idem-e2e-reversed-001");
+        }
+        when(walletGrpcClient.getWalletByUserId(SENDER_USER)).thenReturn(
+                WalletInfoResult.builder().found(true).walletId("wallet-sender").userId(SENDER_USER).balance(10_000_000L).status("ACTIVE").build());
+        when(walletGrpcClient.getWalletByUserId(RECEIVER_USER)).thenReturn(
+                WalletInfoResult.builder().found(true).walletId("wallet-receiver").userId(RECEIVER_USER).balance(5_000_000L).status("ACTIVE").build());
+        when(walletGrpcClient.getWalletByUserId("e2e-user-locked")).thenReturn(
+                WalletInfoResult.builder().found(true).walletId("wallet-locked").userId("e2e-user-locked").balance(0L).status("LOCKED").build());
+
+        when(walletGrpcClient.debit(eq("wallet-sender"), anyLong(), anyString(), anyString())).thenReturn(
+                WalletBalanceResult.builder().success(true).balanceAfter(9_900_000L).build());
+
+        when(walletGrpcClient.credit(eq("wallet-receiver"), anyLong(), anyString(), anyString())).thenReturn(
+                WalletBalanceResult.builder().success(true).balanceAfter(5_100_000L).build());
+
+        when(walletGrpcClient.credit(eq("wallet-locked"), anyLong(), anyString(), anyString())).thenReturn(
+                WalletBalanceResult.builder().success(false).errorCode("WALLET_LOCKED").errorMessage("Ví đích bị khóa").build());
+
+        when(walletGrpcClient.credit(eq("wallet-sender"), anyLong(), anyString(), anyString())).thenReturn(
+                WalletBalanceResult.builder().success(true).balanceAfter(10_000_000L).build());
+    }
 
     private void printDbState(String label) {
         List<Map<String, Object>> txs = jdbcTemplate.queryForList(

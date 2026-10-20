@@ -1,0 +1,179 @@
+==============================================================================
+ 07_api_contract_diff.txt — ĐỐI CHIẾU ROUTE MOBILE ↔ CONTROLLER BACKEND (read-only)
+ đo 2026-10-21 00:43 +07
+==============================================================================
+
+## A. ROUTE KHAI BÁO TRONG MOBILE (mobile/lib/core/constants/api_constants.dart)
+  5:  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080/api/v1');
+  6:  static const String wsUrl = String.fromEnvironment('API_WS_URL', defaultValue: 'ws://localhost:8080/ws-native');
+  7:  static const String wsTopicPrefix = '/topic/wallets';
+  8:  static String walletNotificationTopic(String walletId) => '/topic/wallets/$walletId/notifications';
+  9:  static String userNotificationTopic(String userId) => '/topic/users/$userId/notifications';
+  16:  static const String login = '/auth/login';
+  17:  static const String refresh = '/auth/refresh';
+  18:  static const String register = '/auth/register';
+  19:  static const String otpVerify = '/auth/otp/verify';
+  20:  static const String otpSend = '/auth/otp/send';
+  21:  static const String forgotPassword = '/auth/forgot-password';
+  22:  static const String resetPassword = '/auth/reset-password';
+  23:  static const String logout = '/auth/logout';
+  24:  static const String setPin = '/users/pin/set';
+  25:  static const String verifyPin = '/users/pin/verify';
+  26:  static const String biometricVerify = '/security/biometric/verify';
+  31:  static const String walletMe = '/wallets/me';
+  32:  static String walletDetail(String walletId) => '/wallets/$walletId';
+  33:  static const String recipientInfo = '/wallets/recipient-info';
+  34:  static const String estimateFee = '/wallets/fees/estimate';
+  35:  static const String paymentTransfer = '/payments/transfer';
+  36:  static const String transferInit = '/wallets/transfer/init';
+  37:  static String transferConfirm(String id) => '/wallets/transfer/$id/confirm';
+  38:  static const String deposit = '/wallets/deposit';
+  39:  static const String withdraw = '/wallets/withdraw';
+  42:  static const String userProfile = '/users/profile';
+  45:  static const String transactions = '/transactions';
+  46:  static String transactionDetail(String id) => '/transactions/$id';
+  47:  static String receiptPdf(String id) => '/transactions/$id/receipt.pdf';
+  48:  static String exportTransactions(String format) => '/transactions/export/$format';
+  51:  static const String decodeVietQr = '/payments/vietqr/decode';
+  52:  static const String generateVietQr = '/payments/vietqr/generate';
+  53:  static const String myQrCode = '/users/me/qrcode';
+  56:  static const String billLookup = '/bills/lookup';
+  57:  static const String billPay = '/bills/pay';
+  58:  static const String billTopup = '/bills/topup';
+  61:  static const String banks = '/banks';
+  62:  static const String beneficiaries = '/beneficiaries';
+  63:  static const String fundingSources = '/funding-sources';
+  64:  static const String bankAccounts = '/bank-accounts';
+  67:  static const String userMe = '/users/me';
+  68:  static const String userAvatar = '/users/me/avatar';
+  69:  static const String kycSubmit = '/kyc/submit';
+  70:  static const String kycStatus = '/kyc/status';
+  71:  static const String limitStatus = '/config/limits/status';
+  74:  static const String sessions = '/sessions';
+  75:  static String sessionDetail(String sessionId) => '/sessions/$sessionId';
+  76:  static String sessionFcm(String deviceId) => '/sessions/$deviceId/fcm';
+  77:  static const String notifications = '/notifications';
+  78:  static const String notificationSettings = '/notifications/settings';
+  79:  static const String notificationsSettings = '/notifications/settings';
+  80:  static String readNotification(String id) => '/notifications/$id/read';
+  81:  static const String readAllNotifications = '/notifications/read-all';
+  82:  static const String faq = '/support/faq';
+  83:  static const String tickets = '/support/tickets';
+  86:  static const String bankAccountsLink = '/bank-accounts/link';
+  87:  static String bankAccountDetail(String id) => '/bank-accounts/$id';
+  90:  static const String configLimits = '/config/limits';
+  91:  static const String legalTerms = '/legal/terms';
+  92:  static const String legalConsent = '/legal/consent';
+  95:  static const String moneyRequests = '/payments/money-requests';
+  96:  static String moneyRequestsUser(String userId) => '/payments/money-requests/user/$userId';
+  97:  static const String moneyRequestsReceived = '/payments/money-requests/received';
+  98:  static const String moneyRequestsSent = '/payments/money-requests/sent';
+  99:  static String moneyRequestDetail(String id) => '/payments/money-requests/$id';
+  100:  static String moneyRequestAccept(String id) => '/payments/money-requests/$id/accept';
+  101:  static String moneyRequestReject(String id) => '/payments/money-requests/$id/reject';
+  102:  static String moneyRequestCancel(String id) => '/payments/money-requests/$id/cancel';
+  105:  static const String promotions = '/promotions';
+  106:  static const String myVouchers = '/promotions/my-vouchers';
+  107:  static const String redeemPromotion = '/promotions/redeem';
+  108:  static const String applyPromotion = '/promotions/apply';
+  109:  static const String referralCode = '/referrals/code';
+  110:  static const String referralHistory = '/referrals/history';
+  111:  static const String applyReferral = '/referrals/apply';
+  112:  static const String feedback = '/feedback';
+  115:  static const String deviceRegister = '/devices/register';
+  116:  static const String deviceUnregister = '/devices/unregister';
+
+## B. CÁC ENDPOINT BACKEND (đọc source, @RequestMapping/@*Mapping) — BASELINE 75bf273
+  backend/services/identity-service/src/main/java/com/fintech/identity/controller/AuthController.java :: 16:@RequestMapping("/api/v1/auth") 22:@PostMapping("/register") 30:@PostMapping("/login") 41:@PostMapping("/refresh") 47:@PostMapping("/logout") 
+  backend/services/identity-service/src/main/java/com/fintech/identity/controller/InternalUserController.java :: 21:@RequestMapping("/api/v1/internal/users") 27:@GetMapping("/by-phone") 35:@GetMapping("/{id}") 
+  backend/services/identity-service/src/main/java/com/fintech/identity/controller/KycController.java :: 19:@RequestMapping("/api/v1/kyc") 25:@PostMapping("/submit") 35:@GetMapping("/status") 42:@PutMapping("/{kycId}/review") 
+  backend/services/identity-service/src/main/java/com/fintech/identity/controller/SessionController.java :: 18:@RequestMapping("/api/v1/sessions") 24:@GetMapping 33:@DeleteMapping("/{sessionId}") 
+  backend/services/identity-service/src/main/java/com/fintech/identity/controller/StaffController.java :: 18:@RequestMapping("/api/v1/staff") 31:@GetMapping("/branch/{branchId}") 
+  backend/services/identity-service/src/main/java/com/fintech/identity/controller/UserController.java :: 18:@RequestMapping("/api/v1/users") 24:@GetMapping("/me") 32:@PutMapping("/profile") 
+  backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/controller/LedgerController.java :: 25:@RequestMapping("/api/v1/ledger") 43:@GetMapping({"/summary","/turnover-summary"}) 49:@GetMapping("/accounts") 54:@GetMapping("/accounts/balance-check") 65:@GetMapping("/statement/{walletId}") 76:@GetMapping("/statement/{walletId}/account") 87:@GetMapping("/entries") 92:@GetMapping("/entries/{entryId}") 99:@GetMapping("/transactions/{transactionId}") 
+  backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/controller/LedgerQueryController.java :: 21:@RequestMapping("/api/v1/ledger") 35:@GetMapping({"/cash-summary","/cash-deposit/summary"}) 
+  backend/services/notification-service/src/main/java/com/fintech/notification/controller/DeviceController.java :: 18:@RequestMapping("/api/v1/devices") 27:@PostMapping("/register") 37:@DeleteMapping("/unregister") 
+  backend/services/notification-service/src/main/java/com/fintech/notification/controller/NotificationController.java :: 20:@RequestMapping("/api/v1/notifications") 29:@GetMapping 40:@GetMapping("/unread-count") 48:@PatchMapping("/{id}/read") 57:@PatchMapping("/read-all") 66:@PutMapping("/settings") 
+  backend/services/notification-service/src/main/java/com/fintech/notification/controller/PromotionController.java :: 19:@RequestMapping("/api/v1/promotions") 28:@GetMapping 34:@GetMapping("/campaigns") 40:@PostMapping("/redeem") 49:@PostMapping("/apply") 59:@GetMapping("/my-vouchers") 
+  backend/services/notification-service/src/main/java/com/fintech/notification/controller/SupportController.java :: 22:@RequestMapping("/api/v1/support") 31:@PostMapping("/tickets") 43:@GetMapping("/tickets") 50:@GetMapping("/tickets/{id}") 60:@PostMapping("/tickets/{id}/messages") 70:@GetMapping("/faq") 
+  backend/services/payment-service/src/main/java/com/fintech/payment/controller/BankController.java :: 13:@RequestMapping("/api/v1/payments/banks") 22:@GetMapping 
+  backend/services/payment-service/src/main/java/com/fintech/payment/controller/CashDepositController.java :: 28:@RequestMapping("/api/v1/cash") 49:@PostMapping("/deposits") 138:@PostMapping("/deposits/{id}/approve") 205:@PostMapping("/deposits/{id}/reject") 261:@GetMapping("/deposits") 289:@GetMapping("/vault/summary") 
+  backend/services/payment-service/src/main/java/com/fintech/payment/controller/MoneyRequestController.java :: 18:@RequestMapping("/api/v1/payments/money-requests") 27:@PostMapping 55:@PostMapping("/{id}/accept") 69:@PostMapping("/{id}/reject") 83:@GetMapping("/user/{userId}") 
+  backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransactionHistoryController.java :: 30:@RequestMapping("/api/v1/transactions") 39:@GetMapping 68:@GetMapping("/{id}") 
+  backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransferController.java :: 13:@RequestMapping("/api/v1/payments/transfer") 22:@PostMapping 35:@GetMapping("/{transactionId}") 
+  backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/web/WalletRestController.java :: 29:@RequestMapping("/api/v1/wallets") 43:@GetMapping("/me") 56:@GetMapping("/{walletId}") 68:@GetMapping("/recipient-info") 110:@GetMapping("/fees/estimate") 
+
+## C. CÁC ENDPOINT BACKEND — WORKING TREE HIỆN TẠI (đã vi phạm guard)
+    @DeleteMapping("/{sessionId}")
+    @DeleteMapping("/unregister")
+    @GetMapping
+    @GetMapping("/accounts")
+    @GetMapping("/accounts/balance-check")
+    @GetMapping("/branch/{branchId}")
+    @GetMapping("/by-phone")
+    @GetMapping("/campaigns")
+    @GetMapping({"/cash-summary", "/cash-deposit/summary"})
+    @GetMapping("/deposits")
+    @GetMapping("/entries")
+    @GetMapping("/entries/{entryId}")
+    @GetMapping("/faq")
+    @GetMapping("/fees/estimate")
+    @GetMapping("/{id}")
+    @GetMapping("/me")
+    @GetMapping("/my-vouchers")
+    @GetMapping("/recipient-info")
+    @GetMapping("/statement/{walletId}")
+    @GetMapping("/statement/{walletId}/account")
+    @GetMapping("/status")
+    @GetMapping({"/summary", "/turnover-summary"})
+    @GetMapping("/tickets")
+    @GetMapping("/tickets/{id}")
+    @GetMapping("/{transactionId}")
+    @GetMapping("/transactions/{transactionId}")
+    @GetMapping("/unread-count")
+    @GetMapping("/user/{userId}")
+    @GetMapping("/vault/summary")
+    @GetMapping("/{walletId}")
+    @PatchMapping("/{id}/read")
+    @PatchMapping("/read-all")
+    @PostMapping
+    @PostMapping("/apply")
+    @PostMapping("/deposit")
+    @PostMapping("/deposits")
+    @PostMapping("/deposits/{id}/approve")
+    @PostMapping("/deposits/{id}/reject")
+    @PostMapping("/{id}/accept")
+    @PostMapping("/{id}/reject")
+    @PostMapping("/login")
+    @PostMapping("/logout")
+    @PostMapping("/redeem")
+    @PostMapping("/refresh")
+    @PostMapping("/register")
+    @PostMapping("/set")
+    @PostMapping("/submit")
+    @PostMapping("/tickets")
+    @PostMapping("/tickets/{id}/messages")
+    @PostMapping("/verify")
+    @PostMapping("/withdraw")
+    @PutMapping("/{kycId}/review")
+    @PutMapping("/profile")
+    @PutMapping("/settings")
+    @RequestMapping("/api/v1/auth")
+    @RequestMapping("/api/v1/cash")
+    @RequestMapping("/api/v1/devices")
+    @RequestMapping("/api/v1/internal/users")
+    @RequestMapping("/api/v1/kyc")
+    @RequestMapping("/api/v1/ledger")
+    @RequestMapping("/api/v1/notifications")
+    @RequestMapping("/api/v1/payments")
+    @RequestMapping("/api/v1/payments/banks")
+    @RequestMapping("/api/v1/payments/money-requests")
+    @RequestMapping("/api/v1/payments/transfer")
+    @RequestMapping("/api/v1/promotions")
+    @RequestMapping("/api/v1/sessions")
+    @RequestMapping("/api/v1/staff")
+    @RequestMapping("/api/v1/support")
+    @RequestMapping("/api/v1/transactions")
+    @RequestMapping("/api/v1/users")
+    @RequestMapping("/api/v1/users/pin")
+    @RequestMapping("/api/v1/wallets")

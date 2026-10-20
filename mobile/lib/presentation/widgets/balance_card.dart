@@ -154,7 +154,7 @@ class BalanceCard extends StatelessWidget {
                             const SizedBox(width: 5),
                             Text(
                               'SenBank Premier',
-                              style: GoogleFonts.plusJakartaSans(
+                              style: GoogleFonts.inter(
                                 color: AppColors.bottomBarCyan,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
@@ -217,7 +217,7 @@ class BalanceCard extends StatelessWidget {
                             children: [
                               Text(
                                 (accountNumber != null && accountNumber!.isNotEmpty) ? accountNumber! : 'Ví Sen Hồng',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: GoogleFonts.outfit(
                                   color: Colors.white,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -226,9 +226,9 @@ class BalanceCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 5),
                               const Icon(
-                                CupertinoIcons.doc_on_doc,
+                                CupertinoIcons.doc_on_doc_fill,
                                 color: Colors.white70,
-                                size: 12,
+                                size: 13,
                               ),
                             ],
                           ),
@@ -253,7 +253,7 @@ class BalanceCard extends StatelessWidget {
                               onToggleVisibility();
                             },
                             child: AppMorphIcon(
-                              icon: isHidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                              icon: isHidden ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
                               size: 16,
                               color: Colors.white70,
                               spring: MorphSprings.snappy,
@@ -273,7 +273,7 @@ class BalanceCard extends StatelessWidget {
                     children: [
                       Text(
                         displayAmount,
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.outfit(
                           fontSize: 27,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -283,7 +283,7 @@ class BalanceCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       Text(
                         'VND',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.outfit(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF26E5DC), // Cyan highlight

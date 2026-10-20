@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
+import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
+import 'package:sen_hong_bank/data/datasources/remote/loan_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class LoanScheduleScreen extends StatefulWidget {
   final Map<String, dynamic>? loanData;
@@ -171,13 +175,30 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
               foregroundColor: AppColors.primaryDark,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
+              if (!BackendCapabilities.loans) {
+                await showFeatureUnavailable(
+                  context,
+                  feature: 'Thanh toán kỳ vay',
+                  reason: 'Hệ thống thanh toán khoản vay đang bảo trì.',
+                );
+                return;
+              }
               setState(() => _isPaying = true);
-              Future.delayed(const Duration(milliseconds: 900), () {
+              try {
+                final loanId = widget.loanData?['id']?.toString() ?? widget.loanData?['loanId']?.toString();
+                final termNum = (dueTerm['term'] as num?)?.toInt() ?? 1;
+                final payAmount = (dueTerm['total'] as num?)?.toDouble();
+                if (loanId != null && loanId.isNotEmpty) {
+                  await LoanRemoteDataSource().repayTerm(
+                    loanId,
+                    termNumber: termNum,
+                    amount: payAmount,
+                  );
+                }
                 if (!mounted) return;
                 setState(() {
-                  _isPaying = false;
                   dueTerm['status'] = 'PAID';
                   dueTerm['paidDate'] = 'Hôm nay';
                   if (_schedule.length > 3) {
@@ -192,7 +213,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Thanh toán Kỳ ${dueTerm['term']} thành công! Điểm tín dụng SenBank của bạn đã tăng.',
+                            'Thanh toán Kỳ ${dueTerm['term']} thành công! Tiền đã được trích từ ví.',
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
@@ -202,7 +223,18 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                     behavior: SnackBarBehavior.floating,
                   ),
                 );
-              });
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(extractErrorMessage(e)),
+                    backgroundColor: AppColors.error,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } finally {
+                if (mounted) setState(() => _isPaying = false);
+              }
             },
             child: const Text('Xác nhận thanh toán', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
@@ -714,11 +746,11 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(badgeIcon, color: badgeText, size: 12),
+                    Icon(badgeIcon, color: badgeText, size: 14),
                     const SizedBox(width: 4),
                     Text(
                       badgeLabel,
-                      style: TextStyle(color: badgeText, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: badgeText, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),

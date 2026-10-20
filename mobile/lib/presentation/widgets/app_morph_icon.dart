@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:morphnext/morphnext.dart';
@@ -56,7 +57,7 @@ class MorphEyeButton extends StatelessWidget {
       padding: padding,
       constraints: const BoxConstraints(),
       icon: AnimatedMorphIcon(
-        icon: isHidden ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+        icon: isHidden ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
         size: size,
         color: color,
         spring: MorphSprings.snappy,

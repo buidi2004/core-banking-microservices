@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
@@ -63,6 +64,24 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
   }
 
   Future<void> _verifyOldPin() async {
+    // MOB-007 / R2-P1-03 (vòng 2): backend chưa có API xác thực PIN (BE-REQ-03).
+    // Phải gate TRƯỚC khi gọi API, nếu không người dùng sẽ bị báo nhầm
+    // "Mã PIN hiện tại chưa chính xác" trong khi thực ra tính năng chưa tồn tại.
+    if (!BackendCapabilities.transactionPin) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Đổi mã PIN giao dịch',
+        reason: 'Backend chưa hỗ trợ API xác thực mã PIN giao dịch (BE-REQ-03). '
+            'Tính năng quản lý mã PIN máy chủ đang được nâng cấp.',
+      );
+      if (!mounted) return;
+      setState(() {
+        _oldPin = '';
+        _errorMessage = 'Tính năng chưa sẵn sàng. Vui lòng quay lại sau.';
+      });
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       await WalletTransactionRemoteDataSource().verifyPin(_oldPin);
@@ -71,6 +90,15 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       setState(() {
         _isLoading = false;
         _currentStep = 2;
+      });
+    } on UnsupportedError catch (e) {
+      // Backend không có endpoint ⇒ không được báo nhầm "PIN sai".
+      if (!mounted) return;
+      HapticFeedback.vibrate();
+      setState(() {
+        _isLoading = false;
+        _oldPin = '';
+        _errorMessage = e.message ?? 'Tính năng chưa sẵn sàng. Vui lòng quay lại sau.';
       });
     } catch (e) {
       if (!mounted) return;
@@ -396,7 +424,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(CupertinoIcons.check_mark, size: 13, color: AppColors.emeraldGreen),
+          const Icon(CupertinoIcons.check_mark, size: 14, color: AppColors.emeraldGreen),
           const SizedBox(width: 6),
           Expanded(
             child: Text(

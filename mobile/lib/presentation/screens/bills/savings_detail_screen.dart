@@ -5,9 +5,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
+import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/savings_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class SavingsDetailScreen extends StatefulWidget {
   final Map<String, dynamic>? passbook;
@@ -326,21 +330,43 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
               backgroundColor: Colors.redAccent,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              setState(() => _isSettling = true);
-              Future.delayed(const Duration(milliseconds: 1000), () {
-                if (!mounted) return;
-                setState(() => _isSettling = false);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Tất toán thành công! Tiền đã được chuyển vào Ví SenBank.'),
-                    backgroundColor: AppColors.emeraldGreen,
-                    behavior: SnackBarBehavior.floating,
-                  ),
+              if (!BackendCapabilities.savings) {
+                await showFeatureUnavailable(
+                  context,
+                  feature: 'Tất toán sổ tiết kiệm',
+                  reason: 'Hệ thống tất toán sổ tiết kiệm đang bảo trì.',
                 );
-                context.pop();
-              });
+                return;
+              }
+              setState(() => _isSettling = true);
+              try {
+                final id = _data['id']?.toString() ?? _data['code']?.toString() ?? '';
+                final res = await SavingsRemoteDataSource().settleSavings(id);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(res['message']?.toString() ?? 'Tất toán thành công! Tiền đã được chuyển vào Ví SenBank.'),
+                      backgroundColor: AppColors.emeraldGreen,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  context.pop();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(extractErrorMessage(e)),
+                      backgroundColor: AppColors.error,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              } finally {
+                if (mounted) setState(() => _isSettling = false);
+              }
             },
             child: const Text('Xác nhận tất toán', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -795,8 +821,8 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Gửi ngày: ${_data['openDate']}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
-                Text('Đáo hạn: ${_data['maturityDate']}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                Text('Gửi ngày: ${_data['openDate']}', style: const TextStyle(color: AppColors.textSecondaryDark, fontSize: 11.5, fontWeight: FontWeight.w500)),
+                Text('Đáo hạn: ${_data['maturityDate']}', style: const TextStyle(color: AppColors.textSecondaryDark, fontSize: 11.5, fontWeight: FontWeight.w500)),
               ],
             ),
             const SizedBox(height: 14),

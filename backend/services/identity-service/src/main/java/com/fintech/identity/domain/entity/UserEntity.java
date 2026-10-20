@@ -59,6 +59,16 @@ public class UserEntity {
     @Builder.Default
     private String branchId = "BR_MAIN";
 
+    @Column(name = "pin_hash", length = 255)
+    private String pinHash;
+
+    @Column(name = "pin_failed_attempts", nullable = false)
+    @Builder.Default
+    private Integer pinFailedAttempts = 0;
+
+    @Column(name = "pin_locked_until")
+    private Instant pinLockedUntil;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;

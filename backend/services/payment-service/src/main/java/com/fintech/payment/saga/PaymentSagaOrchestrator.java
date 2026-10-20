@@ -133,6 +133,176 @@ public class PaymentSagaOrchestrator {
         }
     }
 
+    /**
+     * Nạp tiền vào ví người dùng (User Deposit).
+     */
+    @Transactional
+    public SagaContext deposit(String userId, String walletId, Long amount, String currency, String idempotencyKey) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Số tiền nạp phải lớn hơn 0");
+        }
+
+        String resolvedWalletId = walletId;
+        if (resolvedWalletId == null || resolvedWalletId.isBlank()) {
+            var target = walletGrpcClient.getWalletByUserId(userId);
+            if (!target.isFound()) {
+                throw new IllegalArgumentException("Không tìm thấy ví của người dùng: " + userId);
+            }
+            resolvedWalletId = target.getWalletId();
+        }
+
+        String actualIdemKey = (idempotencyKey != null && !idempotencyKey.isBlank())
+                ? idempotencyKey
+                : "dep:" + UUID.randomUUID();
+
+        // Guard idempotency
+        String lockKey = "saga:deposit:idempotency:" + actualIdemKey;
+        Boolean acquired = redisTemplate.opsForValue()
+                .setIfAbsent(lockKey, "1", java.time.Duration.ofSeconds(IDEMPOTENCY_TTL_SECONDS));
+        if (Boolean.FALSE.equals(acquired)) {
+            return transactionRepository.findByIdempotencyKey(actualIdemKey)
+                    .map(this::toContext)
+                    .orElseThrow(() -> new IllegalStateException("Yêu cầu nạp tiền đang được xử lý"));
+        }
+
+        SagaContext ctx = new SagaContext();
+        ctx.setIdempotencyKey(actualIdemKey);
+        ctx.setTargetUserId(userId);
+        ctx.setTargetWalletId(resolvedWalletId);
+        ctx.setAmount(amount);
+        ctx.setCurrency(currency != null ? currency : "VND");
+        ctx.setNote("Nạp tiền vào ví");
+
+        String transactionCode = "DEP_" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+        Transaction tx = Transaction.builder()
+                .transactionCode(transactionCode)
+                .targetWalletId(resolvedWalletId)
+                .receiverId(userId)
+                .amount(amount)
+                .fee(0L)
+                .currency(currency != null ? currency : "VND")
+                .type("DEPOSIT")
+                .status("INITIATED")
+                .idempotencyKey(actualIdemKey)
+                .note("Nạp tiền vào ví")
+                .build();
+        tx = transactionRepository.save(tx);
+        ctx.setTransactionId(tx.getId());
+        ctx.setTransactionCode(transactionCode);
+
+        // Credit ví
+        WalletBalanceResult credit = walletGrpcClient.credit(
+                resolvedWalletId, amount, tx.getId(), actualIdemKey + ":credit");
+        if (!credit.isSuccess()) {
+            tx.setStatus("FAILED");
+            transactionRepository.save(tx);
+            ctx.failed("Nạp tiền thất bại: " + credit.getErrorMessage());
+            throw new IllegalStateException("Nạp tiền thất bại: " + credit.getErrorMessage());
+        }
+
+        tx.setStatus("SUCCESS");
+        tx.setTargetBalanceAfter(credit.getBalanceAfter());
+        transactionRepository.save(tx);
+
+        ctx.setTargetBalanceAfter(String.valueOf(credit.getBalanceAfter()));
+        ctx.succeeded();
+
+        // Outbox event
+        com.fintech.wallet.domain.event.TransactionEvent completedEvent = event(ctx, "SUCCESS");
+        completedEvent.setTransactionId(tx.getId());
+        completedEvent.setType("DEPOSIT");
+        OutboxEvent outbox = OutboxEvent.pending(
+                "Transaction", tx.getId(), "TransactionCompletedEvent", serialize(completedEvent));
+        outboxEventRepository.save(outbox);
+
+        return ctx;
+    }
+
+    /**
+     * Rút tiền từ ví người dùng về tài khoản ngân hàng (User Withdraw).
+     */
+    @Transactional
+    public SagaContext withdraw(String userId, String walletId, Long amount, String currency, String bankAccountId, String idempotencyKey) {
+        if (amount == null || amount <= 0) {
+            throw new IllegalArgumentException("Số tiền rút phải lớn hơn 0");
+        }
+
+        String resolvedWalletId = walletId;
+        if (resolvedWalletId == null || resolvedWalletId.isBlank()) {
+            var source = walletGrpcClient.getWalletByUserId(userId);
+            if (!source.isFound()) {
+                throw new IllegalArgumentException("Không tìm thấy ví của người dùng: " + userId);
+            }
+            resolvedWalletId = source.getWalletId();
+        }
+
+        String actualIdemKey = (idempotencyKey != null && !idempotencyKey.isBlank())
+                ? idempotencyKey
+                : "wdr:" + UUID.randomUUID();
+
+        // Guard idempotency
+        String lockKey = "saga:withdraw:idempotency:" + actualIdemKey;
+        Boolean acquired = redisTemplate.opsForValue()
+                .setIfAbsent(lockKey, "1", java.time.Duration.ofSeconds(IDEMPOTENCY_TTL_SECONDS));
+        if (Boolean.FALSE.equals(acquired)) {
+            return transactionRepository.findByIdempotencyKey(actualIdemKey)
+                    .map(this::toContext)
+                    .orElseThrow(() -> new IllegalStateException("Yêu cầu rút tiền đang được xử lý"));
+        }
+
+        SagaContext ctx = new SagaContext();
+        ctx.setIdempotencyKey(actualIdemKey);
+        ctx.setSourceUserId(userId);
+        ctx.setSourceWalletId(resolvedWalletId);
+        ctx.setAmount(amount);
+        ctx.setCurrency(currency != null ? currency : "VND");
+        ctx.setNote("Rút tiền về tài khoản ngân hàng: " + bankAccountId);
+
+        String transactionCode = "WDR_" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+        Transaction tx = Transaction.builder()
+                .transactionCode(transactionCode)
+                .sourceWalletId(resolvedWalletId)
+                .senderId(userId)
+                .amount(amount)
+                .fee(0L)
+                .currency(currency != null ? currency : "VND")
+                .type("WITHDRAWAL")
+                .status("INITIATED")
+                .idempotencyKey(actualIdemKey)
+                .note("Rút tiền về tài khoản: " + bankAccountId)
+                .build();
+        tx = transactionRepository.save(tx);
+        ctx.setTransactionId(tx.getId());
+        ctx.setTransactionCode(transactionCode);
+
+        // Debit ví
+        WalletBalanceResult debit = walletGrpcClient.debit(
+                resolvedWalletId, amount, tx.getId(), actualIdemKey + ":debit");
+        if (!debit.isSuccess()) {
+            tx.setStatus("FAILED");
+            transactionRepository.save(tx);
+            ctx.failed("Rút tiền thất bại: " + (debit.getErrorMessage() != null ? debit.getErrorMessage() : debit.getErrorCode()));
+            throw new IllegalArgumentException(debit.getErrorMessage() != null ? debit.getErrorMessage() : "Số dư ví không đủ để rút tiền");
+        }
+
+        tx.setStatus("SUCCESS");
+        tx.setSourceBalanceAfter(debit.getBalanceAfter());
+        transactionRepository.save(tx);
+
+        ctx.setSourceBalanceAfter(String.valueOf(debit.getBalanceAfter()));
+        ctx.succeeded();
+
+        // Outbox event
+        com.fintech.wallet.domain.event.TransactionEvent completedEvent = event(ctx, "SUCCESS");
+        completedEvent.setTransactionId(tx.getId());
+        completedEvent.setType("WITHDRAWAL");
+        OutboxEvent outbox = OutboxEvent.pending(
+                "Transaction", tx.getId(), "TransactionCompletedEvent", serialize(completedEvent));
+        outboxEventRepository.save(outbox);
+
+        return ctx;
+    }
+
     /* ---------- Private steps ---------- */
 
     private void resolveWallets(SagaContext ctx) {

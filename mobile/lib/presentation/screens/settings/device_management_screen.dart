@@ -514,7 +514,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(CupertinoIcons.location_solid, color: Colors.white38, size: 13),
+                        const Icon(CupertinoIcons.location_solid, color: AppColors.textSecondaryDark, size: 14),
                         const SizedBox(width: 4),
                         Text(d['ip'] as String, style: const TextStyle(color: Colors.white70, fontSize: 11)),
                       ],
@@ -534,7 +534,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                 const SizedBox(height: 8),
                 const Row(
                   children: [
-                    Icon(CupertinoIcons.lock_shield_fill, color: AppColors.bottomBarCyan, size: 13),
+                    Icon(CupertinoIcons.lock_shield_fill, color: AppColors.bottomBarCyan, size: 14),
                     SizedBox(width: 5),
                     Text(
                       'Đã liên kết Smart OTP • Khóa bảo mật phần cứng duy nhất',

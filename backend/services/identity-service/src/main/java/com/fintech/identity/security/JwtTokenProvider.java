@@ -91,6 +91,61 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String generatePinToken(String userId) {
+        Instant now = Instant.now();
+        Instant expiry = now.plusSeconds(300); // Có hiệu lực trong 5 phút
+        String jti = UUID.randomUUID().toString();
+
+        return Jwts.builder()
+                .id(jti)
+                .subject(userId)
+                .claim("type", "PIN_TOKEN")
+                .claim("scope", "TRANSACTION_AUTH")
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String generateOtpToken(String phoneNumber, String purpose) {
+        Instant now = Instant.now();
+        Instant expiry = now.plusSeconds(600); // 10 phút
+        String jti = UUID.randomUUID().toString();
+
+        return Jwts.builder()
+                .id(jti)
+                .subject(phoneNumber)
+                .claim("type", "OTP_TOKEN")
+                .claim("purpose", purpose)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public boolean validateOtpToken(String token, String expectedPhone, String expectedPurpose) {
+        if (token == null || token.isBlank()) return false;
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+
+            String jti = claims.getId();
+            if (isBlacklisted(jti, token)) {
+                return false;
+            }
+
+            return "OTP_TOKEN".equals(claims.get("type"))
+                    && expectedPhone.equals(claims.getSubject())
+                    && expectedPurpose.equals(claims.get("purpose"));
+        } catch (Exception e) {
+            log.warn("Mã xác thực OTP token không hợp lệ: {}", e.getMessage());
+            return false;
+        }
+    }
+
     public Claims parseAndValidateToken(String token) {
         try {
             Claims claims = Jwts.parser()

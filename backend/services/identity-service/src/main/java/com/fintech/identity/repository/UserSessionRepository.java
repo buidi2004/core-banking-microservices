@@ -17,5 +17,7 @@ public interface UserSessionRepository extends JpaRepository<UserSessionEntity, 
 
     List<UserSessionEntity> findByUserIdAndIsRevokedFalse(String userId);
 
+    void deleteByUserId(String userId);
+
     void deleteByExpiresAtBefore(Instant cutoff);
 }

@@ -3,6 +3,7 @@ package com.fintech.payment.controller;
 import com.fintech.payment.domain.entity.Transaction;
 import com.fintech.payment.dto.ApiResponse;
 import com.fintech.payment.repository.TransactionRepository;
+import com.fintech.payment.service.ReceiptExportService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,9 @@ class TransactionHistoryControllerTest {
 
     @Mock
     private TransactionRepository transactionRepository;
+
+    @Mock
+    private ReceiptExportService receiptExportService;
 
     @InjectMocks
     private TransactionHistoryController controller;
@@ -126,5 +130,31 @@ class TransactionHistoryControllerTest {
         assertThat(content).hasSize(2);
         assertThat(content.get(0).get("type")).isEqualTo("TRANSFER_IN"); // Reversed hoàn tiền
         assertThat(content.get(1).get("type")).isEqualTo("TRANSFER_OUT"); // Normal chuyển đi
+    }
+
+    @Test
+    @DisplayName("GET /{id}/receipt.pdf: Trả về file biên lai định dạng PDF")
+    void getReceiptPdf_Success() {
+        byte[] pdfBytes = "%PDF-1.4 test receipt".getBytes();
+        when(receiptExportService.generateReceiptPdf("tx-normal-1")).thenReturn(pdfBytes);
+
+        ResponseEntity<byte[]> response = controller.getReceiptPdf("tx-normal-1");
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isEqualTo(pdfBytes);
+        assertThat(response.getHeaders().getFirst("Content-Disposition")).contains("receipt-tx-normal-1.pdf");
+    }
+
+    @Test
+    @DisplayName("GET /export/{format}: Xuất sao kê tài khoản định dạng CSV")
+    void exportTransactions_Csv_Success() {
+        byte[] csvBytes = "Mã giao dịch,Thời gian,Số tiền\nTXC-1001,2026-10-21,500000".getBytes();
+        when(receiptExportService.exportTransactions("wallet-source", "csv")).thenReturn(csvBytes);
+
+        ResponseEntity<byte[]> response = controller.exportTransactions("csv", "wallet-source");
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isEqualTo(csvBytes);
+        assertThat(response.getHeaders().getFirst("Content-Disposition")).contains("statement-wallet-source.csv");
     }
 }

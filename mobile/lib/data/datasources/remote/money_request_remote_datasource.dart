@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/constants/backend_capabilities.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/storage/app_secure_storage.dart';
 import 'api_response.dart';
@@ -26,15 +27,26 @@ class MoneyRequestRemoteDataSource {
     return (json['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
-  /// Lấy danh sách money request gửi đi - BE chưa có endpoint riêng cho getSent.
-  /// Trả về danh sách rỗng thay vì gọi endpoint 404.
+  /// Lấy danh sách money request gửi đi
   Future<List<Map<String, dynamic>>> getSent() async {
-    return [];
+    if (!BackendCapabilities.moneyRequestDetail) {
+      return [];
+    }
+    final response = await _dio.get(ApiConstants.moneyRequestsSent);
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! List) throw apiException(json);
+    return (json['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
-  /// Lấy chi tiết money request - BE chưa có endpoint chi tiết ⇒ ném UnsupportedError
+  /// Lấy chi tiết money request
   Future<Map<String, dynamic>> getDetail(String id) async {
-    throw UnsupportedError('Backend chưa hỗ trợ API chi tiết yêu cầu tiền (BE-REQ-06)');
+    if (!BackendCapabilities.moneyRequestDetail) {
+      throw UnsupportedError('Backend chưa hỗ trợ API chi tiết yêu cầu tiền (BE-REQ-06)');
+    }
+    final response = await _dio.get(ApiConstants.moneyRequestDetail(id));
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
   }
 
   /// Tạo money request - body: {requesterId, targetUserId, amount, note?, expiresInHours?}
@@ -89,8 +101,14 @@ class MoneyRequestRemoteDataSource {
     return Map<String, dynamic>.from(json['data'] as Map);
   }
 
-  /// Hủy money request - BE chưa có endpoint ⇒ ném UnsupportedError
+  /// Hủy money request
   Future<Map<String, dynamic>> cancel(String id) async {
-    throw UnsupportedError('Hủy money request chưa hỗ trợ do BE chưa cung cấp API (BE-REQ-06).');
+    if (!BackendCapabilities.moneyRequestCancel) {
+      throw UnsupportedError('Hủy money request chưa hỗ trợ do BE chưa cung cấp API (BE-REQ-06).');
+    }
+    final response = await _dio.post(ApiConstants.moneyRequestCancel(id));
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
   }
 }

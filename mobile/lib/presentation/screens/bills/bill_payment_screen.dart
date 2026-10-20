@@ -717,7 +717,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 10.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -725,8 +725,9 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                     Text(
                       r['status'] as String,
                       style: TextStyle(
-                        color: isDone ? AppColors.emeraldGreen : Colors.white54,
-                        fontSize: 9.5,
+                        color: isDone ? AppColors.emeraldGreen : AppColors.textSecondaryDark,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],

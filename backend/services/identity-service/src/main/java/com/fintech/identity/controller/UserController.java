@@ -37,4 +37,14 @@ public class UserController {
         UserProfileResponse response = userService.updateProfile(userId, request);
         return ResponseEntity.ok(ApiResponse.ok(response, "Cập nhật hồ sơ thành công"));
     }
+
+    @PostMapping("/me/avatar")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> uploadAvatar(
+            @RequestHeader(value = "X-User-Id") String userId,
+            @RequestBody java.util.Map<String, String> payload) {
+        String avatarUrl = payload.getOrDefault("avatarUrl", payload.get("url"));
+        UpdateProfileRequest req = UpdateProfileRequest.builder().avatarUrl(avatarUrl).build();
+        UserProfileResponse response = userService.updateProfile(userId, req);
+        return ResponseEntity.ok(ApiResponse.ok(response, "Cập nhật ảnh đại diện thành công"));
+    }
 }

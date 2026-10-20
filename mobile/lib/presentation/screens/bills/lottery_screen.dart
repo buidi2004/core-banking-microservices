@@ -432,9 +432,9 @@ class _LotteryScreenState extends State<LotteryScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.flame_fill, color: Colors.redAccent, size: 12),
+                    Icon(CupertinoIcons.flame_fill, color: Colors.redAccent, size: 14),
                     SizedBox(width: 4),
-                    Text('HOT', style: TextStyle(color: Colors.redAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+                    Text('HOT', style: TextStyle(color: Colors.redAccent, fontSize: 11, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),

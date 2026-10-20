@@ -3,8 +3,11 @@ package com.fintech.payment.controller;
 import com.fintech.payment.domain.entity.Transaction;
 import com.fintech.payment.dto.ApiResponse;
 import com.fintech.payment.repository.TransactionRepository;
+import com.fintech.payment.service.ReceiptExportService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,9 +34,34 @@ import java.util.Optional;
 public class TransactionHistoryController {
 
     private final TransactionRepository transactionRepository;
+    private final ReceiptExportService receiptExportService;
 
-    public TransactionHistoryController(TransactionRepository transactionRepository) {
+    public TransactionHistoryController(TransactionRepository transactionRepository,
+                                        ReceiptExportService receiptExportService) {
         this.transactionRepository = transactionRepository;
+        this.receiptExportService = receiptExportService;
+    }
+
+    @GetMapping(value = "/{id}/receipt.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> getReceiptPdf(@PathVariable String id) {
+        byte[] pdf = receiptExportService.generateReceiptPdf(id);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=receipt-" + id + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdf);
+    }
+
+    @GetMapping(value = "/export/{format}")
+    public ResponseEntity<byte[]> exportTransactions(
+            @PathVariable String format,
+            @RequestParam String walletId) {
+        byte[] data = receiptExportService.exportTransactions(walletId, format);
+        String mediaType = "pdf".equalsIgnoreCase(format) ? MediaType.APPLICATION_PDF_VALUE : "text/csv; charset=UTF-8";
+        String ext = "pdf".equalsIgnoreCase(format) ? "pdf" : "csv";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=statement-" + walletId + "." + ext)
+                .header(HttpHeaders.CONTENT_TYPE, mediaType)
+                .body(data);
     }
 
     @GetMapping

@@ -595,7 +595,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                             child: const Text(
                               'DU LỊCH HÈ',
                               style: TextStyle(
-                                fontSize: 9,
+                                fontSize: 10.5,
                                 fontWeight: FontWeight.w900,
                                 color: Color(0xFF0077B6),
                               ),
@@ -632,13 +632,13 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(CupertinoIcons.gift_fill, color: Color(0xFF26E5DC), size: 13),
+                          Icon(CupertinoIcons.gift_fill, color: Color(0xFF26E5DC), size: 14),
                           SizedBox(width: 4),
                           Text(
                             'ƯU ĐÃI ĐẶC QUYỀN',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 9.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
                             ),

@@ -9,6 +9,7 @@ import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class CardsScreen extends StatefulWidget {
   const CardsScreen({super.key});
@@ -21,11 +22,11 @@ class _CardsScreenState extends State<CardsScreen> {
   final PageController _cardPageCtrl = PageController(viewportFraction: 0.92);
   int _currentCardIdx = 0;
 
-  bool _isLocked = false;
+  final bool _isLocked = false;
   bool _showDetails = false;
-  bool _onlinePayment = true;
-  bool _intlPayment = true;
-  bool _atmWithdraw = true;
+  final bool _onlinePayment = true;
+  final bool _intlPayment = true;
+  final bool _atmWithdraw = true;
   String _cardHolderName = 'CHỦ THẺ SEN HỒNG';
 
   @override
@@ -117,7 +118,7 @@ class _CardsScreenState extends State<CardsScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
         padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 28),
@@ -188,11 +189,10 @@ class _CardsScreenState extends State<CardsScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    backgroundColor: AppColors.emeraldGreen,
-                    content: Text('Đăng ký phát hành thẻ vật lý thành công! Mã đơn vận: #SHB-CARD-8899'),
-                  ),
+                showFeatureUnavailable(
+                  context,
+                  feature: 'Phát hành thẻ vật lý',
+                  reason: 'Dịch vụ phát hành thẻ vật lý dập nổi đang trong giai đoạn triển khai cùng đối tác phát hành thẻ.',
                 );
               },
               child: const Text('Xác nhận đăng ký phát hành'),
@@ -353,8 +353,11 @@ class _CardsScreenState extends State<CardsScreen> {
                       isActive: _onlinePayment,
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        setState(() => _onlinePayment = !_onlinePayment);
-                        _showToggleFeedback('Thanh toán trực tuyến E-Commerce', _onlinePayment);
+                        showFeatureUnavailable(
+                          context,
+                          feature: 'Quản lý thanh toán Online',
+                          reason: 'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
+                        );
                       },
                     ),
                     const SizedBox(width: 8),
@@ -364,8 +367,11 @@ class _CardsScreenState extends State<CardsScreen> {
                       isActive: _intlPayment,
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        setState(() => _intlPayment = !_intlPayment);
-                        _showToggleFeedback('Chi tiêu quốc tế POS/Online', _intlPayment);
+                        showFeatureUnavailable(
+                          context,
+                          feature: 'Quản lý chi tiêu quốc tế',
+                          reason: 'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
+                        );
                       },
                     ),
                     const SizedBox(width: 8),
@@ -375,8 +381,11 @@ class _CardsScreenState extends State<CardsScreen> {
                       isActive: _atmWithdraw,
                       onTap: () {
                         HapticFeedback.selectionClick();
-                        setState(() => _atmWithdraw = !_atmWithdraw);
-                        _showToggleFeedback('Rút tiền mặt ATM', _atmWithdraw);
+                        showFeatureUnavailable(
+                          context,
+                          feature: 'Quản lý rút tiền ATM',
+                          reason: 'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
+                        );
                       },
                     ),
                   ],
@@ -538,7 +547,11 @@ class _CardsScreenState extends State<CardsScreen> {
 
     return GlassCard(
       quality: GlassQuality.standard,
-      settings: const LiquidGlassSettings(specularSharpness: GlassSpecularSharpness.medium),
+      settings: const LiquidGlassSettings(
+        specularSharpness: GlassSpecularSharpness.soft,
+        lightIntensity: 0.3,
+        glowIntensity: 0.2,
+      ),
       child: Container(
         height: 220,
         decoration: BoxDecoration(
@@ -546,9 +559,9 @@ class _CardsScreenState extends State<CardsScreen> {
           border: Border.all(color: AppColors.bottomBarCyan.withOpacity(0.35), width: 1.2),
           boxShadow: [
             BoxShadow(
-              color: AppColors.bottomBarGlow.withOpacity(0.25),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: AppColors.bottomBarGlow.withOpacity(0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -790,7 +803,7 @@ class _CardsScreenState extends State<CardsScreen> {
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
@@ -834,27 +847,13 @@ class _CardsScreenState extends State<CardsScreen> {
 
     if (confirmed == true && mounted) {
       HapticFeedback.mediumImpact();
-      setState(() => _isLocked = willLock);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: willLock ? AppColors.error : AppColors.emeraldGreen,
-          content: Text(
-            willLock
-                ? 'Đã tạm khóa thẻ an toàn thành công!'
-                : 'Đã mở khóa thẻ thành công! Thẻ đã sẵn sàng giao dịch.',
-          ),
-        ),
+      await showFeatureUnavailable(
+        context,
+        feature: willLock ? 'Khóa thẻ tạm thời' : 'Mở khóa thẻ',
+        reason: 'Hệ thống Switchboard khóa thẻ đang trong quá trình tích hợp Core Banking. Để khóa thẻ khẩn cấp 24/7, quý khách vui lòng liên hệ hotline 1900 8888.',
       );
     }
   }
 
-  void _showToggleFeedback(String feature, bool status) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(seconds: 1),
-        backgroundColor: status ? AppColors.emeraldGreen : AppColors.textSecondaryLight,
-        content: Text('$feature: ${status ? "ĐÃ BẬT" : "ĐÃ TẮT"}'),
-      ),
-    );
-  }
+
 }

@@ -217,7 +217,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       context: context,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(24),
@@ -388,7 +388,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       SizedBox(width: 6),
                       Text('Xem trạng thái eKYC', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 12, fontWeight: FontWeight.bold)),
                       SizedBox(width: 4),
-                      Icon(CupertinoIcons.chevron_forward, color: AppColors.emeraldGreen, size: 12),
+                      Icon(CupertinoIcons.chevron_forward, color: AppColors.emeraldGreen, size: 14),
                     ],
                   ),
                 ),

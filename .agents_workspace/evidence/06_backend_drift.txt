@@ -1,0 +1,178 @@
+==============================================================================
+ 06_backend_drift.txt — BẰNG CHỨNG DRIFT BACKEND (đo 2026-10-21 00:42 +07)
+==============================================================================
+
+## 1. BACKEND GUARD CHECK (scripts/check_backend_guard.sh)
+$ bash scripts/check_backend_guard.sh
+==============================================================================
+ 🔒 BACKEND GUARD CHECK — chỉ đọc, không sửa gì
+==============================================================================
+ Repo            : /home/buidi/core-banking-microservices
+ Baseline commit : 75bf273cd707571c13073a625390a78adfa320ce
+ Baseline SHA256 : eb37871177838108be4df91e6498e40645f610eaff1ed308e1a587c09b0aa003
+ Current  SHA256 : b1338db0854a2165a768a95ca147beb78b17479e348947cfb31f035b55b1c50e
+ Checksum        : ❌ LỆCH (kỳ vọng eb37871177838108be4df91e6498e40645f610eaff1ed308e1a587c09b0aa003)
+
+--- git status --porcelain -- backend docker-compose.yml deploy ---
+ M backend/services/api-gateway/src/main/resources/application.yml
+ M backend/services/identity-service/src/main/java/com/fintech/identity/controller/GlobalExceptionHandler.java
+ M backend/services/identity-service/src/main/java/com/fintech/identity/domain/entity/UserEntity.java
+ M backend/services/identity-service/src/main/java/com/fintech/identity/dto/ApiResponse.java
+ M backend/services/identity-service/src/main/java/com/fintech/identity/security/JwtTokenProvider.java
+ M backend/services/payment-service/pom.xml
+ M backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransferController.java
+ M backend/services/payment-service/src/main/java/com/fintech/payment/dto/ApiResponse.java
+ M backend/services/payment-service/src/main/java/com/fintech/payment/dto/TransferRequest.java
+ M backend/services/payment-service/src/main/java/com/fintech/payment/saga/PaymentSagaOrchestrator.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/controller/UserPinController.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinSetRequest.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyRequest.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyResponse.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/exception/
+?? backend/services/identity-service/src/main/java/com/fintech/identity/service/UserPinService.java
+?? backend/services/identity-service/src/main/resources/db/migration/V4__add_transaction_pin.sql
+?? backend/services/identity-service/src/test/java/com/fintech/identity/controller/UserPinControllerTest.java
+?? backend/services/identity-service/src/test/java/com/fintech/identity/service/UserPinServiceTest.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/controller/DepositWithdrawController.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/controller/WalletMutationController.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositRequest.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositResponse.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawRequest.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawResponse.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/security/
+?? backend/services/payment-service/src/test/java/com/fintech/payment/controller/DepositWithdrawControllerTest.java
+?? backend/services/payment-service/src/test/java/com/fintech/payment/controller/TransferControllerPinTest.java
+?? backend/services/payment-service/src/test/java/com/fintech/payment/security/
+
+--- git diff --name-only (đã sửa, chưa commit) ---
+backend/services/api-gateway/src/main/resources/application.yml
+backend/services/identity-service/src/main/java/com/fintech/identity/controller/GlobalExceptionHandler.java
+backend/services/identity-service/src/main/java/com/fintech/identity/domain/entity/UserEntity.java
+backend/services/identity-service/src/main/java/com/fintech/identity/dto/ApiResponse.java
+backend/services/identity-service/src/main/java/com/fintech/identity/security/JwtTokenProvider.java
+backend/services/payment-service/pom.xml
+backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransferController.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/ApiResponse.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/TransferRequest.java
+backend/services/payment-service/src/main/java/com/fintech/payment/saga/PaymentSagaOrchestrator.java
+
+--- file chưa track (mới tạo) ---
+backend/services/identity-service/src/main/java/com/fintech/identity/controller/UserPinController.java
+backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinSetRequest.java
+backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyRequest.java
+backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyResponse.java
+backend/services/identity-service/src/main/java/com/fintech/identity/exception/InvalidPinException.java
+backend/services/identity-service/src/main/java/com/fintech/identity/exception/PinLockedException.java
+backend/services/identity-service/src/main/java/com/fintech/identity/exception/PinNotSetException.java
+backend/services/identity-service/src/main/java/com/fintech/identity/service/UserPinService.java
+backend/services/identity-service/src/main/resources/db/migration/V4__add_transaction_pin.sql
+backend/services/identity-service/src/test/java/com/fintech/identity/controller/UserPinControllerTest.java
+backend/services/identity-service/src/test/java/com/fintech/identity/service/UserPinServiceTest.java
+backend/services/payment-service/src/main/java/com/fintech/payment/controller/DepositWithdrawController.java
+backend/services/payment-service/src/main/java/com/fintech/payment/controller/WalletMutationController.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositRequest.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositResponse.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawRequest.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawResponse.java
+backend/services/payment-service/src/main/java/com/fintech/payment/security/PinTokenValidator.java
+backend/services/payment-service/src/test/java/com/fintech/payment/controller/DepositWithdrawControllerTest.java
+backend/services/payment-service/src/test/java/com/fintech/payment/controller/TransferControllerPinTest.java
+backend/services/payment-service/src/test/java/com/fintech/payment/security/PinTokenValidatorTest.java
+
+--- drift so với baseline commit (đã commit) ---
+M	backend/services/notification-service/src/test/java/com/fintech/notification/amqp/NotificationConsumerTest.java
+M	backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransactionHistoryController.java
+M	backend/services/payment-service/src/main/java/com/fintech/payment/repository/TransactionRepository.java
+A	backend/services/payment-service/src/test/java/com/fintech/payment/controller/TransactionHistoryControllerTest.java
+
+ Tổng số mục bẩn : 29 (modified=10, untracked=19, khác=0)
+------------------------------------------------------------------------------
+ ❌ KẾT LUẬN: BACKEND GUARD BỊ VI PHẠM — backend/ đã khác baseline.
+ ------------------------------------------------------------------------------
+ ⚠️  HÀNH ĐỘNG BẮT BUỘC CỦA CON 2 / CON 3 / CON 4:
+      • DỪNG mọi thao tác ghi vào backend/**, docker-compose.yml, deploy/**
+      • KHÔNG tự revert, KHÔNG chạy git checkout/reset/clean trên các path đó
+      • BÁO CÁO ngay cho Con 1 (Lead) kèm output của script này
+ ------------------------------------------------------------------------------
+ 🔧 CÁCH KHẮC PHỤC (quyết định thuộc về CHỦ REPO — KHÔNG tự thực hiện):
+      Phương án A — Khôi phục baseline (khuyến nghị):
+        git checkout 75bf273 -- backend docker-compose.yml deploy
+        git clean -fd backend docker-compose.yml deploy
+        git commit -m "revert: khoi phuc backend baseline"
+        → kiểm tra lại: bash scripts/check_backend_guard.sh  (kỳ vọng exit 0)
+      Phương án B — Chính thức hoá thay đổi backend:
+        1) Chủ repo ký waiver .agents_workspace/backend_guard_waiver.json
+           (approved_by, approved_at, commit, scope, expires_at)
+        2) Chạy test backend (mvn) cho các service bị sửa
+        3) Tích hợp mobile theo API mới + bật cờ capability tương ứng
+        4) Cập nhật lại .agents_workspace/05_MOBILE_BE_AUDIT_FINAL.md
+ ------------------------------------------------------------------------------
+exit=2
+
+## 2. CHECKSUM
+$ git ls-tree -r HEAD backend | awk '{print $3"  $4}' | sort -k2 | sha256sum
+b1338db0854a2165a768a95ca147beb78b17479e348947cfb31f035b55b1c50e  -
+baseline (75bf273):
+eb37871177838108be4df91e6498e40645f610eaff1ed308e1a587c09b0aa003  -
+
+## 3. DRIFT ĐÃ COMMIT
+$ git diff --name-status 75bf273 HEAD -- backend
+M	backend/services/notification-service/src/test/java/com/fintech/notification/amqp/NotificationConsumerTest.java
+M	backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransactionHistoryController.java
+M	backend/services/payment-service/src/main/java/com/fintech/payment/repository/TransactionRepository.java
+A	backend/services/payment-service/src/test/java/com/fintech/payment/controller/TransactionHistoryControllerTest.java
+
+## 4. WORKING TREE BẨN
+$ git status --porcelain -- backend docker-compose.yml deploy
+ M backend/services/api-gateway/src/main/resources/application.yml
+ M backend/services/identity-service/src/main/java/com/fintech/identity/controller/GlobalExceptionHandler.java
+ M backend/services/identity-service/src/main/java/com/fintech/identity/domain/entity/UserEntity.java
+ M backend/services/identity-service/src/main/java/com/fintech/identity/dto/ApiResponse.java
+ M backend/services/identity-service/src/main/java/com/fintech/identity/security/JwtTokenProvider.java
+ M backend/services/payment-service/pom.xml
+ M backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransferController.java
+ M backend/services/payment-service/src/main/java/com/fintech/payment/dto/ApiResponse.java
+ M backend/services/payment-service/src/main/java/com/fintech/payment/dto/TransferRequest.java
+ M backend/services/payment-service/src/main/java/com/fintech/payment/saga/PaymentSagaOrchestrator.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/controller/UserPinController.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinSetRequest.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyRequest.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyResponse.java
+?? backend/services/identity-service/src/main/java/com/fintech/identity/exception/
+?? backend/services/identity-service/src/main/java/com/fintech/identity/service/UserPinService.java
+?? backend/services/identity-service/src/main/resources/db/migration/V4__add_transaction_pin.sql
+?? backend/services/identity-service/src/test/java/com/fintech/identity/controller/UserPinControllerTest.java
+?? backend/services/identity-service/src/test/java/com/fintech/identity/service/UserPinServiceTest.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/controller/DepositWithdrawController.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/controller/WalletMutationController.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositRequest.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositResponse.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawRequest.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawResponse.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/security/
+?? backend/services/payment-service/src/test/java/com/fintech/payment/controller/DepositWithdrawControllerTest.java
+?? backend/services/payment-service/src/test/java/com/fintech/payment/controller/TransferControllerPinTest.java
+?? backend/services/payment-service/src/test/java/com/fintech/payment/security/
+
+## 5. FILE MỚI CHƯA TRACK
+backend/services/identity-service/src/main/java/com/fintech/identity/controller/UserPinController.java
+backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinSetRequest.java
+backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyRequest.java
+backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyResponse.java
+backend/services/identity-service/src/main/java/com/fintech/identity/exception/InvalidPinException.java
+backend/services/identity-service/src/main/java/com/fintech/identity/exception/PinLockedException.java
+backend/services/identity-service/src/main/java/com/fintech/identity/exception/PinNotSetException.java
+backend/services/identity-service/src/main/java/com/fintech/identity/service/UserPinService.java
+backend/services/identity-service/src/main/resources/db/migration/V4__add_transaction_pin.sql
+backend/services/identity-service/src/test/java/com/fintech/identity/controller/UserPinControllerTest.java
+backend/services/identity-service/src/test/java/com/fintech/identity/service/UserPinServiceTest.java
+backend/services/payment-service/src/main/java/com/fintech/payment/controller/DepositWithdrawController.java
+backend/services/payment-service/src/main/java/com/fintech/payment/controller/WalletMutationController.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositRequest.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositResponse.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawRequest.java
+backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawResponse.java
+backend/services/payment-service/src/main/java/com/fintech/payment/security/PinTokenValidator.java
+backend/services/payment-service/src/test/java/com/fintech/payment/controller/DepositWithdrawControllerTest.java
+backend/services/payment-service/src/test/java/com/fintech/payment/controller/TransferControllerPinTest.java
+backend/services/payment-service/src/test/java/com/fintech/payment/security/PinTokenValidatorTest.java

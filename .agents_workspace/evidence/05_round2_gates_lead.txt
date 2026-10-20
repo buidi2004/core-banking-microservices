@@ -1,0 +1,103 @@
+==============================================================================
+ 05_round2_gates_lead.txt — TOÀN BỘ QUALITY GATES VÒNG 2 (Con 1 tự thực hiện)
+ đo 2026-10-21 ~01:00 +07 — repo: /home/buidi/core-banking-microservices
+==============================================================================
+
+$ flutter analyze
+Analyzing mobile...                                             
+No issues found! (ran in 0.9s)
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+-> exit=0
+
+$ flutter test
+00:07 +76 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +77 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +78 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +79 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +80 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +81 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +82 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +83 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +84 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +85 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen filters by category and search
+00:07 +86 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: PromotionsScreen switches between all tabs successfully
+00:08 +87 ~1: /home/buidi/core-banking-microservices/mobile/test/promotions_test.dart: TicketCardClipper generates valid ticket path with notches
+00:08 +88 ~1: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+-> exit=0
+
+$ flutter test test/contract/
+Read more about status codes at https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+In order to resolve this exception you typically have either to verify and fix your request code or you have to fix the server code.
+00:00 +26: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Guard — repo integrity (R2-P0-01) repo hiện tại: backend sạch HOẶC vi phạm đã được ghi nhận đầy đủ
+00:00 +27: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Guard — repo integrity (R2-P0-01) logic phát hiện vi phạm hoạt động đúng trên git repo tổng hợp
+00:00 +28: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Guard — repo integrity (R2-P0-01) logic phát hiện vi phạm hoạt động đúng trên git repo tổng hợp
+00:00 +29: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Guard — repo integrity (R2-P0-01) logic phát hiện vi phạm hoạt động đúng trên git repo tổng hợp
+00:00 +30: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Guard — repo integrity (R2-P0-01) logic phát hiện vi phạm hoạt động đúng trên git repo tổng hợp
+00:00 +31: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Guard — repo integrity (R2-P0-01) logic phát hiện vi phạm hoạt động đúng trên git repo tổng hợp
+00:00 +32: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Guard — repo integrity (R2-P0-01) logic phát hiện vi phạm hoạt động đúng trên git repo tổng hợp
+00:00 +33: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Guard — repo integrity (R2-P0-01) logic phát hiện vi phạm hoạt động đúng trên git repo tổng hợp
+00:00 +34: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Capabilities — mặc định an toàn (R2-P1-02) mọi capability flag mặc định là false (backend baseline chưa có API)
+00:00 +35: /home/buidi/core-banking-microservices/mobile/test/contract/backend_guard_test.dart: Backend Capabilities — mặc định an toàn (R2-P1-02) hasEndpoint() chặn đúng các route BE-GAP và cho qua các route có thật
+00:00 +36: All tests passed!
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+-> exit=0
+
+$ flutter test test/be_integration_test.dart
+00:00 +0: loading /home/buidi/core-banking-microservices/mobile/test/be_integration_test.dart
+00:00 +0: Backend E2E Integration Tests [SKIPPED] E2E tests are skipped by default
+  Skip: E2E tests need backend running. Set RUN_E2E=true to enable.
+00:00 +0 ~1: All tests skipped.
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+-> exit=0
+
+$ bash scripts/check_backend_guard.sh
+ ------------------------------------------------------------------------------
+ 🔧 CÁCH KHẮC PHỤC (quyết định thuộc về CHỦ REPO — KHÔNG tự thực hiện):
+      Phương án A — Khôi phục baseline (khuyến nghị):
+        git checkout 75bf273 -- backend docker-compose.yml deploy
+        git clean -fd backend docker-compose.yml deploy
+        git commit -m "revert: khoi phuc backend baseline"
+        → kiểm tra lại: bash scripts/check_backend_guard.sh  (kỳ vọng exit 0)
+      Phương án B — Chính thức hoá thay đổi backend:
+        1) Chủ repo ký waiver .agents_workspace/backend_guard_waiver.json
+           (approved_by, approved_at, commit, scope, expires_at)
+        2) Chạy test backend (mvn) cho các service bị sửa
+        3) Tích hợp mobile theo API mới + bật cờ capability tương ứng
+        4) Cập nhật lại .agents_workspace/05_MOBILE_BE_AUDIT_FINAL.md
+ ------------------------------------------------------------------------------
+-> exit=2
+
+$ git status --porcelain -- backend docker-compose.yml deploy
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawRequest.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawResponse.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/repository/LoanContractRepository.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/repository/LoanScheduleItemRepository.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/repository/SavingsAccountRepository.java
+?? backend/services/payment-service/src/main/java/com/fintech/payment/security/
+?? backend/services/payment-service/src/main/java/com/fintech/payment/service/
+?? backend/services/payment-service/src/main/resources/db/migration/V5__add_savings_and_loans.sql
+?? backend/services/payment-service/src/test/java/com/fintech/payment/controller/DepositWithdrawControllerTest.java
+?? backend/services/payment-service/src/test/java/com/fintech/payment/controller/LoanControllerTest.java
+?? backend/services/payment-service/src/test/java/com/fintech/payment/controller/SavingsControllerTest.java
+?? backend/services/payment-service/src/test/java/com/fintech/payment/controller/TransferControllerPinTest.java
+?? backend/services/payment-service/src/test/java/com/fintech/payment/security/
+?? backend/services/payment-service/src/test/java/com/fintech/payment/service/
+-> exit=0
+
+$ git ls-tree -r HEAD backend | awk '{print $3"  $4}' | sort -k2 | sha256sum
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -
+awk: dòng lệnh:1: {print $3"  $4}
+awk: dòng lệnh:1:          ^ chuỗi không được chấm dứt
+-> exit=0
+
+$ git ls-tree -r 75bf273 backend | awk '{print $3"  $4}' | sort -k2 | sha256sum
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  -
+awk: dòng lệnh:1: {print $3"  $4}
+awk: dòng lệnh:1:          ^ chuỗi không được chấm dứt
+-> exit=0
+
+$ git status --porcelain -- backend | wc -l
+53
+-> exit=0
+

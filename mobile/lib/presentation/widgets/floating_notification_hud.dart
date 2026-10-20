@@ -413,7 +413,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                     child: Material(
                       type: MaterialType.transparency,
                       child: DefaultTextStyle(
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.inter(
                           decoration: TextDecoration.none,
                           color: AppColors.textPrimaryLight,
                         ),
@@ -488,7 +488,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                                   hasAmount
                                                       ? (isAddition ? 'TIỀN VÀO (+)' : isDeduction ? 'TIỀN RA (-)' : 'BIẾN ĐỘNG SỐ DƯ')
                                                       : 'SENBANK THÔNG BÁO',
-                                                  style: GoogleFonts.plusJakartaSans(
+                                                  style: GoogleFonts.inter(
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.w800,
                                                     color: badgeText,
@@ -541,7 +541,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                           Expanded(
                                             child: Text(
                                               notif.title,
-                                              style: GoogleFonts.plusJakartaSans(
+                                              style: GoogleFonts.inter(
                                                 color: AppColors.textPrimaryLight,
                                                 fontWeight: FontWeight.w700,
                                                 fontSize: 14.5,
@@ -553,7 +553,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                             const SizedBox(width: 8),
                                             Text(
                                               '${isAddition ? '+' : isDeduction ? '-' : ''}${CurrencyFormatter.formatVND(notif.amount.abs())}',
-                                              style: GoogleFonts.plusJakartaSans(
+                                              style: GoogleFonts.outfit(
                                                 fontSize: 17,
                                                 fontWeight: FontWeight.w800,
                                                 color: accentColor,
@@ -581,7 +581,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                             if (notif.userName != null && notif.userName!.isNotEmpty) ...[
                                               Row(
                                                 children: [
-                                                  const Icon(CupertinoIcons.person_fill, size: 12, color: AppColors.primary),
+                                                  const Icon(CupertinoIcons.person_fill, size: 14, color: AppColors.primary),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     'Chủ TK: ',
@@ -611,7 +611,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                             if (notif.accountNumber != null && notif.accountNumber!.isNotEmpty) ...[
                                               Row(
                                                 children: [
-                                                  const Icon(CupertinoIcons.creditcard_fill, size: 12, color: AppColors.primary),
+                                                  const Icon(CupertinoIcons.creditcard_fill, size: 14, color: AppColors.primary),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     'Số tài khoản: ',
@@ -643,7 +643,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                               children: [
                                                 const Padding(
                                                   padding: EdgeInsets.only(top: 1.5),
-                                                  child: Icon(CupertinoIcons.chat_bubble_text_fill, size: 12, color: AppColors.primary),
+                                                  child: Icon(CupertinoIcons.chat_bubble_text_fill, size: 14, color: AppColors.primary),
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
@@ -706,7 +706,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                                 notif.currentBalance!.contains('VND') || notif.currentBalance!.contains('đ')
                                                     ? notif.currentBalance!
                                                     : '${notif.currentBalance} VND',
-                                                style: GoogleFonts.plusJakartaSans(
+                                                style: GoogleFonts.outfit(
                                                   fontSize: 13,
                                                   fontWeight: FontWeight.w800,
                                                   color: AppColors.infoTealText,
@@ -747,7 +747,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                                 ),
                                               ),
                                               const SizedBox(width: 3),
-                                              const Icon(CupertinoIcons.chevron_right, size: 10, color: AppColors.primary),
+                                              const Icon(CupertinoIcons.chevron_right, size: 12, color: AppColors.primary),
                                             ],
                                           ),
                                         ],

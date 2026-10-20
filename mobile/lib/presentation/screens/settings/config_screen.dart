@@ -368,9 +368,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bottomBarCyan),
                         )
                       else
-                        const Icon(CupertinoIcons.arrow_clockwise, color: AppColors.bottomBarCyan, size: 13),
+                        const Icon(CupertinoIcons.arrow_clockwise, color: AppColors.bottomBarCyan, size: 14),
                       const SizedBox(width: 5),
-                      const Text('Đo lại Ping', style: TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 11)),
+                      const Text('Đo lại Ping', style: TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 11.5)),
                     ],
                   ),
                 ),

@@ -674,7 +674,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                                 m['badge'] as String,
                                 style: const TextStyle(
                                   color: AppColors.emeraldGreen,
-                                  fontSize: 9,
+                                  fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

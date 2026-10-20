@@ -131,7 +131,7 @@ class UserAvatarWidget extends StatelessWidget {
                       ),
                       child: Icon(
                         CupertinoIcons.camera_fill,
-                        size: radius > 36 ? 16 : 12,
+                        size: radius > 36 ? 16 : 14,
                         color: Colors.white,
                       ),
                     ),

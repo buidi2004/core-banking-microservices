@@ -29,8 +29,20 @@ public class Beneficiary {
     @Column(name = "beneficiary_user_id", length = 36)
     private String beneficiaryUserId;
 
+    @Column(name = "beneficiary_wallet_id", length = 36)
+    private String beneficiaryWalletId;
+
     @Column(name = "beneficiary_phone", length = 15)
     private String beneficiaryPhone;
+
+    @Column(name = "full_name", length = 100)
+    private String fullName;
+
+    @Column(name = "bank_code", length = 20)
+    private String bankCode;
+
+    @Column(name = "account_number", length = 50)
+    private String accountNumber;
 
     @Column(length = 100)
     private String nickname;

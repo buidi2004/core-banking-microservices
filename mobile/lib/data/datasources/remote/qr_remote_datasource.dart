@@ -11,8 +11,13 @@ class QrRemoteDataSource {
   Future<String> getMyQr() async {
     final response = await _dio.get(ApiConstants.myQrCode);
     final json = Map<String, dynamic>.from(response.data as Map);
-    if (json['success'] != true || json['data'] is! String) throw apiException(json);
-    return json['data'] as String;
+    if (json['success'] != true) throw apiException(json);
+    if (json['data'] is String) return json['data'] as String;
+    if (json['data'] is Map) {
+      final map = Map<String, dynamic>.from(json['data'] as Map);
+      return (map['qrDataUrl'] ?? map['qrRaw'] ?? '').toString();
+    }
+    throw apiException(json);
   }
 
   Future<Map<String, dynamic>> generateQr({required String accountNumber, String? bankBin, double? amount, String? purpose}) async {

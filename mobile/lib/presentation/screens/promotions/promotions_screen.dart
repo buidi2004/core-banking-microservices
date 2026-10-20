@@ -1645,8 +1645,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(deal['left'] as String,
-                                style: const TextStyle(color: Colors.white70, fontSize: 9.5)),
-                            const Icon(CupertinoIcons.doc_on_doc_fill, size: 12, color: Colors.white),
+                                style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500)),
+                            const Icon(CupertinoIcons.doc_on_doc_fill, size: 14, color: Colors.white),
                           ],
                         ),
                       ],
@@ -1960,11 +1960,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(CupertinoIcons.clock_fill, size: 13, color: Colors.white54),
+                              const Icon(CupertinoIcons.clock_fill, size: 14, color: AppColors.textSecondaryDark),
                               const SizedBox(width: 5),
                               Text(
                                 item['expiry'] as String,
-                                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                                style: const TextStyle(color: AppColors.textSecondaryDark, fontSize: 11.5),
                               ),
                             ],
                           ),
@@ -1975,16 +1975,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   side: BorderSide(color: Colors.white.withOpacity(0.25)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  minimumSize: const Size(60, 36),
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),
                                 child: const Row(
                                   children: [
-                                    Icon(CupertinoIcons.doc_on_doc_fill, size: 12, color: Colors.white70),
+                                    Icon(CupertinoIcons.doc_on_doc_fill, size: 14, color: Colors.white70),
                                     SizedBox(width: 4),
-                                    Text('Lưu mã', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+                                    Text('Lưu mã', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               ),
@@ -1995,16 +1995,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                   backgroundColor: AppColors.bottomBarCyan,
                                   foregroundColor: Colors.black,
                                   elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                                  minimumSize: Size.zero,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  minimumSize: const Size(64, 38),
                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                 ),
                                 child: const Row(
                                   children: [
-                                    Text('Dùng ngay', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                                    Text('Dùng ngay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                                     SizedBox(width: 4),
-                                    Icon(CupertinoIcons.chevron_forward, size: 11, color: AppColors.textPrimaryLight),
+                                    Icon(CupertinoIcons.chevron_forward, size: 14, color: AppColors.textPrimaryLight),
                                   ],
                                 ),
                               ),

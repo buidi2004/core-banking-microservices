@@ -170,6 +170,13 @@ spring:
                 name: identityServiceCb
                 fallbackUri: forward:/fallback/identity
 
+        - id: payment-service-user-qrcode
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/users/me/qrcode
+          filters:
+            - name: JwtAuthenticationFilter
+
         - id: identity-service-users
           uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
@@ -214,6 +221,60 @@ spring:
                 name: identityServiceCb
                 fallbackUri: forward:/fallback/identity
 
+        - id: identity-service-security
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
+          predicates:
+            - Path=/api/v1/security/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        - id: identity-service-referrals
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
+          predicates:
+            - Path=/api/v1/referrals/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        - id: identity-service-legal
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
+          predicates:
+            - Path=/api/v1/legal/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        - id: identity-service-feedback
+          uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
+          predicates:
+            - Path=/api/v1/feedback/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: identityServiceCb
+                fallbackUri: forward:/fallback/identity
+
+        # ----------------------------------------------------------------------------
+        # WALLET MUTATIONS (Deposit & Withdraw) -> payment-service:8083 (SAGA)
+        # ----------------------------------------------------------------------------
+        - id: payment-service-wallet-mutations
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/wallets/deposit, /api/v1/wallets/withdraw
+          filters:
+            - name: JwtAuthenticationFilter
+
         # ----------------------------------------------------------------------------
         # WALLET SERVICE: QUẢN LÝ VÍ & SỐ DƯ -> wallet-service:8082
         # ----------------------------------------------------------------------------
@@ -251,6 +312,86 @@ spring:
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
             - Path=/api/v1/transactions/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # SAVINGS SERVICE: SỔ TIẾT KIỆM ONLINE CORE BANKING -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-savings
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/savings/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # LOANS SERVICE: VAY TIÊU DÙNG NHANH CORE BANKING -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-loans
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/loans/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # CARDS CMS: QUẢN LÝ THẺ VẬT LÝ & THẺ ẢO -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-cards
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/cards/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # BANK ACCOUNTS: LIÊN KẾT TÀI KHOẢN NGÂN HÀNG -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-bank-accounts
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/bank-accounts/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # FUNDING SOURCES: NGUỒN TIỀN THANH TOÁN -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-funding-sources
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/funding-sources/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # BILLS SERVICE: THANH TOÁN HÓA ĐƠN & NẠP ĐIỆN THOẠI -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-bills
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/bills/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # BENEFICIARIES: DANH BẠ NGƯỜI THỤ HƯỞNG -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-beneficiaries
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/beneficiaries/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # CONFIG LIMITS: HẠN MỨC GIAO DỊCH CORE BANKING -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-config-limits
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/config/**
           filters:
             - name: JwtAuthenticationFilter
 

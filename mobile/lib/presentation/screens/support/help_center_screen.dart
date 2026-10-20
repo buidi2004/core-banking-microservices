@@ -88,7 +88,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
         padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
@@ -509,9 +509,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(CupertinoIcons.clock, size: 12, color: AppColors.textSecondaryLight),
+                  const Icon(CupertinoIcons.clock, size: 14, color: AppColors.textSecondaryLight),
                   const SizedBox(width: 4),
-                  Text(b['time']!, style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
+                  Text(b['time']!, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight)),
                 ],
               ),
             ],
