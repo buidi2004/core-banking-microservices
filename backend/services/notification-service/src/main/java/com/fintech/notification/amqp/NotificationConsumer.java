@@ -6,6 +6,7 @@ import com.fintech.notification.entity.Notification;
 import com.fintech.notification.notification.EventIdempotencyStore;
 import com.fintech.notification.notification.FcmPushSender;
 import com.fintech.notification.notification.NotificationPayload;
+import com.fintech.notification.notification.UserPhoneResolver;
 import com.fintech.notification.notification.WebSocketNotifier;
 import com.fintech.notification.service.NotificationService;
 import com.fintech.wallet.domain.event.TransactionEvent;
@@ -34,17 +35,20 @@ public class NotificationConsumer {
     private final NotificationService notificationService;
     private final WebSocketNotifier webSocketNotifier;
     private final FcmPushSender fcmPushSender;
+    private final UserPhoneResolver userPhoneResolver;
     private final ObjectMapper objectMapper;
 
     public NotificationConsumer(EventIdempotencyStore idempotencyStore,
                                 NotificationService notificationService,
                                 WebSocketNotifier webSocketNotifier,
                                 FcmPushSender fcmPushSender,
+                                UserPhoneResolver userPhoneResolver,
                                 ObjectMapper objectMapper) {
         this.idempotencyStore = idempotencyStore;
         this.notificationService = notificationService;
         this.webSocketNotifier = webSocketNotifier;
         this.fcmPushSender = fcmPushSender;
+        this.userPhoneResolver = userPhoneResolver;
         this.objectMapper = objectMapper;
     }
 
@@ -58,15 +62,31 @@ public class NotificationConsumer {
             return;
         }
 
-        log.info("Processing transaction notification for txId={} type={}",
-                event.getTransactionId(), event.getType());
+        String status = hasText(event.getStatus()) ? event.getStatus().toUpperCase() : "SUCCESS";
+        if ("FAILED".equals(status)) {
+            log.info("Skip notification for FAILED transaction txId={}", event.getTransactionId());
+            return;
+        }
+        // Chỉ giao dịch thành công mới có bút toán ở ví đích. REVERSED chỉ hoàn tiền cho ví nguồn.
+        boolean success = "SUCCESS".equals(status) || "COMPLETED".equals(status);
+        boolean reversal = "REVERSED".equals(status);
+        if (!success && !reversal) {
+            // INITIATED / DEBITED / CREDITED... chưa phải trạng thái cuối -> chưa thông báo
+            log.info("Skip notification for non-final status txId={} status={}",
+                    event.getTransactionId(), status);
+            return;
+        }
+
+        log.info("Processing transaction notification for txId={} type={} status={}",
+                event.getTransactionId(), event.getType(), status);
         try {
             boolean sameWallet = isSameWallet(event);
             if (hasText(event.getSourceWalletId())) {
+                // REVERSED: ví nguồn được hoàn tiền -> hiển thị dấu + (credit)
                 dispatch(event, event.getSourceWalletId(), event.getSourceUserId(), event.getSourcePhone(),
-                        true, event.getTargetWalletId(), event.getTargetUserId(), event.getTargetPhone());
+                        !reversal, event.getTargetWalletId(), event.getTargetUserId(), event.getTargetPhone());
             }
-            if (hasText(event.getTargetWalletId()) && !sameWallet) {
+            if (success && hasText(event.getTargetWalletId()) && !sameWallet) {
                 dispatch(event, event.getTargetWalletId(), event.getTargetUserId(), event.getTargetPhone(),
                         false, event.getSourceWalletId(), event.getSourceUserId(), event.getSourcePhone());
             }
@@ -80,19 +100,31 @@ public class NotificationConsumer {
     private void dispatch(TransactionEvent event, String walletId, String userId, String phone,
                           boolean isDeduct, String counterpartyWalletId,
                           String counterpartyUserId, String counterpartyPhone) {
-        String operation = operationType(event.getType(), isDeduct);
-        String amount = format(displayAmount(event, isDeduct));
-        String balance = format(snapshotBalance(event, isDeduct));
+        boolean reversal = "REVERSED".equalsIgnoreCase(event.getStatus());
+        String operation = reversal ? "Hoàn tiền" : operationType(event.getType(), isDeduct);
+        BigDecimal displayAmount = displayAmount(event, isDeduct);
+        BigDecimal balanceValue = reversal ? sourceBalance(event) : snapshotBalance(event, isDeduct);
+        String amount = format(displayAmount);
+        String balance = format(balanceValue);
         String currency = hasText(event.getCurrency()) ? event.getCurrency() : "VND";
-        String recipient = hasText(phone) ? phone : walletId;
+        // Hiển thị số điện thoại thật của chủ ví (tra từ identity-service, có cache).
+        String recipient = hasText(phone) ? phone : userPhoneResolver.resolve(userId);
+        if (!hasText(recipient)) {
+            recipient = walletId;
+        }
 
         String title = "Biến động số dư: " + operation;
         String sign = isDeduct ? "-" : "+";
+        String resultLabel = reversal ? "GD hoàn tiền" : "GD thành công";
         StringBuilder body = new StringBuilder();
-        body.append(String.format("TK %s GD thành công. PS: %s%s %s. SD: %s %s",
-                recipient, sign, amount, currency, balance, currency));
+        body.append(String.format("TK %s %s. PS: %s%s %s. SD: %s %s",
+                recipient, resultLabel, sign, amount, currency, balance, currency));
 
-        String counterparty = hasText(counterpartyPhone) ? counterpartyPhone : counterpartyWalletId;
+        String counterparty = hasText(counterpartyPhone) ? counterpartyPhone
+                : userPhoneResolver.resolve(counterpartyUserId);
+        if (!hasText(counterparty)) {
+            counterparty = counterpartyWalletId;
+        }
         if (hasText(counterparty)) {
             body.append(isDeduct ? " - Đến: " : " - Từ: ").append(counterparty);
         }
@@ -101,11 +133,12 @@ public class NotificationConsumer {
         }
         String bodyText = body.toString();
 
-        String payloadType = payloadType(event.getType(), isDeduct);
-        String status = hasText(event.getStatus()) ? event.getStatus() : "SUCCESS";
+        String payloadType = reversal ? "TRANSFER_IN" : payloadType(event.getType(), isDeduct);
+        String status = hasText(event.getStatus()) ? event.getStatus().toUpperCase() : "SUCCESS";
         Instant occurredAt = event.getOccurredAt() != null ? event.getOccurredAt() : Instant.now();
 
-        Map<String, String> data = buildData(event, walletId, isDeduct, currency, title, bodyText);
+        Map<String, String> data = buildData(event, walletId, payloadType, displayAmount, balanceValue,
+                currency, title, bodyText);
         String dataPayload = writeJson(data);
         String resolvedUserId = hasText(userId) ? userId : walletId;
 
@@ -115,15 +148,31 @@ public class NotificationConsumer {
                 payloadType,
                 status,
                 walletId,
-                displayAmount(event, isDeduct),
+                displayAmount,
                 currency,
-                snapshotBalance(event, isDeduct),
+                balanceValue,
                 currency,
                 TIME_FORMATTER.format(occurredAt),
                 event.getNote(),
                 title,
                 bodyText
         );
+
+        // Idempotency bền vững ở DB: chống trùng khi Rabbit + Kafka cùng giao 1 event
+        // hoặc khi service restart / consumer replay sau khi mất in-memory cache.
+        boolean alreadyDelivered;
+        try {
+            alreadyDelivered = notificationService.existsForTransaction(
+                    resolvedUserId, event.getTransactionId(), status);
+        } catch (Exception e) {
+            log.warn("Cannot check notification duplicate for userId={} txId={}: {}",
+                    resolvedUserId, event.getTransactionId(), e.getMessage());
+            alreadyDelivered = false;
+        }
+        if (alreadyDelivered) {
+            log.info("Duplicate notification skipped: userId={} txId={}", resolvedUserId, event.getTransactionId());
+            return;
+        }
 
         try {
             notificationService.save(Notification.create(resolvedUserId, "BALANCE", title, bodyText, "FCM", dataPayload));
@@ -148,23 +197,29 @@ public class NotificationConsumer {
         }
     }
 
-    private Map<String, String> buildData(TransactionEvent event, String walletId, boolean isDeduct,
+    private Map<String, String> buildData(TransactionEvent event, String walletId, String payloadType,
+                                          BigDecimal displayAmount, BigDecimal balanceValue,
                                           String currency, String title, String body) {
         Map<String, String> data = new HashMap<>();
         data.put("transactionId", nullSafe(event.getTransactionId()));
-        data.put("type", payloadType(event.getType(), isDeduct));
-        data.put("status", hasText(event.getStatus()) ? event.getStatus() : "SUCCESS");
+        data.put("type", payloadType);
+        data.put("status", hasText(event.getStatus()) ? event.getStatus().toUpperCase() : "SUCCESS");
         data.put("walletId", nullSafe(walletId));
-        data.put("transactionAmount", String.valueOf(displayAmount(event, isDeduct)));
-        data.put("amount", String.valueOf(displayAmount(event, isDeduct)));
+        data.put("transactionAmount", String.valueOf(displayAmount));
+        data.put("amount", String.valueOf(displayAmount));
         data.put("currency", currency);
         data.put("transactionCurrency", currency);
-        data.put("newBalance", String.valueOf(snapshotBalance(event, isDeduct)));
+        data.put("newBalance", String.valueOf(balanceValue));
         data.put("timestamp", (event.getOccurredAt() != null ? event.getOccurredAt() : Instant.now()).toString());
         data.put("note", nullSafe(event.getNote()));
         data.put("title", title);
         data.put("body", body);
         return data;
+    }
+
+    /** Số dư ví nguồn sau khi được hoàn tiền (dùng cho notification REVERSED). */
+    private BigDecimal sourceBalance(TransactionEvent event) {
+        return event.getSourceBalanceAfter() != null ? event.getSourceBalanceAfter() : BigDecimal.ZERO;
     }
 
     private boolean isSameWallet(TransactionEvent event) {
@@ -203,14 +258,22 @@ public class NotificationConsumer {
 
     private BigDecimal displayAmount(TransactionEvent event, boolean isDeduct) {
         BigDecimal amount = event.getAmount() != null ? event.getAmount() : BigDecimal.ZERO;
-        if (isDeduct && event.getFeeAmount() != null) {
+        boolean reversal = "REVERSED".equalsIgnoreCase(event.getStatus());
+        // Khi trừ tiền (hoặc hoàn tiền) thì tổng biến động bao gồm cả phí
+        if ((isDeduct || reversal) && event.getFeeAmount() != null) {
             amount = amount.add(event.getFeeAmount());
         }
         return amount;
     }
 
     private BigDecimal snapshotBalance(TransactionEvent event, boolean isDeduct) {
-        BigDecimal snapshot = isDeduct ? event.getSourceBalanceAfter() : event.getTargetBalanceAfter();
+        BigDecimal snapshot;
+        if ("REVERSED".equalsIgnoreCase(event.getStatus())) {
+            // Hoàn tiền ghi nhận số dư ví nguồn sau khi được hoàn
+            snapshot = event.getSourceBalanceAfter();
+        } else {
+            snapshot = isDeduct ? event.getSourceBalanceAfter() : event.getTargetBalanceAfter();
+        }
         return snapshot != null ? snapshot : BigDecimal.ZERO;
     }
 

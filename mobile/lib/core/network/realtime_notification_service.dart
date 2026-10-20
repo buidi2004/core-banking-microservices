@@ -17,6 +17,11 @@ class RealtimeNotificationService {
   final StreamController<Map<String, dynamic>> _notificationController = StreamController<Map<String, dynamic>>.broadcast();
   final Set<String> _activeSubscribedTopics = {};
 
+  /// Chống trùng khi cùng 1 giao dịch được đẩy qua nhiều topic/consumer
+  /// (wallet topic + user topic, Rabbit + Kafka). Key = txId|status|walletId.
+  final Map<String, int> _recentDeliveries = {};
+  static const int _dedupeWindowMs = 30000;
+
   String? _currentWalletId;
   String? _currentUserId;
 
@@ -24,6 +29,23 @@ class RealtimeNotificationService {
   bool get isConnected => _stompClient?.connected ?? false;
 
   void dispatch(Map<String, dynamic> payload) {
+    _emit(payload);
+  }
+
+  void _emit(Map<String, dynamic> payload) {
+    final txId = (payload['transactionId'] ?? payload['id'] ?? '').toString();
+    final status = (payload['status'] ?? '').toString();
+    final walletId = (payload['walletId'] ?? '').toString();
+    final key = '$txId|$status|$walletId';
+    final now = DateTime.now().millisecondsSinceEpoch;
+    _recentDeliveries.removeWhere((_, ts) => now - ts > _dedupeWindowMs);
+
+    if (txId.isNotEmpty && _recentDeliveries.containsKey(key)) {
+      debugPrint('[WebSocket STOMP] Bỏ qua thông báo trùng: $key');
+      return;
+    }
+    if (txId.isNotEmpty) _recentDeliveries[key] = now;
+
     if (!_notificationController.isClosed) {
       _notificationController.add(payload);
     }
@@ -114,9 +136,11 @@ class RealtimeNotificationService {
     if (_currentWalletId != null && _currentWalletId!.isNotEmpty) {
       final walletTopic = '/topic/wallets/$_currentWalletId/notifications';
       _subscribeTopic(walletTopic);
+      return;
     }
 
-    // Dự phòng thêm: /topic/users/{userId}/notifications
+    // Chỉ fallback sang user topic khi chưa xác định được walletId,
+    // tránh nhận trùng 1 giao dịch trên cả 2 topic.
     if (_currentUserId != null && _currentUserId!.isNotEmpty) {
       final userTopic = '/topic/users/$_currentUserId/notifications';
       _subscribeTopic(userTopic);
@@ -135,7 +159,7 @@ class RealtimeNotificationService {
           try {
             final payload = jsonDecode(frame.body!) as Map<String, dynamic>;
             debugPrint('[WebSocket STOMP] Nhận thông báo từ [$destination]: $payload');
-            _notificationController.add(payload);
+            _emit(payload);
           } catch (e) {
             debugPrint('[WebSocket STOMP] Lỗi giải mã tin nhắn từ [$destination]: $e');
           }

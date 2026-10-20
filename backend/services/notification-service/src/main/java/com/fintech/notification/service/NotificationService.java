@@ -44,7 +44,17 @@ public class NotificationService {
 
     @Transactional
     public void markAllAsRead(String userId, String type) {
-        notificationRepository.markAllAsRead(userId, (type != null && type.isBlank()) ? null : type, Instant.now());
+        String filter = (type == null || type.isBlank()) ? null : type;
+        notificationRepository.markAllAsRead(userId, filter, Instant.now());
+    }
+
+    /** Kiểm tra notification của giao dịch đã tồn tại chưa (chống trùng khi Rabbit/Kafka cùng giao). */
+    public boolean existsForTransaction(String userId, String transactionId, String status) {
+        if (userId == null || userId.isBlank() || transactionId == null || transactionId.isBlank()) {
+            return false;
+        }
+        return notificationRepository.countByUserAndTransaction(userId, transactionId,
+                (status == null || status.isBlank()) ? "SUCCESS" : status.toUpperCase()) > 0;
     }
 
     @Transactional

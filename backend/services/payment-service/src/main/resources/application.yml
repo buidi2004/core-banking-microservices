@@ -80,7 +80,10 @@ spring:
 # RabbitMQ Topology (tương đồng doc architecture 5.md)
 rabbitmq:
   exchange:
-    name: wallet.exchange
+    # Phải trùng tên exchange mà notification-service và ledger-service đang bind
+    # (wallet.transaction.events / transaction.#). Trước đây để wallet.exchange
+    # nên event rơi vào exchange không có consumer -> mất thông báo.
+    name: wallet.transaction.events
   queue:
     payment: payment.outbox.queue
   routing:
@@ -94,7 +97,8 @@ saga:
   p2p:
     timeout-seconds: 30
   outbox:
-    poll-interval-ms: 2000
+    # 500ms để thông báo realtime tới mobile nhanh (trước đây 2s).
+    poll-interval-ms: 500
     batch-size: 50
     max-retry: 5
 

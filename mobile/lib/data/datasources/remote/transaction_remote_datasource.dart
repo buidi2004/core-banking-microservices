@@ -106,7 +106,10 @@ class TransactionRemoteDataSource {
         : (counterparty != null && counterparty.toString().isNotEmpty
             ? (isIncoming ? 'Từ: $counterparty' : 'Tới: $counterparty')
             : (type == 'DEPOSIT' ? 'Nạp tiền vào ví thành công' : 'Giao dịch thành công'));
-    final balance = (item['runningBalance'] ?? item['balance'] ?? item['balanceAfter'] as num?)?.toDouble();
+    final rawBalance = item['runningBalance'] ?? item['balance'] ?? item['balanceAfter'];
+    final balance = rawBalance is num
+        ? rawBalance.toDouble()
+        : double.tryParse(rawBalance?.toString() ?? '');
 
     return {
       'id': (item['transactionId'] ?? item['id'] ?? '').toString(),

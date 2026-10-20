@@ -215,10 +215,10 @@ spring:
                 fallbackUri: forward:/fallback/identity
 
         # ----------------------------------------------------------------------------
-        # WALLET SERVICE: QUẢN LÝ VÍ & SỐ DƯ -> wallet-service:8083
+        # WALLET SERVICE: QUẢN LÝ VÍ & SỐ DƯ -> wallet-service:8082
         # ----------------------------------------------------------------------------
         - id: wallet-service-wallets
-          uri: ${WALLET_SERVICE_URI:http://wallet-service:8083}
+          uri: ${WALLET_SERVICE_URI:http://wallet-service:8082}
           predicates:
             - Path=/api/v1/wallets/**
           filters:
@@ -241,6 +241,16 @@ spring:
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
             - Path=/api/v1/payments/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # TRANSACTION HISTORY: LỊCH SỬ BIẾN ĐỘNG SỐ DƯ -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-transactions
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/transactions/**
           filters:
             - name: JwtAuthenticationFilter
 

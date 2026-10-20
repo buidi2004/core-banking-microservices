@@ -22,6 +22,15 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
 
     long countByUserIdAndReadFalse(String userId);
 
+    /** Đếm notification đã phát cho 1 user theo transactionId + status (idempotency bền vững ở DB). */
+    @Query(value = "SELECT count(*) FROM notifications "
+            + "WHERE user_id = :userId AND data_payload->>'transactionId' = :transactionId "
+            + "AND data_payload->>'status' = :status",
+            nativeQuery = true)
+    long countByUserAndTransaction(@Param("userId") String userId,
+                                   @Param("transactionId") String transactionId,
+                                   @Param("status") String status);
+
     @Transactional
     @Modifying
     @Query("UPDATE Notification n SET n.read = true, n.readAt = :readAt "

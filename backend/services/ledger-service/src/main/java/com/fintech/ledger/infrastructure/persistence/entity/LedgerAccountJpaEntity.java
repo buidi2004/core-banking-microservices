@@ -16,7 +16,7 @@ public class LedgerAccountJpaEntity {
     @Id
     private UUID id;
 
-    @Column(nullable = false, length = 20, unique = true)
+    @Column(nullable = false, length = 100, unique = true)
     private String code;
 
     @Column(nullable = false)

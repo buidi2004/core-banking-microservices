@@ -57,8 +57,15 @@ public class KafkaLedgerEventTranslator {
     }
 
     public TransactionEventMessage fromPaymentLifecycle(KafkaEventEnvelope envelope) {
+        return fromPaymentLifecycle(envelope, null);
+    }
+
+    public TransactionEventMessage fromPaymentLifecycle(KafkaEventEnvelope envelope, String messageKey) {
         Map<String, Object> payload = requirePayload(envelope);
         String transactionId = firstString(payload, "transactionId", "transaction_id", "TransactionId", "depositCode");
+        if ((transactionId == null || transactionId.isBlank()) && messageKey != null && !messageKey.isBlank()) {
+            transactionId = messageKey;
+        }
         if (transactionId == null || transactionId.isBlank()) {
             transactionId = requireString(payload, "transactionId", "transaction_id", "TransactionId");
         }

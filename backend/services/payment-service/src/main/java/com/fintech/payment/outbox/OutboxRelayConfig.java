@@ -7,10 +7,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,8 +23,12 @@ import java.time.Instant;
 
 /**
  * Cấu hình RabbitMQ Topology cho Payment Service.
- * Exchange: wallet.exchange (topic) - tương đồng các consumer Ledger/Notification.
+ * Exchange: wallet.transaction.events (topic) - dùng chung với Ledger/Notification.
  * Queue: payment.outbox.queue, binding routing key transaction.*.
+ *
+ * Lưu ý: phải là TopicExchange (không phải DirectExchange) vì consumer bind
+ * bằng wildcard "transaction.#". Nếu khai báo DirectExchange cùng tên sẽ gây
+ * PRECONDITION_FAILED hoặc làm wildcard không match.
  */
 @Configuration
 @EnableScheduling
@@ -30,11 +36,11 @@ import java.time.Instant;
 @Slf4j
 public class OutboxRelayConfig {
 
-    public static final String EXCHANGE_NAME = "wallet.exchange";
+    public static final String EXCHANGE_NAME = "wallet.transaction.events";
     public static final String QUEUE_NAME = "payment.outbox.queue";
     public static final String ROUTING_KEY_TRANSACTION = "transaction.completed";
 
-    @Value("${rabbitmq.exchange.name:wallet.exchange}")
+    @Value("${rabbitmq.exchange.name:wallet.transaction.events}")
     private String exchangeName;
 
     @Value("${rabbitmq.queue.payment:payment.outbox.queue}")
@@ -44,8 +50,8 @@ public class OutboxRelayConfig {
     private String routingKeyTransaction;
 
     @Bean
-    DirectExchange walletExchange() {
-        return new DirectExchange(exchangeName);
+    TopicExchange walletExchange() {
+        return new TopicExchange(exchangeName, true, false);
     }
 
     @Bean
@@ -54,12 +60,22 @@ public class OutboxRelayConfig {
     }
 
     @Bean
-    Binding paymentOutboxBinding(DirectExchange exchange, Queue queue) {
+    Binding paymentOutboxBinding(TopicExchange exchange, Queue queue) {
         return BindingBuilder.bind(queue).to(exchange).with(routingKeyTransaction);
     }
 
     @Bean
     RabbitAdmin rabbitAdmin(RabbitTemplate rabbitTemplate) {
         return new RabbitAdmin(rabbitTemplate);
+    }
+
+    /**
+     * Publish dưới dạng JSON (content_type=application/json).
+     * Nếu dùng SimpleMessageConverter mặc định, JsonNode sẽ bị Java-serialize
+     * (application/x-java-serialized-object) và Ledger/Notification không đọc được.
+     */
+    @Bean
+    public MessageConverter jsonMessageConverter(com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
+        return new Jackson2JsonMessageConverter(objectMapper);
     }
 }

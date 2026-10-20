@@ -125,62 +125,40 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
 
     // Lắng nghe trực tiếp từ Realtime WebSocket STOMP
     _realtimeSub = RealtimeNotificationService().notificationStream.listen((payload) async {
-      final title = (payload['title'] ?? payload['data']?['title'] ?? 'Biến động số dư').toString();
-      final body = (payload['content'] ?? payload['body'] ?? payload['message'] ?? payload['data']?['content'] ?? payload['data']?['body'] ?? payload['data']?['message'] ?? '').toString();
-      var amount = double.tryParse((payload['transactionAmount'] ?? payload['amount'] ?? payload['data']?['amount'] ?? '0').toString()) ?? 0.0;
-      final txId = (payload['transactionId'] ?? payload['data']?['transactionId'] ?? payload['id'])?.toString();
-
-      // Bóc tách thông tin cấu trúc từ body
-      String? account = RegExp(r'Tài khoản:\s*([^\n]+)').firstMatch(body)?.group(1)?.trim();
-      String? balanceStr = RegExp(r'Số dư cuối:\s*([^\n]+)').firstMatch(body)?.group(1)?.trim();
-      String? timeStr = RegExp(r'Thời gian:\s*([^\n]+)').firstMatch(body)?.group(1)?.trim();
-      String? noteStr = RegExp(r'Nội dung:\s*([^\n]+)').firstMatch(body)?.group(1)?.trim();
-
-      if (amount == 0.0) {
-        final psMatch = RegExp(r'PS:\s*([+-]?[\d\.]+)').firstMatch(body);
-        if (psMatch != null) {
-          amount = double.tryParse(psMatch.group(1)!.replaceAll('.', '')) ?? 0.0;
-        }
+      final title = (payload['title'] ?? 'Biến động số dư').toString();
+      final body = (payload['body'] ?? payload['content'] ?? payload['message'] ?? '').toString();
+      final rawAmount = payload['transactionAmount'] ?? payload['amount'];
+      var amount = rawAmount is num
+          ? rawAmount.toDouble()
+          : (double.tryParse(rawAmount?.toString() ?? '') ?? 0.0);
+      final type = (payload['type'] ?? '').toString().toUpperCase();
+      final isDeductType = type == 'TRANSFER_OUT' || type == 'WITHDRAWAL' ||
+          type == 'PAYMENT' || type == 'BILL_PAYMENT' || type == 'TOPUP';
+      if (amount > 0 && isDeductType) {
+        amount = -amount;
       }
+      final txId = (payload['transactionId'] ?? payload['id'])?.toString();
 
-      // Đọc SĐT thật từ storage nếu body chưa có
-      if (account == null || account.isEmpty) {
-        try {
-          const storage = FlutterSecureStorage();
-          account = await storage.read(key: AppConstants.keyPhoneNumber);
-        } catch (_) {}
+      // Payload realtime của BE đã có đủ dữ liệu -> không cần gọi thêm API
+      // (trước đây gọi ví + profile mỗi lần nhận thông báo, làm chậm hiển thị).
+      String? account = (payload['accountNumber'] ?? payload['phoneNumber'])?.toString();
+      String? balanceStr;
+      final newBalance = payload['newBalance'];
+      if (newBalance is num) {
+        balanceStr = CurrencyFormatter.formatVND(newBalance.toDouble());
+      } else if (newBalance != null && newBalance.toString().isNotEmpty) {
+        balanceStr = newBalance.toString();
       }
-
-      // Đọc số dư thật từ ví nếu body chưa có
-      if (balanceStr == null || balanceStr.isEmpty) {
-        try {
-          final wallet = await WalletRemoteDataSource().getMyWallet();
-          balanceStr = CurrencyFormatter.formatVND(wallet.balance);
-        } catch (_) {}
-      }
-
-      // Lấy tên người dùng thực tế từ profile
-      String? userName = payload['userName']?.toString() ?? payload['fullName']?.toString();
-      if (userName == null || userName.isEmpty) {
-        try {
-          final profile = await ProfileRemoteDataSource().getMe();
-          userName = (profile['fullName'] ?? profile['name'])?.toString();
-        } catch (_) {}
-      }
-
-      if (timeStr == null || timeStr.isEmpty) {
-        final now = DateTime.now();
-        timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')} ${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
-      }
+      String? timeStr = payload['formattedTime']?.toString() ?? payload['timestamp']?.toString();
+      String? noteStr = payload['note']?.toString();
 
       _displayNotification(
         FloatingNotificationData(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: 'live-${txId ?? DateTime.now().millisecondsSinceEpoch}',
           title: title,
           body: body,
           amount: amount,
           txId: txId,
-          userName: userName,
           accountNumber: account,
           currentBalance: balanceStr,
           note: noteStr,
@@ -244,16 +222,16 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
     String? userName = rawData.userName;
     double amount = rawData.amount;
 
-    // Phân tích từ body nếu chưa có
-    account ??= RegExp(r'Tài khoản:\s*([^\n]+)').firstMatch(rawData.body)?.group(1)?.trim();
-    balanceStr ??= RegExp(r'Số dư cuối:\s*([^\n]+)').firstMatch(rawData.body)?.group(1)?.trim();
-    timeStr ??= RegExp(r'Thời gian:\s*([^\n]+)').firstMatch(rawData.body)?.group(1)?.trim();
-    noteStr ??= RegExp(r'Nội dung:\s*([^\n]+)').firstMatch(rawData.body)?.group(1)?.trim();
+    // Phân tích từ body nếu chưa có (format BE: "TK ... PS: ... SD: ... - ND: ...")
+    account ??= RegExp(r'\bTK\s+([^\s]+)').firstMatch(rawData.body)?.group(1)?.trim();
+    balanceStr ??= RegExp(r'\bSD:\s*([\d.,]+)').firstMatch(rawData.body)?.group(1)?.trim();
+    noteStr ??= RegExp(r'\bND:\s*([^\n]+)').firstMatch(rawData.body)?.group(1)?.trim();
 
     if (amount == 0.0) {
-      final psMatch = RegExp(r'PS:\s*([+-]?[\d\.]+)').firstMatch(rawData.body);
+      final psMatch = RegExp(r'PS:\s*([+-]?[\d.,]+)').firstMatch(rawData.body);
       if (psMatch != null) {
-        amount = double.tryParse(psMatch.group(1)!.replaceAll('.', '')) ?? 0.0;
+        final clean = psMatch.group(1)!.replaceAll('.', '').replaceAll(',', '');
+        amount = double.tryParse(clean) ?? 0.0;
       }
     }
 

@@ -105,7 +105,7 @@ public class PaymentSagaOrchestrator {
                 return handleDebitFailure(ctx, debit.getErrorCode(), debit.getErrorMessage());
             }
             ctx.sourceDebited(String.valueOf(debit.getBalanceAfter()));
-            updateTransactionStatus(ctx.getTransactionId(), "DEBITED");
+            updateTransactionStatus(ctx.getTransactionId(), "DEBITED", debit.getBalanceAfter(), null);
 
             // Bước 3: Credit ví người nhận
             ctx.setCurrentStep("PENDING_CREDIT");
@@ -119,7 +119,7 @@ public class PaymentSagaOrchestrator {
 
             // Bước 4: Hoàn thành giao dịch
             ctx.succeeded();
-            completeTransaction(ctx, credit.getBalanceAfter());
+            completeTransaction(ctx);
             return ctx;
 
         } catch (Exception e) {
@@ -167,28 +167,40 @@ public class PaymentSagaOrchestrator {
                 .build();
         tx = transactionRepository.save(tx);
 
+        // Payload phải mang đầy đủ dữ liệu (amount, ví nguồn/đích, user...).
+        // Trước đây serialize event rỗng nên consumer nhận event INITIATED không có amount.
+        com.fintech.wallet.domain.event.TransactionEvent initEvent = event(ctx, status);
+        initEvent.setTransactionId(tx.getId());
         OutboxEvent outbox = OutboxEvent.pending(
-                "Transaction", tx.getId(), eventType,
-                serialize(new com.fintech.wallet.domain.event.TransactionEvent()));
+                "Transaction", tx.getId(), eventType, serialize(initEvent));
         outboxEventRepository.save(outbox);
         return tx;
     }
 
-    private void updateTransactionStatus(String transactionId, String status) {
+    private void updateTransactionStatus(String transactionId, String status,
+                                         Long sourceBalanceAfter, Long targetBalanceAfter) {
         transactionRepository.findById(transactionId).ifPresent(tx -> {
             tx.setStatus(status);
+            if (sourceBalanceAfter != null) {
+                tx.setSourceBalanceAfter(sourceBalanceAfter);
+            }
+            if (targetBalanceAfter != null) {
+                tx.setTargetBalanceAfter(targetBalanceAfter);
+            }
             transactionRepository.save(tx);
         });
     }
 
-    private void completeTransaction(SagaContext ctx, Long targetBalanceAfter) {
+    private void completeTransaction(SagaContext ctx) {
         transactionRepository.findById(ctx.getTransactionId()).ifPresent(tx -> {
             tx.setStatus("SUCCESS");
+            tx.setSourceBalanceAfter(toLong(ctx.getSourceBalanceAfter()));
+            tx.setTargetBalanceAfter(toLong(ctx.getTargetBalanceAfter()));
             transactionRepository.save(tx);
         });
         outboxEventRepository.save(OutboxEvent.pending(
                 "Transaction", ctx.getTransactionId(), "TransactionCompletedEvent",
-                serialize(event(ctx, "SUCCESS", targetBalanceAfter))));
+                serialize(event(ctx, "SUCCESS"))));
     }
 
     private SagaContext handleDebitFailure(SagaContext ctx, String errorCode, String errorMessage) {
@@ -196,7 +208,7 @@ public class PaymentSagaOrchestrator {
         markTransactionFailed(ctx.getTransactionId(), errorMessage != null ? errorMessage : errorCode);
         outboxEventRepository.save(OutboxEvent.pending(
                 "Transaction", ctx.getTransactionId(), "TransactionFailedEvent",
-                serialize(event(ctx, "FAILED", null))));
+                serialize(event(ctx, "FAILED"))));
         return ctx;
     }
 
@@ -212,16 +224,21 @@ public class PaymentSagaOrchestrator {
         WalletBalanceResult refund = walletGrpcClient.credit(
                 ctx.getSourceWalletId(), refundAmount, ctx.getTransactionId() + ":reversal", ctx.getIdempotencyKey() + ":reversal");
 
+        if (refund.isSuccess() && refund.getBalanceAfter() != null) {
+            ctx.setSourceBalanceAfter(String.valueOf(refund.getBalanceAfter()));
+        }
+
         transactionRepository.findById(ctx.getTransactionId()).ifPresent(tx -> {
             tx.setStatus("REVERSED");
             tx.setFailureReason(reason);
+            tx.setSourceBalanceAfter(toLong(ctx.getSourceBalanceAfter()));
             transactionRepository.save(tx);
         });
         ctx.reversed();
 
         outboxEventRepository.save(OutboxEvent.pending(
                 "Transaction", ctx.getTransactionId(), "TransactionReversedEvent",
-                serialize(event(ctx, "REVERSED", null))));
+                serialize(event(ctx, "REVERSED"))));
 
         if (!refund.isSuccess()) {
             ctx.setFailureReason(reason + " | Hoàn tiền thất bại: " + (refund.getErrorMessage() != null ? refund.getErrorMessage() : refund.getErrorCode()));
@@ -239,7 +256,7 @@ public class PaymentSagaOrchestrator {
 
     /* ---------- Helpers ---------- */
 
-    private com.fintech.wallet.domain.event.TransactionEvent event(SagaContext ctx, String status, Long balanceAfter) {
+    private com.fintech.wallet.domain.event.TransactionEvent event(SagaContext ctx, String status) {
         com.fintech.wallet.domain.event.TransactionEvent evt = new com.fintech.wallet.domain.event.TransactionEvent();
         evt.setEventId(UUID.randomUUID().toString());
         evt.setTransactionId(ctx.getTransactionId());
@@ -252,9 +269,26 @@ public class PaymentSagaOrchestrator {
         evt.setAmount(java.math.BigDecimal.valueOf(ctx.getAmount()));
         evt.setCurrency(ctx.getCurrency());
         evt.setNote(ctx.getNote());
-        evt.setSourceBalanceAfter(balanceAfter != null ? java.math.BigDecimal.valueOf(balanceAfter) : null);
+        evt.setSourceBalanceAfter(toBigDecimal(ctx.getSourceBalanceAfter()));
+        evt.setTargetBalanceAfter(toBigDecimal(ctx.getTargetBalanceAfter()));
         evt.setOccurredAt(Instant.now());
         return evt;
+    }
+
+    private java.math.BigDecimal toBigDecimal(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return new java.math.BigDecimal(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Long toLong(String value) {
+        java.math.BigDecimal parsed = toBigDecimal(value);
+        return parsed != null ? parsed.longValue() : null;
     }
 
     private String serialize(Object obj) {
@@ -277,6 +311,8 @@ public class PaymentSagaOrchestrator {
         ctx.setCurrency(tx.getCurrency());
         ctx.setStatus(tx.getStatus());
         ctx.setIdempotencyKey(tx.getIdempotencyKey());
+        ctx.setSourceBalanceAfter(tx.getSourceBalanceAfter() != null ? String.valueOf(tx.getSourceBalanceAfter()) : null);
+        ctx.setTargetBalanceAfter(tx.getTargetBalanceAfter() != null ? String.valueOf(tx.getTargetBalanceAfter()) : null);
         return ctx;
     }
 }

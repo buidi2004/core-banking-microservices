@@ -47,6 +47,10 @@ public class NotificationKafkaConsumer {
         try {
             JsonNode root = objectMapper.readTree(payload);
             JsonNode eventNode = root.hasNonNull("payload") ? root.get("payload") : root;
+            // Tương thích ngược: outbox cũ publish payload dưới dạng JSON string (double-encoded).
+            if (eventNode != null && eventNode.isTextual()) {
+                eventNode = objectMapper.readTree(eventNode.asText());
+            }
             return objectMapper.treeToValue(eventNode, TransactionEvent.class);
         } catch (Exception e) {
             throw new IllegalArgumentException("Cannot deserialize Kafka transaction event", e);

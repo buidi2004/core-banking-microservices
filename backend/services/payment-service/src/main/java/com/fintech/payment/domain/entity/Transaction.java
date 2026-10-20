@@ -68,6 +68,14 @@ public class Transaction {
     @Column(columnDefinition = "text")
     private String note;
 
+    /** Số dư ví nguồn ngay sau giao dịch (snapshot từ Wallet Service, dùng cho lịch sử biến động số dư). */
+    @Column(name = "source_balance_after")
+    private Long sourceBalanceAfter;
+
+    /** Số dư ví đích ngay sau giao dịch (snapshot từ Wallet Service). */
+    @Column(name = "target_balance_after")
+    private Long targetBalanceAfter;
+
     @CreationTimestamp
     @Column(name = "created_at")
     private Instant createdAt;

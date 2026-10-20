@@ -18,8 +18,8 @@ class LedgerAccountTest {
         String code = LedgerAccount.walletAccountCode(walletId);
         String name = LedgerAccount.walletAccountName(walletId);
 
-        // Assert: mã tài khoản nhất định tối đa 20 ký tự vì VARCHAR(20)
-        assertThat(code).hasSizeLessThanOrEqualTo(20).startsWith("W");
+        // Assert: mã tài khoản dạng W:<walletId>
+        assertThat(code).hasSizeLessThanOrEqualTo(100).startsWith("W:").isEqualTo("W:" + walletId);
         assertThat(name).isEqualTo("CUSTOMER_DEPOSITS:" + walletId);
     }
 
@@ -46,8 +46,8 @@ class LedgerAccountTest {
     void codeMustBeShortEnough() {
         // Act & Assert
         assertThatThrownBy(() -> LedgerAccount.create(
-                "CODE_" + "X".repeat(25), "Too long", AccountType.EQUITY, "VND"))
+                "CODE_" + "X".repeat(105), "Too long", AccountType.EQUITY, "VND"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("20 characters");
+                .hasMessageContaining("100 characters");
     }
 }

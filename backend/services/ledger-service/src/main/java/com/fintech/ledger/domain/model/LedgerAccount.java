@@ -20,8 +20,8 @@ public class LedgerAccount {
         if (code == null || code.isBlank()) {
             throw new IllegalArgumentException("Ledger account code must not be null or blank");
         }
-        if (code.length() > 20) {
-            throw new IllegalArgumentException("Ledger account code must be at most 20 characters: " + code);
+        if (code.length() > 100) {
+            throw new IllegalArgumentException("Ledger account code must be at most 100 characters: " + code);
         }
         this.id = (id == null || id.isBlank()) ? UUID.randomUUID().toString() : id;
         this.code = code;
@@ -52,8 +52,10 @@ public class LedgerAccount {
     }
 
     public static String walletAccountCode(String walletId) {
-        String cleaned = walletId.replace("-", "");
-        return "W" + cleaned.substring(0, Math.min(12, cleaned.length()));
+        if (walletId == null) {
+            return "W:UNKNOWN";
+        }
+        return "W:" + walletId;
     }
 
     public static String walletAccountName(String walletId) {

@@ -308,6 +308,8 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       RABBITMQ_HOST: rabbitmq
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      # wallet-service gọi identity-service nội bộ để map phone -> userId
+      IDENTITY_SERVICE_URL: http://identity-service:8081
     depends_on:
       postgres-wallet:
         condition: service_healthy
@@ -371,6 +373,8 @@ services:
       DB_PORT: 5432
       RABBITMQ_HOST: rabbitmq
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      # Tra cứu số điện thoại chủ ví để hiển thị trong nội dung thông báo
+      IDENTITY_SERVICE_URL: http://identity-service:8081
     depends_on:
       postgres-notification:
         condition: service_healthy

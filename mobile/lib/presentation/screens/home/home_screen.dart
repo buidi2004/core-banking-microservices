@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/network/realtime_notification_service.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
@@ -28,6 +31,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _accountNumber = '';
   bool _isLoading = true;
   List<Map<String, dynamic>> _recentTransactions = [];
+  StreamSubscription? _notifSub;
+  Timer? _refreshTimer;
 
   final List<Map<String, dynamic>> _quickServices = const [
     {'icon': Icons.send_outlined, 'label': 'Chuyển tiền', 'route': '/transfer'},
@@ -44,6 +49,25 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadAllData();
+    _listenRealtime();
+  }
+
+  /// Khi có biến động số dư realtime, làm mới số dư + giao dịch gần đây
+  /// (debounce 400ms để gộp nhiều event của cùng 1 giao dịch).
+  void _listenRealtime() {
+    _notifSub = RealtimeNotificationService().notificationStream.listen((_) {
+      _refreshTimer?.cancel();
+      _refreshTimer = Timer(const Duration(milliseconds: 400), () {
+        if (mounted) _loadWalletAndTransactions();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _notifSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadAllData() async {

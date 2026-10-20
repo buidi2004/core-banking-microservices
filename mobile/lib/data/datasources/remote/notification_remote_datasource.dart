@@ -47,31 +47,48 @@ class NotificationRemoteDataSource {
 
     final items = rawList.map((item) {
       final value = Map<String, dynamic>.from(item as Map);
+
+      // BE trả `dataPayload` (jsonb -> String JSON). Giữ tương thích với các key cũ
+      // (`metadata`, `data`) để không vỡ dữ liệu lịch sử.
       Map<String, dynamic> metadata = {};
-      if (value['metadata'] is String && (value['metadata'] as String).isNotEmpty) {
+      final rawPayload = value['dataPayload'] ?? value['metadata'];
+      if (rawPayload is String && rawPayload.isNotEmpty) {
         try {
-          metadata = jsonDecode(value['metadata'] as String) as Map<String, dynamic>;
+          final decoded = jsonDecode(rawPayload);
+          if (decoded is Map) metadata = Map<String, dynamic>.from(decoded);
         } catch (_) {}
+      } else if (rawPayload is Map) {
+        metadata = Map<String, dynamic>.from(rawPayload);
       } else if (value['data'] is Map) {
         metadata = Map<String, dynamic>.from(value['data'] as Map);
       }
 
       final content = (value['content'] ?? value['body'] ?? value['message'] ?? '').toString();
-      double amount = (metadata['amount'] as num?)?.toDouble() ?? 0.0;
-      if (amount == 0.0 && content.isNotEmpty) {
-        final match = RegExp(r'PS:\s*([+-]?[\d\.]+)').firstMatch(content);
-        if (match != null) {
-          final clean = match.group(1)!.replaceAll('.', '');
-          amount = double.tryParse(clean) ?? 0.0;
-        }
-      }
-
       final isRead = (value['isRead'] ?? value['read'] ?? false) == true;
 
-      final accountMatch = RegExp(r'Tài khoản:\s*([^\n]+)').firstMatch(content)?.group(1)?.trim();
-      final balanceMatch = RegExp(r'Số dư cuối:\s*([^\n]+)').firstMatch(content)?.group(1)?.trim();
-      final timeMatch = RegExp(r'Thời gian:\s*([^\n]+)').firstMatch(content)?.group(1)?.trim();
-      final noteMatch = RegExp(r'Nội dung:\s*([^\n]+)').firstMatch(content)?.group(1)?.trim();
+      // Format body thực tế của BE:
+      // "TK <phone> GD thành công. PS: -100.000 VND. SD: 18.900.000 VND - Đến: ... - ND: ..."
+      final psMatch = RegExp(r'PS:\s*([+-]?[\d.,]+)').firstMatch(content);
+      final sdMatch = RegExp(r'\bSD:\s*([\d.,]+)').firstMatch(content);
+      final tkMatch = RegExp(r'\bTK\s+([^\s]+)').firstMatch(content);
+      final ndMatch = RegExp(r'\bND:\s*([^\n]+)').firstMatch(content);
+
+      final rawAmount = metadata['transactionAmount'] ?? metadata['amount'];
+      double amount = rawAmount is num
+          ? rawAmount.toDouble()
+          : (double.tryParse(rawAmount?.toString() ?? '') ?? 0.0);
+      if (psMatch != null) {
+        final clean = psMatch.group(1)!.replaceAll('.', '').replaceAll(',', '');
+        amount = double.tryParse(clean) ?? amount;
+      }
+      // BE có thể trả amount dạng dương kèm type TRANSFER_OUT -> đảo dấu cho đúng chiều tiền.
+      final payloadType = (metadata['type'] ?? value['type'] ?? '').toString().toUpperCase();
+      if (amount > 0 && (payloadType == 'TRANSFER_OUT' || payloadType == 'WITHDRAWAL' || payloadType == 'PAYMENT')) {
+        amount = -amount;
+      }
+
+      final balanceRaw = sdMatch?.group(1)?.replaceAll('.', '').replaceAll(',', '') ??
+          metadata['newBalance']?.toString();
 
       return {
         'id': value['id']?.toString() ?? '',
@@ -80,16 +97,16 @@ class NotificationRemoteDataSource {
         'body': content,
         'content': content,
         'message': content,
-        'type': value['type']?.toString() ?? type,
-        'time': value['createdAt']?.toString() ?? value['timestamp']?.toString() ?? '',
+        'type': payloadType.isNotEmpty ? payloadType : type,
+        'time': value['createdAt']?.toString() ?? value['timestamp']?.toString() ?? metadata['timestamp']?.toString() ?? '',
         'isRead': isRead,
         'read': isRead,
         'txId': (metadata['transactionId'] ?? value['transactionId'])?.toString() ?? '',
         'amount': amount,
-        'accountNumber': accountMatch,
-        'endingBalance': balanceMatch,
-        'transactionTime': timeMatch,
-        'note': noteMatch,
+        'accountNumber': tkMatch?.group(1)?.trim() ?? metadata['walletId']?.toString(),
+        'endingBalance': balanceRaw,
+        'transactionTime': metadata['timestamp']?.toString() ?? value['createdAt']?.toString(),
+        'note': ndMatch?.group(1)?.trim() ?? metadata['note']?.toString(),
         'metadata': metadata,
         'raw': value,
       };

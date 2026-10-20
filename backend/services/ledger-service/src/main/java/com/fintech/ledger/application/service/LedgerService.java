@@ -120,7 +120,12 @@ public class LedgerService {
             }
             return existing;
         }
-        return persistencePort.saveAccount(LedgerAccount.bankSettlement(safeCurrency));
+        try {
+            return persistencePort.saveAccount(LedgerAccount.bankSettlement(safeCurrency));
+        } catch (Exception e) {
+            return persistencePort.findAccountByCode(LedgerAccount.BANK_SETTLEMENT_CODE)
+                    .orElseThrow(() -> new RuntimeException("Could not resolve bank settlement account", e));
+        }
     }
 
     private LedgerAccount resolveCashOnHandAccount(String currency) {
@@ -135,13 +140,22 @@ public class LedgerService {
             }
             return existing;
         }
-        return persistencePort.saveAccount(LedgerAccount.cashOnHand(safeCurrency));
+        try {
+            return persistencePort.saveAccount(LedgerAccount.cashOnHand(safeCurrency));
+        } catch (Exception e) {
+            return persistencePort.findAccountByCode(LedgerAccount.CASH_ON_HAND_CODE)
+                    .or(() -> persistencePort.findAccountByCode("1011:BR_Q1"))
+                    .orElseThrow(() -> new RuntimeException("Could not resolve cash on hand account", e));
+        }
     }
 
     private LedgerAccount resolveWalletAccount(String walletId, String currency) {
+        String accountCode = LedgerAccount.walletAccountCode(walletId);
         String accountName = LedgerAccount.walletAccountName(walletId);
         String safeCurrency = currency != null ? currency : "VND";
-        LedgerAccount existing = persistencePort.findAccountByName(accountName).orElse(null);
+        LedgerAccount existing = persistencePort.findAccountByName(accountName)
+                .or(() -> persistencePort.findAccountByCode(accountCode))
+                .orElse(null);
         if (existing != null) {
             if (currency != null && !safeCurrency.equals(existing.getCurrency())) {
                 throw new LedgerUnbalancedException("Currency mismatch: event " + safeCurrency
@@ -149,11 +163,17 @@ public class LedgerService {
             }
             return existing;
         }
-        return persistencePort.saveAccount(LedgerAccount.create(
-                LedgerAccount.walletAccountCode(walletId),
-                accountName,
-                AccountType.LIABILITY,
-                safeCurrency));
+        try {
+            return persistencePort.saveAccount(LedgerAccount.create(
+                    accountCode,
+                    accountName,
+                    AccountType.LIABILITY,
+                    safeCurrency));
+        } catch (Exception e) {
+            return persistencePort.findAccountByName(accountName)
+                    .or(() -> persistencePort.findAccountByCode(accountCode))
+                    .orElseThrow(() -> new RuntimeException("Could not resolve wallet account: " + walletId, e));
+        }
     }
 
     private List<LedgerPosting> buildCompletedPostings(TransactionEventMessage event) {

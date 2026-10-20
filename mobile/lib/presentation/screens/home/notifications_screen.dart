@@ -38,6 +38,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final List<Map<String, dynamic>> _systemNotifs = [];
 
   StreamSubscription? _notifSub;
+  Timer? _reconcileTimer;
+
+  void _scheduleReconcile() {
+    _reconcileTimer?.cancel();
+    _reconcileTimer = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) _loadNotifications(silent: true);
+    });
+  }
 
   @override
   void initState() {
@@ -68,38 +76,70 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       );
       _notifSub = RealtimeNotificationService().notificationStream.listen((data) {
         if (!mounted) return;
-        final title = (data['title'] ?? data['data']?['title'] ?? 'Biến động số dư').toString();
-        final body = (data['content'] ?? data['body'] ?? data['message'] ?? data['data']?['content'] ?? data['data']?['body'] ?? data['data']?['message'] ?? '').toString();
-        final amount = double.tryParse((data['transactionAmount'] ?? data['amount'] ?? data['data']?['amount'] ?? '0').toString()) ?? 0.0;
-        final txId = (data['transactionId'] ?? data['data']?['transactionId'] ?? data['id'])?.toString();
+        final title = (data['title'] ?? 'Biến động số dư').toString();
+        final body = (data['body'] ?? data['content'] ?? data['message'] ?? '').toString();
+        final rawAmount = data['transactionAmount'] ?? data['amount'];
+        var amount = rawAmount is num
+            ? rawAmount.toDouble()
+            : (double.tryParse(rawAmount?.toString() ?? '') ?? 0.0);
+        final type = (data['type'] ?? '').toString().toUpperCase();
+        if (amount > 0 && (type == 'TRANSFER_OUT' || type == 'WITHDRAWAL' || type == 'PAYMENT')) {
+          amount = -amount;
+        }
+        final txId = (data['transactionId'] ?? data['id'] ?? '').toString();
+
+        // Chống trùng: cùng 1 giao dịch có thể được đẩy từ wallet topic + user topic,
+        // hoặc từ Rabbit + Kafka. Nếu đã có trong danh sách thì chỉ cập nhật.
+        final existingIndex = txId.isEmpty
+            ? -1
+            : _balanceNotifs.indexWhere((n) => (n['txId']?.toString() ?? '') == txId);
+        if (existingIndex >= 0) {
+          setState(() {
+            _balanceNotifs[existingIndex]
+              ..['title'] = title
+              ..['body'] = body
+              ..['content'] = body
+              ..['message'] = body
+              ..['amount'] = amount;
+          });
+          return;
+        }
 
         setState(() {
           _balanceNotifs.insert(0, {
-            'id': txId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+            // `id` là id của bản ghi notification (dùng cho API mark-as-read).
+            // Bản realtime chưa có id DB nên dùng id tạm; sau khi đồng bộ sẽ thay bằng id thật.
+            'id': 'live-$txId',
             'title': title,
             'body': body,
             'content': body,
             'message': body,
-            'time': 'Vừa xong',
+            'type': type,
+            'time': (data['timestamp'] ?? DateTime.now().toIso8601String()).toString(),
             'isRead': false,
             'read': false,
-            'txId': txId ?? '',
+            'txId': txId,
             'amount': amount,
           });
         });
+
+        // Đồng bộ lại từ server sau khi notification đã được persist,
+        // để lấy id thật (mark-as-read) và trạng thái chuẩn.
+        _scheduleReconcile();
       });
     }
   }
 
   @override
   void dispose() {
+    _reconcileTimer?.cancel();
     _notifSub?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadNotifications() async {
+  Future<void> _loadNotifications({bool silent = false}) async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    if (!silent) setState(() => _isLoading = true);
 
     final prefs = await SharedPreferences.getInstance();
     final token = await AuthLocalDataSourceImpl(prefs: prefs).getAccessToken();
@@ -436,7 +476,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       item['read'] = true;
                     });
                     final id = item['id']?.toString();
-                    if (id != null && id.isNotEmpty) {
+                    if (id != null && id.isNotEmpty && !id.startsWith('live-')) {
                       NotificationRemoteDataSource().markRead(id);
                     }
                     if (isBalance) {

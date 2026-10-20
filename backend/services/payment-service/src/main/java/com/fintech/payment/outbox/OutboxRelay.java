@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * Outbox Relay: quét bảng outbox_events status='PENDING' và publish sự kiện
- * (bao gồm TRANSACTION_COMPLETED) lên RabbitMQ exchange wallet.exchange và
+ * (bao gồm TRANSACTION_COMPLETED) lên RabbitMQ exchange wallet.transaction.events và
  * Kafka topic banking.payment.transaction-lifecycle.v1 (AGENT 3).
  *
  * Mẫu Transactional Outbox: sự kiện được lưu cùng DB transaction với business
@@ -34,7 +34,7 @@ public class OutboxRelay {
     private final PaymentKafkaProducer paymentKafkaProducer;
     private final ObjectMapper objectMapper;
 
-    @Value("${rabbitmq.exchange.name:wallet.exchange}")
+    @Value("${rabbitmq.exchange.name:wallet.transaction.events}")
     private String exchangeName;
 
     @Value("${rabbitmq.routing.key.transaction:transaction.completed}")
@@ -59,13 +59,22 @@ public class OutboxRelay {
 
         for (OutboxEvent event : pending) {
             try {
+                // Payload lưu trong outbox là JSON string (jsonb). Phải parse thành object node
+                // trước khi publish, nếu không sẽ bị "double-encode" (JSON string lồng trong JSON)
+                // và consumer không thể deserialize.
+                com.fasterxml.jackson.databind.JsonNode payloadNode =
+                        objectMapper.readTree(event.getPayload());
+
                 // 1. Publish RabbitMQ (task queue - Ledger/Notification consumer)
                 String routingKey = resolveRoutingKey(event);
-                rabbitTemplate.convertAndSend(exchangeName, routingKey, event.getPayload(),
+                rabbitTemplate.convertAndSend(exchangeName, routingKey, payloadNode,
                         message -> {
                             message.getMessageProperties().setHeader("event_type", event.getEventType());
                             message.getMessageProperties().setHeader("aggregate_type", event.getAggregateType());
                             message.getMessageProperties().setHeader("aggregate_id", event.getAggregateId());
+                            // Ledger dùng TYPE_ID + IdClassMapping cho tên class cũ của monolith.
+                            message.getMessageProperties().setHeader("__TypeId__",
+                                    "com.fintech.wallet.domain.model.TransactionEvent");
                             return message;
                         });
 
@@ -74,7 +83,7 @@ public class OutboxRelay {
                 paymentKafkaProducer.sendLifecycleEvent(
                         event.getAggregateId(),
                         event.getEventType(),
-                        event.getPayload());
+                        payloadNode);
 
                 event.markPublished();
                 outboxEventRepository.save(event);

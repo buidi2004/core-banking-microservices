@@ -60,7 +60,14 @@ public class LedgerKafkaConsumer {
                                    @Header(name = "kafka_receivedMessageKey", required = false) String messageKey,
                                    Acknowledgment acknowledgment) {
         log.info("Kafka payment.transaction-lifecycle received: key={}, {}", messageKey, envelope);
-        TransactionEventMessage event = translator.fromPaymentLifecycle(envelope);
+        TransactionEventMessage event;
+        try {
+            event = translator.fromPaymentLifecycle(envelope, messageKey);
+        } catch (IllegalArgumentException e) {
+            log.warn("Malformed payment lifecycle event (skipping): key={}, error={}", messageKey, e.getMessage());
+            acknowledgment.acknowledge();
+            return;
+        }
         String status = event.getStatus() == null ? "" : event.getStatus().toUpperCase();
         if (!status.equals("SUCCESS") && !status.equals("COMPLETED") && !status.equals("REVERSED")) {
             log.info("Saga state ignored by ledger (not completed/reversed): eventId={}, txId={}, status={}",
@@ -90,6 +97,10 @@ public class LedgerKafkaConsumer {
                         recorded.getId(), event.getTransactionId(), recorded.getPostings().size());
             }
             // (2) ack ngay sau khi hạch toán DB thành công
+            acknowledgment.acknowledge();
+        } catch (IllegalArgumentException e) {
+            log.warn("Malformed transaction event for ledger posting (skipping): eventId={}, txId={}, error={}",
+                    envelope.getEventId(), event.getTransactionId(), e.getMessage());
             acknowledgment.acknowledge();
         } catch (RuntimeException e) {
             log.error("Kafka ledger posting failed (will retry / DLT): eventId={}, txId={}",
