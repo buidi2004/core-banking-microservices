@@ -21,9 +21,12 @@ class AuthRemoteDataSource {
     final json = Map<String, dynamic>.from(response.data as Map);
     final data = json['data'] as Map<String, dynamic>?;
     if (json['success'] != true || data == null) throw apiException(json);
+    final String? accessToken = data['accessToken'] as String? ?? data['token'] as String?;
+    final String? refreshToken = data['refreshToken'] as String?;
+    if (accessToken == null || refreshToken == null) throw apiException(json);
     await _local.saveTokens(
-      accessToken: data['accessToken'] as String,
-      refreshToken: data['refreshToken'] as String,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
     );
     await _local.saveIdentity(userId: data['userId'] as String, phoneNumber: data['phoneNumber'] as String? ?? phoneNumber);
     if (data['fullName'] != null && (data['fullName'] as String).isNotEmpty) {
@@ -32,7 +35,7 @@ class AuthRemoteDataSource {
 
     // Bước 1: Sau khi login, lấy walletId và profile fullName
     try {
-      final token = data['accessToken'] as String;
+      final token = accessToken;
       final meRes = await _dio.get(
         ApiConstants.userMe,
         options: Options(headers: {'Authorization': 'Bearer $token'}),
@@ -69,7 +72,7 @@ class AuthRemoteDataSource {
 
     final data = json['data'] as Map<String, dynamic>?;
     if (data != null) {
-      final accessToken = data['accessToken'] as String?;
+      final accessToken = (data['accessToken'] ?? data['token']) as String?;
       final refreshToken = data['refreshToken'] as String?;
       if (accessToken != null && refreshToken != null) {
         await _local.saveTokens(accessToken: accessToken, refreshToken: refreshToken);

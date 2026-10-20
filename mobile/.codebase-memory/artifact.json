@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "ff933d7f4ea70eaa4574c964cabc28e4fd40cb92",
+    "indexed_at": "2026-10-20T01:47:49Z",
+    "project": "core-banking-mobile",
+    "nodes": 1914,
+    "edges": 6595,
+    "original_size": 6946816,
+    "compressed_size": 1086576,
+    "compression_level": 9
+}

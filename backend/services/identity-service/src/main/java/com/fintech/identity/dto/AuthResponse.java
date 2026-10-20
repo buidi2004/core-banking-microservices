@@ -26,4 +26,8 @@ public class AuthResponse {
     private List<String> roles;
     private String branchId;
     private String kycTier;
+
+    public String getAccessToken() {
+        return token;
+    }
 }

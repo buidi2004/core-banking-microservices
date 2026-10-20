@@ -33,6 +33,7 @@ public class OutboxEvent {
     @Column(name = "event_type", length = 100, nullable = false)
     private String eventType;
 
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @Column(name = "payload", columnDefinition = "jsonb", nullable = false)
     private String payload;
 

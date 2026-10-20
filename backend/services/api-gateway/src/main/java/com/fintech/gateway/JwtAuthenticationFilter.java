@@ -59,7 +59,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final List<String> PUBLIC_PATH_PREFIXES = List.of(
             "/api/v1/auth/",
             "/actuator/health",
-            "/fallback/"
+            "/fallback/",
+            "/ws",
+            "/ws-native"
     );
 
     private final SecretKey secretKey;

@@ -65,9 +65,21 @@ cmd_deps() {
     fi
 }
 
+# Tự động forward cổng 8080 cho các máy ảo / thiết bị Android cắm vào
+auto_adb_reverse() {
+    if command -v adb &>/dev/null; then
+        local devices
+        devices=$(adb devices 2>/dev/null | awk 'NR>1 && $2=="device" {print $1}')
+        for dev in $devices; do
+            adb -s "$dev" reverse tcp:8080 tcp:8080 2>/dev/null || true
+        done
+    fi
+}
+
 # 2. Khởi chạy ứng dụng (Run)
 cmd_run() {
     print_banner
+    auto_adb_reverse
     if check_flutter; then
         echo -e "${BLUE}🚀 Đang khởi chạy ứng dụng Sen Hồng Bank...${NC}"
         cd "$MOBILE_DIR"
@@ -179,11 +191,33 @@ cmd_be_check() {
         echo -e "${RED}○ OFFLINE${NC}"
     fi
 
-    # 3. Thông tin IP cho Emulators
+    # 3. Trạng thái ADB Reverse cho Android Devices / Emulators
+    echo -e "\n  ${BOLD}📱 Trạng thái Android ADB Reverse (Bridge Port 8080):${NC}"
+    if command -v adb &>/dev/null; then
+        local devices
+        devices=$(adb devices 2>/dev/null | awk 'NR>1 && $2=="device" {print $1}')
+        if [ -n "$devices" ]; then
+            for dev in $devices; do
+                adb -s "$dev" reverse tcp:8080 tcp:8080 &>/dev/null || true
+                local rev_status
+                rev_status=$(adb -s "$dev" reverse --list 2>/dev/null | grep "8080" || true)
+                if [ -n "$rev_status" ]; then
+                    echo -e "    • Thiết bị ${CYAN}$dev${NC}: ${GREEN}✔ Kích hoạt thành công (Dùng http://localhost:8080/api/v1)${NC}"
+                else
+                    echo -e "    • Thiết bị ${CYAN}$dev${NC}: ${YELLOW}⚠ Không hỗ trợ adb reverse (Dùng http://10.0.2.2:8080/api/v1)${NC}"
+                fi
+            done
+        else
+            echo -e "    ${YELLOW}Chưa phát hiện thiết bị Android / máy ảo nào đang cắm.${NC}"
+        fi
+    fi
+
+    # 4. Thông tin IP cho Emulators
     echo -e "\n${BOLD}💡 THIẾT LẬP MẠNG CHO THIẾT BỊ / MÁY ẢO:${NC}"
-    echo -e "  • ${CYAN}Android Emulator:${NC}  Sử dụng endpoint: ${BOLD}http://10.0.2.2:8080/api/v1${NC}"
-    echo -e "  • ${CYAN}iOS Simulator:${NC}     Sử dụng endpoint: ${BOLD}http://localhost:8080/api/v1${NC}"
-    echo -e "  • ${CYAN}Thiết bị thật (LAN):${NC} Sử dụng IP mạng nội bộ của máy chủ phát Wi-Fi."
+    echo -e "  • ${CYAN}Android Emulator (adb reverse):${NC} Sử dụng endpoint: ${BOLD}http://localhost:8080/api/v1${NC}"
+    echo -e "  • ${CYAN}Android Emulator (mặc định):${NC}    Sử dụng endpoint: ${BOLD}http://10.0.2.2:8080/api/v1${NC}"
+    echo -e "  • ${CYAN}iOS Simulator:${NC}                  Sử dụng endpoint: ${BOLD}http://localhost:8080/api/v1${NC}"
+    echo -e "  • ${CYAN}Thiết bị thật (LAN):${NC}              Sử dụng IP mạng nội bộ của máy chủ phát Wi-Fi."
     echo -e "  • Đổi URL trực tiếp trên app tại: ${YELLOW}Cài đặt hệ thống (config_screen.dart)${NC}"
 }
 
@@ -268,6 +302,11 @@ case "$COMMAND" in
         ;;
     be:check|status)
         cmd_be_check
+        ;;
+    index|cbm)
+        echo -e "${YELLOW}🧠 Đang index đồ thị mã nguồn Mobile (core-banking-mobile)...${NC}"
+        /home/buidi/.local/bin/codebase-memory-mcp cli index_repository --repo-path "$MOBILE_DIR" --name core-banking-mobile --persistence true
+        echo -e "${GREEN}✔ Đã index xong Mobile vào Codebase Memory MCP!${NC}"
         ;;
     doctor)
         cmd_doctor

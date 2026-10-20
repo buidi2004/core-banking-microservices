@@ -1,8 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
 Future<void> main() async {
-  final baseUrl = 'http://180.93.120.246:8080/api/v1';
+  final baseUrl = Platform.environment['API_BASE_URL'] ?? 'http://localhost:8080/api/v1';
 
   print('--- Testing GET /promotions ---');
   try {
@@ -21,7 +22,12 @@ Future<void> main() async {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'phoneNumber': '0976019781', 'password': 'Password123!'}),
     );
-    final token = jsonDecode(loginRes.body)['data']['accessToken'];
+    final data = jsonDecode(loginRes.body)['data'];
+    final token = (data?['token'] ?? data?['accessToken']) as String?;
+    if (token == null) {
+      print('Login error: ${loginRes.body}');
+      return;
+    }
     print('Logged in successfully, token: ${token.substring(0, 15)}...');
 
     final myVouchersRes = await http.get(

@@ -45,3 +45,5 @@ emulator_*.png
 screen_*.png
 live_app_*.png
 scratch/
+# Widget Preview related
+.widget_preview/

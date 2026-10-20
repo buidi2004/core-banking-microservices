@@ -30,7 +30,8 @@ public class WalletGrpcService {
 
     @Transactional
     public DebitResult debitWallet(String walletId, Long amount, String transactionId, String idempotencyKey) {
-        if (!isIdempotent(transactionId)) {
+        String opKey = (idempotencyKey != null && !idempotencyKey.isBlank()) ? idempotencyKey : ("debit:" + transactionId);
+        if (!isIdempotent(opKey)) {
             return DebitResult.failure("DEBIT_IDEMPOTENT", "Giao dịch đã được xử lý: " + transactionId);
         }
 
@@ -55,7 +56,8 @@ public class WalletGrpcService {
 
     @Transactional
     public CreditResult creditWallet(String walletId, Long amount, String transactionId, String idempotencyKey) {
-        if (!isIdempotent(transactionId)) {
+        String opKey = (idempotencyKey != null && !idempotencyKey.isBlank()) ? idempotencyKey : ("credit:" + transactionId);
+        if (!isIdempotent(opKey)) {
             return CreditResult.failure("CREDIT_IDEMPOTENT", "Giao dịch đã được xử lý: " + transactionId);
         }
 

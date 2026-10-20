@@ -10,6 +10,10 @@
 spring:
   application:
     name: ewallet-api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   cloud:
     gateway:
       default-filters:
@@ -135,6 +139,11 @@ spring:
                 name: notificationServiceCb
                 fallbackUri: forward:/fallback/notification
 
+        - id: notification-service-websocket
+          uri: ${NOTIFICATION_SERVICE_WS_URI:ws://notification-service:8085}
+          predicates:
+            - Path=/ws/**, /ws-native/**, /ws, /ws-native
+
         # ----------------------------------------------------------------------------
         # GIAI ĐOẠN 2: TÁCH GENERAL LEDGER & AUDIT SERVICE -> ledger-service:8084
         # ----------------------------------------------------------------------------
@@ -216,12 +225,22 @@ spring:
             - name: JwtAuthenticationFilter
 
         # ----------------------------------------------------------------------------
-        # CASH SERVICE: QUẦY GIAO DỊCH NẠP TIỀN (Maker-Checker & Cash Deposit) -> payment-service:8082
+        # CASH SERVICE: QUẦY GIAO DỊCH NẠP TIỀN (Maker-Checker & Cash Deposit) -> payment-service:8083
         # ----------------------------------------------------------------------------
         - id: cash-service-route
-          uri: ${CASH_SERVICE_URI:http://payment-service:8082}
+          uri: ${CASH_SERVICE_URI:http://payment-service:8083}
           predicates:
             - Path=/api/v1/cash/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # PAYMENT SERVICE: GIAO DỊCH CHUYỂN TIỀN & P2P SAGA -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-route
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/payments/**
           filters:
             - name: JwtAuthenticationFilter
 

@@ -1,9 +1,9 @@
 class ApiConstants {
   ApiConstants._();
 
-  // Base URLs - VPS Server
-  static const String baseUrl = 'http://180.93.120.246:8080/api/v1';
-  static const String wsUrl = 'ws://180.93.120.246:8080/ws-native';
+  // Base URLs - Mặc định kết nối trực tiếp API Gateway Local (:8080), có thể override qua --dart-define
+  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080/api/v1');
+  static const String wsUrl = String.fromEnvironment('API_WS_URL', defaultValue: 'ws://localhost:8080/ws-native');
   static const String wsTopicPrefix = '/topic/wallets';
   static String walletNotificationTopic(String walletId) => '/topic/wallets/$walletId/notifications';
   static String userNotificationTopic(String userId) => '/topic/users/$userId/notifications';

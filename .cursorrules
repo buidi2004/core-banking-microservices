@@ -1,0 +1,16 @@
+# Codebase Memory MCP Rules for Cursor
+
+You MUST ALWAYS use `codebase-memory-mcp` tools as your FIRST and HIGHEST PRIORITY for code exploration and navigation.
+DO NOT use grep, find, cat, or read large files before searching via MCP knowledge graph.
+
+## Projects:
+- `core-banking-backend`: Java 17 / Spring Boot 3 microservices in `backend/`
+- `core-banking-mobile`: Flutter Clean Architecture mobile app in `mobile/`
+
+## MCP Priority:
+1. `search_graph(project, query)` - Locate classes, functions, routes, variables
+2. `trace_path(project, function_name, direction)` - Analyze call hierarchies and dependencies
+3. `get_code_snippet(project, qualified_name)` - Read only the exact target code snippet
+4. `get_file_outline(project, file_path)` - Inspect file structure before editing
+5. `get_architecture(project, aspects)` - Analyze system & module boundaries
+

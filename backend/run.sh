@@ -234,6 +234,11 @@ case "$COMMAND" in
     logs)
         cmd_logs "${2:-api-gateway}"
         ;;
+    index|cbm)
+        echo -e "${YELLOW}🧠 Đang index đồ thị mã nguồn Backend (core-banking-backend)...${NC}"
+        /home/buidi/.local/bin/codebase-memory-mcp cli index_repository --repo-path "$BACKEND_DIR" --name core-banking-backend --persistence true
+        echo -e "${GREEN}✔ Đã index xong Backend vào Codebase Memory MCP!${NC}"
+        ;;
     menu)
         interactive_menu
         ;;

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-const String baseUrl = 'http://180.93.120.246:8080/api/v1';
+final String baseUrl = Platform.environment['API_BASE_URL'] ?? 'http://localhost:8080/api/v1';
 
 void main() async {
   final client = HttpClient();
@@ -91,7 +91,7 @@ void main() async {
     });
     check('POST /auth/register', reg['status'] == 201 && reg['body']?['success'] == true);
 
-    final token = reg['body']?['data']?['accessToken'] as String?;
+    final token = reg['body']?['data']?['accessToken'] as String? ?? reg['body']?['data']?['token'] as String?;
     final refreshToken = reg['body']?['data']?['refreshToken'] as String?;
 
     final login = await req(method: 'POST', path: '/auth/login', body: {
@@ -101,11 +101,12 @@ void main() async {
     });
     check('POST /auth/login', login['status'] == 200 && login['body']?['success'] == true);
     final freshRefresh = login['body']?['data']?['refreshToken'] as String? ?? refreshToken;
+    final freshToken = login['body']?['data']?['token'] as String? ?? login['body']?['data']?['accessToken'] as String? ?? token;
 
-    final refresh = await req(method: 'POST', path: '/auth/refresh', query: {'refreshToken': freshRefresh!});
+    final refresh = await req(method: 'POST', path: '/auth/refresh', body: {'refreshToken': freshRefresh!});
     check('POST /auth/refresh', refresh['status'] == 200 && refresh['body']?['success'] == true);
 
-    final activeToken = refresh['body']?['data']?['accessToken'] as String? ?? token;
+    final activeToken = refresh['body']?['data']?['token'] as String? ?? refresh['body']?['data']?['accessToken'] as String? ?? freshToken;
 
     print('\n\x1B[33m[3] PROFILE, PIN & SECURITY\x1B[0m');
     final profile = await req(method: 'GET', path: '/users/me', token: activeToken);

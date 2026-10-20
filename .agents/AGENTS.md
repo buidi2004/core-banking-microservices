@@ -1,9 +1,30 @@
 # AI Agent Rules for EWallet Project
 
 ---
-## 🔌 MCP: codebase-memory-mcp
-- **Mục đích:** Đọc hiểu đồ thị mã nguồn dự án.
-- **Rule:** Ưu tiên dùng `search_graph` và `trace_path` thay vì grep hay tìm kiếm thủ công.
+## 🚨 NGUYÊN TẮC BẮT BUỘC SỐ 1: CODEBASE MEMORY MCP (GRAPH-FIRST ENGINE)
+> [!IMPORTANT]
+> **AI AGENT PHẢI LUÔN SỬ DỤNG `codebase-memory-mcp` ĐẦU TIÊN KHI ĐỌC, TÌM KIẾM HOẶC PHÂN TÍCH MÃ NGUỒN.**
+> - **CẤM:** Tuyệt đối không dùng `grep`, `find`, `cat` bừa bãi hoặc đọc toàn bộ file lớn gây quá tải context window.
+> - **BẮT BUỘC:** Mọi thao tác tìm class, interface, method, route, model, luồng gọi hàm, hoặc khảo sát kiến trúc PHẢI gọi công cụ MCP Graph trước.
+
+### 📌 Phân vùng dự án (Bắt buộc truyền tham số `project`):
+1. **`core-banking-backend`**: Dành cho mã nguồn Backend Java 17 / Spring Boot 3 (`backend/`):
+   - 6 Microservices: `api-gateway`, `identity-service`, `wallet-service`, `payment-service`, `ledger-service`, `notification-service`.
+   - `common-library` (Protobuf, gRPC, Events, DTOs).
+2. **`core-banking-mobile`**: Dành cho ứng dụng Mobile Flutter (`mobile/`):
+   - Clean Architecture, 50+ Screens, BLoC/Cubit, Repositories, Liquid Glass UI.
+
+### 🛠️ Thứ tự ưu tiên sử dụng MCP Tools (Bắt buộc tuân thủ):
+1. `search_graph(project, query/name_pattern)`: Tìm kiếm symbol (class, method, route, model, controller).
+2. `trace_path(project, function_name, direction)`: Lần theo luồng gọi hàm (`inbound` = ai gọi, `outbound` = hàm này gọi ai, `both` = cả hai).
+3. `get_code_snippet(project, qualified_name)`: Lấy chính xác đúng đoạn code cần đọc/sửa thay vì đọc cả file.
+4. `get_file_outline(project, file_path)`: Xem cấu trúc/dàn ý của file trước khi can thiệp.
+5. `get_architecture(project, aspects)`: Khảo sát kiến trúc module/service.
+
+### ⚠️ Trường hợp ngoại lệ duy nhất được fallback sang grep/cat:
+- Tìm chuỗi ký tự cố định trong file cấu hình (`.yml`, `.properties`, `.env`, `.sql`).
+- Tìm chuỗi thông báo lỗi hardcoded literal.
+- Sau khi `search_graph` xác nhận không có symbol trong đồ thị AST.
 
 ---
 ## 🔌 MCP: postgres-database-mcp
