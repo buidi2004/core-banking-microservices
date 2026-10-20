@@ -18,8 +18,8 @@ void main() {
     HttpOverrides.global = _RealHttpOverrides();
   });
 
-  const String baseUrl = 'http://180.93.120.246:8080/api/v1';
-  const String wsUrl = 'ws://180.93.120.246:8080/ws-native';
+  const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080/api/v1');
+  const String wsUrl = String.fromEnvironment('API_WS_URL', defaultValue: 'ws://localhost:8080/ws-native');
 
   final client = HttpClient();
   tearDownAll(() => client.close());

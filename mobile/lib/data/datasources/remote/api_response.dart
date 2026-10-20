@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 class ApiResponse<T> {
   final bool success;
   final String? message;
@@ -22,7 +24,58 @@ Exception apiException(Map<String, dynamic> json) {
 
 String extractErrorMessage(dynamic error) {
   if (error == null) return 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
-  
+
+  // 1. Trích xuất chính xác thông điệp lỗi từ Backend trả về qua DioException
+  if (error is DioException) {
+    final res = error.response;
+    if (res?.data != null) {
+      if (res!.data is Map) {
+        final map = Map<String, dynamic>.from(res.data as Map);
+
+        // Trường hợp validation lỗi theo trường cụ thể: {data: {phoneNumber: "..."}}
+        if (map['data'] is Map) {
+          final dataMap = Map<String, dynamic>.from(map['data'] as Map);
+          if (dataMap.containsKey('phoneNumber')) {
+            final phoneErr = dataMap['phoneNumber'].toString();
+            if (phoneErr.contains('Invalid Vietnamese phone number') || phoneErr.contains('phone')) {
+              return 'Số điện thoại không đúng định dạng Việt Nam (phải gồm 10 số, bắt đầu bằng 03, 05, 07, 08, 09).';
+            }
+            return phoneErr;
+          }
+          final firstVal = dataMap.values.firstOrNull?.toString();
+          if (firstVal != null && firstVal.isNotEmpty) {
+            if (firstVal.contains('Invalid Vietnamese phone number')) {
+              return 'Số điện thoại không đúng định dạng Việt Nam (phải gồm 10 số, bắt đầu bằng 03, 05, 07, 08, 09).';
+            }
+            return firstVal;
+          }
+        }
+
+        if (map['message'] != null && map['message'].toString().trim().isNotEmpty) {
+          final msg = map['message'].toString().trim();
+          if (msg.contains('Invalid Vietnamese phone number')) {
+            return 'Số điện thoại không đúng định dạng Việt Nam (phải gồm 10 số, bắt đầu bằng 03, 05, 07, 08, 09).';
+          }
+          return msg;
+        }
+
+        if (map['error'] != null && map['error'].toString().trim().isNotEmpty) {
+          return map['error'].toString().trim();
+        }
+      } else if (res.data is String && (res.data as String).trim().isNotEmpty) {
+        return (res.data as String).trim();
+      }
+    }
+
+    // Nếu thực sự là lỗi không kết nối được mạng (connection timeout, connection error)
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.sendTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.connectionError) {
+      return 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng và thử lại.';
+    }
+  }
+
   // Xử lý chuỗi thông điệp
   var raw = error.toString().replaceAll('Exception: ', '').trim();
   
@@ -133,4 +186,4 @@ String extractErrorMessage(dynamic error) {
   }
   
   return raw;
-}
+}

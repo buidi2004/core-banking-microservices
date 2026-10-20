@@ -265,6 +265,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             );
                             return;
                           }
+                          final phoneRegex = RegExp(r'^(0|\+84)[35789][0-9]{8}$');
+                          if (!phoneRegex.hasMatch(phone)) {
+                            HapticFeedback.vibrate();
+                            AppAlerts.showWarning(
+                              context,
+                              'Số điện thoại không đúng định dạng Việt Nam. Vui lòng nhập số gồm 10 chữ số bắt đầu bằng 03, 05, 07, 08, 09 (ví dụ: 0912345678).',
+                              title: 'Số điện thoại không hợp lệ',
+                            );
+                            return;
+                          }
                           if (name.isEmpty) {
                             HapticFeedback.vibrate();
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();

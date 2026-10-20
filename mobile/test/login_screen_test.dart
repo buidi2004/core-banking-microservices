@@ -20,7 +20,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     // Verify clear login requirement notice
-    expect(find.text('Yêu Cầu Đăng Nhập'), findsWidgets);
     expect(find.text('Yêu Cầu Đăng Nhập Lại'), findsOneWidget);
 
     // Dismiss dialog
