@@ -1,6 +1,12 @@
 # AI Agent Rules for EWallet Project
 
 ---
+## 📖 HƯỚNG DẪN KHỞI TẠO MÔI TRƯỜNG DỰ ÁN (BE, FE, MOBILE)
+> [!TIP]
+> Chi tiết toàn bộ quy trình thiết lập môi trường từ zero, tải dependencies, chạy 14 Docker containers, 6 Microservices, Web Portal và Flutter Mobile được ghi chép đầy đủ tại:
+> 👉 [ENVIRONMENT_SETUP_GUIDE.md](file:///home/buidi/core-banking-microservices/.agents/ENVIRONMENT_SETUP_GUIDE.md)
+
+---
 ## 🚨 NGUYÊN TẮC BẮT BUỘC SỐ 1: CODEBASE MEMORY MCP (GRAPH-FIRST ENGINE)
 > [!IMPORTANT]
 > **AI AGENT PHẢI LUÔN SỬ DỤNG `codebase-memory-mcp` ĐẦU TIÊN KHI ĐỌC, TÌM KIẾM HOẶC PHÂN TÍCH MÃ NGUỒN.**
