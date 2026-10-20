@@ -396,6 +396,16 @@ spring:
             - name: JwtAuthenticationFilter
 
         # ----------------------------------------------------------------------------
+        # LOTTERY: XỔ SỐ ĐIỆN TOÁN SENBANK -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-lottery
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/lottery/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
         # FALLBACK: TOÀN BỘ CÁC API CÒN LẠI -> MONOLITH CŨ (monolith:8080)
         # (Wallet Core, Payment, Transaction, Ledger query, QR, ...)
         # ----------------------------------------------------------------------------

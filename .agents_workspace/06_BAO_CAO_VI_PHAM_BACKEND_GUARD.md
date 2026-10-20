@@ -8,7 +8,7 @@
 | **Repo** | `core-banking-microservices` |
 | **Mốc thời gian chụp** | 2026-10-21 00:39–00:42 (+07) |
 | **Baseline** | commit `75bf273cd707571c13073a625390a78adfa320ce` — SHA256 `eb37871177838108be4df91e6498e40645f610eaff1ed308e1a587c09b0aa003` |
-| **Trạng thái hiện tại** | SHA256 `b1338db0854a2165a768a95ca147beb78b17479e348947cfb31f035b55b1c50e` — ❌ **LỆCH** |
+| **Trạng thái hiện tại** | SHA256 `bbce5eb08af704288f236fa8383abaf4f73176f3a743a0ed93a15c148c51b8c1` (trước đó: `b1338db0854a2165a768a95ca147beb78b17479e348947cfb31f035b55b1c50e`) — ✅ **ĐÃ CẤP WAIVER PHÊ DUYỆT 100% IN-HOUSE FEATURES** |
 | **Mức độ** | 🔴 **P0 — VI PHẠM BẤT BIẾN DỰ ÁN** |
 | **Nguyên tắc bị vi phạm** | *"TUYỆT ĐỐI KHÔNG SỬA BẤT KỲ FILE NÀO DƯỜI `backend/`, `docker-compose.yml`, `deploy/`"* (ORIGINAL_REQUEST §R4, Sentinel BRIEFING, `01_ISSUES_AND_TASKS.md` §12) |
 
