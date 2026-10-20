@@ -1,153 +1,29 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:morphnext/morphnext.dart';
+import '../../core/theme/app_colors.dart';
 
-/// Icon 4 ô vuông bo góc đa sắc XOAY NGHIÊNG CHÉO 3D kèm ngôi sao lấp lánh (Sparkle)
-/// Khớp chuẩn xác góc nghiêng ~22 độ và bề mặt nổi 3D trong ảnh mẫu tham chiếu
+/// Icon thao tác nhanh chuẩn thư viện Cupertino (square_grid_2x2_fill)
+/// Màu sắc Oceanic Cyan chuẩn hệ thống nhận diện thương hiệu SenBank
 class FourTileQuickActionIcon extends StatelessWidget {
   final double size;
+  final Color? color;
 
   const FourTileQuickActionIcon({
     super.key,
-    this.size = 32,
+    this.size = 30,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final tileSize = size * 0.42;
-    final borderRadius = BorderRadius.circular(tileSize * 0.38);
-
-    return SizedBox(
-      width: size + 8,
-      height: size + 8,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // Hiệu ứng ánh sáng tỏa tròn (Radial Glow) phía sau cụm icon
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFF00E5FF).withOpacity(0.35),
-                    const Color(0xFF00B4D8).withOpacity(0.15),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.55, 1.0],
-                ),
-              ),
-            ),
-          ),
-
-          // Khối 4 ô vuông xoay góc 22 độ
-          Transform.rotate(
-            angle: 0.384, // ~22 độ
-            child: SizedBox(
-              width: size,
-              height: size,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 1. Ô TRÊN-TRÁI: Cyan phát sáng
-                      _buildTile(
-                        size: tileSize,
-                        borderRadius: borderRadius,
-                        colors: const [Color(0xFF2AF598), Color(0xFF009EFD)],
-                        shadowColor: const Color(0xFF00E5FF).withOpacity(0.60),
-                        hasSpecularHighlight: true,
-                      ),
-                      const SizedBox(width: 3),
-                      // 2. Ô TRÊN-PHẢI: Royal Blue
-                      _buildTile(
-                        size: tileSize,
-                        borderRadius: borderRadius,
-                        colors: const [Color(0xFF5B86E5), Color(0xFF363795)],
-                        shadowColor: const Color(0xFF5B86E5).withOpacity(0.50),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // 3. Ô DƯỚI-TRÁI: Vàng cam Sunburst
-                      _buildTile(
-                        size: tileSize,
-                        borderRadius: borderRadius,
-                        colors: const [Color(0xFFFFB300), Color(0xFFFF6F00)],
-                        shadowColor: const Color(0xFFFF9800).withOpacity(0.55),
-                      ),
-                      const SizedBox(width: 3),
-                      // 4. Ô DƯỚI-PHẢI: Xanh lá mạ Neon Green
-                      _buildTile(
-                        size: tileSize,
-                        borderRadius: borderRadius,
-                        colors: const [Color(0xFFB4EC51), Color(0xFF429321)],
-                        shadowColor: const Color(0xFF7ED321).withOpacity(0.50),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTile({
-    required double size,
-    required BorderRadius borderRadius,
-    required List<Color> colors,
-    required Color shadowColor,
-    bool hasSpecularHighlight = false,
-  }) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        borderRadius: borderRadius,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: shadowColor,
-            blurRadius: 5,
-            offset: const Offset(0, 2.5),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.white.withOpacity(0.35),
-          width: 0.8,
-        ),
-      ),
-      child: hasSpecularHighlight
-          ? Container(
-              decoration: BoxDecoration(
-                borderRadius: borderRadius,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.center,
-                  colors: [
-                    Colors.white.withOpacity(0.40),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.55],
-                ),
-              ),
-            )
-          : null,
+    return Icon(
+      CupertinoIcons.square_grid_2x2_fill,
+      size: size,
+      color: color ?? AppColors.bottomBarCyan,
     );
   }
 }

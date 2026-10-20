@@ -107,27 +107,10 @@ class BalanceCard extends StatelessWidget {
                       // Chip chip EMV + Sóng NFC + Loại tài khoản
                       Row(
                         children: [
-                          // Chip EMV kim loại mạ vàng
-                          Container(
-                            width: 30,
-                            height: 22,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFFFFDF7A),
-                                  Color(0xFFD4AF37),
-                                  Color(0xFFAA771C),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              border: Border.all(
-                                color: const Color(0xFF8B6508),
-                                width: 0.5,
-                              ),
-                            ),
-                            child: CustomPaint(painter: _EmvChipPainter()),
+                          const Icon(
+                            CupertinoIcons.creditcard_fill,
+                            size: 20,
+                            color: AppColors.bottomBarCyan,
                           ),
                           const SizedBox(width: 8),
                           const Icon(
@@ -155,7 +138,7 @@ class BalanceCard extends StatelessWidget {
                           color: Colors.black.withOpacity(0.25),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color(0xFFFFD54F).withOpacity(0.4),
+                            color: AppColors.bottomBarCyan.withOpacity(0.4),
                             width: 0.8,
                           ),
                         ),
@@ -171,7 +154,7 @@ class BalanceCard extends StatelessWidget {
                             Text(
                               'SenBank Premier',
                               style: GoogleFonts.plusJakartaSans(
-                                color: const Color(0xFFFFE082),
+                                color: AppColors.bottomBarCyan,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.2,
@@ -405,35 +388,4 @@ class BalanceCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// CustomPainter vẽ các vân rãnh vi mạch chip thông minh EMV
-class _EmvChipPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF8B6508).withOpacity(0.55)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.6;
-
-    // Đường phân cách vi mạch trung tâm
-    canvas.drawLine(
-      Offset(size.width * 0.45, 0),
-      Offset(size.width * 0.45, size.height),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(0, size.height * 0.38),
-      Offset(size.width, size.height * 0.38),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(0, size.height * 0.68),
-      Offset(size.width, size.height * 0.68),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
