@@ -645,18 +645,10 @@ class _CardsScreenState extends State<CardsScreen> {
                     // Row 2: Chip EMV & Contactless
                     Row(
                       children: [
-                        Container(
-                          width: 36,
-                          height: 26,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.bottomBarCyan, AppColors.primary],
-                            ),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: const Center(
-                            child: Icon(CupertinoIcons.square_grid_2x2_fill, color: Colors.black45, size: 16),
-                          ),
+                        const Icon(
+                          CupertinoIcons.creditcard_fill,
+                          color: AppColors.bottomBarCyan,
+                          size: 24,
                         ),
                         const SizedBox(width: 10),
                         const Icon(CupertinoIcons.radiowaves_right, color: Colors.white70, size: 20),

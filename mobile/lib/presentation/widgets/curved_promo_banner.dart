@@ -84,15 +84,15 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
       highlightValue: '50%',
       highlightText: 'HOÀN TIỀN',
       buttonText: 'MỞ THẺ NGAY',
-      buttonTextColor: Color(0xFF7B1FA2),
+      buttonTextColor: Color(0xFF0077B6),
       rightIcon: CupertinoIcons.creditcard_fill,
       gradientColors: [
-        Color(0xFF4A0E4E),
-        Color(0xFF6A1B9A),
-        Color(0xFF8E24AA),
-        Color(0xFFAB47BC),
+        Color(0xFF03045E),
+        Color(0xFF023E8A),
+        Color(0xFF0077B6),
+        Color(0xFF00B4D8),
       ],
-      shadowColor: Color(0xFF6A1B9A),
+      shadowColor: Color(0xFF023E8A),
       route: '/cards',
     ),
 
@@ -104,15 +104,15 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
       highlightValue: '0%',
       highlightText: 'LÃI THÁNG ĐẦU',
       buttonText: 'NHẬN TIỀN NGAY',
-      buttonTextColor: Color(0xFF00695C),
+      buttonTextColor: Color(0xFF0077B6),
       rightIcon: CupertinoIcons.money_dollar_circle_fill,
       gradientColors: [
-        Color(0xFF004D40),
-        Color(0xFF00695C),
-        Color(0xFF00897B),
-        Color(0xFF26A69A),
+        Color(0xFF0F3E6D),
+        Color(0xFF056676),
+        Color(0xFF0077B6),
+        Color(0xFF26E5DC),
       ],
-      shadowColor: Color(0xFF00695C),
+      shadowColor: Color(0xFF0F3E6D),
       route: '/bills/quick-loan',
     ),
 
@@ -353,7 +353,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFB300),
+                                color: const Color(0xFF26E5DC),
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: [
                                   BoxShadow(
@@ -376,7 +376,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                             Text(
                               promo.highlightText,
                               style: const TextStyle(
-                                color: Color(0xFFFFEB3B),
+                                color: Colors.white,
                                 fontSize: 16,
                                 fontWeight: FontWeight.w900,
                                 shadows: [
@@ -674,14 +674,14 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                              colors: [Color(0xFF26E5DC), Color(0xFF00B4D8)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.25),
+                                color: const Color(0xFF00B4D8).withOpacity(0.35),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -690,7 +690,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                           child: const Text(
                             '100K',
                             style: TextStyle(
-                              color: Color(0xFF0F172A),
+                              color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
                             ),

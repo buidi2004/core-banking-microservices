@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
 import 'package:morphnext/morphnext.dart';
+import '../../core/theme/app_colors.dart';
 
 /// Thẻ tài khoản ngân hàng chuẩn quốc tế (SenBank Premier Card)
 /// Thiết kế chuẩn Digital Banking: Chi tiết tài khoản, số dư định dạng tài chính,
