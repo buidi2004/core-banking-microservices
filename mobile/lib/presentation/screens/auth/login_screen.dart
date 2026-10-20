@@ -510,7 +510,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 16),
+                    Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primary, size: 16),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(

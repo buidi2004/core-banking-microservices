@@ -189,7 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 decoration: InputDecoration(
                   labelText: 'Mã người giới thiệu (Tùy chọn nhận 50.000đ)',
                   labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.gift_fill, color: AppColors.accentGold),
+                  prefixIcon: const Icon(CupertinoIcons.gift_fill, color: AppColors.primary),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),

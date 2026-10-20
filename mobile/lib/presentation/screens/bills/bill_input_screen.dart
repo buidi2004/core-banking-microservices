@@ -187,7 +187,7 @@ class _BillInputScreenState extends State<BillInputScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(CupertinoIcons.lightbulb_fill, color: AppColors.accentGold, size: 14),
+                          const Icon(CupertinoIcons.lightbulb_fill, color: AppColors.bottomBarCyan, size: 14),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(

@@ -84,16 +84,24 @@ public class TransactionHistoryController {
 
     private Map<String, Object> toView(Transaction tx, String walletId) {
         boolean isSource = walletId != null && walletId.equals(tx.getSourceWalletId());
+        boolean isReversed = "REVERSED".equalsIgnoreCase(tx.getStatus());
         boolean transfer = "TRANSFER".equalsIgnoreCase(tx.getType());
 
         String displayType;
         if (transfer) {
-            displayType = isSource ? "TRANSFER_OUT" : "TRANSFER_IN";
+            if (isReversed) {
+                // B-02 & B-03: Giao dịch đảo (hoàn tiền)
+                // - Ví nguồn được hoàn tiền lại: hiển thị dương (TRANSFER_IN)
+                // - Ví đích không thực nhận được tiền: loại trừ khỏi credit ảo (hiển thị REVERSED)
+                displayType = isSource ? "TRANSFER_IN" : "REVERSED";
+            } else {
+                displayType = isSource ? "TRANSFER_OUT" : "TRANSFER_IN";
+            }
         } else {
-            displayType = tx.getType();
+            displayType = isReversed ? "REVERSED" : tx.getType();
         }
 
-        Long balanceAfter = isSource ? tx.getSourceBalanceAfter() : tx.getTargetBalanceAfter();
+        Long balanceAfter = isSource ? tx.getSourceBalanceAfter() : (isReversed ? null : tx.getTargetBalanceAfter());
         String counterpartyWalletId = isSource ? tx.getTargetWalletId() : tx.getSourceWalletId();
 
         Map<String, Object> view = new LinkedHashMap<>();

@@ -180,19 +180,19 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: isApplied ? AppColors.emeraldGreen : AppColors.borderLight, width: isApplied ? 2 : 1),
-                    color: isApplied ? AppColors.emeraldGreen.withOpacity(0.06) : Colors.white,
+                    border: Border.all(color: isApplied ? AppColors.bottomBarCyan : AppColors.borderLight, width: isApplied ? 2 : 1),
+                    color: isApplied ? AppColors.bottomBarCyan.withOpacity(0.08) : Colors.white,
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.emeraldGreen.withOpacity(0.15),
-                      child: const Icon(CupertinoIcons.tickets_fill, color: AppColors.emeraldGreen, size: 20),
+                      backgroundColor: AppColors.bottomBarCyan.withOpacity(0.15),
+                      child: const Icon(CupertinoIcons.tickets_fill, color: AppColors.bottomBarCyan, size: 20),
                     ),
                     title: Text(v['code'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimaryLight)),
                     subtitle: Text(v['title'] as String, style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
                     trailing: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isApplied ? AppColors.emeraldGreen : AppColors.primary,
+                        backgroundColor: isApplied ? AppColors.bottomBarCyan : AppColors.primary,
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       ),
                       onPressed: () {
@@ -328,10 +328,10 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.accentGold.withOpacity(0.15),
+                          color: AppColors.primary.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text('Chờ thanh toán', style: TextStyle(color: AppColors.warningText, fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: const Text('Chờ thanh toán', style: TextStyle(color: AppColors.primaryDark, fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                       const Divider(height: 28, color: AppColors.cardBorderLight),
 
@@ -359,7 +359,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                 quality: GlassQuality.minimal,
                 child: ListTile(
                   onTap: _showVoucherPicker,
-                  leading: const Icon(CupertinoIcons.tickets_fill, color: AppColors.emeraldGreen, size: 24),
+                  leading: const Icon(CupertinoIcons.tickets_fill, color: AppColors.bottomBarCyan, size: 24),
                   title: const Text('Mã giảm giá / Voucher', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
                   subtitle: Text(
                     _discountAmount > 0

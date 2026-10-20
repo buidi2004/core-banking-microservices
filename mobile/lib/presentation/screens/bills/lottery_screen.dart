@@ -259,16 +259,16 @@ class _LotteryScreenState extends State<LotteryScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.accentGold.withValues(alpha: 0.15),
+              color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.4)),
+              border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.4)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 14),
+                Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.bottomBarCyan, size: 14),
                 SizedBox(width: 4),
-                Text('100% HỢP PHÁP', style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text('100% HỢP PHÁP', style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -375,12 +375,12 @@ class _LotteryScreenState extends State<LotteryScreen> {
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: AppColors.accentGold.withValues(alpha: 0.4),
+          color: AppColors.bottomBarCyan.withValues(alpha: 0.4),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.accentGold.withValues(alpha: 0.15),
+            color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
             blurRadius: 18,
             offset: const Offset(0, 6),
           ),
@@ -397,10 +397,10 @@ class _LotteryScreenState extends State<LotteryScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.accentGold.withValues(alpha: 0.15),
+                      color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(CupertinoIcons.ticket_fill, color: AppColors.accentGold, size: 22),
+                    child: const Icon(CupertinoIcons.ticket_fill, color: AppColors.bottomBarCyan, size: 22),
                   ),
                   const SizedBox(width: 10),
                   const Column(
@@ -409,7 +409,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                       Text(
                         'GIẢI JACKPOT 1 ĐANG TÍCH LŨY',
                         style: TextStyle(
-                          color: AppColors.accentGold,
+                          color: AppColors.bottomBarCyan,
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.1,
@@ -458,7 +458,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
               const Text(
                 'VND',
                 style: TextStyle(
-                  color: AppColors.accentGold,
+                  color: AppColors.bottomBarCyan,
                   fontWeight: FontWeight.w800,
                   fontSize: 16,
                 ),
@@ -697,10 +697,10 @@ class _LotteryScreenState extends State<LotteryScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.accentGold.withValues(alpha: 0.15),
+                color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(CupertinoIcons.repeat, color: AppColors.accentGold, size: 20),
+              child: const Icon(CupertinoIcons.repeat, color: AppColors.bottomBarCyan, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -721,7 +721,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
             ),
             CupertinoSwitch(
               value: _autoRecurring,
-              activeTrackColor: AppColors.accentGold,
+              activeTrackColor: AppColors.bottomBarCyan,
               onChanged: (val) {
                 setState(() => _autoRecurring = val);
               },
@@ -769,7 +769,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title, style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
-          Text(val, style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 12)),
+          Text(val, style: const TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 12)),
         ],
       ),
     );
@@ -912,7 +912,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(CupertinoIcons.ticket, color: AppColors.accentGold, size: 18),
+                  const Icon(CupertinoIcons.ticket, color: AppColors.bottomBarCyan, size: 18),
                   const SizedBox(width: 8),
                   Text(
                     '${t['game']} • ${t['drawPeriod']}',
@@ -1008,7 +1008,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
             children: [
               Text(
                 r['game'] as String,
-                style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 15),
+                style: const TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 15),
               ),
               Text(
                 r['period'] as String,
@@ -1027,7 +1027,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
-                      colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+                      colors: [AppColors.bottomBarCyan, AppColors.primary],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),

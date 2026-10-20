@@ -677,7 +677,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               margin: const EdgeInsets.only(bottom: 6),
                               decoration: BoxDecoration(
-                                color: isSelected ? Colors.white.withOpacity(0.25) : AppColors.accentGold.withOpacity(0.2),
+                                color: isSelected ? Colors.white.withOpacity(0.25) : AppColors.bottomBarCyan.withOpacity(0.18),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
@@ -685,7 +685,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
-                                  color: isSelected ? Colors.white : AppColors.accentGold,
+                                  color: isSelected ? Colors.white : AppColors.bottomBarCyan,
                                 ),
                               ),
                             )
@@ -884,18 +884,18 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.accentGold.withOpacity(0.25),
+                    color: AppColors.bottomBarCyan.withOpacity(0.18),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.accentGold.withOpacity(0.6)),
+                    border: Border.all(color: AppColors.bottomBarCyan.withOpacity(0.5)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 12),
+                      Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.bottomBarCyan, size: 12),
                       SizedBox(width: 4),
                       Text(
                         'TIẾT KIỆM BẢO CHỨNG NHNN',
-                        style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),

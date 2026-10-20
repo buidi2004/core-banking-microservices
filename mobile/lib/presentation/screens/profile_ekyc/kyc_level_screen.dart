@@ -465,13 +465,13 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.accentGold.withOpacity(0.3),
+                  color: AppColors.bottomBarCyan.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.accentGold),
+                  border: Border.all(color: AppColors.bottomBarCyan),
                 ),
-                child: const Text('SEN PREMIER BANKING', style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold)),
+                child: const Text('SEN PREMIER BANKING', style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.bold)),
               ),
-              const Icon(CupertinoIcons.star_circle_fill, color: AppColors.accentGold, size: 24),
+              const Icon(CupertinoIcons.star_circle_fill, color: AppColors.bottomBarCyan, size: 24),
             ],
           ),
           const SizedBox(height: 10),
@@ -487,8 +487,8 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
           const SizedBox(height: 12),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.accentGold),
-              foregroundColor: AppColors.accentGold,
+              side: const BorderSide(color: AppColors.bottomBarCyan),
+              foregroundColor: AppColors.bottomBarCyan,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
             onPressed: () {

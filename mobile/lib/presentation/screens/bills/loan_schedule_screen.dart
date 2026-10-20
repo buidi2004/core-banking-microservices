@@ -420,12 +420,12 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.accentGold.withValues(alpha: 0.15),
+                      color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       CupertinoIcons.shield_lefthalf_fill,
-                      color: AppColors.accentGold,
+                      color: AppColors.bottomBarCyan,
                       size: 20,
                     ),
                   ),
@@ -562,7 +562,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                     flex: 12,
                     child: Container(
                       height: 10,
-                      color: AppColors.accentGold,
+                      color: AppColors.bottomBarCyan,
                     ),
                   ),
                 ],
@@ -581,7 +581,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 ),
                 Row(
                   children: [
-                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.accentGold, shape: BoxShape.circle)),
+                    Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.bottomBarCyan, shape: BoxShape.circle)),
                     const SizedBox(width: 6),
                     const Text('Tổng lãi: 630.000 đ', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   ],
@@ -635,8 +635,8 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
       badgeLabel = 'ĐÃ TRẢ';
       badgeIcon = CupertinoIcons.checkmark_alt_circle_fill;
     } else if (status == 'DUE') {
-      badgeBg = AppColors.accentGold.withValues(alpha: 0.22);
-      badgeText = AppColors.accentGold;
+      badgeBg = AppColors.bottomBarCyan.withValues(alpha: 0.22);
+      badgeText = AppColors.bottomBarCyan;
       badgeLabel = 'ĐẾN HẠN';
       badgeIcon = CupertinoIcons.clock_fill;
     } else {
@@ -741,7 +741,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 ),
                 Text(
                   '+ Lãi: ${CurrencyFormatter.formatVND(interest)}',
-                  style: const TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   '= ${CurrencyFormatter.formatVND(total)}',
@@ -829,14 +829,14 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.accentGold.withValues(alpha: 0.08),
+        color: AppColors.bottomBarCyan.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.25)),
+        border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.25)),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+          Icon(CupertinoIcons.info_circle_fill, color: AppColors.bottomBarCyan, size: 20),
           SizedBox(width: 10),
           Expanded(
             child: Text(

@@ -277,7 +277,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(CupertinoIcons.exclamationmark_triangle, color: Colors.amber, size: 48),
+              const Icon(CupertinoIcons.exclamationmark_triangle, color: AppColors.bottomBarCyan, size: 48),
               const SizedBox(height: 16),
               Text(
                 _errorMessage!,
@@ -378,7 +378,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
               ),
               Text(
                 'TIÊU CHUẨN FIPS 140-2',
-                style: TextStyle(color: AppColors.accentGold, fontSize: 10.5, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10.5, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -522,7 +522,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                     Text(
                       d['lastActive'] as String,
                       style: TextStyle(
-                        color: isCurrent ? AppColors.emeraldGreen : AppColors.accentGold,
+                        color: isCurrent ? AppColors.bottomBarCyan : Colors.white70,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),

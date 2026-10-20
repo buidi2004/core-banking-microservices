@@ -299,12 +299,12 @@ class _MoreScreenState extends State<MoreScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.accentGold.withOpacity(0.2),
+                        color: AppColors.primary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         _kycStatus,
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentGold),
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
                       ),
                     ),
                   ],
@@ -342,10 +342,10 @@ class _MoreScreenState extends State<MoreScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.accentGold.withOpacity(0.2),
+              color: AppColors.bottomBarCyan.withOpacity(0.18),
               shape: BoxShape.circle,
             ),
-            child: const Icon(CupertinoIcons.star_circle_fill, color: AppColors.accentGold, size: 28),
+            child: const Icon(CupertinoIcons.star_circle_fill, color: AppColors.bottomBarCyan, size: 28),
           ),
           const SizedBox(width: 12),
           const Expanded(
@@ -354,7 +354,7 @@ class _MoreScreenState extends State<MoreScreen> {
               children: [
                 Text(
                   '12.450 SenPoints',
-                  style: TextStyle(color: AppColors.accentGold, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 2),
                 Text(
@@ -366,8 +366,8 @@ class _MoreScreenState extends State<MoreScreen> {
           ),
           OutlinedButton(
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.accentGold),
-              foregroundColor: AppColors.accentGold,
+              side: const BorderSide(color: AppColors.bottomBarCyan),
+              foregroundColor: AppColors.bottomBarCyan,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             ),
             onPressed: () {

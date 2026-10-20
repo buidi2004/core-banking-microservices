@@ -73,11 +73,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
   }
 
   Color _getServiceColor() {
-    final p = widget.provider.toLowerCase();
-    if (p.contains('evn') || p.contains('điện')) return AppColors.accentGold;
-    if (p.contains('nước') || p.contains('sawaco') || p.contains('viwaco')) return AppColors.primary;
-    if (p.contains('vnpt') || p.contains('fpt') || p.contains('internet')) return AppColors.emeraldGreen;
-    return AppColors.primaryDark;
+    return AppColors.primary;
   }
 
   Future<void> _onBiometricPressed() async {

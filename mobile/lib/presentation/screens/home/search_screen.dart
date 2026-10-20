@@ -386,7 +386,7 @@ class _SearchScreenState extends State<SearchScreen> {
       children: [
         const Row(
           children: [
-            Icon(CupertinoIcons.flame_fill, size: 16, color: AppColors.accentGold),
+            Icon(CupertinoIcons.flame_fill, size: 16, color: AppColors.primary),
             SizedBox(width: 6),
             Text('Xu hướng tìm kiếm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
           ],

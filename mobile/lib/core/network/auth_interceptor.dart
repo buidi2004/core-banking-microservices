@@ -153,6 +153,7 @@ class AuthInterceptor extends Interceptor {
           'refreshToken': refreshToken,
           if (activeDeviceId != null && activeDeviceId.isNotEmpty) 'deviceId': activeDeviceId,
         },
+        options: Options(contentType: 'application/json'),
       );
 
       if (response.data is! Map) {

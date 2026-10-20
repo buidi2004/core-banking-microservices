@@ -666,7 +666,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               child: const Row(
                 children: [
                   Icon(CupertinoIcons.airplane,
-                      color: AppColors.accentGold, size: 16),
+                      color: AppColors.bottomBarCyan, size: 16),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(

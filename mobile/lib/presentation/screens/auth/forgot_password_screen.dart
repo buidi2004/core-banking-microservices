@@ -170,7 +170,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 24),
+                    const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primary, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -253,10 +253,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: AppColors.softPurple.withOpacity(0.12),
+                            color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.softPurple, size: 22),
+                          child: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.primary, size: 22),
                         ),
                         title: Text('Tổng đài hỗ trợ 24/7 (Miễn phí)', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Hotline: 1900 6868 (Bấm phím 1 để gặp điện thoại viên)', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),

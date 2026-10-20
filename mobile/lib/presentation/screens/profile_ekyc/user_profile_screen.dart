@@ -467,7 +467,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       type: MaterialType.transparency,
                       child: ListTile(
                         onTap: () => context.push('/profile/kyc-level'),
-                        leading: const Icon(CupertinoIcons.chart_bar_fill, color: AppColors.accentGold),
+                        leading: const Icon(CupertinoIcons.chart_bar_fill, color: AppColors.primary),
                         title: Text('Hạn mức giao dịch (Kyc Level)', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Hạn mức hiện tại: 100.000.000đ/ngày', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                         trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
@@ -489,7 +489,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       type: MaterialType.transparency,
                       child: ListTile(
                         onTap: () => context.push('/profile/digital-signature'),
-                        leading: const Icon(CupertinoIcons.shield_fill, color: AppColors.vividTeal),
+                        leading: const Icon(CupertinoIcons.shield_fill, color: AppColors.primary),
                         title: Text('Chữ ký số & Smart OTP', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Chứng thư số cá nhân PKI', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                         trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
@@ -500,7 +500,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       type: MaterialType.transparency,
                       child: ListTile(
                         onTap: () => context.push('/profile/email-settings'),
-                        leading: const Icon(CupertinoIcons.chat_bubble_fill, color: AppColors.softPurple),
+                        leading: const Icon(CupertinoIcons.chat_bubble_fill, color: AppColors.primary),
                         title: Text('Cài đặt Email nhận hóa đơn VAT', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Nhận sao kê định kỳ & biên lai điện tử', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                         trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),

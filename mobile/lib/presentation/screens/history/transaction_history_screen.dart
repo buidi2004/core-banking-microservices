@@ -209,27 +209,6 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   Color _getTransactionColor(Map<String, dynamic> tx) {
-    final title = (tx['title'] as String? ?? '').toLowerCase();
-    final type = (tx['type'] as String? ?? '').toLowerCase();
-
-    if (title.contains('điện thoại') || title.contains('viettel') || title.contains('vina') || title.contains('mobi') || type == 'recharge') {
-      return AppColors.softPurple;
-    }
-    if (title.contains('evn') || title.contains('tiền điện') || type == 'electricity') {
-      return AppColors.warning;
-    }
-    if (title.contains('nước') || type == 'water') {
-      return AppColors.primaryDark;
-    }
-    if (type == 'deposit' || title.contains('nạp tiền')) {
-      return AppColors.emeraldGreen;
-    }
-    if (type == 'withdraw' || title.contains('rút tiền')) {
-      return AppColors.warningText;
-    }
-    if (type == 'transfer' || title.contains('chuyển tiền')) {
-      return AppColors.primary;
-    }
     final isPositive = ((tx['amount'] as num?)?.toDouble() ?? 0.0) > 0;
     return isPositive ? AppColors.emeraldGreen : AppColors.primary;
   }

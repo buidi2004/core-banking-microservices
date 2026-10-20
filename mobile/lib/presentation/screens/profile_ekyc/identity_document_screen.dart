@@ -328,7 +328,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                     SizedBox(height: 4),
                     Text(
                       'CĂN CƯỚC CÔNG DÂN / IDENTITY CARD',
-                      style: TextStyle(color: AppColors.accentGold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                      style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
                     ),
                   ],
                 ),
@@ -387,7 +387,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                                 width: 28,
                                 height: 20,
                                 decoration: BoxDecoration(
-                                  color: AppColors.accentGold,
+                                  color: AppColors.bottomBarCyan,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: const Icon(CupertinoIcons.radiowaves_right, size: 14, color: AppColors.primaryDark),
@@ -405,7 +405,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                           const SizedBox(height: 2),
                           const Text('Quốc tịch: Việt Nam', style: TextStyle(color: Colors.white70, fontSize: 10)),
                           const SizedBox(height: 2),
-                          const Text('Có giá trị đến: 15/08/2029', style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.w600)),
+                          const Text('Có giá trị đến: 15/08/2029', style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),

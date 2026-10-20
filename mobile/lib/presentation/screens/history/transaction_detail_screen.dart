@@ -518,7 +518,17 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: () {
+                      onPressed: () async {
+                        // MOB-002: Chặn giao dịch khi chưa có xác thực server-side (B-02/B-03)
+                        if (!BackendCapabilities.serverSideTransferAuth) {
+                          await showFeatureUnavailable(
+                            context,
+                            feature: 'Thực hiện lại giao dịch',
+                            reason: 'Backend chưa cung cấp API xác thực PIN/OTP (B-02/B-03). '
+                                    'Giao dịch sẽ tạm khóa để tránh rủi ro mất tiền.',
+                          );
+                          return;
+                        }
                         final positiveAmt = txAmount.abs();
                         final uri = Uri(
                           path: '/transfer/amount',

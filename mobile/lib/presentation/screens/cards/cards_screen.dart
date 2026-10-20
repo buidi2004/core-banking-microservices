@@ -168,7 +168,7 @@ class _CardsScreenState extends State<CardsScreen> {
                   SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(CupertinoIcons.clock_fill, color: AppColors.accentGold, size: 20),
+                      Icon(CupertinoIcons.clock_fill, color: AppColors.primary, size: 20),
                       SizedBox(width: 10),
                       Text('Thời gian giao dự kiến: 3 - 5 ngày làm việc', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
                     ],
@@ -176,9 +176,9 @@ class _CardsScreenState extends State<CardsScreen> {
                   SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(CupertinoIcons.gift_fill, color: AppColors.emeraldGreen, size: 20),
+                      Icon(CupertinoIcons.gift_fill, color: AppColors.primary, size: 20),
                       SizedBox(width: 10),
-                      Text('Phí phát hành & Giao hàng: MIỄN PHÍ 100%', style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('Phí phát hành & Giao hàng: MIỄN PHÍ 100%', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
                     ],
                   ),
                 ],
@@ -415,7 +415,7 @@ class _CardsScreenState extends State<CardsScreen> {
                           color: Colors.white.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(CupertinoIcons.sparkles, color: AppColors.accentGold, size: 24),
+                        child: const Icon(CupertinoIcons.sparkles, color: AppColors.bottomBarCyan, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -569,7 +569,7 @@ class _CardsScreenState extends State<CardsScreen> {
                     gradient: LinearGradient(
                       colors: card['colorScheme'] == 'napas'
                           ? [AppColors.balanceCardGradient.colors[0], AppColors.primaryDark, AppColors.primary]
-                          : [AppColors.textPrimaryLight, AppColors.cardDark, AppColors.softPurple],
+                          : [AppColors.textPrimaryLight, AppColors.cardDark, AppColors.primaryDark],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -650,7 +650,7 @@ class _CardsScreenState extends State<CardsScreen> {
                           height: 26,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [AppColors.accentGold, AppColors.warningText],
+                              colors: [AppColors.bottomBarCyan, AppColors.primary],
                             ),
                             borderRadius: BorderRadius.circular(5),
                           ),
@@ -663,7 +663,7 @@ class _CardsScreenState extends State<CardsScreen> {
                         const Spacer(),
                         Text(
                           card['tier'] as String,
-                          style: const TextStyle(color: AppColors.accentGold, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -702,7 +702,7 @@ class _CardsScreenState extends State<CardsScreen> {
                               children: [
                                 Text('HSD: $displayExpiry', style: const TextStyle(color: Colors.white70, fontSize: 11)),
                                 const SizedBox(width: 10),
-                                Text('CVV: $displayCvv', style: const TextStyle(color: AppColors.accentGold, fontSize: 11, fontWeight: FontWeight.bold)),
+                                Text('CVV: $displayCvv', style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ],

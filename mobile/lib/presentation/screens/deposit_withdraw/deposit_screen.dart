@@ -415,7 +415,7 @@ class _DepositScreenState extends State<DepositScreen> {
                   child: Text(
                     'Bằng chữ: $words đồng',
                     style: const TextStyle(
-                      color: AppColors.accentGold,
+                      color: AppColors.bottomBarCyan,
                       fontStyle: FontStyle.italic,
                       fontSize: 12,
                     ),
@@ -726,7 +726,7 @@ class _DepositScreenState extends State<DepositScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF0C1929).withValues(alpha: 0.85),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.35)),
+        border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -734,7 +734,7 @@ class _DepositScreenState extends State<DepositScreen> {
           const Row(
             children: [
               Icon(CupertinoIcons.building_2_fill,
-                  color: AppColors.accentGold, size: 20),
+                  color: AppColors.bottomBarCyan, size: 20),
               SizedBox(width: 8),
               Text(
                 'Mạng Lưới Nộp Tiền Mặt Tự Động (CDM 24/7)',
@@ -782,7 +782,7 @@ class _DepositScreenState extends State<DepositScreen> {
       child: Row(
         children: [
           const Icon(CupertinoIcons.location_solid,
-              color: AppColors.accentGold, size: 18),
+              color: AppColors.bottomBarCyan, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -818,11 +818,11 @@ class _DepositScreenState extends State<DepositScreen> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.accentGold.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.3)),
       ),
       child: const Row(
         children: [
-          Icon(CupertinoIcons.sparkles, color: AppColors.accentGold, size: 24),
+          Icon(CupertinoIcons.sparkles, color: AppColors.bottomBarCyan, size: 24),
           SizedBox(width: 12),
           Expanded(
             child: Column(

@@ -468,7 +468,7 @@ class _NotificationSettingsScreenState
             _buildDivider(),
             _buildSwitchTile(
               icon: CupertinoIcons.phone_fill,
-              iconColor: AppColors.accentGold,
+              iconColor: AppColors.bottomBarCyan,
               title: 'SMS Banking',
               subtitle: 'Phí dịch vụ viễn thông 11.000đ/tháng/số điện thoại',
               value: _smsEnabled,
@@ -479,7 +479,7 @@ class _NotificationSettingsScreenState
             _buildDivider(),
             _buildSwitchTile(
               icon: CupertinoIcons.mail_solid,
-              iconColor: const Color(0xFF38BDF8),
+              iconColor: AppColors.bottomBarCyan,
               title: 'Báo cáo sao kê qua Email',
               subtitle: 'Gửi sao kê điện tử có chữ ký số vào ngày 01 hàng tháng',
               value: _emailEnabled,
@@ -505,12 +505,12 @@ class _NotificationSettingsScreenState
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.emeraldGreen.withValues(alpha: 0.15),
+                    color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(
                     CupertinoIcons.music_note,
-                    color: AppColors.emeraldGreen,
+                    color: AppColors.bottomBarCyan,
                     size: 20,
                   ),
                 ),
@@ -539,7 +539,7 @@ class _NotificationSettingsScreenState
                 ),
                 CupertinoSwitch(
                   value: _tingTingSound,
-                  activeTrackColor: AppColors.emeraldGreen,
+                  activeTrackColor: AppColors.bottomBarCyan,
                   onChanged: (val) {
                     setState(() => _tingTingSound = val);
                   },
@@ -556,10 +556,10 @@ class _NotificationSettingsScreenState
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.emeraldGreen.withValues(alpha: 0.12),
+                    color: AppColors.bottomBarCyan.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.emeraldGreen.withValues(alpha: 0.3),
+                      color: AppColors.bottomBarCyan.withValues(alpha: 0.3),
                     ),
                   ),
                   child: const Row(
@@ -567,14 +567,14 @@ class _NotificationSettingsScreenState
                     children: [
                       Icon(
                         CupertinoIcons.play_arrow_solid,
-                        color: AppColors.emeraldGreen,
+                        color: AppColors.bottomBarCyan,
                         size: 14,
                       ),
                       SizedBox(width: 6),
                       Text(
                         'Nghe thử âm báo Ting Ting',
                         style: TextStyle(
-                          color: AppColors.emeraldGreen,
+                          color: AppColors.bottomBarCyan,
                           fontWeight: FontWeight.w700,
                           fontSize: 12,
                         ),
@@ -587,7 +587,7 @@ class _NotificationSettingsScreenState
             _buildDivider(),
             _buildSwitchTile(
               icon: CupertinoIcons.waveform,
-              iconColor: const Color(0xFFA855F7),
+              iconColor: AppColors.bottomBarCyan,
               title: 'Rung phản hồi xúc giác',
               subtitle: 'Haptic feedback khi có biến động số dư',
               value: _vibrationEnabled,
@@ -610,7 +610,7 @@ class _NotificationSettingsScreenState
           children: [
             _buildSwitchTile(
               icon: CupertinoIcons.money_dollar_circle_fill,
-              iconColor: AppColors.emeraldGreen,
+              iconColor: AppColors.bottomBarCyan,
               title: 'Biến động số dư tài khoản',
               subtitle: 'Tiền vào, chuyển khoản, nạp/rút (Đồng bộ máy chủ)',
               value: _balanceChangeNotif,
@@ -632,7 +632,7 @@ class _NotificationSettingsScreenState
             _buildDivider(),
             _buildSwitchTile(
               icon: CupertinoIcons.shield_lefthalf_fill,
-              iconColor: Colors.redAccent,
+              iconColor: AppColors.bottomBarCyan,
               title: 'Cảnh báo bảo mật hệ thống',
               subtitle: 'Đăng nhập thiết bị lạ, đổi mật khẩu (Bắt buộc bật)',
               value: _securityAlertNotif,
@@ -641,7 +641,7 @@ class _NotificationSettingsScreenState
             _buildDivider(),
             _buildSwitchTile(
               icon: CupertinoIcons.tag_fill,
-              iconColor: AppColors.accentGold,
+              iconColor: AppColors.bottomBarCyan,
               title: 'Ưu đãi & Điểm thưởng SenClub',
               subtitle: 'Voucher hoàn tiền, ưu đãi thành viên (Đồng bộ máy chủ)',
               value: _promoRewardNotif,
@@ -652,7 +652,7 @@ class _NotificationSettingsScreenState
             _buildDivider(),
             _buildSwitchTile(
               icon: CupertinoIcons.archivebox_fill,
-              iconColor: const Color(0xFFF472B6),
+              iconColor: AppColors.bottomBarCyan,
               title: 'Đáo hạn sổ tiết kiệm & Khoản vay',
               subtitle: 'Nhắc tái tục hoặc thanh toán kỳ hạn (Chỉ áp dụng trên thiết bị này)',
               value: _savingsMaturityNotif,

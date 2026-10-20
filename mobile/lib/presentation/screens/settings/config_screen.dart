@@ -675,9 +675,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: p['method'] == 'POST'
-                        ? AppColors.accentGold.withValues(alpha: 0.2)
+                        ? AppColors.primary.withValues(alpha: 0.2)
                         : (p['method'] == 'WS'
-                            ? const Color(0xFFA855F7).withValues(alpha: 0.2)
+                            ? AppColors.bottomBarCyan.withValues(alpha: 0.2)
                             : AppColors.bottomBarCyan.withValues(alpha: 0.2)),
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -685,9 +685,9 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     p['method'] as String,
                     style: TextStyle(
                       color: p['method'] == 'POST'
-                          ? AppColors.accentGold
+                          ? AppColors.primary
                           : (p['method'] == 'WS'
-                              ? const Color(0xFFA855F7)
+                              ? AppColors.bottomBarCyan
                               : AppColors.bottomBarCyan),
                       fontWeight: FontWeight.bold,
                       fontSize: 10,

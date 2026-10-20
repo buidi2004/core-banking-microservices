@@ -95,7 +95,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -179,7 +179,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 18),
+                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 18),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(

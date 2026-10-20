@@ -147,13 +147,13 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(CupertinoIcons.sparkles, color: AppColors.accentGold, size: 40),
+                    const Icon(CupertinoIcons.sparkles, color: AppColors.bottomBarCyan, size: 40),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('HẠN MỨC PHÊ DUYỆT TỰ ĐỘNG AI', style: TextStyle(color: AppColors.accentGold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          const Text('HẠN MỨC PHÊ DUYỆT TỰ ĐỘNG AI', style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                           const SizedBox(height: 2),
                           const Text('Lên đến 50.000.000 đ', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
                           Text('Giải ngân thần tốc sau 15 phút • Không cần thế chấp tài sản', style: AppTypography.bodySmall(color: Colors.white70).copyWith(fontSize: 11)),

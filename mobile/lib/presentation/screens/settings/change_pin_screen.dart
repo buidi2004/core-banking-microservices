@@ -173,7 +173,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                       ),
                       child: const Row(
                         children: [
-                          Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                          Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 20),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -275,7 +275,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 18),
+                                const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primary, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Quy tắc bảo mật mã PIN',

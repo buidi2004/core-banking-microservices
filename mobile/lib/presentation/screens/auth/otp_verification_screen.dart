@@ -78,7 +78,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(

@@ -170,7 +170,7 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.phone_badge_plus, color: AppColors.accentGold, size: 22),
+                    Icon(CupertinoIcons.phone_badge_plus, color: AppColors.primary, size: 22),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(

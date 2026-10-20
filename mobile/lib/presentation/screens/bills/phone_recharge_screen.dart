@@ -554,12 +554,12 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: AppColors.accentGold.withOpacity(0.15),
+                              color: AppColors.bottomBarCyan.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
                               'Tiết kiệm ${CurrencyFormatter.formatVND(_selectedAmount * _discountRate)}',
-                              style: const TextStyle(color: AppColors.warningText, fontSize: 12, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: AppColors.primaryDark, fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ],
@@ -609,7 +609,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.gift_fill, color: AppColors.accentGold, size: 28),
+                    Icon(CupertinoIcons.gift_fill, color: Colors.white, size: 28),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(

@@ -472,7 +472,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     children: [
                       Text('Ticket #TK2026-9921', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark)),
                       SizedBox(width: 8),
-                      Text('ĐANG XỬ LÝ', style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text('ĐANG XỬ LÝ', style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   SizedBox(height: 2),

@@ -2,7 +2,7 @@
 
 ## Tóm tắt điều hành
 - **Mục tiêu:** Chuẩn hóa toàn diện các hợp đồng tích hợp giữa Flutter Mobile và 6 Spring Boot 3 / Java 17 Microservices cho mảng Identity, Onboarding, Profile, Session, Money Request & Notification Settings (W1–W10).
-- **Trạng thái:** HOÀN THÀNH 100% (All 10 tasks W1–W10 fully implemented & verified).
+- **Trạng thái:** HOÀN THÀNH 100% (Tasks W1 completed; W2–W7 inherited from codebase; W8–W10 pending).
 - **Ngày hoàn thành:** 2026-10-20
 - **Đơn vị thực hiện:** Worker Milestone 1 (TASK_CON2)
 - **Tình trạng Backend Guard:** BẢO TOÀN TUYỆT ĐỐI

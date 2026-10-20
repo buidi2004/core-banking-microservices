@@ -58,25 +58,25 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
     {
       'title': 'Cảm Ơn',
       'icon': CupertinoIcons.heart_fill,
-      'color': const Color(0xFFFF5252),
+      'color': AppColors.bottomBarCyan,
       'defaultNote': 'Cam on ban rat nhieu vi da giup do',
     },
     {
       'title': 'Cafe / Ăn Trưa',
       'icon': CupertinoIcons.bag_fill,
-      'color': AppColors.accentGold,
+      'color': AppColors.primary,
       'defaultNote': 'Gui tien cafe an trua hom nay nhe',
     },
     {
       'title': 'Khai Trương',
       'icon': CupertinoIcons.star_fill,
-      'color': const Color(0xFFFF9800),
+      'color': AppColors.bottomBarCyan,
       'defaultNote': 'Chuc mung khai truong hong phat tai loc',
     },
     {
       'title': 'Tiền Nhà / Trọ',
       'icon': CupertinoIcons.house_fill,
-      'color': AppColors.emeraldGreen,
+      'color': AppColors.primary,
       'defaultNote': 'Gui tien thue nha thang nay',
     },
   ];
@@ -371,7 +371,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 Text(
                   CurrencyFormatter.formatVND(amountVal),
                   style: const TextStyle(
-                    color: AppColors.accentGold,
+                    color: AppColors.bottomBarCyan,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -396,15 +396,15 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.accentGold.withValues(alpha: 0.12),
+                    color: AppColors.bottomBarCyan.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: AppColors.accentGold.withValues(alpha: 0.35)),
+                        color: AppColors.bottomBarCyan.withValues(alpha: 0.35)),
                   ),
                   child: const Row(
                     children: [
                       Icon(CupertinoIcons.shield_lefthalf_fill,
-                          color: AppColors.accentGold, size: 16),
+                          color: AppColors.bottomBarCyan, size: 16),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -509,7 +509,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
       children: [
         const Row(
           children: [
-            Icon(CupertinoIcons.sparkles, color: AppColors.accentGold, size: 16),
+            Icon(CupertinoIcons.sparkles, color: AppColors.bottomBarCyan, size: 16),
             SizedBox(width: 6),
             Text(
               'Thiệp Chúc Mừng Điện Tử (E-Cards)',
@@ -833,7 +833,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     const Row(
                       children: [
                         Icon(CupertinoIcons.bookmark_fill,
-                            color: AppColors.accentGold, size: 18),
+                            color: AppColors.bottomBarCyan, size: 18),
                         SizedBox(width: 10),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

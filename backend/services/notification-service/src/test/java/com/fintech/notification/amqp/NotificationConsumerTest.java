@@ -5,6 +5,7 @@ import com.fintech.notification.entity.Notification;
 import com.fintech.notification.notification.EventIdempotencyStore;
 import com.fintech.notification.notification.FcmPushSender;
 import com.fintech.notification.notification.NotificationPayload;
+import com.fintech.notification.notification.UserPhoneResolver;
 import com.fintech.notification.notification.WebSocketNotifier;
 import com.fintech.notification.service.NotificationService;
 import com.fintech.wallet.domain.event.TransactionEvent;
@@ -44,12 +45,15 @@ class NotificationConsumerTest {
     @Mock
     private FcmPushSender fcmPushSender;
 
+    @Mock
+    private UserPhoneResolver userPhoneResolver;
+
     private NotificationConsumer consumer;
 
     @BeforeEach
     void setUp() {
         consumer = new NotificationConsumer(new EventIdempotencyStore(), notificationService,
-                webSocketNotifier, fcmPushSender, new ObjectMapper());
+                webSocketNotifier, fcmPushSender, userPhoneResolver, new ObjectMapper());
     }
 
     private TransactionEvent transferEvent(String eventId) {

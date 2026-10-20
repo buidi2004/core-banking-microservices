@@ -245,7 +245,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: const BoxDecoration(
-              color: AppColors.accentGold,
+              color: AppColors.bottomBarCyan,
               shape: BoxShape.circle,
             ),
             child: const Icon(
@@ -526,7 +526,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.lightbulb_fill, color: AppColors.accentGold, size: 20),
+          Icon(CupertinoIcons.lightbulb_fill, color: AppColors.bottomBarCyan, size: 20),
           SizedBox(width: 10),
           Expanded(
             child: Text(

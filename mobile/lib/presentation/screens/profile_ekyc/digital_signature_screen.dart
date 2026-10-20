@@ -326,9 +326,9 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(CupertinoIcons.stopwatch, color: AppColors.accentGold, size: 16),
+                        const Icon(CupertinoIcons.stopwatch, color: AppColors.bottomBarCyan, size: 16),
                         const SizedBox(width: 6),
-                        Text('Mã tự động đổi sau ${_secondsRemaining}s', style: const TextStyle(color: AppColors.warning, fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text('Mã tự động đổi sau ${_secondsRemaining}s', style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 13, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 16),

@@ -491,7 +491,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 2),
-                                    Text(b['nickname']!, style: const TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.w600)),
+                                    Text(b['nickname']!, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
                                     const SizedBox(height: 2),
                                     Text('${b['bank']} • ${b['acc']}', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                                   ],

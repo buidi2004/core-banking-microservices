@@ -30,19 +30,23 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
     /**
      * Lịch sử biến động số dư của một ví (nguồn hoặc đích).
      * type rỗng = tất cả; TRANSFER_OUT/TRANSFER_IN lọc theo vai trò của ví trong giao dịch.
+     * B-02 & B-03: Nếu status = 'REVERSED', ví đích không có credit thực nên loại trừ;
+     * ví nguồn được hoàn tiền nên hiển thị dưới dạng TRANSFER_IN.
      */
     @Query(value = "SELECT t FROM Transaction t "
-            + "WHERE (t.sourceWalletId = :walletId OR t.targetWalletId = :walletId) "
+            + "WHERE (t.sourceWalletId = :walletId OR (t.targetWalletId = :walletId AND t.status != 'REVERSED')) "
             + "AND (:type = '' "
-            + "     OR (:type = 'TRANSFER_OUT' AND t.sourceWalletId = :walletId) "
-            + "     OR (:type = 'TRANSFER_IN' AND t.targetWalletId = :walletId) "
+            + "     OR (:type = 'TRANSFER_OUT' AND t.sourceWalletId = :walletId AND t.status != 'REVERSED') "
+            + "     OR (:type = 'TRANSFER_IN' AND ((t.targetWalletId = :walletId AND t.status != 'REVERSED') "
+            + "                                    OR (t.sourceWalletId = :walletId AND t.status = 'REVERSED'))) "
             + "     OR t.type = :type) "
             + "ORDER BY t.createdAt DESC",
             countQuery = "SELECT count(t) FROM Transaction t "
-            + "WHERE (t.sourceWalletId = :walletId OR t.targetWalletId = :walletId) "
+            + "WHERE (t.sourceWalletId = :walletId OR (t.targetWalletId = :walletId AND t.status != 'REVERSED')) "
             + "AND (:type = '' "
-            + "     OR (:type = 'TRANSFER_OUT' AND t.sourceWalletId = :walletId) "
-            + "     OR (:type = 'TRANSFER_IN' AND t.targetWalletId = :walletId) "
+            + "     OR (:type = 'TRANSFER_OUT' AND t.sourceWalletId = :walletId AND t.status != 'REVERSED') "
+            + "     OR (:type = 'TRANSFER_IN' AND ((t.targetWalletId = :walletId AND t.status != 'REVERSED') "
+            + "                                    OR (t.sourceWalletId = :walletId AND t.status = 'REVERSED'))) "
             + "     OR t.type = :type)")
     Page<Transaction> findWalletHistory(@Param("walletId") String walletId,
                                         @Param("type") String type,

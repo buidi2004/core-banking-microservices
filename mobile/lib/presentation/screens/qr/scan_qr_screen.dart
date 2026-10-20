@@ -356,7 +356,7 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
           ),
           Container(
             decoration: BoxDecoration(
-              color: _isTorchOn ? AppColors.accentGold.withOpacity(0.3) : Colors.black.withOpacity(0.4),
+              color: _isTorchOn ? AppColors.bottomBarCyan.withOpacity(0.3) : Colors.black.withOpacity(0.4),
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -366,7 +366,7 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
               },
               icon: Icon(
                 _isTorchOn ? CupertinoIcons.lightbulb_fill : CupertinoIcons.lightbulb_slash,
-                color: _isTorchOn ? AppColors.accentGold : Colors.white,
+                color: _isTorchOn ? AppColors.bottomBarCyan : Colors.white,
                 size: 26,
               ),
             ),
@@ -513,7 +513,7 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.accentGold, size: 16),
+                const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.bottomBarCyan, size: 16),
                 const SizedBox(width: 8),
                 Text(
                   _selectedModeIndex == 2
@@ -530,10 +530,10 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
             spacing: 8,
             runSpacing: 6,
             children: [
-              _buildPillBadge('Napas 24/7', AppColors.emeraldGreen),
+              _buildPillBadge('Napas 24/7', AppColors.bottomBarCyan),
               _buildPillBadge('VietQR', AppColors.primary),
-              _buildPillBadge('VNPAY-QR', AppColors.error),
-              _buildPillBadge('EMVCo QRCPS', AppColors.softPurple),
+              _buildPillBadge('VNPAY-QR', AppColors.bottomBarCyan),
+              _buildPillBadge('EMVCo QRCPS', AppColors.primaryLight),
             ],
           ),
         ],

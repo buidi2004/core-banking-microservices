@@ -33,7 +33,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
       'provider': 'EVN Hà Nội',
       'code': 'PE0100088921',
       'amount': 845000.0,
-      'color': AppColors.accentGold,
+      'color': AppColors.bottomBarCyan,
       'icon': CupertinoIcons.bolt_fill,
       'dueDate': '10/09/2026',
     },
@@ -43,7 +43,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
       'provider': 'Viwaco Hà Nội',
       'code': '100293847',
       'amount': 165000.0,
-      'color': AppColors.primary,
+      'color': AppColors.bottomBarCyan,
       'icon': CupertinoIcons.drop_fill,
       'dueDate': '05/09/2026',
     },
@@ -53,32 +53,32 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
       'provider': 'FPT Telecom',
       'code': 'HNI002941',
       'amount': 275000.0,
-      'color': AppColors.emeraldGreen,
+      'color': AppColors.bottomBarCyan,
       'icon': CupertinoIcons.wifi,
       'dueDate': '15/09/2026',
     },
   ];
 
   final List<Map<String, dynamic>> _essentialCategories = const [
-    {'icon': CupertinoIcons.bolt_fill, 'label': 'Tiền điện', 'color': AppColors.accentGold, 'ncc': 'EVN Toàn quốc'},
-    {'icon': CupertinoIcons.drop_fill, 'label': 'Tiền nước', 'color': AppColors.primary, 'ncc': 'Sawaco / Viwaco'},
-    {'icon': CupertinoIcons.wifi, 'label': 'Internet', 'color': AppColors.emeraldGreen, 'ncc': 'VNPT / FPT / Viettel'},
+    {'icon': CupertinoIcons.bolt_fill, 'label': 'Tiền điện', 'color': AppColors.bottomBarCyan, 'ncc': 'EVN Toàn quốc'},
+    {'icon': CupertinoIcons.drop_fill, 'label': 'Tiền nước', 'color': AppColors.bottomBarCyan, 'ncc': 'Sawaco / Viwaco'},
+    {'icon': CupertinoIcons.wifi, 'label': 'Internet', 'color': AppColors.bottomBarCyan, 'ncc': 'VNPT / FPT / Viettel'},
     {'icon': CupertinoIcons.phone_fill, 'label': 'Nạp ĐT', 'color': AppColors.bottomBarCyan, 'ncc': 'Trả trước & Trả sau'},
-    {'icon': CupertinoIcons.tv_fill, 'label': 'Truyền hình', 'color': AppColors.softPurple, 'ncc': 'K+ / VTVCab / FPT Play'},
-    {'icon': CupertinoIcons.building_2_fill, 'label': 'Phí chung cư', 'color': AppColors.vividTeal, 'ncc': 'BQL Tòa nhà'},
+    {'icon': CupertinoIcons.tv_fill, 'label': 'Truyền hình', 'color': AppColors.bottomBarCyan, 'ncc': 'K+ / VTVCab / FPT Play'},
+    {'icon': CupertinoIcons.building_2_fill, 'label': 'Phí chung cư', 'color': AppColors.bottomBarCyan, 'ncc': 'BQL Tòa nhà'},
   ];
 
   final List<Map<String, dynamic>> _financeCategories = const [
-    {'icon': CupertinoIcons.money_dollar_circle_fill, 'label': 'Vay tiêu dùng', 'color': AppColors.accentGold, 'ncc': 'FE Credit, Home Credit, Shinhan'},
+    {'icon': CupertinoIcons.money_dollar_circle_fill, 'label': 'Vay tiêu dùng', 'color': AppColors.bottomBarCyan, 'ncc': 'FE Credit, Home Credit, Shinhan'},
     {'icon': CupertinoIcons.creditcard_fill, 'label': 'Thẻ tín dụng', 'color': AppColors.bottomBarCyan, 'ncc': 'Dư nợ Visa / Mastercard'},
-    {'icon': CupertinoIcons.shield_fill, 'label': 'Bảo hiểm', 'color': AppColors.emeraldGreen, 'ncc': 'Bảo Việt, Prudential, Manulife'},
-    {'icon': CupertinoIcons.car_detailed, 'label': 'Thu phí ETC', 'color': AppColors.primary, 'ncc': 'VETC & ePass tự động'},
+    {'icon': CupertinoIcons.shield_fill, 'label': 'Bảo hiểm', 'color': AppColors.bottomBarCyan, 'ncc': 'Bảo Việt, Prudential, Manulife'},
+    {'icon': CupertinoIcons.car_detailed, 'label': 'Thu phí ETC', 'color': AppColors.bottomBarCyan, 'ncc': 'VETC & ePass tự động'},
   ];
 
   final List<Map<String, dynamic>> _publicCategories = const [
-    {'icon': CupertinoIcons.doc_text_fill, 'label': 'Thuế & Lệ phí', 'color': AppColors.accentGold, 'ncc': 'Thuế TNCN, Trước bạ xe'},
-    {'icon': CupertinoIcons.book_fill, 'label': 'Học phí SSC', 'color': AppColors.primary, 'ncc': 'Trường học các cấp & ĐH'},
-    {'icon': CupertinoIcons.bandage_fill, 'label': 'Viện phí y tế', 'color': AppColors.emeraldGreen, 'ncc': 'Bệnh viện Bạch Mai, Chợ Rẫy'},
+    {'icon': CupertinoIcons.doc_text_fill, 'label': 'Thuế & Lệ phí', 'color': AppColors.bottomBarCyan, 'ncc': 'Thuế TNCN, Trước bạ xe'},
+    {'icon': CupertinoIcons.book_fill, 'label': 'Học phí SSC', 'color': AppColors.bottomBarCyan, 'ncc': 'Trường học các cấp & ĐH'},
+    {'icon': CupertinoIcons.bandage_fill, 'label': 'Viện phí y tế', 'color': AppColors.bottomBarCyan, 'ncc': 'Bệnh viện Bạch Mai, Chợ Rẫy'},
     {'icon': CupertinoIcons.tickets_fill, 'label': 'Vé tàu / Xe', 'color': AppColors.bottomBarCyan, 'ncc': 'Đường sắt VN & Xe khách'},
   ];
 
@@ -207,12 +207,12 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: AppColors.accentGold.withValues(alpha: 0.2),
+              color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.accentGold, width: 1.5),
+              border: Border.all(color: AppColors.bottomBarCyan, width: 1.5),
             ),
             child: const Icon(CupertinoIcons.ticket_fill,
-                color: AppColors.accentGold, size: 26),
+                color: AppColors.bottomBarCyan, size: 26),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -251,7 +251,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
             const Row(
               children: [
                 Icon(CupertinoIcons.bookmark_fill,
-                    color: AppColors.accentGold, size: 16),
+                    color: AppColors.bottomBarCyan, size: 16),
                 SizedBox(width: 6),
                 Text(
                   'Danh Bạ Hóa Đơn Của Tôi',
@@ -314,7 +314,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                           Text(
                             'Hạn cước: ${bill['dueDate']}',
                             style: const TextStyle(
-                                color: AppColors.accentGold,
+                                color: AppColors.bottomBarCyan,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600),
                           ),
@@ -608,7 +608,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
               ),
               Text(
                 'TB: 1.450.000 đ/tháng',
-                style: TextStyle(color: AppColors.accentGold, fontSize: 11),
+                style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11),
               ),
             ],
           ),

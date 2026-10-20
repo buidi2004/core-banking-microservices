@@ -307,7 +307,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
-                      color: _selectedFrameIdx == 1 ? AppColors.accentGold : AppColors.borderLight,
+                      color: _selectedFrameIdx == 1 ? AppColors.bottomBarCyan : AppColors.borderLight,
                       width: _selectedFrameIdx == 1 ? 2.5 : 1,
                     ),
                   ),

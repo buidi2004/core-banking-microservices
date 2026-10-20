@@ -285,13 +285,13 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.accentGold.withOpacity(0.3),
+                                  color: AppColors.bottomBarCyan.withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: AppColors.accentGold.withOpacity(0.6), width: 0.8),
+                                  border: Border.all(color: AppColors.bottomBarCyan.withOpacity(0.6), width: 0.8),
                                 ),
                                 child: const Text(
                                   '-3% HOÀN TIỀN',
-                                  style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],

@@ -502,14 +502,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       CircleAvatar(
                         backgroundColor: isBalance
                             ? (isPositive ? AppColors.emeraldGreen.withOpacity(0.18) : AppColors.primary.withOpacity(0.18))
-                            : (_selectedTab == 1 ? AppColors.accentGold.withOpacity(0.18) : AppColors.vividTeal.withOpacity(0.18)),
+                            : AppColors.primary.withOpacity(0.18),
                         child: Icon(
                           isBalance
                               ? (isPositive ? CupertinoIcons.arrow_down_circle_fill : CupertinoIcons.arrow_up_circle_fill)
                               : (_selectedTab == 1 ? CupertinoIcons.gift_fill : CupertinoIcons.bell_fill),
                           color: isBalance
                               ? (isPositive ? AppColors.emeraldGreen : AppColors.primary)
-                              : (_selectedTab == 1 ? AppColors.accentGold : AppColors.vividTeal),
+                              : AppColors.primary,
                           size: 20,
                         ),
                       ),

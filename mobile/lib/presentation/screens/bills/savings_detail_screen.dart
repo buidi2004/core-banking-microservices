@@ -266,7 +266,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Row(
           children: [
-            Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.accentGold, size: 24),
+            Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.bottomBarCyan, size: 24),
             SizedBox(width: 10),
             Text(
               'Tất toán sổ trước hạn?',
@@ -561,12 +561,12 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.accentGold.withValues(alpha: 0.15),
+                      color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       CupertinoIcons.sparkles,
-                      color: AppColors.accentGold,
+                      color: AppColors.bottomBarCyan,
                       size: 20,
                     ),
                   ),
@@ -577,7 +577,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                       const Text(
                         'SENBANK E-CERTIFICATE',
                         style: TextStyle(
-                          color: AppColors.accentGold,
+                          color: AppColors.bottomBarCyan,
                           fontWeight: FontWeight.w800,
                           fontSize: 12,
                           letterSpacing: 1.2,
@@ -772,7 +772,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                     Text(
                       CurrencyFormatter.formatVND(expectedInterest),
                       style: const TextStyle(
-                        color: AppColors.accentGold,
+                        color: AppColors.bottomBarCyan,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),

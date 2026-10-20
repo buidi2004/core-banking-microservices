@@ -68,7 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(CupertinoIcons.star_circle_fill,
-                color: AppColors.accentGold, size: 48),
+                color: AppColors.bottomBarCyan, size: 48),
             const SizedBox(height: 12),
             const Text(
               'Đánh Giá Trải Nghiệm Sen Hồng',
@@ -90,7 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: List.generate(5, (idx) {
                 return IconButton(
                   icon: const Icon(CupertinoIcons.star_fill,
-                      color: AppColors.accentGold, size: 32),
+                      color: AppColors.bottomBarCyan, size: 32),
                   onPressed: () {
                     Navigator.pop(ctx);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -757,7 +757,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNavTile(
             icon: CupertinoIcons.bell_fill,
-            iconColor: AppColors.accentGold,
+            iconColor: AppColors.bottomBarCyan,
             title: 'Cài đặt thông báo biến động số dư',
             subtitle: 'Tùy chỉnh thông báo OTT, biến động nạp rút',
             onTap: () => context.push('/notifications/settings'),
@@ -765,7 +765,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNavTile(
             icon: CupertinoIcons.doc_plaintext,
-            iconColor: AppColors.emeraldGreen,
+            iconColor: AppColors.bottomBarCyan,
             title: 'Điều khoản dịch vụ & Bảo vệ dữ liệu',
             subtitle: 'Chính sách bảo mật theo Nghị định 13/2023/NĐ-CP',
             onTap: () => context.push('/auth/terms'),
@@ -784,7 +784,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             type: MaterialType.transparency,
             child: ListTile(
               leading: const Icon(CupertinoIcons.trash_circle_fill,
-                  color: AppColors.accentGold, size: 24),
+                  color: AppColors.bottomBarCyan, size: 24),
               title: const Text(
                 'Dọn dẹp bộ nhớ đệm (Cache)',
                 style: TextStyle(
@@ -820,7 +820,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNavTile(
             icon: CupertinoIcons.star_fill,
-            iconColor: AppColors.accentGold,
+            iconColor: AppColors.bottomBarCyan,
             title: 'Đánh giá ứng dụng SenBank',
             subtitle: 'Gửi nhận xét trải nghiệm trên chợ ứng dụng App Store / Google Play',
             onTap: _showRatingModal,
