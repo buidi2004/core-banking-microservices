@@ -1,0 +1,47 @@
+# Flutter & Dart files
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Android
+android/**/gradle-wrapper.jar
+android/.gradle
+**/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+
+# iOS
+ios/Runner/GeneratedPluginRegistrant.*
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/flutter_assets/
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/ephemeral/
+ios/Pods/
+ios/.symlinks/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary test screenshots & scratch
+emulator_*.png
+!emulator_screen_updated.png
+screen_*.png
+live_app_*.png
+scratch/

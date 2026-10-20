@@ -9,7 +9,7 @@
 
 ## 📌 1. Giới Thiệu Tổng Quan
 
-Dự án là một hệ thống **Ví điện tử (E-Wallet)** hoàn chỉnh, kết hợp giữa **Backend Core** đạt tiêu chuẩn ngân hàng (Java 17 / Spring Boot 3) và **Mobile Client** (React Native Expo / TypeScript) với giao diện chuẩn iOS Glassmorphism cao cấp.
+Dự án là một hệ thống **Ví điện tử (E-Wallet)** hoàn chỉnh, kết hợp giữa **Backend Core** đạt tiêu chuẩn ngân hàng (Java 17 / Spring Boot 3 Microservices) và **Mobile Client** (Flutter / Dart / Clean Architecture) với giao diện chuẩn iOS Glassmorphism cao cấp (`liquid_glass_widgets`).
 
 Hệ thống được thiết kế theo kiến trúc **Hexagonal Architecture (Ports and Adapters)** kết hợp với **Domain-Driven Design (DDD)** nhằm đảm bảo tính toàn vẹn tài chính, khả năng mở rộng và độc lập hoàn toàn giữa logic nghiệp vụ và hạ tầng công nghệ.
 
@@ -102,18 +102,38 @@ mvn clean test
 mvn spring-boot:run
 ```
 
-#### 2. Mobile App (React Native Expo)
+#### 2. Frontend Web Portal (React Vite)
 ```bash
-cd mobile-app
+cd frontend/cash-deposit-portal
 
 # Cài đặt dependencies
 npm install
 
-# Kiểm tra TypeScript typecheck
-npx tsc --noEmit
+# Khởi chạy dev server (Port 5173)
+npm run dev
+```
 
-# Khởi chạy Metro Bundler
-npm start
+#### 3. Mobile App (Flutter)
+```bash
+cd mobile
+
+# Cài đặt dependencies
+flutter pub get
+
+# Kiểm tra mã nguồn / analyze
+flutter analyze
+
+# Chạy ứng dụng trên thiết bị / emulator
+flutter run
+```
+
+#### 4. Sử dụng CLI Run.sh (Tất cả trong một)
+```bash
+./run.sh all       # Khởi động toàn bộ Infra + BE + FE
+./run.sh fe        # Khởi động Frontend React Portal (:5173)
+./run.sh be        # Khởi động Backend Microservices
+./run.sh mobile    # Khởi chạy Mobile Flutter
+./run.sh test      # Chạy bộ test E2E 8 kịch bản dữ liệu thật
 ```
 
 ---

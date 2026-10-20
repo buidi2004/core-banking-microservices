@@ -1,1 +1,0 @@
-ALTER TABLE transactions ADD COLUMN note VARCHAR(255);

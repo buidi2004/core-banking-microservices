@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mau accent cho icon thong bao FCM tren Android 8+ (Oreo+) -->
+    <!-- Mau xanh la Sen Hong Bank: #1BAF7E -->
+    <color name="notification_color">#FF1BAF7E</color>
+	<color name="ic_launcher_background">#FFFFFF</color>
+    <color name="splash_background">#060B1E</color>
+</resources>

@@ -19,7 +19,7 @@ set -e
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-FE_DIR="$ROOT_DIR/web/cash-deposit-portal"
+FE_DIR="$ROOT_DIR/frontend/cash-deposit-portal"
 FE_PID_FILE="$ROOT_DIR/.fe.pid"
 FE_LOG_FILE="$ROOT_DIR/.fe.log"
 
@@ -104,12 +104,33 @@ start_fe() {
     if kill -0 "$fe_pid" 2>/dev/null; then
         echo -e "  ${GREEN}✓ Cổng Quản lý Nạp tiền Quầy (React) đã chạy thành công!${NC}"
         echo -e "  👉 TRUY CẬP NGAY: ${BOLD}${CYAN}http://localhost:5173${NC}"
-        echo -e "  👉 TRANG DEMO GỐC: ${CYAN}http://127.0.0.1:5500/web/cash-deposit-portal/index.html${NC}"
+        echo -e "  👉 TRANG DEMO GỐC: ${CYAN}http://127.0.0.1:5500/frontend/cash-deposit-portal/index.html${NC}"
     else
         echo -e "  ${RED}❌ Khởi động Frontend thất bại. Vui lòng kiểm tra log: $FE_LOG_FILE${NC}"
         cat "$FE_LOG_FILE" | tail -n 15
         return 1
     fi
+}
+
+# 3b. Khởi động / Kiểm tra Mobile App (Flutter)
+run_mobile() {
+    print_banner
+    echo -e "${BLUE}${BOLD}[MOBILE] Sen Hồng Bank Flutter E-Wallet Client${NC}"
+    echo -e "Thư mục: ${CYAN}$ROOT_DIR/mobile${NC}\n"
+    if ! command -v flutter &>/dev/null; then
+        echo -e "  ${YELLOW}⚠️  Flutter SDK chưa được cài đặt trong PATH hệ thống.${NC}"
+        echo -e "  👉 Hướng dẫn khởi chạy cục bộ:"
+        echo -e "     1. Cài đặt Flutter: https://docs.flutter.dev/get-started/install"
+        echo -e "     2. cd $ROOT_DIR/mobile"
+        echo -e "     3. flutter pub get"
+        echo -e "     4. flutter run"
+        return 0
+    fi
+    echo -e "  ${GREEN}✓ Tìm thấy Flutter SDK: $(flutter --version | head -n 1)${NC}"
+    cd "$ROOT_DIR/mobile"
+    flutter pub get
+    flutter run "${@:2}"
+    cd "$ROOT_DIR"
 }
 
 # 4. Khởi động Tất cả (All-in-one)
@@ -246,22 +267,32 @@ interactive_menu() {
         echo -e "  ${GREEN}1.${NC} 🚀 ${BOLD}Khởi Động Toàn Bộ Hệ Thống${NC} (Infra + BE + FE React)"
         echo -e "  ${GREEN}2.${NC} 🌐 ${BOLD}Chỉ Khởi Động Frontend React Portal${NC} (Vite: http://localhost:5173)"
         echo -e "  ${GREEN}3.${NC} ⚙️ ${BOLD}Chỉ Khởi Động Backend Microservices${NC} (Gateway :8080 & Services)"
-        echo -e "  ${GREEN}4.${NC} 🐳 ${BOLD}Khởi Động Cụm Hạ Tầng Docker${NC} (Postgres x5, Kafka, Redis, RabbitMQ)"
-        echo -e "  ${GREEN}5.${NC} 🧪 ${BOLD}Chạy Kiểm Thử 8 Kịch Bản Dữ Liệu Thật${NC} (E2E Multi-scenario)"
-        echo -e "  ${GREEN}6.${NC} 📊 ${BOLD}Xem Bảng Đối Soát Sổ Cái Kép Trực Tiếp${NC} (Delta = 0.00 VND)"
-        echo -e "  ${GREEN}7.${NC} 💰 ${BOLD}Xem Tồn Quỹ Két Quầy Chi Nhánh & Hạn Mức 500M${NC}"
-        echo -e "  ${GREEN}8.${NC} 🔑 ${BOLD}Cấp Mới JWT Tokens Cán Bộ Quầy${NC} (Teller 1, Teller 2, Manager 1)"
-        echo -e "  ${GREEN}9.${NC} 🔍 ${BOLD}Kiểm Tra Trạng Thái Sức Khỏe Toàn Diện${NC} (Ports & Health Audit)"
-        echo -e "  ${RED}10.${NC} 🛑 ${BOLD}Dừng Toàn Bộ Hệ Thống${NC} (Tắt FE, BE & Cleanup)"
-        echo -e "  ${BLUE}11.${NC} 📄 ${BOLD}Xem Logs Frontend React${NC}"
+        echo -e "  ${GREEN}4.${NC} 📱 ${BOLD}Khởi Chạy Mobile App E-Wallet${NC} (Flutter: cd mobile)"
+        echo -e "  ${GREEN}5.${NC} 🐳 ${BOLD}Khởi Động Cụm Hạ Tầng Docker${NC} (Postgres x5, Kafka, Redis, RabbitMQ)"
+        echo -e "  ${GREEN}6.${NC} 🧪 ${BOLD}Chạy Kiểm Thử 8 Kịch Bản Dữ Liệu Thật${NC} (E2E Multi-scenario)"
+        echo -e "  ${GREEN}7.${NC} 📊 ${BOLD}Xem Bảng Đối Soát Sổ Cái Kép Trực Tiếp${NC} (Delta = 0.00 VND)"
+        echo -e "  ${GREEN}8.${NC} 💰 ${BOLD}Xem Tồn Quỹ Két Quầy Chi Nhánh & Hạn Mức 500M${NC}"
+        echo -e "  ${GREEN}9.${NC} 🔑 ${BOLD}Cấp Mới JWT Tokens Cán Bộ Quầy${NC} (Teller 1, Teller 2, Manager 1)"
+        echo -e "  ${GREEN}10.${NC} 🔍 ${BOLD}Kiểm Tra Trạng Thái Sức Khỏe Toàn Diện${NC} (Ports & Health Audit)"
+        echo -e "  ${RED}11.${NC} 🛑 ${BOLD}Dừng Toàn Bộ Hệ Thống${NC} (Tắt FE, BE & Cleanup)"
+        echo -e "  ${BLUE}12.${NC} 📄 ${BOLD}Xem Logs Frontend React${NC}"
         echo -e "  ${YELLOW}0.${NC} 🚪 ${BOLD}Thoát Menu${NC}"
         echo -e " ----------------------------------------------------------------------------------------"
-        read -rp "👉 Nhập lựa chọn của bạn [0-11]: " choice
+        read -rp "👉 Nhập lựa chọn của bạn [0-12]: " choice
 
         case "$choice" in
             1) start_all; read -rp "Ấn Enter để tiếp tục..." ;;
             2) start_fe; read -rp "Ấn Enter để tiếp tục..." ;;
             3) start_be; read -rp "Ấn Enter để tiếp tục..." ;;
+            4) run_mobile; read -rp "Ấn Enter để tiếp tục..." ;;
+            5) start_infra; read -rp "Ấn Enter để tiếp tục..." ;;
+            6) run_test; read -rp "Ấn Enter để tiếp tục..." ;;
+            7) check_ledger; read -rp "Ấn Enter để tiếp tục..." ;;
+            8) check_vault; read -rp "Ấn Enter để tiếp tục..." ;;
+            9) generate_tokens; read -rp "Ấn Enter để tiếp tục..." ;;
+            10) check_status; read -rp "Ấn Enter để tiếp tục..." ;;
+            11) stop_all; read -rp "Ấn Enter để tiếp tục..." ;;
+            12) view_logs fe ;;
             4) start_infra; read -rp "Ấn Enter để tiếp tục..." ;;
             5) run_test; read -rp "Ấn Enter để tiếp tục..." ;;
             6) check_ledger; read -rp "Ấn Enter để tiếp tục..." ;;
@@ -287,6 +318,9 @@ case "$COMMAND" in
         ;;
     be|backend)
         start_be
+        ;;
+    mobile)
+        run_mobile "$@"
         ;;
     infra)
         start_infra
@@ -325,6 +359,7 @@ case "$COMMAND" in
         echo "  ./run.sh all          Khởi động toàn bộ (Infra + BE + FE)"
         echo "  ./run.sh fe           Khởi động Frontend React (Port 5173)"
         echo "  ./run.sh be           Khởi động Backend Microservices"
+        echo "  ./run.sh mobile       Kiểm tra và khởi chạy Mobile App (Flutter)"
         echo "  ./run.sh infra        Khởi động cụm Docker (Kafka, 5 DBs, Redis, RabbitMQ)"
         echo "  ./run.sh test         Chạy 8 kịch bản kiểm thử dữ liệu thật E2E"
         echo "  ./run.sh ledger       Xem bảng đối soát Sổ cái kép trực tiếp (Delta=0)"

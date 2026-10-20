@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "mobile-mcp": {
+      "command": "/Users/buidi/.nodejs/bin/mcp-server-mobile",
+      "args": ["--stdio"],
+      "env": {
+        "PATH": "/Users/buidi/.nodejs/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+  }
+}

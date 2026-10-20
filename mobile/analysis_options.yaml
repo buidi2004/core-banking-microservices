@@ -1,0 +1,19 @@
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - scratch/**
+    - bin/**
+  errors:
+    deprecated_member_use: ignore
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    prefer_const_literals_to_create_immutables: true
+    avoid_print: true
+    use_build_context_synchronously: true
+    always_declare_return_types: true

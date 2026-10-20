@@ -27,7 +27,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ../web/cash-deposit-portal:/usr/share/caddy:ro
+      - ../frontend/cash-deposit-portal:/usr/share/caddy:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:

@@ -92,45 +92,57 @@ Hệ thống **Core Banking Microservices** là giải pháp ngân hàng lõi & 
 
 ---
 
-## 2. BẢN ĐỒ CẤU TRÚC THƯ MỤC MONOREPO
+## 2. BẢN ĐỒ CẤU TRÚC THƯ MỤC MONOREPO (CHUẨN HÓA FE - BE - MOBILE)
 
-```
+```text
 core-banking-microservices/
 ├── .agents/                                  # Cấu hình AI Agents & MCP Servers
 │   ├── AGENTS.md                             # Bộ quy tắc dành riêng cho AI Agents
-│   ├── MCP: codebase-memory-mcp.md           # Tài liệu kỹ thuật chuẩn cho codebase-memory-mcp
 │   ├── mcp_config.json                       # Khai báo máy chủ MCP codebase-memory
-│   └── skills/archify/                       # Skill tạo sơ đồ kiến trúc tương tác chuẩn HTML/SVG
+│   └── plugins/                              # Plugins MCP (codebase-memory, mobile-mcp)
 │
-├── common-library/                           # Thư viện dùng chung (Shared Kernel)
-│   ├── src/main/proto/wallet_service.proto   # Hợp đồng gRPC Stubs (Debit, Credit, Reserve, Release)
-│   ├── src/main/java/com/fintech/wallet/     # Common DTOs, Kafka Events, Domain Exceptions
-│   └── pom.xml                               # Quản lý dependencies chung (Kafka, gRPC, Protobuf)
+├── backend/                                  # [BE] TOÀN BỘ HỆ THỐNG BACKEND JAVA 17 / SPRING BOOT 3
+│   ├── pom.xml                               # Parent Maven Reactor quản lý dependencies & plugins
+│   ├── common-library/                       # Thư viện dùng chung (Shared Kernel, gRPC, Events, DTOs)
+│   └── services/                             # 6 DỊCH VỤ MICROSERVICES ĐỘC LẬP (DATABASE-PER-SERVICE)
+│       ├── api-gateway/                      # [Port 8080] Spring Cloud Gateway, Edge JWT Filter, CORS
+│       ├── identity-service/                 # [Port 8081] Auth, JWT Blacklist, eKYC, Users (DB: 5433)
+│       ├── wallet-service/                   # [Port 8082, gRPC: 9090] Balance Custody (DB: 5434)
+│       ├── payment-service/                  # [Port 8083] Saga Orchestrator, Cash Desk (DB: 5435)
+│       ├── ledger-service/                   # [Port 8084] Double-Entry Ledger, Append-Only (DB: 5436)
+│       └── notification-service/             # [Port 8085] Push FCM, WebSocket STOMP (DB: 5437)
 │
-├── services/                                 # CÁC DỊCH VỤ MICROSERVICES ĐỘC LẬP
-│   ├── api-gateway/                          # [Port 8080] Spring Cloud Gateway, JWT Filter, CORS
-│   ├── identity-service/                     # [Port 8081] Auth, Token 5m, eKYC, Users (DB: 5433)
-│   ├── wallet-service/                       # [Port 8082, gRPC: 9090] Balance Custody (DB: 5434)
-│   ├── payment-service/                      # [Port 8083] Saga Orchestrator, Cash Desk (DB: 5435)
-│   ├── ledger-service/                       # [Port 8084] Double-Entry Ledger, Append-Only (DB: 5436)
-│   └── notification-service/                 # [Port 8085] Push FCM, WebSocket STOMP (DB: 5437)
+├── frontend/                                 # [FE] TOÀN BỘ ỨNG DỤNG WEB FRONTEND (REACT / VITE)
+│   └── cash-deposit-portal/                  # Cổng giao dịch nộp tiền mặt tại quầy (Port 5173)
 │
-├── legacy/                                   # BẢO TỒN BẢN MONOLITH ĐỐI SOÁT DUAL-RUN
-│   └── monolith/                             # Mã nguồn nguyên bản 100% làm reference & load test
+├── mobile/                                   # [MOBILE] TOÀN BỘ ỨNG DỤNG E-WALLET FLUTTER (CLEAN ARCHITECTURE)
+│   ├── lib/                                  # 50 màn hình, 10 phân hệ nghiệp vụ, Liquid Glass Widgets
+│   ├── android/                              # Cấu hình Native Android & Google Services
+│   ├── ios/                                  # Cấu hình Native iOS Pods & Runner
+│   ├── assets/                               # Tài nguyên hình ảnh, biểu tượng & glass shader patterns
+│   ├── test/                                 # Kịch bản kiểm thử Flutter Unit & Widget Tests
+│   ├── docs/                                 # Tài liệu Mobile: API Integration Guide, Migration, Screenshots
+│   └── pubspec.yaml                          # Quản lý dependencies Flutter & Liquid Glass
 │
-├── docs/                                     # TÀI LIỆU KỸ THUẬT & KIẾN TRÚC
+├── deploy/                                   # CẤU HÌNH TRIỂN KHAI & REVERSE PROXY
+│   ├── docker-compose.public.yml             # Caddy Reverse Proxy bảo vệ cổng public (80/443)
+│   └── Caddyfile                             # Cấu hình SSL tự động & định tuyến Gateway
+│
+├── docs/                                     # TÀI LIỆU KỸ THUẬT & KIẾN TRÚC TOÀN HỆ THỐNG
 │   ├── architecture/                         # Sơ đồ kiến trúc, báo cáo chuyển đổi, Saga spec
 │   └── guides/                               # Hướng dẫn chi tiết: CODEBASE_MEMORY, Frontend Dev
 │
-├── scripts/                                  # SCRIPTS VẬN HÀNH & KIỂM THỬ
+├── scripts/                                  # SCRIPTS VẬN HÀNH & KIỂM THỬ TỰ ĐỘNG
 │   ├── verify-all-artifacts.sh               # Kịch bản kiểm chứng toàn diện 12/12 artifacts
-│   ├── e2e/01-infra-broker.sh                # Kiểm thử hạ tầng broker với dữ liệu thật (Kafka/RabbitMQ/Redis)
-│   ├── maintenance/security-audit-public.sh  # Quét an toàn cổng nội bộ không lộ ra public host
+│   ├── e2e/                                  # Bộ test E2E 8 kịch bản dữ liệu thật (Kafka/RabbitMQ/Redis)
+│   ├── maintenance/                          # Bảo trì an toàn cổng & audit bảo mật
 │   └── init-5-databases.sql                  # Khởi tạo 5 DBs và phân quyền Append-Only
 │
-├── docker-compose.yml                        # Cụm Microservices + 5 DBs + Kafka + RabbitMQ + Redis
-├── docker-compose.public.yml                 # Caddy Reverse Proxy bảo vệ cổng public (80/443)
-└── pom.xml                                   # Root Maven Reactor Quản lý Multi-Module
+├── docker-compose.yml                        # Cụm Microservices + 5 DBs + Kafka + RabbitMQ + Redis (14 containers)
+├── run.sh                                    # CLI Master Control: ./run.sh fe | be | mobile | infra | test | all
+├── README.md                                 # Hướng dẫn tổng quan toàn dự án
+├── ACCOUNTS.md                               # Danh sách tài khoản thử nghiệm hệ thống
+└── pom.xml                                   # Root Maven Monorepo Aggregator
 ```
 
 ---

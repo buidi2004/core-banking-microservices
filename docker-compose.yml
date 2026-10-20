@@ -26,7 +26,7 @@ services:
       POSTGRES_PASSWORD: IdentityDb#Secure2025!
     volumes:
       - postgres-identity-data:/var/lib/postgresql/data
-      - ./services/identity-service/src/main/resources/db/migration/V1__init_identity_db.sql:/docker-entrypoint-initdb.d/01-init-identity.sql:ro
+      - ./backend/services/identity-service/src/main/resources/db/migration/V1__init_identity_db.sql:/docker-entrypoint-initdb.d/01-init-identity.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U identity_db_user -d ewallet_identity_db"]
       interval: 10s
@@ -52,7 +52,7 @@ services:
       POSTGRES_PASSWORD: WalletDb#Secure2025!
     volumes:
       - postgres-wallet-data:/var/lib/postgresql/data
-      - ./services/wallet-service/src/main/resources/db/migration/V1__init_wallet_db.sql:/docker-entrypoint-initdb.d/01-init-wallet.sql:ro
+      - ./backend/services/wallet-service/src/main/resources/db/migration/V1__init_wallet_db.sql:/docker-entrypoint-initdb.d/01-init-wallet.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U wallet_db_user -d ewallet_wallet_db"]
       interval: 10s
@@ -78,7 +78,7 @@ services:
       POSTGRES_PASSWORD: PaymentDb#Secure2025!
     volumes:
       - postgres-payment-data:/var/lib/postgresql/data
-      - ./services/payment-service/src/main/resources/db/migration/V1__init_payment_db.sql:/docker-entrypoint-initdb.d/01-init-payment.sql:ro
+      - ./backend/services/payment-service/src/main/resources/db/migration/V1__init_payment_db.sql:/docker-entrypoint-initdb.d/01-init-payment.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U payment_db_user -d ewallet_payment_db"]
       interval: 10s
@@ -104,7 +104,7 @@ services:
       POSTGRES_PASSWORD: LedgerApp#Secure2025!
     volumes:
       - postgres-ledger-data:/var/lib/postgresql/data
-      - ./services/ledger-service/src/main/resources/db/migration/V1__init_ledger_db.sql:/docker-entrypoint-initdb.d/01-init-ledger.sql:ro
+      - ./backend/services/ledger-service/src/main/resources/db/migration/V1__init_ledger_db.sql:/docker-entrypoint-initdb.d/01-init-ledger.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ledger_app_user -d ewallet_ledger_db"]
       interval: 10s
@@ -130,7 +130,7 @@ services:
       POSTGRES_PASSWORD: NotificationDb#Secure2025!
     volumes:
       - postgres-notification-data:/var/lib/postgresql/data
-      - ./services/notification-service/src/main/resources/db/migration/V1__init_notification_db.sql:/docker-entrypoint-initdb.d/01-init-notification.sql:ro
+      - ./backend/services/notification-service/src/main/resources/db/migration/V1__init_notification_db.sql:/docker-entrypoint-initdb.d/01-init-notification.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U notification_db_user -d ewallet_notification_db"]
       interval: 10s
@@ -247,7 +247,7 @@ services:
   # API GATEWAY (Spring Cloud Gateway)
   # ----------------------------------------------------------------------------
   api-gateway:
-    build: ./services/api-gateway
+    build: ./backend/services/api-gateway
     container_name: ewallet-api-gateway
     restart: unless-stopped
     mem_limit: 300m
@@ -270,7 +270,7 @@ services:
   # 5 MICROSERVICES CONTAINERS
   # ----------------------------------------------------------------------------
   identity-service:
-    build: ./services/identity-service
+    build: ./backend/services/identity-service
     container_name: ewallet-identity-service
     restart: unless-stopped
     mem_limit: 300m
@@ -289,7 +289,7 @@ services:
       - microservices-network
 
   wallet-service:
-    build: ./services/wallet-service
+    build: ./backend/services/wallet-service
     container_name: ewallet-wallet-service
     restart: unless-stopped
     mem_limit: 300m
@@ -310,7 +310,7 @@ services:
       - microservices-network
 
   payment-service:
-    build: ./services/payment-service
+    build: ./backend/services/payment-service
     container_name: ewallet-payment-service
     restart: unless-stopped
     mem_limit: 300m
@@ -331,7 +331,7 @@ services:
       - microservices-network
 
   ledger-service:
-    build: ./services/ledger-service
+    build: ./backend/services/ledger-service
     container_name: ewallet-ledger-service
     restart: unless-stopped
     mem_limit: 300m
@@ -350,7 +350,7 @@ services:
       - microservices-network
 
   notification-service:
-    build: ./services/notification-service
+    build: ./backend/services/notification-service
     container_name: ewallet-notification-service
     restart: unless-stopped
     mem_limit: 300m

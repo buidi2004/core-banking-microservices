@@ -35,6 +35,7 @@ tmp/
 *.pid
 .fe.pid
 .staff_tokens.env
+*:Zone.Identifier
 
 ### Node / Frontend ###
 node_modules/
@@ -45,3 +46,28 @@ dist/
 *firebase-service-account*.json
 *serviceAccount*.json
 *firebase-adminsdk*.json*
+
+### Flutter / Mobile ###
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/
+mobile/android/.gradle/
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/ios/Flutter/ephemeral/
+mobile/emulator_*.png
+mobile/screen_*.png
+mobile/live_app_*.png
+mobile/scratch/
+

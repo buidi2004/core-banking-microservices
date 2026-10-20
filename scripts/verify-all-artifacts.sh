@@ -84,14 +84,14 @@ echo -e "${BOLD}${BLUE}--- GIAI ĐOẠN 1: DỰNG API GATEWAY & TÁCH NOTIFICATI
 check_artifact \
     "Giai đoạn 1" \
     "Flyway Migration Notification DB" \
-    "services/notification-service/src/main/resources/db/migration/V1__init_notification_db.sql" \
+    "backend/services/notification-service/src/main/resources/db/migration/V1__init_notification_db.sql" \
     "notifications" \
     "Schema Flyway độc lập cho 7 bảng Notifications/Promotions/Devices không còn FK"
 
 check_artifact \
     "Giai đoạn 1" \
     "Cấu hình Spring Cloud Gateway Routes" \
-    "services/api-gateway/gateway-routes.yml" \
+    "backend/services/api-gateway/gateway-routes.yml" \
     "notification-service:8085" \
     "Định tuyến 6 controller path về notification-service:8085 và fallback về monolith"
 
@@ -99,7 +99,7 @@ echo -e "${BOLD}${BLUE}--- GIAI ĐOẠN 2: TÁCH GENERAL LEDGER & AUDIT SERVICE 
 check_artifact \
     "Giai đoạn 2" \
     "Flyway Migration Ledger DB (Append-Only)" \
-    "services/ledger-service/src/main/resources/db/migration/V1__init_ledger_db.sql" \
+    "backend/services/ledger-service/src/main/resources/db/migration/V1__init_ledger_db.sql" \
     "journal_entries" \
     "Schema Flyway sổ cái kép, phân quyền Append-Only chống sửa/xóa bút toán tài chính"
 
@@ -114,14 +114,14 @@ echo -e "${BOLD}${BLUE}--- GIAI ĐOẠN 3: TÁCH IDENTITY & XÁC THỰC TẬP TR
 check_artifact \
     "Giai đoạn 3" \
     "Bộ lọc JWT Edge Gateway & Header Injection" \
-    "services/api-gateway/JwtAuthenticationFilter.java" \
+    "backend/services/api-gateway/src/main/java/com/fintech/gateway/JwtAuthenticationFilter.java" \
     "HEADER_USER_ID" \
     "Filter xác thực JWT, tra cứu Redis blacklist và inject X-User-Id xuống downstream"
 
 check_artifact \
     "Giai đoạn 3" \
     "Domain Event Đăng ký Người dùng (RabbitMQ)" \
-    "common-library/src/main/java/com/fintech/wallet/domain/event/UserRegisteredEvent.java" \
+    "backend/common-library/src/main/java/com/fintech/wallet/domain/event/UserRegisteredEvent.java" \
     "UserRegisteredEvent" \
     "Contract Event-driven onboarding khởi tạo ví bất đồng bộ qua RabbitMQ"
 
@@ -129,7 +129,7 @@ echo -e "${BOLD}${BLUE}--- GIAI ĐOẠN 4: PHÂN TÁCH LÕI TÀI CHÍNH (WALLET 
 check_artifact \
     "Giai đoạn 4" \
     "Hợp đồng gRPC Wallet Internal Service" \
-    "common-library/src/main/proto/wallet_service.proto" \
+    "backend/common-library/src/main/proto/wallet_service.proto" \
     "service WalletInternalService" \
     "Protobuf contract cho Debit, Credit, Reserve, Release giữa Payment Svc và Wallet Core"
 
