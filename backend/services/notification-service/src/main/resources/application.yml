@@ -50,11 +50,6 @@ identity:
   service:
     url: ${IDENTITY_SERVICE_URL:http://localhost:8081}
 
-# Tra cứu số điện thoại chủ ví cho nội dung thông báo (identity-service nội bộ)
-identity:
-  service:
-    url: ${IDENTITY_SERVICE_URL:http://localhost:8081}
-
 firebase:
   credential:
     path: ${FIREBASE_CREDENTIAL_PATH:classpath:firebase-service-account.json}

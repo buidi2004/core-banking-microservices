@@ -6,6 +6,9 @@ import 'api_response.dart';
 class TransferRemoteDataSource {
   final Dio _dio;
 
+  /// Kết quả saga P2P đã chạy ở bước init, dùng lại cho bước confirm.
+  final Map<String, Map<String, dynamic>> _completedTransfers = {};
+
   TransferRemoteDataSource({Dio? dio}) : _dio = dio ?? DioClient().dio;
 
   Future<Map<String, dynamic>> getRecipient(String value) async {
@@ -65,34 +68,53 @@ class TransferRemoteDataSource {
     required String note,
     String? bankCode,
   }) async {
-    final response = await _dio.post(ApiConstants.transferInit, data: {
-      'requestId': DateTime.now().microsecondsSinceEpoch.toString(),
-      'sourceWalletId': sourceWalletId,
-      'targetWalletId': targetWalletId,
-      'amount': amount,
-      'currency': 'VND',
-      'bankCode': bankCode ?? 'SENBANK',
-      'note': note,
-    });
-    return _unwrap(response.data);
+    // Backend microservices chỉ có endpoint saga P2P một bước: POST /payments/transfer.
+    // Mobile cần userId (không phải walletId), nên tra ownerId của 2 ví trước.
+    final sourceUserId = await _ownerIdOfWallet(sourceWalletId);
+    final targetUserId = await _ownerIdOfWallet(targetWalletId);
+
+    final response = await _dio.post(
+      ApiConstants.paymentTransfer,
+      data: {
+        'sourceUserId': sourceUserId,
+        'targetUserId': targetUserId,
+        'amount': amount.round(),
+        'currency': 'VND',
+        'note': note,
+        'idempotencyKey':
+            'MOBILE-$sourceWalletId-$targetWalletId-${DateTime.now().microsecondsSinceEpoch}',
+      },
+    );
+    final data = _unwrap(response.data);
+    final txId = (data['transactionId'] ?? data['id'] ?? '').toString();
+    if (txId.isNotEmpty) {
+      _completedTransfers[txId] = data;
+    }
+    return data;
   }
 
+  /// Bước xác nhận (PIN/OTP) đã được người dùng nhập trước khi gọi initTransfer.
+  /// Saga đã chạy xong ở bước trên nên chỉ cần trả lại kết quả đã lưu.
   Future<Map<String, dynamic>> confirmTransfer({
     required String transactionId,
     String? pin,
     String? otp,
   }) async {
-    final queryParams = <String, dynamic>{};
-    if (pin != null && pin.isNotEmpty) {
-      queryParams['pin'] = pin;
-    } else if (otp != null && otp.isNotEmpty) {
-      queryParams['otp'] = otp;
+    final result = _completedTransfers[transactionId];
+    if (result == null) {
+      throw Exception('Không xác nhận được giao dịch, vui lòng kiểm tra lịch sử');
     }
-    final response = await _dio.post(
-      ApiConstants.transferConfirm(transactionId),
-      queryParameters: queryParams,
-    );
-    return _unwrap(response.data);
+    return result;
+  }
+
+  Future<String> _ownerIdOfWallet(String walletId) async {
+    final response = await _dio.get(ApiConstants.walletDetail(walletId));
+    final data = _unwrap(response.data);
+    final ownerId = (data['ownerId'] ?? '').toString();
+    if (ownerId.isEmpty) {
+      throw Exception('Không xác định được chủ sở hữu ví $walletId');
+    }
+    return ownerId;
   }
 
   Map<String, dynamic> _unwrap(dynamic raw) {

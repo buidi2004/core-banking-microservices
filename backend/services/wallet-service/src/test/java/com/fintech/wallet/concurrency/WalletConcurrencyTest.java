@@ -73,10 +73,22 @@ class WalletConcurrencyTest {
                 .dailySpent(0L)
                 .build();
 
-        // Mỗi lần gọi findByIdForUpdate trả về cùng 1 đối tượng (shared state)
-        when(walletRepository.findByIdForUpdate(WALLET_ID)).thenReturn(Optional.of(sharedWallet));
-        // save trả về chính đối tượng đó
-        when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> inv.getArgument(0));
+        // Mô phỏng pessimistic row-level lock (SELECT FOR UPDATE) trên DB
+        java.util.concurrent.locks.ReentrantLock dbCreditLock = new java.util.concurrent.locks.ReentrantLock(true);
+        when(walletRepository.findByIdForUpdate(WALLET_ID)).thenAnswer(inv -> {
+            dbCreditLock.lock();
+            return Optional.of(sharedWallet);
+        });
+        // save trả về chính đối tượng đó và giải phóng row lock
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> {
+            try {
+                return inv.getArgument(0);
+            } finally {
+                if (dbCreditLock.isHeldByCurrentThread()) {
+                    dbCreditLock.unlock();
+                }
+            }
+        });
         // idempotency key luôn unique
         when(valueOperations.setIfAbsent(anyString(), anyString(), any())).thenReturn(true);
 
@@ -86,15 +98,19 @@ class WalletConcurrencyTest {
         AtomicInteger success = new AtomicInteger(0);
 
         for (int i = 0; i < THREAD_COUNT; i++) {
+            final int idx = i;
             executor.submit(() -> {
                 try {
                     start.await();
                     WalletGrpcService.CreditResult r = walletGrpcService.creditWallet(
-                            WALLET_ID, CREDIT_AMOUNT, "tx-" + i, null);
+                            WALLET_ID, CREDIT_AMOUNT, "tx-" + idx, null);
                     if (r.success) success.incrementAndGet();
                 } catch (Exception e) {
                     // ignore
                 } finally {
+                    if (dbCreditLock.isHeldByCurrentThread()) {
+                        dbCreditLock.unlock();
+                    }
                     done.countDown();
                 }
             });
@@ -129,8 +145,21 @@ class WalletConcurrencyTest {
                 .dailySpent(0L)
                 .build();
 
-        when(walletRepository.findByIdForUpdate(WALLET_ID)).thenReturn(Optional.of(sharedWallet));
-        when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> inv.getArgument(0));
+        // Mô phỏng pessimistic row-level lock (SELECT FOR UPDATE) trên DB
+        java.util.concurrent.locks.ReentrantLock dbDebitLock = new java.util.concurrent.locks.ReentrantLock(true);
+        when(walletRepository.findByIdForUpdate(WALLET_ID)).thenAnswer(inv -> {
+            dbDebitLock.lock();
+            return Optional.of(sharedWallet);
+        });
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(inv -> {
+            try {
+                return inv.getArgument(0);
+            } finally {
+                if (dbDebitLock.isHeldByCurrentThread()) {
+                    dbDebitLock.unlock();
+                }
+            }
+        });
         when(valueOperations.setIfAbsent(anyString(), anyString(), any())).thenReturn(true);
 
         ExecutorService executor = Executors.newFixedThreadPool(THREAD_COUNT);
@@ -140,16 +169,20 @@ class WalletConcurrencyTest {
         AtomicInteger failed = new AtomicInteger(0);
 
         for (int i = 0; i < THREAD_COUNT; i++) {
+            final int idx = i;
             executor.submit(() -> {
                 try {
                     start.await();
                     WalletGrpcService.DebitResult r = walletGrpcService.debitWallet(
-                            WALLET_ID, debitAmt, "tx-d-" + i, null);
+                            WALLET_ID, debitAmt, "tx-d-" + idx, null);
                     if (r.success) success.incrementAndGet();
                     else failed.incrementAndGet();
                 } catch (Exception e) {
                     failed.incrementAndGet();
                 } finally {
+                    if (dbDebitLock.isHeldByCurrentThread()) {
+                        dbDebitLock.unlock();
+                    }
                     done.countDown();
                 }
             });

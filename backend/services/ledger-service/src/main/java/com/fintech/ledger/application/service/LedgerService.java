@@ -5,6 +5,7 @@ import com.fintech.ledger.application.port.LedgerPersistencePort;
 import com.fintech.ledger.domain.exception.LedgerUnbalancedException;
 import com.fintech.ledger.domain.model.AccountType;
 import com.fintech.ledger.domain.model.JournalEntry;
+import com.fintech.ledger.domain.model.JournalEntryStatus;
 import com.fintech.ledger.domain.model.LedgerAccount;
 import com.fintech.ledger.domain.model.LedgerPosting;
 import com.fintech.ledger.domain.model.PostingSide;
@@ -83,8 +84,16 @@ public class LedgerService {
         try {
             return persistencePort.saveJournalEntry(entry);
         } catch (DataIntegrityViolationException e) {
-            // Duplicate eventId hoặc giao dịch đã có chứng từ POSTED → idempotency cấp DB
+            // Duplicate eventId hoặc giao dịch đã có chứng từ POSTED → idempotency cấp DB.
+            // Trường hợp Rabbit và Kafka cùng gửi 1 sự kiện: eventId khác nhau nên phải
+            // kiểm tra thêm "giao dịch đã có chứng từ gốc POSTED" để không đẩy message
+            // vào DLQ chỉ vì vi phạm unique index.
             if (persistencePort.existsJournalEntryByReference(entry.getReferenceNumber())) {
+                return null;
+            }
+            if (entry.getStatus() == JournalEntryStatus.POSTED
+                    && entry.getTransactionId() != null
+                    && persistencePort.findPostedEntryByTransactionId(entry.getTransactionId()).isPresent()) {
                 return null;
             }
             throw e;

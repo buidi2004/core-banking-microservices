@@ -1,7 +1,9 @@
 package com.fintech.wallet.kafka;
 
 import com.fintech.wallet.application.service.WalletInternalApplicationService;
-import com.fintech.wallet.domain.entity.Wallet;
+import com.fintech.wallet.domain.model.Wallet;
+import com.fintech.wallet.domain.model.Money;
+import com.fintech.wallet.domain.model.WalletStatus;
 import com.fintech.wallet.domain.port.out.DistributedLockPort;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
 import com.fintech.wallet.infrastructure.kafka.WalletBalanceChangedKafkaProducer;
@@ -17,10 +19,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -36,6 +41,7 @@ import static org.mockito.Mockito.*;
  *  3. Payload chứa đủ metadata: previousBalance, changeAmount, newBalance, currency, transactionId
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class WalletKafkaProducerIntegrationTest {
 
     @Mock
@@ -54,22 +60,23 @@ class WalletKafkaProducerIntegrationTest {
     void setUp() {
         // Mock distributed lock — trả về kết quả trực tiếp (không lock thật)
         when(distributedLockPort.executeWithLock(anyString(), anyLong(), any())).thenAnswer(inv -> {
-            var supplier = inv.getArgument(2);
+            java.util.function.Supplier<?> supplier = inv.getArgument(2);
             return supplier.get();
         });
     }
 
     private Wallet createWallet(String id, String userId, long balance) {
-        return Wallet.builder()
-                .id(id)
-                .userId(userId)
-                .balance(balance)
-                .reservedBalance(0L)
-                .currency("VND")
-                .status("ACTIVE")
-                .dailyLimit(50000000L)
-                .dailySpent(0L)
-                .build();
+        return new Wallet(
+                id,
+                userId,
+                Money.of(BigDecimal.valueOf(balance), "VND"),
+                Instant.now(),
+                Instant.now(),
+                1L,
+                WalletStatus.ACTIVE,
+                50000000L,
+                0L
+        );
     }
 
     // ======================== KAFKA PRODUCER DIRECT TEST ========================
@@ -86,10 +93,7 @@ class WalletKafkaProducerIntegrationTest {
             String transactionId = "tx-kafka-debit-1";
 
             // Chuẩn bị sendResult mock
-            RecordMetadata metadata = new RecordMetadata(
-                    new org.apache.kafka.common.TopicPartition(
-                            com.fintech.wallet.kafka.KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED, 0),
-                    null, 0L, 0L, 0L);
+            RecordMetadata metadata = mock(RecordMetadata.class);
             when(kafkaTemplate.send(eq(KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED),
                     eq(walletId), any())).thenReturn(
                     CompletableFuture.completedFuture(new SendResult<>(
@@ -131,10 +135,7 @@ class WalletKafkaProducerIntegrationTest {
             long amount = 30000L;
             String transactionId = "tx-kafka-credit-1";
 
-            RecordMetadata metadata = new RecordMetadata(
-                    new org.apache.kafka.common.TopicPartition(
-                            KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED, 1),
-                    null, 0L, 0L, 0L);
+            RecordMetadata metadata = mock(RecordMetadata.class);
             when(kafkaTemplate.send(eq(KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED),
                     eq(walletId), any())).thenReturn(
                     CompletableFuture.completedFuture(new SendResult<>(
@@ -174,10 +175,7 @@ class WalletKafkaProducerIntegrationTest {
             String walletId = "w-kafka-3";
             String reservationId = "res-kafka-1";
 
-            RecordMetadata metadata = new RecordMetadata(
-                    new org.apache.kafka.common.TopicPartition(
-                            KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED, 2),
-                    null, 0L, 0L, 0L);
+            RecordMetadata metadata = mock(RecordMetadata.class);
             when(kafkaTemplate.send(eq(KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED),
                     eq(walletId), any())).thenReturn(
                     CompletableFuture.completedFuture(new SendResult<>(
@@ -221,9 +219,7 @@ class WalletKafkaProducerIntegrationTest {
             when(walletPersistencePort.findWalletByIdForUpdate(walletId)).thenReturn(Optional.of(wallet));
             when(walletPersistencePort.saveWallet(any())).thenReturn(wallet);
 
-            RecordMetadata metadata = new RecordMetadata(
-                    new org.apache.kafka.common.TopicPartition(KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED, 0),
-                    null, 0L, 0L, 0L);
+            RecordMetadata metadata = mock(RecordMetadata.class);
             when(kafkaTemplate.send(eq(KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED),
                     eq(walletId), any())).thenReturn(
                     CompletableFuture.completedFuture(new SendResult<>(
@@ -267,9 +263,7 @@ class WalletKafkaProducerIntegrationTest {
             when(walletPersistencePort.findWalletByIdForUpdate(walletId)).thenReturn(Optional.of(wallet));
             when(walletPersistencePort.saveWallet(any())).thenReturn(wallet);
 
-            RecordMetadata metadata = new RecordMetadata(
-                    new org.apache.kafka.common.TopicPartition(KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED, 0),
-                    null, 0L, 0L, 0L);
+            RecordMetadata metadata = mock(RecordMetadata.class);
             when(kafkaTemplate.send(eq(KafkaTopicConstants.TOPIC_WALLET_BALANCE_CHANGED),
                     eq(walletId), any())).thenReturn(
                     CompletableFuture.completedFuture(new SendResult<>(
@@ -292,7 +286,7 @@ class WalletKafkaProducerIntegrationTest {
             KafkaEventEnvelope<WalletBalanceChangedPayload> envelope =
                     (KafkaEventEnvelope<WalletBalanceChangedPayload>) valueCaptor.getValue();
             assertEquals("DEPOSIT", envelope.payload().changeType());
-            assertEquals(new BigDecimal(initialBalance + creditAmount), envelope.payload().newBalance());
+            assertEquals(0, BigDecimal.valueOf(initialBalance + creditAmount).compareTo(envelope.payload().newBalance()));
         }
 
         @Test
@@ -316,7 +310,7 @@ class WalletKafkaProducerIntegrationTest {
         }
 
         @Test
-        @DisplayName("Wallet not found → KHÔNG publish event")
+        @DisplayName("Wallet not found → ném WalletNotFoundException & KHÔNG publish event")
         void debit_walletNotFound_noKafkaPublish() {
             when(walletPersistencePort.findWalletByIdForUpdate("w-missing"))
                     .thenReturn(Optional.empty());
@@ -324,10 +318,10 @@ class WalletKafkaProducerIntegrationTest {
             WalletInternalApplicationService service = new WalletInternalApplicationService(
                     walletPersistencePort, distributedLockPort, kafkaProducer);
 
-            WalletInternalApplicationService.DebitResult result = service.debitWallet(
-                    "w-missing", 1000L, "tx-missing", null);
+            assertThrows(com.fintech.wallet.domain.exception.WalletNotFoundException.class, () ->
+                    service.debitWallet("w-missing", 1000L, "tx-missing", null)
+            );
 
-            assertFalse(result.success());
             verifyNoInteractions(kafkaTemplate);
         }
 

@@ -30,6 +30,7 @@ class ApiConstants {
   static String walletDetail(String walletId) => '/wallets/$walletId';
   static const String recipientInfo = '/wallets/recipient-info';
   static const String estimateFee = '/wallets/fees/estimate';
+  static const String paymentTransfer = '/payments/transfer';
   static const String transferInit = '/wallets/transfer/init';
   static String transferConfirm(String id) => '/wallets/transfer/$id/confirm';
   static const String deposit = '/wallets/deposit';

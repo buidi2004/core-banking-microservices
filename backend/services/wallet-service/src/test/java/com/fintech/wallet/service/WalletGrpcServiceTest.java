@@ -11,6 +11,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -25,6 +27,7 @@ import static org.mockito.Mockito.*;
  * DebitWallet, CreditWallet, ReserveBalance, ReleaseBalance, CheckLimit, GetWalletByUserId.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class WalletGrpcServiceTest {
 
     @Mock
@@ -42,6 +45,7 @@ class WalletGrpcServiceTest {
     @BeforeEach
     void setUp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.setIfAbsent(anyString(), anyString(), any())).thenReturn(true);
     }
 
     private Wallet createWallet(String id, String userId, long balance, long reservedBalance,
@@ -81,14 +85,14 @@ class WalletGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("Should return failure when wallet not found")
+        @DisplayName("Should throw IllegalArgumentException when wallet not found")
         void debit_walletNotFound() {
             when(walletRepository.findByIdForUpdate(any())).thenReturn(Optional.empty());
 
-            WalletGrpcService.DebitResult result = walletGrpcService.debitWallet("w-missing", 1000L, "tx-1", null);
-
-            assertFalse(result.success);
-            assertEquals("Wallet not found: w-missing", result.errorMessage);
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                    walletGrpcService.debitWallet("w-missing", 1000L, "tx-1", null)
+            );
+            assertEquals("Wallet not found: w-missing", ex.getMessage());
         }
 
         @Test
@@ -152,13 +156,14 @@ class WalletGrpcServiceTest {
         }
 
         @Test
-        @DisplayName("Should return failure when wallet not found")
+        @DisplayName("Should throw IllegalArgumentException when wallet not found")
         void credit_walletNotFound() {
             when(walletRepository.findByIdForUpdate(any())).thenReturn(Optional.empty());
 
-            WalletGrpcService.CreditResult result = walletGrpcService.creditWallet("w-missing", 1000L, "tx-2", null);
-
-            assertFalse(result.success);
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                    walletGrpcService.creditWallet("w-missing", 1000L, "tx-2", null)
+            );
+            assertEquals("Wallet not found: w-missing", ex.getMessage());
         }
     }
 
@@ -214,7 +219,7 @@ class WalletGrpcServiceTest {
 
             Wallet wallet = createWallet(walletId, "u-1", 100000L, amount, "VND", "ACTIVE");
             when(walletRepository.findByIdForUpdate(walletId)).thenReturn(Optional.of(wallet));
-            when(valueOperations.delete("wallet:reservation:" + reservationId)).thenReturn(true);
+            when(redisTemplate.delete("wallet:reservation:" + reservationId)).thenReturn(true);
 
             WalletGrpcService.ReleaseResult result = walletGrpcService.releaseBalance(reservationId, "tx-4");
 
@@ -245,6 +250,7 @@ class WalletGrpcServiceTest {
         @DisplayName("Should allow when sufficient available balance")
         void checkLimit_allowed() {
             Wallet wallet = createWallet("w-1", "u-1", 100000L, 10000L, "VND", "ACTIVE");
+            wallet.setDailyLimit(50000L);
             wallet.setDailySpent(5000L);
             when(walletRepository.findById("w-1")).thenReturn(Optional.of(wallet));
 

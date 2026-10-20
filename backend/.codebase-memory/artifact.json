@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "ff933d7f4ea70eaa4574c964cabc28e4fd40cb92",
-    "indexed_at": "2026-10-20T01:47:43Z",
+    "commit": "aba27372d5ff0256f99f47d97d758a53839425e7",
+    "indexed_at": "2026-10-20T04:29:54Z",
     "project": "core-banking-backend",
-    "nodes": 3554,
-    "edges": 15160,
-    "original_size": 11468800,
-    "compressed_size": 1784520,
+    "nodes": 3615,
+    "edges": 15476,
+    "original_size": 11730944,
+    "compressed_size": 1825437,
     "compression_level": 9
 }

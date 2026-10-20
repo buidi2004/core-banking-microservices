@@ -27,7 +27,14 @@ public class UserPhoneResolver {
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
     public UserPhoneResolver(@Value("${identity.service.url:http://localhost:8081}") String identityServiceUrl) {
-        this.restClient = RestClient.builder().baseUrl(identityServiceUrl).build();
+        org.springframework.http.client.SimpleClientHttpRequestFactory factory =
+                new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(1000);
+        factory.setReadTimeout(1500);
+        this.restClient = RestClient.builder()
+                .baseUrl(identityServiceUrl)
+                .requestFactory(factory)
+                .build();
     }
 
     public String resolve(String userId) {

@@ -84,8 +84,6 @@ rabbitmq:
     # (wallet.transaction.events / transaction.#). Trước đây để wallet.exchange
     # nên event rơi vào exchange không có consumer -> mất thông báo.
     name: wallet.transaction.events
-  queue:
-    payment: payment.outbox.queue
   routing:
     key:
       transaction: transaction.completed

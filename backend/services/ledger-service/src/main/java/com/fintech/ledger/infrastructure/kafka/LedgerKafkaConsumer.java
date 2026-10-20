@@ -8,6 +8,7 @@ import com.fintech.ledger.application.service.LedgerService;
 import com.fintech.ledger.domain.model.JournalEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.messaging.handler.annotation.Header;
@@ -75,6 +76,15 @@ public class LedgerKafkaConsumer {
             acknowledgment.acknowledge();
             return;
         }
+        // Cùng 1 giao dịch có thể đến từ cả Rabbit và Kafka với eventId khác nhau:
+        // nếu chứng từ gốc đã POSTED thì bỏ qua (tránh rollback/DLQ).
+        if (!"REVERSED".equals(status)
+                && event.getTransactionId() != null
+                && persistencePort.findPostedEntryByTransactionId(event.getTransactionId()).isPresent()) {
+            log.info("Transaction already posted, skipping Kafka duplicate: txId={}", event.getTransactionId());
+            acknowledgment.acknowledge();
+            return;
+        }
         postAndAck(envelope, event, acknowledgment);
     }
 
@@ -101,6 +111,12 @@ public class LedgerKafkaConsumer {
         } catch (IllegalArgumentException e) {
             log.warn("Malformed transaction event for ledger posting (skipping): eventId={}, txId={}, error={}",
                     envelope.getEventId(), event.getTransactionId(), e.getMessage());
+            acknowledgment.acknowledge();
+        } catch (DataIntegrityViolationException e) {
+            // Xảy ra khi Rabbit và Kafka xử lý song song cùng giao dịch: unique index
+            // uq_journal_entries_transaction_posted đã chặn bút toán trùng.
+            log.warn("Duplicate journal posting ignored (already posted): eventId={}, txId={}",
+                    envelope.getEventId(), event.getTransactionId());
             acknowledgment.acknowledge();
         } catch (RuntimeException e) {
             log.error("Kafka ledger posting failed (will retry / DLT): eventId={}, txId={}",

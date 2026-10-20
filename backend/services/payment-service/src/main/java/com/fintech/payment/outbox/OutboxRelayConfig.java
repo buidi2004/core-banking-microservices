@@ -5,9 +5,6 @@ import com.fintech.payment.repository.OutboxEventRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -24,7 +21,7 @@ import java.time.Instant;
 /**
  * Cấu hình RabbitMQ Topology cho Payment Service.
  * Exchange: wallet.transaction.events (topic) - dùng chung với Ledger/Notification.
- * Queue: payment.outbox.queue, binding routing key transaction.*.
+ * Payment chỉ publish sự kiện (không tự bind queue riêng).
  *
  * Lưu ý: phải là TopicExchange (không phải DirectExchange) vì consumer bind
  * bằng wildcard "transaction.#". Nếu khai báo DirectExchange cùng tên sẽ gây
@@ -37,32 +34,18 @@ import java.time.Instant;
 public class OutboxRelayConfig {
 
     public static final String EXCHANGE_NAME = "wallet.transaction.events";
-    public static final String QUEUE_NAME = "payment.outbox.queue";
     public static final String ROUTING_KEY_TRANSACTION = "transaction.completed";
 
     @Value("${rabbitmq.exchange.name:wallet.transaction.events}")
     private String exchangeName;
-
-    @Value("${rabbitmq.queue.payment:payment.outbox.queue}")
-    private String queueName;
-
-    @Value("${rabbitmq.routing.key.transaction:transaction.completed}")
-    private String routingKeyTransaction;
 
     @Bean
     TopicExchange walletExchange() {
         return new TopicExchange(exchangeName, true, false);
     }
 
-    @Bean
-    Queue paymentOutboxQueue() {
-        return new Queue(queueName, true);
-    }
-
-    @Bean
-    Binding paymentOutboxBinding(TopicExchange exchange, Queue queue) {
-        return BindingBuilder.bind(queue).to(exchange).with(routingKeyTransaction);
-    }
+    // Payment chỉ PUBLISH sự kiện; không tự bind một queue cho chính mình
+    // (trước đây queue payment.outbox.queue không có consumer nên phình vô hạn).
 
     @Bean
     RabbitAdmin rabbitAdmin(RabbitTemplate rabbitTemplate) {

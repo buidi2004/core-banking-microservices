@@ -147,7 +147,10 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
       if (newBalance is num) {
         balanceStr = CurrencyFormatter.formatVND(newBalance.toDouble());
       } else if (newBalance != null && newBalance.toString().isNotEmpty) {
-        balanceStr = newBalance.toString();
+        final parsedBalance = double.tryParse(newBalance.toString());
+        balanceStr = parsedBalance != null
+            ? CurrencyFormatter.formatVND(parsedBalance)
+            : newBalance.toString();
       }
       String? timeStr = payload['formattedTime']?.toString() ?? payload['timestamp']?.toString();
       String? noteStr = payload['note']?.toString();

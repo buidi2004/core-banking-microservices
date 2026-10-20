@@ -31,7 +31,7 @@ class OutboxRelayKafkaTest {
     @Mock private OutboxEventRepository outboxEventRepository;
     @Mock private RabbitTemplate rabbitTemplate;
     @Mock private PaymentKafkaProducer paymentKafkaProducer;
-    @Mock private ObjectMapper objectMapper;
+    @org.mockito.Spy private ObjectMapper objectMapper = new ObjectMapper();
 
     private OutboxRelay relay;
 

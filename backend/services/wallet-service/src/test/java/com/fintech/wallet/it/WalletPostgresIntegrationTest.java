@@ -20,7 +20,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -122,8 +124,8 @@ class WalletPostgresIntegrationTest {
 
             // Xác thực tồn tại trong DB
             Long count = jdbcTemplate.queryForObject(
-                    "SELECT count(*) FROM wallets WHERE id = ?", Integer.class, wallet.getId());
-            assertThat(count).isEqualTo(1);
+                    "SELECT count(*) FROM wallets WHERE id = ?", Long.class, wallet.getId());
+            assertThat(count).isEqualTo(1L);
         }
 
         @Test
@@ -142,8 +144,7 @@ class WalletPostgresIntegrationTest {
 
             Wallet second = buildWallet("user-dup-1", 0L);
             assertThatThrownBy(() -> walletRepository.save(second))
-                    .hasRootCauseMessageContaining("duplicate key value")
-                    .or().isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
         }
     }
 
@@ -239,8 +240,7 @@ class WalletPostgresIntegrationTest {
             // CHECK constraint (balance >= 0) phải chặn ở cấp DB
             assertThatThrownBy(() -> walletRepository.saveAndFlush(w))
                     .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
-                    .satisfies(e -> assertThat(e.getMessage())
-                            .anySatisfy(msg -> assertThat(msg).containsIgnoringCase("balance")));
+                    .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("balance"));
         }
 
         @Test
@@ -254,8 +254,7 @@ class WalletPostgresIntegrationTest {
             // CHECK constraint (reserved_balance >= 0) phải chặn ở cấp DB
             assertThatThrownBy(() -> walletRepository.saveAndFlush(w))
                     .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
-                    .satisfies(e -> assertThat(e.getMessage())
-                            .anySatisfy(msg -> assertThat(msg).containsIgnoringCase("reserved_balance")));
+                    .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("reserved_balance"));
         }
 
         @Test
@@ -389,8 +388,8 @@ class WalletPostgresIntegrationTest {
             Wallet wallet = saveWallet("user-ts-1", 10000L);
             String walletId = wallet.getId();
 
-            Instant before = jdbcTemplate.queryForObject(
-                    "SELECT updated_at FROM wallets WHERE id = ?", Instant.class, walletId);
+            Timestamp before = jdbcTemplate.queryForObject(
+                    "SELECT updated_at FROM wallets WHERE id = ?", Timestamp.class, walletId);
 
             Thread.sleep(100); // đảm bảo thời gian thay đổi
 
@@ -398,10 +397,12 @@ class WalletPostgresIntegrationTest {
             w.setBalance(9000L);
             walletRepository.save(w);
 
-            Instant after = jdbcTemplate.queryForObject(
-                    "SELECT updated_at FROM wallets WHERE id = ?", Instant.class, walletId);
+            Timestamp after = jdbcTemplate.queryForObject(
+                    "SELECT updated_at FROM wallets WHERE id = ?", Timestamp.class, walletId);
 
-            assertThat(after).isAfterOrEqualTo(before);
+            assertThat(after).isNotNull();
+            assertThat(before).isNotNull();
+            assertThat(after.getTime()).isGreaterThanOrEqualTo(before.getTime());
         }
     }
 }
