@@ -417,7 +417,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         ),
                       ),
                       Text(
-                        'Thiết bị chính: Apple iPhone 15 Pro Max',
+                        'Thiết bị chính: Thiết bị này',
                         style: TextStyle(color: Colors.white70, fontSize: 11),
                       ),
                     ],
@@ -737,7 +737,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               leading: const Icon(CupertinoIcons.device_phone_portrait,
                   color: AppColors.bottomBarCyan, size: 22),
               title: const Text(
-                'Quản lý thiết bị đăng nhập (2 Thiết bị)',
+                'Quản lý thiết bị đăng nhập',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
@@ -745,7 +745,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 ),
               ),
               subtitle: const Text(
-                'iPhone 15 Pro (Hiện tại) • iPad Air M2',
+                'Quản lý phiên đăng nhập và thiết bị tin cậy',
                 style: TextStyle(fontSize: 11, color: Colors.white54),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,

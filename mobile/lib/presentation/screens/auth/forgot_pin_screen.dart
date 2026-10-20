@@ -4,12 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
-import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sen_hong_bank/core/constants/app_constants.dart';
-import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
-import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 
 class ForgotPinScreen extends StatefulWidget {
@@ -38,17 +33,22 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
     }
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final phone = await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber);
-      if (phone == null || phone.isEmpty) throw Exception('Thiếu số điện thoại xác minh');
-      final verified = await AuthRemoteDataSource(local: AuthLocalDataSourceImpl(prefs: prefs)).verifyOtp(phoneNumber: phone, otp: _otpCtrl.text);
-      if (!verified) throw Exception('Mã OTP không chính xác');
-      if (mounted) setState(() => _currentStep = 2);
+      // BE chưa hỗ trợ OTP cho forgot PIN ⇒ hiển thị hướng dẫn liên hệ CSKH
+      if (!mounted) return;
+      await showFeatureUnavailable(
+        context,
+        feature: 'Xác thực OTP cấp lại PIN',
+        reason: 'Backend chưa cung cấp API OTP xác thực (BE-REQ-04). Vui lòng liên hệ Hotline 1900 6688 để cấp lại mã PIN.',
+      );
+      // Không thực hiện verifyOtp endpoint, quay lại màn hình chính
+      if (!mounted) return;
+      Navigator.pop(context);
+      return;
     } catch (error) {
       if (mounted) {
         AppAlerts.showError(
           context,
-          extractErrorMessage(error),
+          error.toString(),
           title: 'Xác minh OTP thất bại',
         );
       }
@@ -123,30 +123,25 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await AuthRemoteDataSource(local: AuthLocalDataSourceImpl(prefs: prefs)).setPin(_pin);
       if (!mounted) return;
-      AppAlerts.showSuccess(
+      await showFeatureUnavailable(
         context,
-        'Cấp lại mã PIN mới thành công!',
-        title: 'Thành công',
+        feature: 'Cài đặt mã PIN mới',
+        reason: 'Backend chưa hỗ trợ API cập nhật mã PIN trên máy chủ (BE-REQ-03). Vui lòng liên hệ Hotline 1900 6868.',
       );
+      if (!mounted) return;
       if (context.canPop()) {
         context.pop();
       } else {
         context.go('/settings/security');
       }
-    } catch (error) {
-      if (mounted) {
-        AppAlerts.showError(
-          context,
-          extractErrorMessage(error),
-          title: 'Cài đặt mã PIN thất bại',
-        );
-      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void goToStep(int step) {
+    setState(() => _currentStep = step);
   }
 
   @override
@@ -164,6 +159,28 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             children: [
+              // Hotline 1900 6868 Banner
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warningBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warningBorder),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(CupertinoIcons.phone_badge_plus, color: AppColors.accentGold, size: 22),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Tính năng cấp lại mã PIN trực tuyến đang được nâng cấp bảo mật (BE-REQ-03, BE-REQ-04). Quý khách vui lòng liên hệ tổng đài CSKH 1900 6868 để được hỗ trợ cấp lại mã PIN.',
+                        style: TextStyle(color: AppColors.warningText, fontSize: 12, height: 1.35),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const InlineWarningBanner(
                 title: 'Bảo mật mã PIN thanh toán',
                 message: 'Mã PIN 6 số là khóa xác thực cho toàn bộ giao dịch ví SenBank. Không chia sẻ mã PIN cho bất kỳ ai và tránh sử dụng ngày tháng năm sinh.',
@@ -278,9 +295,10 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
         SizedBox(
           width: double.infinity,
           height: 50,
-          child: ElevatedButton(
+          child: ElevatedButton.icon(
             onPressed: _verifyOtp,
-            child: const Text('Xác nhận OTP & Bước tiếp theo'),
+            icon: const Icon(CupertinoIcons.phone_fill, size: 18),
+            label: const Text('Hỗ trợ cấp lại PIN (Hotline 1900 6868)'),
           ),
         ),
       ],

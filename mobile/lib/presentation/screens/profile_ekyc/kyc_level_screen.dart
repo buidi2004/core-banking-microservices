@@ -6,6 +6,7 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 
 class KycLevelScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
   double _customDailyLimit = 0;
   double _usedToday = 0;
   double _maxDailyLimit = 0;
+  String _kycStatus = 'NOT_SUBMITTED';
   bool _loading = true;
   String? _error;
 
@@ -30,12 +32,18 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
 
   Future<void> _loadLimits() async {
     try {
-      final data = await ProfileRemoteDataSource().getLimitStatus();
+      final wallet = await WalletRemoteDataSource().getMyWallet();
+      Map<String, dynamic>? kycData;
+      try {
+        kycData = await ProfileRemoteDataSource().getKycStatus();
+      } catch (_) {}
+
       if (!mounted) return;
       setState(() {
-        _customDailyLimit = (data['dailyLimit'] as num?)?.toDouble() ?? 0;
-        _maxDailyLimit = _customDailyLimit;
-        _usedToday = (data['dailySpent'] as num?)?.toDouble() ?? 0;
+        _maxDailyLimit = wallet.dailyLimit > 0 ? wallet.dailyLimit : 50000000.0;
+        _customDailyLimit = _maxDailyLimit;
+        _usedToday = wallet.dailySpent;
+        _kycStatus = kycData?['verificationStatus'] as String? ?? 'NOT_SUBMITTED';
         _loading = false;
       });
     } catch (error) {
@@ -45,8 +53,13 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final remainingToday = (_customDailyLimit - _usedToday).clamp(0.0, _customDailyLimit);
-    final usagePercent = (_usedToday / _customDailyLimit).clamp(0.0, 1.0);
+    final remainingToday = _customDailyLimit > 0
+        ? (_customDailyLimit - _usedToday).clamp(0.0, _customDailyLimit)
+        : 0.0;
+    final usagePercent = _customDailyLimit > 0
+        ? (_usedToday / _customDailyLimit).clamp(0.0, 1.0)
+        : 0.0;
+    final isTier2 = _kycStatus == 'APPROVED';
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -97,12 +110,13 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
             Text('Các Cấp Độ Định Danh Khách Hàng', style: AppTypography.titleMedium(color: AppColors.primaryDark)),
             const SizedBox(height: 12),
 
+
             _buildTierCard(
               tier: 1,
               title: 'Cấp 1: Cơ Bản (Đăng ký SĐT)',
               limit: '5.000.000 đ / ngày',
               desc: 'Tài khoản đăng ký bằng SĐT, chưa hoàn tất chụp CCCD gắn chip.',
-              isCurrent: false,
+              isCurrent: !isTier2,
               isCompleted: true,
               features: [
                 'Chuyển tiền nội bộ Sen Hồng (tối đa 5tr/ngày)',
@@ -117,14 +131,15 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
               title: 'Cấp 2: Tiêu Chuẩn (Đã eKYC CCCD Chip)',
               limit: '100.000.000 đ / ngày',
               desc: 'Đã đối soát C06 thành công và xác thực sinh trắc học khuôn mặt theo QĐ 2345.',
-              isCurrent: true,
-              isCompleted: true,
+              isCurrent: isTier2,
+              isCompleted: isTier2,
               features: [
                 'Chuyển liên ngân hàng Napas 24/7 tới 100.000.000 đ/ngày',
                 'Thanh toán hóa đơn điện/nước/viễn thông tự động không giới hạn',
                 'Mở sổ tiết kiệm online lãi suất ưu đãi cao nhất',
                 'Phát hành thẻ ghi nợ phi vật lý & thẻ quốc tế',
               ],
+              onUpgrade: isTier2 ? null : () => context.push('/kyc'),
             ),
             const SizedBox(height: 16),
 
@@ -244,10 +259,10 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
             ),
             const SizedBox(height: 12),
             Slider(
-              value: _customDailyLimit,
-              min: 10000000,
-              max: _maxDailyLimit,
-              divisions: 9,
+              value: _customDailyLimit.clamp(0.0, _maxDailyLimit > 0 ? _maxDailyLimit : 50000000.0),
+              min: 0,
+              max: _maxDailyLimit > 0 ? _maxDailyLimit : 50000000.0,
+              divisions: 10,
               activeColor: AppColors.bottomBarCyan,
               inactiveColor: AppColors.dividerLight,
               label: CurrencyFormatter.formatVND(_customDailyLimit),

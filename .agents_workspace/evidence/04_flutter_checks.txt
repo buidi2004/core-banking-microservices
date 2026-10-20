@@ -1,0 +1,7 @@
+# flutter analyze
+Flutter assets will be downloaded from https://storage.flutter-io.cn. Make sure you trust this source!
+Analyzing mobile...                                             
+No issues found! (ran in 1.0s)
+
+# flutter test summary
+success=49, error=26, failure=12, total=87 (hidden success excluded)

@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class QuickLoanScreen extends StatefulWidget {
   const QuickLoanScreen({super.key});
@@ -50,7 +52,16 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
     },
   ];
 
-  void _submitApplication() {
+  Future<void> _submitApplication() async {
+    // MOB-007: BE chưa có API vay (BE-REQ-06) => chặn nộp hồ sơ, không giả vờ thành công.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Vay tiêu dùng',
+        reason: 'Backend chưa cung cấp API vay (BE-REQ-06).',
+      );
+      return;
+    }
     if (!_agreeTerms) {
       HapticFeedback.vibrate();
       ScaffoldMessenger.of(context).hideCurrentSnackBar();

@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/promotion_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class BillConfirmScreen extends StatefulWidget {
   final String? service;
@@ -221,6 +223,16 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
 
   Future<void> _proceedPayment() async {
     if (_isSubmitting) return;
+
+    // MOB-007: BE chưa có API bills (BE-REQ-06) => chặn tiến trình thanh toán.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Thanh toán hóa đơn',
+        reason: 'Backend chưa cung cấp API hóa đơn (BE-REQ-06).',
+      );
+      return;
+    }
 
     // Nếu chọn nguồn là Ví Sen Hồng mà số dư nhỏ hơn số tiền cần trả
     if (_selectedSourceIdx == 0 && _walletBalance < _finalAmount) {

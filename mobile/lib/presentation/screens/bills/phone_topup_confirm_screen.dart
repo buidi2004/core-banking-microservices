@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
@@ -13,6 +14,7 @@ import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class PhoneTopupConfirmScreen extends StatefulWidget {
   final String phoneNumber;
@@ -100,6 +102,15 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
 
   Future<void> _processTopupWithoutPin() async {
     if (_loading) return;
+    // MOB-007: BE chưa có API bills (BE-REQ-06) => chặn nạp tiền điện thoại.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Nạp tiền điện thoại',
+        reason: 'Backend chưa cung cấp API nạp tiền điện thoại (BE-REQ-06).',
+      );
+      return;
+    }
     setState(() => _loading = true);
     try {
       final wallet = await WalletRemoteDataSource().getMyWallet();
@@ -127,6 +138,16 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
 
   Future<void> _submit(String pin) async {
     if (_loading) return;
+
+    // MOB-007: BE chưa có API bills (BE-REQ-06) => chặn nạp tiền điện thoại.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Nạp tiền điện thoại',
+        reason: 'Backend chưa cung cấp API nạp tiền điện thoại (BE-REQ-06).',
+      );
+      return;
+    }
 
     if (_walletBalance < _finalAmount) {
       AppAlerts.showWarning(

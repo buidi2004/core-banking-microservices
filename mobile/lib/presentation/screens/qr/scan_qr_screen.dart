@@ -5,6 +5,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/network/permission_service.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
@@ -731,7 +732,7 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
       // 1. Kiểm tra nếu là SĐT trực tiếp 10 số (03, 05, 07, 08, 09)
       if (RegExp(r'^(0[3|5|7|8|9])[0-9]{8}$').hasMatch(code)) {
         account = code;
-      } else {
+      } else if (BackendCapabilities.vietQr) {
         // 2. Giải mã qua API Backend: scanQr hoặc decodeQr
         try {
           final payload = await QrRemoteDataSource().scanQr(code);
@@ -748,6 +749,13 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
           if (tagMatch != null) {
             account = tagMatch.group(1);
           }
+        }
+      } else {
+        // MOB-007: BE chưa có API VietQR (BE-REQ-06) => chỉ bóc tách EMVCo cục bộ,
+        // không gọi API không tồn tại.
+        final tagMatch = RegExp(r'0110(0[3|5|7|8|9]\d{8})').firstMatch(code);
+        if (tagMatch != null) {
+          account = tagMatch.group(1);
         }
       }
 

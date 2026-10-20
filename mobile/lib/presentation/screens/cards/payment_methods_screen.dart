@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/funding_source_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
@@ -235,6 +237,15 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       onPressed: isSubmitting
                           ? null
                           : () async {
+                              // MOB-007: BE chưa có API funding-sources (BE-REQ-06).
+                              if (!BackendCapabilities.fundingSources) {
+                                await showFeatureUnavailable(
+                                  context,
+                                  feature: 'Liên kết thẻ quốc tế',
+                                  reason: 'Backend chưa cung cấp API nguồn tiền/thẻ (BE-REQ-06).',
+                                );
+                                return;
+                              }
                               final numStr = numberCtrl.text.replaceAll(' ', '').trim();
                               final holder = nameCtrl.text.trim();
                               final exp = expiryCtrl.text.trim();
@@ -440,6 +451,15 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               title: const Text('Hủy liên kết thẻ này', style: TextStyle(color: AppColors.error)),
               onTap: () async {
                 Navigator.pop(ctx);
+                // MOB-007: BE chưa có API funding-sources (BE-REQ-06).
+                if (!BackendCapabilities.fundingSources) {
+                  await showFeatureUnavailable(
+                    context,
+                    feature: 'Hủy liên kết thẻ',
+                    reason: 'Backend chưa cung cấp API nguồn tiền/thẻ (BE-REQ-06).',
+                  );
+                  return;
+                }
                 final bool? confirmed = await showDialog<bool>(
                   context: context,
                   builder: (dialogCtx) => AlertDialog(

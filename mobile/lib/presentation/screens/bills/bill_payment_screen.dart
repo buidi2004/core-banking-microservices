@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class BillPaymentScreen extends StatefulWidget {
   const BillPaymentScreen({super.key});
@@ -333,7 +335,16 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                         ),
                         const SizedBox(height: 6),
                         GestureDetector(
-                          onTap: () {
+                          onTap: () async {
+                            // MOB-007: BE chưa có API bills (BE-REQ-06).
+                            if (!BackendCapabilities.bills) {
+                              await showFeatureUnavailable(
+                                context,
+                                feature: 'Thanh toán hóa đơn',
+                                reason: 'Backend chưa cung cấp API hóa đơn (BE-REQ-06).',
+                              );
+                              return;
+                            }
                             HapticFeedback.selectionClick();
                             final uri = Uri(
                               path: '/bills/confirm',

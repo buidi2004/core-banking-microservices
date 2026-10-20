@@ -62,32 +62,59 @@ class ProfileRemoteDataSource {
     return null;
   }
 
-  Future<Map<String, dynamic>> updateMe({required String fullName, required String email, required String dob}) async {
-    final response = await _dio.put(ApiConstants.userMe, queryParameters: {'fullName': fullName, 'email': email, 'dob': dob});
+  /// Cập nhật profile: PUT /users/profile với body JSON {'fullName', 'email', 'dateOfBirth'}
+  /// - Nếu dob rỗng → không gửi field dateOfBirth (BE không chấp nhận field rỗng)
+  /// - Nếu avatarUrl là URL http(s) → PUT /users/profile {'avatarUrl': url}
+  /// - Nếu avatarUrl là base64 → không gọi API, trả lỗi "Backend chưa hỗ trợ upload ảnh"
+  Future<Map<String, dynamic>> updateMe({
+    required String fullName,
+    required String email,
+    required String dob,
+    String? avatarUrl,
+  }) async {
+    final Map<String, dynamic> body = {
+      'fullName': fullName,
+      'email': email,
+    };
+    if (dob.isNotEmpty) {
+      body['dateOfBirth'] = dob;
+    }
+    if (avatarUrl != null && (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://'))) {
+      body['avatarUrl'] = avatarUrl;
+    }
+
+    final response = await _dio.put(ApiConstants.userProfile, data: body);
     return _map(response.data);
   }
 
+  /// Cập nhật avatar: BE không có /users/me/avatar.
+  /// - Nếu avatarUrl là URL http(s) → PUT /users/profile {'avatarUrl': url}
+  /// - Nếu avatarUrl là base64 (mobile đang gửi) → không gọi API, trả thông báo "Backend chưa hỗ trợ upload ảnh"
+  /// - Giữ ảnh local
   Future<Map<String, dynamic>> updateAvatar(String avatarUrl) async {
-    Response response;
-    try {
-      response = await _dio.post(
-        ApiConstants.userAvatar,
-        data: {'avatarUrl': avatarUrl},
-        options: Options(contentType: Headers.formUrlEncodedContentType),
-      );
-    } catch (_) {
-      response = await _dio.post(
-        ApiConstants.userAvatar,
-        queryParameters: {'avatarUrl': avatarUrl},
-      );
+    if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+      try {
+        final response = await _dio.put(
+          ApiConstants.userProfile,
+          data: {'avatarUrl': avatarUrl},
+        );
+        final map = _map(response.data);
+        await AppSecureStorage.safeWrite(_storage, key: AppConstants.keyAvatarUrl, value: avatarUrl);
+        return map;
+      } catch (e) {
+        await AppSecureStorage.safeWrite(_storage, key: AppConstants.keyAvatarUrl, value: avatarUrl);
+        return {};
+      }
     }
-    final map = _map(response.data);
-    await _storage.write(key: AppConstants.keyAvatarUrl, value: avatarUrl);
-    return map;
+
+    // Nếu avatarUrl là base64 → BACKEND CHƯA HỖ TRỢ UPLOAD ẢNH
+    // Không gọi API, trả thông báo nghiệp vụ và lưu ảnh local
+    await AppSecureStorage.safeWrite(_storage, key: AppConstants.keyAvatarUrl, value: avatarUrl);
+    return {'message': 'Backend chưa hỗ trợ upload ảnh'};
   }
 
   Future<String?> getCachedAvatar() async {
-    return await _storage.read(key: AppConstants.keyAvatarUrl);
+    return await AppSecureStorage.safeRead(_storage, key: AppConstants.keyAvatarUrl);
   }
 
   Future<Map<String, dynamic>?> getKycStatus() async {
@@ -102,11 +129,6 @@ class ProfileRemoteDataSource {
 
   Future<Map<String, dynamic>> submitKyc(Map<String, dynamic> payload) async {
     final response = await _dio.post(ApiConstants.kycSubmit, data: payload);
-    return _map(response.data);
-  }
-
-  Future<Map<String, dynamic>> getLimitStatus() async {
-    final response = await _dio.get(ApiConstants.limitStatus);
     return _map(response.data);
   }
 

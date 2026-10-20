@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/network/permission_service.dart';
+import 'package:sen_hong_bank/core/storage/app_session.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
@@ -308,7 +311,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               deviceId: 'flutter-${DateTime.now().millisecondsSinceEpoch}',
                             );
                             if (!mounted) return;
-                            router.push('/auth/set-pin');
+                            // BE trả token ngay sau register ⇒ mở khóa phiên, cấp quyền và vào Trang Chủ
+                            AppSession.unlocked = true;
+                            unawaited(PermissionService().requestAllAppPermissions());
+                            router.go('/');
                           } catch (error) {
                             if (!mounted || !context.mounted) return;
                             AppAlerts.showError(
@@ -321,7 +327,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                         }
                       : null,
-                  child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Tiếp tục tạo mã PIN'),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Đăng ký tài khoản ví'),
                 ),
               ),
               const SizedBox(height: 16),

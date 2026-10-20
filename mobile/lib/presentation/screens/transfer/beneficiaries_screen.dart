@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/beneficiary_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class BeneficiariesScreen extends StatefulWidget {
   const BeneficiariesScreen({super.key});
@@ -206,6 +208,15 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                       onPressed: isSubmitting
                           ? null
                           : () async {
+                              // MOB-007: BE chưa có API beneficiaries (BE-REQ-06).
+                              if (!BackendCapabilities.beneficiaries) {
+                                await showFeatureUnavailable(
+                                  context,
+                                  feature: 'Thêm người thụ hưởng',
+                                  reason: 'Backend chưa cung cấp API danh bạ thụ hưởng (BE-REQ-06).',
+                                );
+                                return;
+                              }
                               final name = nameCtrl.text.trim();
                               final acc = accCtrl.text.trim();
                               if (name.isEmpty || acc.isEmpty) {

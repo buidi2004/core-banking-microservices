@@ -6,8 +6,12 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/core/storage/app_session.dart';
 import '../../widgets/user_avatar_widget.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -189,13 +193,18 @@ class _MoreScreenState extends State<MoreScreen> {
                             onPressed: () async {
                               HapticFeedback.mediumImpact();
                               Navigator.pop(ctx);
-                              const storage = FlutterSecureStorage();
-                              await storage.delete(key: AppConstants.keyAccessToken);
-                              await storage.delete(key: AppConstants.keyRefreshToken);
-                              await storage.delete(key: AppConstants.keyPinToken);
-                              await storage.delete(key: AppConstants.keyWalletId);
-                              if (context.mounted) {
-                                context.go('/auth/login');
+                              try {
+                                final prefs = await SharedPreferences.getInstance();
+                                final localAuth = AuthLocalDataSourceImpl(prefs: prefs);
+                                final authRemote = AuthRemoteDataSource(local: localAuth);
+                                await authRemote.logout();
+                              } catch (e) {
+                                debugPrint('[MoreScreen] Logout error: $e');
+                              } finally {
+                                AppSession.unlocked = false;
+                                if (context.mounted) {
+                                  context.go('/auth/login');
+                                }
                               }
                             },
                             child: const Text('Đăng xuất'),

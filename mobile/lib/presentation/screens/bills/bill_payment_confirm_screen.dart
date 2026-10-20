@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
@@ -13,6 +14,7 @@ import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class BillPaymentConfirmScreen extends StatefulWidget {
   final String billId;
@@ -110,6 +112,15 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
 
   Future<void> _processPaymentWithoutPin() async {
     if (_isSubmitting) return;
+    // MOB-007: BE chưa có API bills (BE-REQ-06) => chặn thanh toán.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Thanh toán hóa đơn',
+        reason: 'Backend chưa cung cấp API hóa đơn (BE-REQ-06).',
+      );
+      return;
+    }
     setState(() => _isSubmitting = true);
     try {
       final wallet = await WalletRemoteDataSource().getMyWallet();
@@ -137,6 +148,15 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
 
   Future<void> _pay(String pin) async {
     if (_isSubmitting) return;
+    // MOB-007: BE chưa có API bills (BE-REQ-06) => chặn thanh toán.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Thanh toán hóa đơn',
+        reason: 'Backend chưa cung cấp API hóa đơn (BE-REQ-06).',
+      );
+      return;
+    }
     setState(() => _isSubmitting = true);
     try {
       final wallet = await WalletRemoteDataSource().getMyWallet();

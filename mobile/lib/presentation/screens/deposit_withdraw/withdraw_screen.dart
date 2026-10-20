@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
@@ -384,6 +386,15 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   onPressed: _isSubmitting
                       ? null
                       : () async {
+                          // MOB-007: BE chưa có API rút tiền user-level (BE-REQ-06).
+                          if (!BackendCapabilities.withdraw) {
+                            await showFeatureUnavailable(
+                              context,
+                              feature: 'Rút tiền về ngân hàng',
+                              reason: 'Backend chưa cung cấp API rút tiền user-level (BE-REQ-06).',
+                            );
+                            return;
+                          }
                           final amt = double.tryParse(_amountCtrl.text) ?? 0;
                           if (amt < 20000) {
                             AppAlerts.showWarning(context, 'Số tiền rút tối thiểu là 20.000đ', title: 'Hạn mức rút tiền');

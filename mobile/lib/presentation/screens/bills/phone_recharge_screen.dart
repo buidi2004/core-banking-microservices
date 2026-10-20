@@ -9,9 +9,11 @@ import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/data/datasources/remote/beneficiary_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 import '../../widgets/app_alerts.dart';
 
 class PhoneRechargeScreen extends StatefulWidget {
@@ -180,6 +182,16 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
 
   Future<void> _handlePay() async {
     if (_isSubmitting) return;
+
+    // MOB-007: BE chưa có API bills (BE-REQ-06) => chặn nạp tiền điện thoại.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Nạp tiền điện thoại',
+        reason: 'Backend chưa cung cấp API nạp tiền điện thoại (BE-REQ-06).',
+      );
+      return;
+    }
 
     final telco = _telcos[_selectedTelcoIdx];
     final cleanPhone = _phoneCtrl.text.replaceAll(RegExp(r'\D'), '');

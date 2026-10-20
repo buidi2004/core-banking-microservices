@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
+import 'package:sen_hong_bank/data/datasources/remote/session_remote_datasource.dart';
 
 class DeviceManagementScreen extends StatefulWidget {
   const DeviceManagementScreen({super.key});
@@ -14,193 +14,139 @@ class DeviceManagementScreen extends StatefulWidget {
 
 class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
   List<Map<String, dynamic>> _devices = [];
-  List<Map<String, dynamic>> _loginHistory = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _initDeviceData();
+    _loadDeviceSessions();
   }
 
-  void _initDeviceData() {
-    String model = 'Thiết bị đang sử dụng (Thiết bị này)';
-    String os = 'Sen Hồng Mobile App v2.4.0';
-    if (Platform.isAndroid) {
-      model = 'Samsung Galaxy S24 Ultra (Thiết bị này)';
-      os = 'Android 14 • One UI 6.1 • SenBank Mobile';
-    } else if (Platform.isIOS) {
-      model = 'iPhone 15 Pro Max (Thiết bị này)';
-      os = 'iOS 18.0 • FaceID Ready • SenBank Mobile';
-    } else if (Platform.isWindows) {
-      model = 'Máy tính cá nhân Windows (Thiết bị này)';
-      os = 'Windows 11 Pro • SenBank Desktop App';
-    } else if (Platform.isMacOS) {
-      model = 'Apple MacBook Pro M3 (Thiết bị này)';
-      os = 'macOS Sonoma • TouchID Ready';
-    }
-
+  Future<void> _loadDeviceSessions() async {
     setState(() {
-      _devices = [
-        {
-          'id': 'd1',
-          'model': model,
-          'os': os,
-          'ip': '113.161.72.48 (Hà Nội, VN)',
-          'lastActive': 'Đang hoạt động (Hiện tại)',
-          'isCurrent': true,
-          'hasSmartOtp': true,
-          'isTrusted': true,
-        },
-        {
-          'id': 'd2',
-          'model': 'Apple iPad Air M2 11-inch',
-          'os': 'iPadOS 17.5 • FaceID Ready',
-          'ip': '14.162.19.102 (TP. Hồ Chí Minh, VN)',
-          'lastActive': 'Hoạt động 3 giờ trước',
-          'isCurrent': false,
-          'hasSmartOtp': false,
-          'isTrusted': true,
-        },
-      ];
-
-      _loginHistory = [
-        {
-          'device': model.replaceAll(' (Thiết bị này)', ''),
-          'time': '14:28 - Hôm nay',
-          'location': 'Hà Nội, Việt Nam (113.161.72.48)',
-          'channel': 'SenBank App (Sinh trắc học)',
-          'isSuccess': true,
-        },
-        {
-          'device': 'Apple iPad Air M2',
-          'time': '11:15 - Hôm nay',
-          'location': 'TP. Hồ Chí Minh, Việt Nam (14.162.19.102)',
-          'channel': 'SenBank App (Mã PIN 6 số)',
-          'isSuccess': true,
-        },
-        {
-          'device': 'Google Chrome trên Windows',
-          'time': '09:04 - 05/09/2026',
-          'location': 'Hà Nội, Việt Nam (113.161.72.48)',
-          'channel': 'Web Banking (QR Code Login)',
-          'isSuccess': true,
-        },
-        {
-          'device': 'Thiết bị lạ (Firefox trên Linux)',
-          'time': '23:14 - 02/09/2026',
-          'location': 'Singapore (128.199.204.11)',
-          'channel': 'Web Banking • ĐÃ CHẶN TỰ ĐỘNG',
-          'isSuccess': false,
-        },
-      ];
+      _isLoading = true;
+      _errorMessage = null;
     });
+    try {
+      final sessionDataSource = SessionRemoteDataSource();
+      final sessions = await sessionDataSource.getSessions();
+
+      setState(() {
+        _devices = sessions.map((s) {
+          final isCurrent = s['isCurrentDevice'] == true;
+          final deviceName = s['deviceName']?.toString();
+          final deviceId = s['deviceId']?.toString();
+          final model = (deviceName != null && deviceName.isNotEmpty)
+              ? deviceName
+              : (isCurrent ? 'Thiết bị này' : 'Thiết bị di động');
+          final os = s['deviceOs']?.toString() ?? 'SenBank Mobile App';
+          final ip = s['ipAddress']?.toString() ?? 'N/A';
+          final lastActive = s['lastAccessedAt']?.toString() ?? s['createdAt']?.toString() ?? 'Đang hoạt động';
+
+          return {
+            'id': s['id']?.toString() ?? '',
+            'deviceId': deviceId ?? '',
+            'model': isCurrent ? '$model (Thiết bị này)' : model,
+            'os': os,
+            'ip': ip,
+            'lastActive': isCurrent ? 'Đang hoạt động (Hiện tại)' : lastActive,
+            'isCurrent': isCurrent,
+            'hasSmartOtp': isCurrent,
+            'isTrusted': true,
+          };
+        }).toList();
+
+        // Sắp xếp: thiết bị hiện tại lên đầu
+        _devices.sort((a, b) {
+          if (a['isCurrent'] == true) return -1;
+          if (b['isCurrent'] == true) return 1;
+          return 0;
+        });
+
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('[DeviceManagementScreen] Error loading sessions: $e');
+      setState(() {
+        _errorMessage = 'Không thể tải danh sách phiên đăng nhập. Vui lòng kiểm tra kết nối mạng.';
+        _isLoading = false;
+      });
+    }
   }
 
-  void _logoutDevice(String id) {
-    HapticFeedback.mediumImpact();
-    setState(() => _devices.removeWhere((d) => d['id'] == id));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: AppColors.emeraldGreen,
-        content: Text('Đã thu hồi quyền truy cập và đăng xuất thiết bị!'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _logoutAllOtherDevices() {
-    HapticFeedback.heavyImpact();
-    setState(() => _devices.removeWhere((d) => !d['isCurrent']));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        backgroundColor: AppColors.emeraldGreen,
-        content: Text('Đã đăng xuất khỏi tất cả các thiết bị khác!'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _lockAccountEmergency() {
-    HapticFeedback.heavyImpact();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0E1E33),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Row(
-          children: [
-            Icon(CupertinoIcons.exclamationmark_triangle_fill, color: Colors.redAccent, size: 24),
-            SizedBox(width: 10),
-            Text(
-              'Khóa Khẩn Cấp Tài Khoản?',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-          ],
+  void _logoutDevice(String sessionId) async {
+    try {
+      final sessionDataSource = SessionRemoteDataSource();
+      await sessionDataSource.revokeSession(sessionId);
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      setState(() => _devices.removeWhere((d) => d['id'] == sessionId));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.emeraldGreen,
+          content: Text('Đã thu hồi phiên đăng nhập thiết bị thành công!'),
+          behavior: SnackBarBehavior.floating,
         ),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hành động này sẽ ngay lập tức:',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-            SizedBox(height: 8),
-            Text('• Hủy tất cả phiên đăng nhập trên mọi thiết bị', style: TextStyle(color: Colors.white60, fontSize: 12)),
-            Text('• Tạm khóa Smart OTP và tính năng chuyển tiền', style: TextStyle(color: Colors.white60, fontSize: 12)),
-            Text('• Gửi SMS cảnh báo đến số điện thoại đăng ký', style: TextStyle(color: Colors.white60, fontSize: 12)),
-            SizedBox(height: 12),
-            Text(
-              'Để mở lại tài khoản, bạn cần gọi Hotline 1900 6688 hoặc đến quầy giao dịch SenBank.',
-              style: TextStyle(color: AppColors.accentGold, fontSize: 11.5, height: 1.3),
-            ),
-          ],
+      );
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.vibrate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.error,
+          content: Text('Không thể thu hồi phiên đăng nhập, vui lòng thử lại'),
+          behavior: SnackBarBehavior.floating,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy bỏ', style: TextStyle(color: Colors.white54)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: Colors.redAccent,
-                  content: Text('Đã kích hoạt khóa tài khoản khẩn cấp thành công!'),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: const Text('Xác nhận khóa', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
+      );
+    }
+  }
+
+  void _logoutAllOtherDevices() async {
+    try {
+      final sessionDataSource = SessionRemoteDataSource();
+      await sessionDataSource.revokeAllOtherSessions();
+      if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      await _loadDeviceSessions();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.emeraldGreen,
+          content: Text('Đã đăng xuất khỏi tất cả các thiết bị khác thành công!'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.vibrate();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.error,
+          content: Text('Có lỗi khi đăng xuất các thiết bị khác, vui lòng thử lại'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF030B17),
+      backgroundColor: const Color(0xFF07111E),
       body: Stack(
         children: [
-          // Background ambient gradient
           Positioned(
-            top: -100,
-            right: -80,
+            top: -60,
+            right: -60,
             child: Container(
-              width: 320,
-              height: 320,
+              width: 280,
+              height: 280,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primary.withValues(alpha: 0.28),
+                    AppColors.emeraldGreen.withValues(alpha: 0.18),
                     Colors.transparent,
                   ],
                 ),
@@ -224,33 +170,12 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
               ),
             ),
           ),
-
           SafeArea(
             child: Column(
               children: [
                 _buildAppBar(),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                    children: [
-                      _buildHardwareSecurityCard(),
-                      const SizedBox(height: 20),
-                      _buildSectionHeader('PHIÊN THIẾT BỊ ĐANG HOẠT ĐỘNG (${_devices.length})'),
-                      const SizedBox(height: 10),
-                      _buildDevicesList(),
-                      const SizedBox(height: 14),
-                      _buildLogoutOthersButton(),
-                      const SizedBox(height: 24),
-                      _buildSectionHeader('NHẬT KÝ ĐĂNG NHẬP 7 NGÀY GẦN NHẤT'),
-                      const SizedBox(height: 10),
-                      _buildLoginHistoryList(),
-                      const SizedBox(height: 24),
-                      _buildSecurityPolicyCard(),
-                      const SizedBox(height: 24),
-                      _buildEmergencyLockSection(),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+                  child: _buildBody(),
                 ),
               ],
             ),
@@ -335,6 +260,78 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.bottomBarCyan),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(CupertinoIcons.exclamationmark_triangle, color: Colors.amber, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: _loadDeviceSessions,
+                icon: const Icon(CupertinoIcons.refresh),
+                label: const Text('Thử lại'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final hasOtherDevices = _devices.any((d) => d['isCurrent'] != true);
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      children: [
+        _buildHardwareSecurityCard(),
+        const SizedBox(height: 20),
+        _buildSectionHeader('PHIÊN THIẾT BỊ ĐANG HOẠT ĐỘNG (${_devices.length})'),
+        const SizedBox(height: 10),
+        if (_devices.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0C1929).withValues(alpha: 0.8),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            child: const Center(
+              child: Text(
+                'Chưa có phiên đăng nhập nào',
+                style: TextStyle(color: Colors.white60, fontSize: 13),
+              ),
+            ),
+          )
+        else
+          _buildDevicesList(),
+        if (hasOtherDevices) ...[
+          const SizedBox(height: 14),
+          _buildLogoutOthersButton(),
+        ],
+        const SizedBox(height: 24),
+        _buildSecurityPolicyCard(),
+        const SizedBox(height: 24),
+        _buildEmergencyLockSection(),
+        const SizedBox(height: 40),
+      ],
     );
   }
 
@@ -572,72 +569,6 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
     );
   }
 
-  Widget _buildLoginHistoryList() {
-    return Column(
-      children: _loginHistory.map((item) {
-        final isSuccess = item['isSuccess'] as bool;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0C1929).withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSuccess
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.redAccent.withValues(alpha: 0.4),
-            ),
-          ),
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isSuccess
-                      ? AppColors.emeraldGreen.withValues(alpha: 0.15)
-                      : Colors.redAccent.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  isSuccess ? CupertinoIcons.checkmark_alt : CupertinoIcons.clear,
-                  color: isSuccess ? AppColors.emeraldGreen : Colors.redAccent,
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['device'] as String,
-                      style: TextStyle(
-                        color: isSuccess ? Colors.white : Colors.redAccent,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${item['time']} • ${item['channel']}',
-                      style: const TextStyle(color: Colors.white54, fontSize: 11),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item['location'] as String,
-                      style: const TextStyle(color: Colors.white38, fontSize: 11),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
   Widget _buildSecurityPolicyCard() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -661,8 +592,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
           ),
           SizedBox(height: 8),
           Text(
-            '• Mỗi tài khoản SenBank chỉ được cấp quyền sinh mã Smart OTP trên duy nhất 01 thiết bị di động chính chủ tại cùng một thời điểm.\n'
-            '• Khi đăng nhập trên thiết bị mới, hệ thống sẽ yêu cầu xác thực khuôn mặt sinh trắc học khớp với chip CCCD (QĐ 2345/QĐ-NHNN).',
+            '• Mỗi tài khoản SenBank chỉ được cấp quyền sinh mã Smart OTP trên duy nhất 01 thiết bị di động chính chủ tại cùng một thời điểm.',
             style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
           ),
         ],
@@ -706,7 +636,13 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              onPressed: _lockAccountEmergency,
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Vui lòng liên hệ hotline 1900 6868 để thực hiện khóa khẩn cấp tài khoản.'),
+                  ),
+                );
+              },
               icon: const Icon(CupertinoIcons.exclamationmark_shield_fill, size: 18),
               label: const Text('Kích hoạt khóa khẩn cấp 1-chạm', style: TextStyle(fontWeight: FontWeight.bold)),
             ),

@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class LotteryScreen extends StatefulWidget {
   const LotteryScreen({super.key});
@@ -111,7 +113,16 @@ class _LotteryScreenState extends State<LotteryScreen> {
     });
   }
 
-  void _handleBuy() {
+  Future<void> _handleBuy() async {
+    // MOB-007: BE chưa có API bills (BE-REQ-06) => chặn mua vé số.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Mua vé số',
+        reason: 'Backend chưa cung cấp API xổ số (BE-REQ-06).',
+      );
+      return;
+    }
     if (_selectedNumbers.length < _requiredCount) {
       AppAlerts.showWarning(
         context,

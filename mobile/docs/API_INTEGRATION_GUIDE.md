@@ -1,5 +1,11 @@
 # API Integration Guide — Sen Hồng E-Wallet Backend
 
+> **⚠️ SUPERSEDED — NỘI DUNG DƯỚI ĐÂY LÀ HƯỚNG DẪN LỊCH SỬ (NGÀY 05/09/2026), KHÔNG PHẢN ÁNH BACKEND COMMIT 75BF273**
+>
+> **Hợp đồng thực tế tại commit 75bf273:** Xem `.agents_workspace/01_ISSUES_AND_TASKS.md` Phụ lục A + `mobile/README.md` (đã đính chính).
+
+---
+
 > **VPS Base URL (Staging):** `http://180.93.120.246:8080`  
 > **Local Base URL (Dev):** `http://localhost:8080`  
 > **Auth:** `Authorization: Bearer {accessToken}` (JWT)  
@@ -22,12 +28,13 @@
 | **WebSocket (Web)** | `ws://180.93.120.246:8080/ws` | Web browser / SockJS |
 | **RabbitMQ Dashboard** | `http://180.93.120.246:15672` | Tra cứu queue/message lúc test |
 
+> ⚠️ **Lưu ý:** Docker compose tại commit 75bf273 **KHÔNG CÓ API Gateway container** ⇒ `:8080` không phản hồi. Chỉ có PostgreSQL/Redis/RabbitMQ/Kafka.
+
 ---
 
 ### 2. Mẫu Cấu hình Biến Môi Trường (`.env`)
 
 #### 📱 React Native (Expo)
-Tạo hoặc cập nhật file `.env`:
 ```env
 EXPO_PUBLIC_API_URL=http://180.93.120.246:8080
 EXPO_PUBLIC_WS_URL=ws://180.93.120.246:8080/ws-native
@@ -82,6 +89,8 @@ Trong `ios/YourApp/Info.plist`, thêm exception cho IP VPS hoặc cho phép tả
 
 ### 4. Mẫu Khởi Tạo Axios Instance & Tự Động Refresh Token
 
+> ⚠️ **QUAN TRỌNG:** Backend thực tế yêu cầu **JSON Body** cho refresh token, KHÔNG phải query parameter như mẫu cũ dưới đây.
+
 ```typescript
 // src/services/api.ts
 import axios from 'axios';
@@ -105,7 +114,7 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Response Interceptor: Xử lý 401 Silent Refresh
+// Response Interceptor: Xử lý 401 Silent Refresh (ĐÚNG THEO BE THỰC TẾ)
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -114,7 +123,10 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       try {
         const refreshToken = getRefreshToken();
-        const res = await axios.post(`${BASE_URL}/api/v1/auth/refresh?refreshToken=${refreshToken}`);
+        // BE THỰC TẾ: POST /api/v1/auth/refresh với JSON BODY
+        const res = await axios.post(`${BASE_URL}/api/v1/auth/refresh`, {
+          refreshToken: refreshToken,
+        });
         if (res.data.success) {
           const newAccessToken = res.data.data.accessToken;
           saveAccessToken(newAccessToken);
@@ -166,35 +178,39 @@ export const initWebSocket = (userId: string, onNotification: (msg: any) => void
 
 ---
 
-## Response Format chuẩn
+## Response Format chuẩn (Backend Thực Tế KHÔNG Thống Nhất)
+
+> ⚠️ **Backend thực tế KHÔNG có envelope thống nhất:**
+> - **Identity Service:** có `success`, `message`, `data`, `timestamp` — **KHÔNG `errorCode`**
+> - **Payment Service:** `ApiResponse` có `success`, `message`, `data` — **KHÔNG `errorCode`, KHÔNG `timestamp`**
+> - **Gateway 401:** chỉ `{ "error": "Unauthorized" }`
 
 ```json
 {
   "success": true,
   "message": "...",
   "data": { ... },
-  "timestamp": "2026-09-02T07:30:00Z",
-  "errorCode": null
+  "timestamp": "2026-09-02T07:30:00Z",  // Chỉ Identity có
+  "errorCode": null                     // Payment KHÔNG CÓ field này
 }
 ```
 
-Khi lỗi: `"success": false`, `"errorCode": "WALLET_NOT_FOUND"`, `"data": null`
+Khi lỗi: `"success": false`, `"message": "..."`, `"data": null` — **KHÔNG đảm bảo có `errorCode`**.
 
 ---
 
-## 1. AUTH `/api/v1/auth`
+## 1. AUTH `/api/v1/auth` (Backend Thực Tế)
 
 | Method | Path | Body / Params | Response `data` | Notes |
 |--------|------|---------------|-----------------|-------|
-| POST | `/register` | `{phoneNumber*, fullName*, password*(min6), deviceId}` | `AuthResponse` | 201 Created |
+| POST | `/register` | `{phoneNumber*, fullName*, password*(min6), deviceId}` | `AuthResponse` | 201 Created, tự tạo ví VND |
 | POST | `/login` | `{phoneNumber*, password*, deviceId}` | `AuthResponse` | Rate limited 10/min |
 | POST | `/logout` | Header: `Authorization: Bearer {token}` | `null` | Blacklists access token |
-| POST | `/logout/current` | Header: `Authorization: Bearer {token}` | `null` | Alias của logout |
-| POST | `/refresh` | `?refreshToken={token}` | `AuthResponse` | Silent refresh |
-| POST | `/otp/send` | `?phoneNumber={phone}` | `null` | Rate limited 3/min |
-| POST | `/otp/verify` | `?phoneNumber={phone}&otp={6digits}` | `Boolean` | |
-| POST | `/forgot-password` | `?phoneNumber={phone}` | `null` | Rate limited 3/min |
-| POST | `/reset-password` | `?phoneNumber=&otp=&newPassword=` | `null` | |
+| POST | `/refresh` | **JSON Body** `{refreshToken, deviceId?}` | `AuthResponse` | **KHÔNG DÙNG QUERY PARAM** |
+| POST | `/otp/send` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-04 |
+| POST | `/otp/verify` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-04 |
+| POST | `/forgot-password` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-04 |
+| POST | `/reset-password` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-04 |
 
 **AuthResponse:**
 ```json
@@ -208,21 +224,19 @@ Khi lỗi: `"success": false`, `"errorCode": "WALLET_NOT_FOUND"`, `"data": null`
 
 ---
 
-## 2. WALLET `/api/v1/wallets`
+## 2. WALLET `/api/v1/wallets` (Backend Thực Tế)
 
 | Method | Path | Body / Params | Response `data` | Notes |
 |--------|------|---------------|-----------------|-------|
 | POST | `/` | `{ownerId*, currency*}` | `WalletResponse` | Tạo ví mới |
-| GET | `/me` | — | `WalletResponse` | Auth required, lấy ví của user hiện tại (sau login) |
-| GET | `/{walletId}` | — | `WalletResponse` | Auth required, phải là owner |
+| GET | `/me` | — | `WalletResponse` | Auth required, ví của user hiện tại |
+| GET | `/{walletId}` | — | `WalletResponse` | ⚠️ **Thiếu ownership check** (BE-001) |
 | GET | `/recipient-info` | `?walletId= hoặc ?phoneNumber=` | `RecipientInfoResponse` | Tra tên masked |
-| POST | `/deposit` | `{requestId, walletId*, amount*(>0), currency*}` | `TransferResponse` | Auth required |
-| POST | `/transfer/init` | `{requestId*, sourceWalletId*, targetWalletId*, amount*, currency*, bankCode*, note}` | `TransferResponse` (status=PENDING_CONFIRMATION) | Tạo OTP tự động |
-| POST | `/transfer/{transactionId}/confirm` | `?otp= hoặc ?pin=` | `TransferResponse` (status=SUCCESS) | Auth + verify OTP/PIN |
-| POST | `/transfer/qr/init` | `{requestId, sourceWalletId*, qrCode*, amount, currency*}` | `TransferResponse` | QR transfer |
-| POST | `/withdraw` | `{requestId, walletId*, bankAccountId*, amount*, currency*, pinToken*}` | `TransferResponse` | Cần pinToken từ verify PIN |
 | GET | `/fees/estimate` | `?type={TRANSFER\|WITHDRAWAL\|TOPUP}&amount=&currency=VND` | `FeeEstimateResponse` | Auth required |
-| POST | `/transactions/{transactionId}/reverse` | `?reason=` | `TransferResponse` | Admin/support only |
+| POST | `/deposit` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
+| POST | `/transfer/init` | ❌ **KHÔNG TỒN TẠI** | - | BE-GAP (dùng `/payments/transfer`) |
+| POST | `/transfer/{transactionId}/confirm` | ❌ **KHÔNG TỒN TẠI** | - | BE-GAP (dùng `/payments/transfer`) |
+| POST | `/withdraw` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
 
 **WalletResponse:**
 ```json
@@ -236,17 +250,15 @@ Khi lỗi: `"success": false`, `"errorCode": "WALLET_NOT_FOUND"`, `"data": null`
 }
 ```
 
-**RecipientInfoResponse:**
-```json
-{
-  "walletId": "uuid",
-  "phoneNumber": "0987...",
-  "maskedName": "NGUYEN V** AN",
-  "fullName": "NGUYEN VAN AN"
-}
-```
+---
 
-**TransferResponse** (fields dùng `@JsonInclude(NON_NULL)` — null không xuất hiện trong JSON):
+## 3. TRANSFER `/api/v1/payments` (Backend Thực Tế - Single Step)
+
+| Method | Path | Body | Response `data` | Notes |
+|--------|------|------|-----------------|-------|
+| POST | `/transfer` | `{sourceUserId*, targetUserId*, amount*, currency*, bankCode*, note?, requestId*}` | `TransferResponse` | **Single-step**, ⚠️ **IDOR: BE không check sourceUserId vs X-User-Id** (BE-001) |
+
+**TransferResponse** (fields `@JsonInclude(NON_NULL)` — null không xuất hiện):
 ```json
 {
   "transactionId": "uuid",
@@ -275,48 +287,38 @@ Khi lỗi: `"success": false`, `"errorCode": "WALLET_NOT_FOUND"`, `"data": null`
 }
 ```
 
-**Enum `type`:** `TRANSFER_OUT` / `TRANSFER_IN` / `DEPOSIT` / `WITHDRAWAL` / `REVERSAL`
-**Enum `status`:** `PENDING_CONFIRMATION` / `SUCCESS` / `FAILED`
-
-> ⚠️ **FE cần biết:**
-> - `bankCode = "SENHONG"` = nội bộ, `bankCode = "VCB"/"BIDV"...` = ngoại
-> - `balance` là snapshot sender tại lúc commit — dùng để update UI ngay, không cần GET lại ví
-> - `balance` của **receiver** không có trong response này — receiver phải gọi `GET /wallets/{id}` riêng nếu cần hiển thị
-> - `type` trong history đã được enrich thành `TRANSFER_OUT`/`TRANSFER_IN` theo `walletId` người xem
-
 ---
 
-## 3. TRANSACTION HISTORY `/api/v1/transactions`
+## 4. TRANSACTION HISTORY `/api/v1/transactions` (Backend Thực Tế)
 
 | Method | Path | Params | Response `data` | Notes |
 |--------|------|--------|-----------------|-------|
-| GET | `/` | `?walletId=*&type={enum}&page=0&size=20` | `List<TransferResponse>` | type tùy chọn: TRANSFER/DEPOSIT/WITHDRAWAL |
-| GET | `/{id}` | — | `TransferResponse` | Chi tiết 1 giao dịch |
-| GET | `/export/csv` | `?walletId=*&fromDate=&toDate=` | `byte[]` (text/csv) | File download |
-| GET | `/export/pdf` | `?walletId=*&fromDate=&toDate=` | `byte[]` (application/pdf) | File download |
-| GET | `/export/excel` | `?walletId=*&fromDate=&toDate=` | `byte[]` (.xlsx) | File download |
-| GET | `/{id}/receipt.pdf` | — | `byte[]` (application/pdf) | Auth, chỉ owner |
-
-`fromDate`, `toDate` format: ISO-8601 Instant (`2026-01-01T00:00:00Z`)
+| GET | `/` | `?walletId=*&type={enum}&page=0&size=20` | `List<TransferResponse>` | type: TRANSFER/DEPOSIT/WITHDRAWAL |
+| GET | `/{id}` | — | `TransferResponse` | ⚠️ **Thiếu `walletId` query** ⇒ sai `runningBalance` cho TRANSFER_IN |
+| GET | `/export/csv` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
+| GET | `/export/pdf` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
+| GET | `/export/excel` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
+| GET | `/{id}/receipt.pdf` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
 
 ---
 
-## 4. USER & PROFILE `/api/v1/users`
+## 5. USER & PROFILE `/api/v1/users` (Backend Thực Tế)
 
 | Method | Path | Body / Params | Response `data` | Notes |
 |--------|------|---------------|-----------------|-------|
 | GET | `/me` | — | `UserProfile` | Auth required |
-| PUT | `/me` | `?fullName=&email=&dob=` | `UserProfile` | @RequestParam, không phải JSON body |
-| POST | `/me/avatar` | `?avatarUrl=` | `UserProfile` | |
-| GET | `/{id}/public-info` | — | `UserProfile` | Thông tin public của người dùng |
+| PUT | `/profile` | **JSON Body** `{fullName?, email?, dateOfBirth?}` | `UserProfile` | **KHÔNG DÙNG QUERY PARAM**, field `dateOfBirth` (ISO `yyyy-MM-dd`) |
+| POST | `/me/avatar` | ❌ **KHÔNG TỒN TẠI** | - | BE-GAP |
+| GET | `/{id}/public-info` | — | `UserProfile` | Thông tin public |
 | GET | `/search` | `?phone={phoneNumber}` | `PublicUserProfile` | 404 nếu không tìm thấy |
-| POST | `/pin/set` | `{pin*}` (6 chữ số) | `null` | |
-| POST | `/pin/verify` | `{pin*}` (6 chữ số) | `String` (pinToken) | Dùng pinToken cho withdraw |
-| POST | `/kyc` | `{idCardNumber*, fullName*, dob*, frontCardUrl*, backCardUrl*, selfieUrl*}` | `KycResponse` | |
-| GET | `/kyc/status` | — | `KycResponse` | |
-| POST | `/kyc/webhook` | `?userId=&status=&reason=` | `KycResponse` | Internal webhook |
-| POST | `/change-password` | `?oldPassword=&newPassword=` | `null` | @RequestParam |
-| GET | `/me/qrcode` | — | `String` (EMVCo QR string) | QR cá nhân |
+| POST | `/pin/set` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-03 |
+| POST | `/pin/verify` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-03 |
+| POST | `/kyc` | ❌ **KHÔNG TỒN TẠI** (dùng `/kyc/submit`) | - | SAI PATH |
+| GET | `/kyc/status` | ❌ **KHÔNG TỒN TẠI** (dùng `/kyc/status`) | - | SAI PATH |
+| POST | `/kyc/submit` | `{documentType*, documentNumber*, frontImageUrl*, backCardUrl?, faceImageUrl*, issuedDate?, issuedPlace?}` | `KycResponse` | **ĐÚNG PATH** |
+| GET | `/kyc/status` | — | `KycResponse` | **ĐÚNG PATH** |
+| POST | `/change-password` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-04? |
+| GET | `/me/qrcode` | ❌ **KHÔNG TỒN TẠI** | - | BE-GAP |
 
 **UserProfile:**
 ```json
@@ -329,52 +331,25 @@ Khi lỗi: `"success": false`, `"errorCode": "WALLET_NOT_FOUND"`, `"data": null`
 }
 ```
 
-**KycResponse:**
-```json
-{
-  "id": "uuid",
-  "userId": "uuid",
-  "status": "PENDING|VERIFIED|REJECTED",
-  "fullName": "...",
-  "idCardNumber": "...",
-  "frontCardUrl": "...",
-  "backCardUrl": "...",
-  "selfieUrl": "...",
-  "createdAt": "..."
-}
-```
+---
+
+## 6. KYC `/api/v1/kyc` (Backend Thực Tế)
+
+| Method | Path | Body | Response `data` | Notes |
+|--------|------|------|-----------------|-------|
+| POST | `/submit` | `{documentType*, documentNumber*, frontImageUrl*, backCardUrl?, faceImageUrl*, issuedDate?, issuedPlace?}` | `KycResponse` | Mobile cũ sai path `/users/kyc` |
+| GET | `/status` | — | `KycResponse` | Mobile cũ sai path `/users/kyc/status` |
 
 ---
 
-## 5. ACCOUNT `/api/v1/account`
-
-| Method | Path | Body / Params | Response `data` | Notes |
-|--------|------|---------------|-----------------|-------|
-| POST | `/password/change` | `{oldPassword*, newPassword*(min6)}` | `null` | Auth required |
-| POST | `/password/reset` | `?phoneNumber=&otp=&newPassword=` | `null` | Public |
-| POST | `/2fa/enable` | — | `null` | |
-| POST | `/2fa/disable` | — | `null` | |
-
----
-
-## 6. SECURITY `/api/v1/security`
-
-| Method | Path | Params | Response `data` | Notes |
-|--------|------|--------|-----------------|-------|
-| POST | `/biometric/register` | `?biometricToken=` | `null` | Auth required |
-| POST | `/biometric/verify` | `?biometricToken=` | `String` (pinToken) | Trả pinToken để dùng cho withdraw |
-| GET | `/login-history` | — | `List<Map>` | Auth required |
-
----
-
-## 7. SESSIONS `/api/v1/sessions`
+## 7. SESSIONS `/api/v1/sessions` (Backend Thực Tế)
 
 | Method | Path | Params | Response `data` | Notes |
 |--------|------|--------|-----------------|-------|
 | GET | `/` | — | `List<DeviceSession>` | Auth required |
 | DELETE | `/{deviceId}` | — | `null` | Remote logout thiết bị |
 | DELETE | `/` | — | `null` | Đăng xuất tất cả thiết bị |
-| POST | `/{deviceId}/fcm` | `?fcmToken=` | `null` | Đăng ký FCM token cho thiết bị |
+| POST | `/{deviceId}/fcm` | ❌ **KHÔNG TỒN TẠI** | - | BE-GAP |
 
 **DeviceSession:**
 ```json
@@ -389,196 +364,63 @@ Khi lỗi: `"success": false`, `"errorCode": "WALLET_NOT_FOUND"`, `"data": null`
 
 ---
 
-## 7.1. DEVICE TOKENS & FCM PUSH `/api/v1/devices`
+## 8. DEVICE TOKENS & FCM PUSH `/api/v1/devices` (Backend Thực Tế)
 
 | Method | Path | Body / Params | Response `data` | Notes |
 |--------|------|---------------|-----------------|-------|
-| POST | `/register` | `{fcmToken*, deviceType}` | `DeviceToken` | Auth required, lưu/cập nhật token FCM |
-| DELETE | `/unregister` | `?fcmToken=` hoặc body `{fcmToken}` | `null` | Gọi khi logout để xóa token khỏi DB |
-
-**Register Request:**
-```json
-{
-  "fcmToken": "c-N6Vq7...fcm_token_string",
-  "deviceType": "ANDROID" // "ANDROID" | "IOS"
-}
-```
-
-**Payload FCM Push (Mobile nhận khi app killed/background):**
-- **`notification`**: Hiển thị trên Notification Center của OS
-  - `title`: "Biến động số dư: Chuyển tiền"
-  - `body`: "TK 0987... GD thành công. PS: -50,000 VND. SD: 950,000 VND - Đến: NGUYEN VAN AN (0912...)"
-- **`data`** (Khớp 100% schema WebSocket `NotificationPayload` để FE parse chung 1 hàm):
-  ```json
-  {
-    "transactionId": "uuid",
-    "requestId": "client-uuid",
-    "type": "TRANSFER_OUT", // TRANSFER_OUT | TRANSFER_IN | DEPOSIT | WITHDRAWAL...
-    "status": "SUCCESS",
-    "walletId": "uuid",
-    "transactionAmount": "50000.00",
-    "amount": "50000.00",
-    "transactionCurrency": "VND",
-    "newBalance": "950000.00",
-    "currency": "VND",
-    "timestamp": "2026-09-03T03:30:00Z",
-    "note": "Trả tiền cà phê",
-    "title": "Biến động số dư: Chuyển tiền",
-    "body": "..."
-  }
-  ```
+| POST | `/register` | `{fcmToken*, deviceType}` | `DeviceToken` | Auth required |
+| DELETE | `/unregister` | `?fcmToken=` hoặc body `{fcmToken}` | `null` | Gọi khi logout |
 
 ---
 
-
-## 8. NOTIFICATIONS `/api/v1/notifications`
+## 9. NOTIFICATIONS `/api/v1/notifications` (Backend Thực Tế)
 
 | Method | Path | Params | Response `data` | Notes |
 |--------|------|--------|-----------------|-------|
 | GET | `/` | `?type={BALANCE\|PROMOTION\|SYSTEM}&page=0&size=20` | `PageResponse<NotificationInfo>` | Auth required |
 | PATCH | `/{id}/read` | — | `null` | Đánh dấu đã đọc |
 | PATCH | `/read-all` | `?type=` (optional) | `null` | Đọc tất cả |
-| PUT | `/settings` | `?transactionEnabled={bool}&promoEnabled={bool}` | `null` | Cài đặt thông báo |
-
-**PageResponse:**
-```json
-{
-  "content": [...],
-  "page": 0,
-  "size": 20,
-  "totalElements": 100,
-  "totalPages": 5,
-  "last": false
-}
-```
+| PUT | `/settings` | `?transactionEnabled={bool}&promoEnabled={bool}` | `null` | **QUERY PARAMS** (không phải JSON body) |
 
 ---
 
-## 9. BANK ACCOUNTS `/api/v1/bank-accounts`
+## 10. MONEY REQUESTS `/api/v1/payments/money-requests` (Backend Thực Tế)
 
 | Method | Path | Body | Response `data` | Notes |
 |--------|------|------|-----------------|-------|
-| POST | `/link` | `{bankCode*, accountNumber*, accountHolderName*}` | `BankAccountResponse` | 201 Created |
-| GET | `/` | — | `List<BankAccountResponse>` | Auth required |
-| DELETE | `/{bankAccountId}` | — | `null` | |
-
-**BankAccountResponse:**
-```json
-{
-  "id": "uuid",
-  "bankCode": "VCB",
-  "accountNumber": "10****78",
-  "accountHolderName": "...",
-  "isDefault": false
-}
-```
+| POST | `/` | `{requesterId*, targetUserId*, amount*(>0), currency*, message?, expiresInHours?}` | `MoneyRequestResponse` | Mobile cũ sai: `payerUserId` |
+| POST | `/{id}/accept` | — | `MoneyRequestResponse` | Query: `payerUserId` |
+| POST | `/{id}/reject` | — | `MoneyRequestResponse` | Query: `payerUserId` |
+| POST | `/{id}/cancel` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
+| GET | `/user/{userId}` | — | `List<MoneyRequestResponse>` | Received requests |
+| GET | `/received` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
+| GET | `/sent` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
+| GET | `/{id}` | ❌ **KHÔNG TỒN TẠI** | - | BE-REQ-06 |
 
 ---
 
-## 10. FUNDING SOURCES `/api/v1/funding-sources`
-
-| Method | Path | Body | Response `data` | Notes |
-|--------|------|------|-----------------|-------|
-| GET | `/` | — | `List<FundingSourceResponse>` | Auth required |
-| POST | `/link` | `{type*(BANK_ACCOUNT\|CREDIT_CARD\|DEBIT_CARD), provider*, number*(4-20 chars), cardHolderName, expiryDate, cvv}` | `FundingSourceResponse` | Số bị mask khi lưu |
-| DELETE | `/{id}` | — | `null` | Soft delete |
-
----
-
-## 11. BENEFICIARIES `/api/v1/beneficiaries`
-
-| Method | Path | Body | Response `data` | Notes |
-|--------|------|------|-----------------|-------|
-| POST | `/` | `{beneficiaryWalletId, nickname, bankCode, accountNumber}` | `Beneficiary` | 201 Created |
-| GET | `/` | — | `List<Beneficiary>` | Auth required |
-| DELETE | `/{id}` | — | `null` | |
-
----
-
-## 12. BANKS `/api/v1/banks`
+## 11. PROMOTIONS `/api/v1/promotions` (Backend Thực Tế)
 
 | Method | Path | Params | Response `data` | Notes |
 |--------|------|--------|-----------------|-------|
-| GET | `/` | — | `List<BankResponse>` | Public, không cần auth |
-
-**BankResponse:**
-```json
-{
-  "bankCode": "VCB",
-  "bankName": "Vietcombank",
-  "logoUrl": "...",
-  "isInternal": false
-}
-```
-
-Có sẵn trong hệ thống: `SENHONG` (internal), `VCB`, `TCB`, `BIDV`
+| GET | `/` | — | `List<Voucher>` | Public |
+| GET | `/my-vouchers` | — | `List<Voucher>` | Auth required |
+| POST | `/redeem` | `?code=` | `Voucher` | Auth required |
+| POST | `/apply` | `?code=&orderAmount=` | `Voucher` | Auth required |
 
 ---
 
-## 13. PAYMENTS `/api/v1/payments`
-
-| Method | Path | Body / Params | Response `data` | Notes |
-|--------|------|---------------|-----------------|-------|
-| POST | `/vietqr/generate` | `{bankBin*, accountNumber*, amount, purpose}` | `VietQrPayload` | Sinh QR |
-| POST | `/vietqr/decode` | `?qrString=` | `VietQrPayload` | Giải mã QR |
-| GET | `/bills/query` | `?billType={ELECTRICITY\|WATER\|INTERNET\|TUITION}&customerCode=` | `Bill` | Tra hóa đơn |
-| POST | `/bills/pay` | `{requestId, walletId*, billId*, amount*, currency*}` | `TransferResponse` | Auth required |
-| POST | `/topup` | `{requestId, walletId*, phoneNumber*, amount*, currency*}` | `TransferResponse` | Auth required |
-| POST | `/qr/scan` | `?qrString=` | `Map<String,Object>` | Parse QR, trả thông tin |
-
----
-
-## 14. BILLS `/api/v1/bills`
-
-| Method | Path | Body / Params | Response `data` | Notes |
-|--------|------|---------------|-----------------|-------|
-| GET | `/lookup` | `?type={BillType}&customerCode=` | `Bill` | Public |
-| POST | `/pay` | `{requestId, walletId*, billId*, amount*, currency*}` | `Transaction` | Auth required |
-| POST | `/topup` | `{requestId, walletId*, phoneNumber*, amount*, currency*}` | `Transaction` | Auth required |
-
-> ⚠️ Trùng chức năng với `/api/v1/payments/bills/pay` và `/payments/topup`. FE nên dùng nhất quán **một** trong hai prefix. Khuyến nghị dùng `/api/v1/bills/`.
-
----
-
-## 15. MONEY REQUESTS `/api/v1/money-requests`
-
-| Method | Path | Body | Response `data` | Notes |
-|--------|------|------|-----------------|-------|
-| POST | `/` | `{payerUserId*, amount*(>0), currency*, message}` | `MoneyRequestResponse` | 201 Created, auth required |
-| POST | `/{id}/accept` | — | `MoneyRequestResponse` | Payer chấp nhận → thực hiện transfer |
-| POST | `/{id}/reject` | — | `MoneyRequestResponse` | Payer từ chối |
-| POST | `/{id}/cancel` | — | `MoneyRequestResponse` | Requester hủy |
-| GET | `/received` | — | `List<MoneyRequestResponse>` | Yêu cầu nhận (mình là người trả) |
-| GET | `/sent` | — | `List<MoneyRequestResponse>` | Yêu cầu đã gửi (mình là người nhận tiền) |
-| GET | `/{id}` | — | `MoneyRequestResponse` | Chi tiết 1 request |
-
----
-
-## 16. CONFIG & LEGAL
+## 12. BANKS `/api/v1/payments/banks` (Backend Thực Tế)
 
 | Method | Path | Params | Response `data` | Notes |
 |--------|------|--------|-----------------|-------|
-| GET | `/api/v1/config/limits` | — | `Map` (static limits) | Auth required |
-| GET | `/api/v1/config/limits/status` | — | `UserLimitStatus` | Auth required, tính thực tế đã tiêu |
-| GET | `/api/v1/legal/terms` | — | `String` | Public |
-| POST | `/api/v1/legal/consent` | `?termsVersion=` | `LegalConsent` | Auth required |
+| GET | `/` | — | `List<BankResponse>` | Public, có SENHONG/VCB/TCB/BIDV |
 
-**UserLimitStatus:**
-```json
-{
-  "dailyLimit": 100000000,
-  "dailySpent": 500000,
-  "dailyRemaining": 99500000,
-  "monthlyLimit": 500000000,
-  "monthlySpent": 2000000,
-  "monthlyRemaining": 498000000,
-  "kycLevel": "UNVERIFIED"
-}
-```
+> ⚠️ **Mobile cũ dùng `/banks` — SAI PATH**, BE là `/payments/banks`
 
 ---
 
-## 17. SUPPORT `/api/v1/support`
+## 13. SUPPORT `/api/v1/support` (Backend Thực Tế)
 
 | Method | Path | Params | Response `data` | Notes |
 |--------|------|--------|-----------------|-------|
@@ -590,44 +432,46 @@ Có sẵn trong hệ thống: `SENHONG` (internal), `VCB`, `TCB`, `BIDV`
 
 ---
 
-## 18. MISC
+## 14. CÁC ENDPOINT KHÔNG TỒN TẠI (BE-GAP / BE-REQ)
 
-| Method | Path | Params | Response `data` | Notes |
-|--------|------|--------|-----------------|-------|
-| POST | `/api/v1/promotions/redeem` | `?code=` | `Voucher` | Auth required |
-| POST | `/api/v1/promotions/apply` | `?code=&orderAmount=` | `Voucher` | Auth required |
-| GET | `/api/v1/promotions` | — | `List<Voucher>` | Public |
-| GET | `/api/v1/promotions/my-vouchers` | — | `List<Voucher>` | Auth required |
-| GET | `/api/v1/referrals/code` | — | `ReferralInfo` | Auth required |
-| POST | `/api/v1/referrals/apply` | `?referralCode=` | `null` | Auth required |
-| GET | `/api/v1/referrals/history` | — | `List<Map>` | Auth required |
-| POST | `/api/v1/feedback` | `?rating={1-5}&comment=` | `AppFeedback` | Auth required |
-| POST | `/api/v1/merchants/payments/confirm` | `?walletId=&orderId=` | `TransferResponse` | Auth required |
+Dưới đây là các endpoint **mobile cũ gọi / tài liệu cũ liệt kê** nhưng **KHÔNG TỒN TẠI** trong backend commit 75bf273:
 
----
-
-## 19. LEDGER & RECONCILIATION (Internal / Admin)
-
-| Method | Path | Body | Response `data` | Notes |
-|--------|------|------|-----------------|-------|
-| POST | `/api/v1/ledger/accounts` | `{accountName*, accountType*(ASSET/LIABILITY/...), currency*}` | `LedgerAccount` | 201 Created |
-| GET | `/api/v1/ledger/accounts` | — | `List<LedgerAccount>` | |
-| GET | `/api/v1/ledger/entries` | — | `List<JournalEntry>` | |
-| POST | `/api/v1/reconciliation/run` | — | `Map` (report) | Trigger manual reconciliation |
+| Nhóm | Endpoint | BE-REQ | Ghi Chú |
+|------|----------|--------|---------|
+| **Auth OTP** | `/auth/otp/send`, `/auth/otp/verify`, `/auth/forgot-password`, `/auth/reset-password` | BE-REQ-04 | Onboarding hỏng |
+| **PIN/OTP Trans** | `/users/pin/set`, `/users/pin/verify`, `/security/biometric/verify` | BE-REQ-03 | Xác thực giả (MOB-002) |
+| **Deposit/Withdraw** | `/wallets/deposit`, `/wallets/withdraw` | BE-REQ-06 | 4 màn hình gate |
+| **Old Transfer** | `/wallets/transfer/init`, `/wallets/transfer/{id}/confirm` | BE-GAP | Thay bằng `/payments/transfer` |
+| **Bills/VietQR** | `/bills/*`, `/payments/vietqr/*`, `/payments/bills/*`, `/payments/topup` | BE-REQ-06 | 7 màn hình gate |
+| **Bank Accounts** | `/bank-accounts/*`, `/funding-sources/*` | BE-REQ-06 | 3 màn hình gate |
+| **Beneficiaries** | `/beneficiaries/*` | BE-REQ-06 | 1 màn hình gate |
+| **Receipt/Export** | `/transactions/{id}/receipt.pdf`, `/transactions/export/{csv|pdf|excel}` | BE-REQ-06 | 2 màn hình gate |
+| **Config Limits** | `/config/limits`, `/config/limits/status` | BE-REQ-06 | KYC level screen gate |
+| **User Extras** | `/users/me/avatar`, `/users/me/qrcode`, `/users/kyc*`, `/users/change-password` | BE-GAP/REQ-04 | Profile/KYC gate |
+| **Money Request** | `/payments/money-requests/received|sent|{id}|cancel` | BE-REQ-06 | Partial support |
+| **Referral** | `/referrals/*` | BE-REQ-06 | 1 màn hình gate |
+| **Legal/Feedback** | `/legal/*`, `/feedback` | BE-REQ-06 | Gate |
+| **Sessions FCM** | `/sessions/{deviceId}/fcm` | BE-GAP | Device mgmt partial |
 
 ---
 
-## 20. WEBHOOKS `/api/v1/webhooks` (Public — BE nhận từ đối tác)
+## Error Codes (Backend Thực Tế — KHÔNG Thống Nhất)
 
-| Method | Path | Body / Params | Notes |
-|--------|------|---------------|-------|
-| POST | `/napas/callback` | `@RequestBody Map` | NAPAS callback |
-| POST | `/bank/deposit-notify` | `?walletId=&amount=&bankTxRef=` | Ngân hàng thông báo nạp tiền |
-| POST | `/merchants/callback` | `@RequestBody Map` | Merchant callback (stub) |
+| Service | errorCode | HTTP | Mô tả |
+|---------|-----------|------|-------|
+| Identity | (không có) | 401 | Token hết hạn → trigger silent refresh |
+| Identity | (không có) | 400 | Validation failed |
+| Payment | (không có) | 400 | INSUFFICIENT_BALANCE, LIMIT_EXCEEDED, VALIDATION_FAILED |
+| Payment | (không có) | 404 | WALLET_NOT_FOUND, USER_NOT_FOUND |
+| Payment | (không có) | 409 | CONCURRENT_CONFLICT — FE retry exponential backoff |
+| Payment | (không có) | 429 | SYSTEM_BUSY — FE retry 1s |
+| Gateway | (chỉ `error`) | 401 | Unauthorized |
+
+> ⚠️ **Mobile parse lỗi cũ dùng `errorCode` — SẼ FAIL** vì payment/gateway không trả field này.
 
 ---
 
-## Luồng chuyển tiền nội bộ — Step-by-step
+## Luồng chuyển tiền nội bộ — Step-by-step (Backend Thực Tế)
 
 ```
 1. GET /api/v1/wallets/recipient-info?phoneNumber=0912345678
@@ -636,60 +480,34 @@ Có sẵn trong hệ thống: `SENHONG` (internal), `VCB`, `TCB`, `BIDV`
 2. GET /api/v1/wallets/fees/estimate?type=TRANSFER&amount=500000&currency=VND
    → hiển thị phí (= 0 VND với chuyển khoản nội bộ SENHONG)
 
-3. POST /api/v1/wallets/transfer/init
+3. POST /api/v1/payments/transfer  (SINGLE-STEP, KHÔNG CÓ INIT/CONFIRM)
    Body: {
      "requestId": "client-uuid-v4",
-     "sourceWalletId": "uuid",
-     "targetWalletId": "uuid",
+     "sourceUserId": "uuid",        // ⚠️ BE không verify vs X-User-Id (IDOR)
+     "targetUserId": "uuid",        // Từ recipient-info.ownerId
      "amount": 500000,
      "currency": "VND",
      "bankCode": "SENHONG",
      "note": "Trả tiền ăn"
    }
-   → nhận transactionId, status = "PENDING_CONFIRMATION"
-   → OTP 6 số được generate và log ra server (mock)
-
-4. POST /api/v1/wallets/transfer/{transactionId}/confirm?otp=123456
-   (hoặc ?pin=123456 nếu dùng PIN)
    → nhận TransferResponse với status = "SUCCESS", balance mới của sender
+   → KHÔNG CÓ OTP/PIN XÁC THỰC SERVER-SIDE (BE-REQ-03)
 
-5. WebSocket nhận notification realtime:
+4. WebSocket nhận notification realtime:
    Subscribe: /topic/users/{userId}/notifications
-   → cả sender và receiver đều nhận push ngay sau bước 4
+   → cả sender và receiver đều nhận push ngay sau bước 3
 ```
 
-> ⚠️ **OTP TTL = 5 phút.** Nếu user không confirm trong 5 phút → `/confirm` trả lỗi `INVALID_PIN`. FE phải restart flow từ `/init`.
-> ⚠️ **Sai OTP/PIN 3 lần** → user bị lock 15 phút. FE hiển thị thông báo có countdown.
-> ⚠️ **OTP là 1-time** (bị xóa sau khi dùng đúng). **PIN không phải 1-time** — có thể dùng lại trong cùng session.
+> ⚠️ **Mobile hiện tại CHẶN ở bước 3** vì `BackendCapabilities.serverSideTransferAuth = false` (BE-REQ-03).
 
 ---
 
-## Error Codes chuẩn
-
-| errorCode | HTTP | Mô tả |
-|-----------|------|-------|
-| `WALLET_NOT_FOUND` | 404 | Ví không tồn tại |
-| `INVALID_PIN` | 400 | Sai PIN hoặc OTP |
-| `INSUFFICIENT_BALANCE` | 400 | Không đủ số dư |
-| `ACCOUNT_LOCKED` | 423 | Tài khoản bị khóa (sai PIN/OTP 3 lần) |
-| `LIMIT_EXCEEDED` | 400 | Vượt hạn mức ngày/tháng |
-| `VALIDATION_FAILED` | 400 | Dữ liệu đầu vào không hợp lệ |
-| `BAD_REQUEST` | 400 | Request không hợp lệ |
-| `USER_NOT_FOUND` | 404 | User không tồn tại |
-| `INTERNAL_SERVER_ERROR` | 500 | Lỗi server |
-| _(không có errorCode)_ | 409 | Optimistic lock conflict — FE retry với exponential backoff |
-| _(không có errorCode)_ | 401 | Token hết hạn → trigger silent refresh (`POST /auth/refresh`) |
-| _(không có errorCode)_ | 403 | Không có quyền truy cập |
-
----
-
-## Thứ tự ưu tiên Sprint (dành cho PM/Dev Lead)
+## Thứ tự ưu tiên Sprint (Cập nhật sau Audit)
 
 | Sprint | Nội dung | Ghi chú |
 |--------|----------|---------|
-| **Sprint 1** | Auth (Mục 1) + Wallet Core (Mục 2 — GET balance, recipient-info) | Dashboard chạy được, hiển thị số dư |
-| **Sprint 2** | Transaction flow (Mục 2 — init/confirm/deposit/withdraw) | Luồng tiền cốt lõi với OTP/PIN |
-| **Sprint 3** | Transaction History (Mục 3) + Export | Xem lịch sử, tải sao kê |
-| **Sprint 4** | QR & Bills (Mục 12, 13, 14) | Tiện ích mở rộng |
-| **Sprint 5** | Security, Sessions, Notifications, Beneficiaries (Mục 6, 7, 8, 11) | Hoàn thiện UX |
-| **Sprint 6** | Money Requests, Promotions, Referrals, Support (Mục 15, 17, 18) | Nice-to-have |
+| **Sprint 1** | Auth (Login/Register/Refresh/Logout) + Wallet Core (GET balance, recipient-info) | Dashboard chạy được, hiển thị số dư |
+| **Sprint 2** | Transfer single-step `/payments/transfer` + Profile update + KYC + Money Requests | Luồng tiền cốt lõi — **CHẶN PIN/OTP** cho đến khi BE có API |
+| **Sprint 3** | Transaction History (có `walletId` query) + Sessions thật + Notifications sync | Xem lịch sử, quản lý thiết bị |
+| **Sprint 4** | Device Management, Promotions, Support | Hoàn thiện UX |
+| **Backend Required** | BE-REQ-01/02 (IDOR), BE-REQ-03 (PIN/OTP), BE-REQ-04 (OTP onboarding), BE-REQ-06 (Deposit/Withdraw/Bills/QR/Accounts/Beneficiaries/Export/Referral/Legal/Feedback) | Cần Backend team triển khai |

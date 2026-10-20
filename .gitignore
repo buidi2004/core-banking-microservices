@@ -71,3 +71,7 @@ mobile/screen_*.png
 mobile/live_app_*.png
 mobile/scratch/
 
+### AI Agent Teamwork Runtime ###
+.agents/teamwork/
+
+

@@ -5,6 +5,8 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+
 class EKycScreen extends StatefulWidget {
   const EKycScreen({super.key});
 
@@ -17,8 +19,10 @@ class _EKycScreenState extends State<EKycScreen> {
   final bool _isCapturing = false;
 
   void _nextStep() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('eKYC chưa thể hoàn tất: cần tích hợp camera và upload ảnh lên storage trước khi gửi BE.')),
+    showFeatureUnavailable(
+      context,
+      feature: 'Định danh điện tử eKYC',
+      reason: 'Dịch vụ lưu trữ và đối soát hình ảnh CCCD trực tuyến đang hoàn thiện. Quý khách vui lòng mang CCCD gắn chip đến quầy giao dịch gần nhất.',
     );
   }
 
@@ -45,8 +49,10 @@ class _EKycScreenState extends State<EKycScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(backgroundColor: AppColors.emeraldGreen, content: Text('Đã đọc dữ liệu chip vi mạch CCCD thành công qua NFC!')),
+                showFeatureUnavailable(
+                  context,
+                  feature: 'Quét chip CCCD qua NFC',
+                  reason: 'Tính năng đọc chip NFC đang trong giai đoạn thử nghiệm liên thông C06 Bộ Công An.',
                 );
               },
               child: const Text('Bắt đầu quét NFC'),

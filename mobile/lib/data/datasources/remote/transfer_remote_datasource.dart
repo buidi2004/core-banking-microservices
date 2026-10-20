@@ -1,15 +1,28 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import '../../../core/constants/api_constants.dart';
+import '../../../core/constants/backend_capabilities.dart';
 import '../../../core/network/dio_client.dart';
 import 'api_response.dart';
 
 class TransferRemoteDataSource {
   final Dio _dio;
 
+  /// MOB-002: BE chưa cung cấp API xác thực PIN/OTP (BE-REQ-03) nên mobile phải
+  /// chặn giao dịch. Cho phép test inject cờ để kiểm chứng nhánh "đã bật".
+  final bool _serverSideTransferAuth;
+
   /// Kết quả saga P2P đã chạy ở bước init, dùng lại cho bước confirm.
+  /// MOB-017: giới hạn tối đa 5 entry, xóa sau khi đọc; không giữ vô hạn.
+  static const int _maxCompletedTransfers = 5;
   final Map<String, Map<String, dynamic>> _completedTransfers = {};
 
-  TransferRemoteDataSource({Dio? dio}) : _dio = dio ?? DioClient().dio;
+  TransferRemoteDataSource({
+    Dio? dio,
+    bool? serverSideTransferAuth,
+  })  : _dio = dio ?? DioClient.sharedDio,
+        _serverSideTransferAuth =
+            serverSideTransferAuth ?? BackendCapabilities.serverSideTransferAuth;
 
   Future<Map<String, dynamic>> getRecipient(String value) async {
     final trimmed = value.trim();
@@ -61,50 +74,116 @@ class TransferRemoteDataSource {
     return (data['feeAmount'] as num?)?.toDouble() ?? 0;
   }
 
+  /// Khởi tạo giao dịch P2P qua saga một bước `POST /payments/transfer`.
+  ///
+  /// **MOB-014 / OPT-01:** nhận trực tiếp `sourceUserId` / `targetUserId` từ
+  /// client (session + `recipient-info`) để bỏ 2 `GET /wallets/{id}` dư thừa.
+  /// Chỉ quay về `GET /wallets/{id}` khi client chưa truyền userId.
+  ///
+  /// **MOB-002 (P0):** ném [UnsupportedError] nếu BE chưa có xác thực PIN/OTP.
   Future<Map<String, dynamic>> initTransfer({
-    required String sourceWalletId,
-    required String targetWalletId,
+    String sourceUserId = '',
+    String targetUserId = '',
     required double amount,
     required String note,
+    String? idempotencyKey,
+    String? sourceWalletId,
+    String? targetWalletId,
     String? bankCode,
   }) async {
-    // Backend microservices chỉ có endpoint saga P2P một bước: POST /payments/transfer.
-    // Mobile cần userId (không phải walletId), nên tra ownerId của 2 ví trước.
-    final sourceUserId = await _ownerIdOfWallet(sourceWalletId);
-    final targetUserId = await _ownerIdOfWallet(targetWalletId);
+    if (!_serverSideTransferAuth) {
+      throw UnsupportedError(
+        'Backend chưa cung cấp API xác thực PIN/OTP (BE-REQ-03). '
+        'Giao dịch bị từ chối để tránh rủi ro mất tiền.',
+      );
+    }
+
+    final String resolvedSourceUserId = await _resolveUserId(
+      userId: sourceUserId,
+      walletId: sourceWalletId,
+      role: 'nguồn',
+    );
+    final String resolvedTargetUserId = await _resolveUserId(
+      userId: targetUserId,
+      walletId: targetWalletId,
+      role: 'đích',
+    );
+
+    // MOB-017: idempotency key ổn định, retry mạng dùng lại đúng key.
+    final key = idempotencyKey ??
+        'MOBILE-$resolvedSourceUserId-$resolvedTargetUserId-${DateTime.now().microsecondsSinceEpoch}';
 
     final response = await _dio.post(
       ApiConstants.paymentTransfer,
       data: {
-        'sourceUserId': sourceUserId,
-        'targetUserId': targetUserId,
+        'sourceUserId': resolvedSourceUserId,
+        'targetUserId': resolvedTargetUserId,
         'amount': amount.round(),
         'currency': 'VND',
         'note': note,
-        'idempotencyKey':
-            'MOBILE-$sourceWalletId-$targetWalletId-${DateTime.now().microsecondsSinceEpoch}',
+        'idempotencyKey': key,
       },
     );
     final data = _unwrap(response.data);
     final txId = (data['transactionId'] ?? data['id'] ?? '').toString();
     if (txId.isNotEmpty) {
-      _completedTransfers[txId] = data;
+      _rememberTransfer(txId, data);
     }
     return data;
   }
 
-  /// Bước xác nhận (PIN/OTP) đã được người dùng nhập trước khi gọi initTransfer.
-  /// Saga đã chạy xong ở bước trên nên chỉ cần trả lại kết quả đã lưu.
+  /// Bước xác nhận giao dịch.
+  ///
+  /// **MOB-002:** BE không có endpoint xác thực PIN/OTP (BE-REQ-03) nên mobile
+  /// KHÔNG được giả vờ "thành công" từ map local. Khi BE bổ sung endpoint thật,
+  /// thay nhánh dưới bằng lệnh gọi endpoint tương ứng.
   Future<Map<String, dynamic>> confirmTransfer({
     required String transactionId,
     String? pin,
     String? otp,
   }) async {
-    final result = _completedTransfers[transactionId];
+    if (!_serverSideTransferAuth) {
+      throw UnsupportedError(
+        'Backend chưa cung cấp API xác thực PIN/OTP (BE-REQ-03). '
+        'Không thể xác nhận giao dịch.',
+      );
+    }
+
+    // MOB-017: đọc và xóa sau khi dùng; nếu phiên đã mất (app khởi động lại
+    // giữa init và confirm) thì KHÔNG giả vờ thành công.
+    final result = _completedTransfers.remove(transactionId);
     if (result == null) {
-      throw Exception('Không xác nhận được giao dịch, vui lòng kiểm tra lịch sử');
+      throw StateError(
+        'Không xác nhận được giao dịch (phiên đã hết hoặc ứng dụng khởi động lại). '
+        'Vui lòng kiểm tra lịch sử giao dịch.',
+      );
     }
     return result;
+  }
+
+  Future<String> _resolveUserId({
+    required String userId,
+    String? walletId,
+    required String role,
+  }) async {
+    if (userId.isNotEmpty) return userId;
+    if (walletId == null || walletId.isEmpty) {
+      throw ArgumentError(
+        'Thiếu ${role == 'nguồn' ? 'sourceUserId' : 'targetUserId'} cho giao dịch chuyển tiền',
+      );
+    }
+    debugPrint(
+      '[TransferRemoteDataSource] Thiếu userId ($role), fallback GET /wallets/{id}',
+    );
+    return _ownerIdOfWallet(walletId);
+  }
+
+  /// MOB-017: lưu kết quả saga nhưng giới hạn tối đa 5 entry.
+  void _rememberTransfer(String txId, Map<String, dynamic> data) {
+    _completedTransfers[txId] = data;
+    while (_completedTransfers.length > _maxCompletedTransfers) {
+      _completedTransfers.remove(_completedTransfers.keys.first);
+    }
   }
 
   Future<String> _ownerIdOfWallet(String walletId) async {

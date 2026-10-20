@@ -26,6 +26,8 @@ class ApiConstants {
   static const String biometricVerify = '/security/biometric/verify';
 
   // Wallet & Transfer endpoints
+
+  // Wallet & Transfer endpoints
   static const String walletMe = '/wallets/me';
   static String walletDetail(String walletId) => '/wallets/$walletId';
   static const String recipientInfo = '/wallets/recipient-info';
@@ -35,6 +37,9 @@ class ApiConstants {
   static String transferConfirm(String id) => '/wallets/transfer/$id/confirm';
   static const String deposit = '/wallets/deposit';
   static const String withdraw = '/wallets/withdraw';
+
+  // Profile endpoint
+  static const String userProfile = '/users/profile';
 
   // Transactions & Statement
   static const String transactions = '/transactions';
@@ -61,15 +66,17 @@ class ApiConstants {
   // User Profile & KYC
   static const String userMe = '/users/me';
   static const String userAvatar = '/users/me/avatar';
-  static const String kycSubmit = '/users/kyc';
-  static const String kycStatus = '/users/kyc/status';
+  static const String kycSubmit = '/kyc/submit';
+  static const String kycStatus = '/kyc/status';
   static const String limitStatus = '/config/limits/status';
 
   // Sessions & Notifications
   static const String sessions = '/sessions';
-  static String sessionDetail(String deviceId) => '/sessions/$deviceId';
+  static String sessionDetail(String sessionId) => '/sessions/$sessionId';
   static String sessionFcm(String deviceId) => '/sessions/$deviceId/fcm';
   static const String notifications = '/notifications';
+  static const String notificationSettings = '/notifications/settings';
+  static const String notificationsSettings = '/notifications/settings';
   static String readNotification(String id) => '/notifications/$id/read';
   static const String readAllNotifications = '/notifications/read-all';
   static const String faq = '/support/faq';
@@ -85,13 +92,14 @@ class ApiConstants {
   static const String legalConsent = '/legal/consent';
 
   // Money Requests
-  static const String moneyRequests = '/money-requests';
-  static const String moneyRequestsReceived = '/money-requests/received';
-  static const String moneyRequestsSent = '/money-requests/sent';
-  static String moneyRequestDetail(String id) => '/money-requests/$id';
-  static String moneyRequestAccept(String id) => '/money-requests/$id/accept';
-  static String moneyRequestReject(String id) => '/money-requests/$id/reject';
-  static String moneyRequestCancel(String id) => '/money-requests/$id/cancel';
+  static const String moneyRequests = '/payments/money-requests';
+  static String moneyRequestsUser(String userId) => '/payments/money-requests/user/$userId';
+  static const String moneyRequestsReceived = '/payments/money-requests/received';
+  static const String moneyRequestsSent = '/payments/money-requests/sent';
+  static String moneyRequestDetail(String id) => '/payments/money-requests/$id';
+  static String moneyRequestAccept(String id) => '/payments/money-requests/$id/accept';
+  static String moneyRequestReject(String id) => '/payments/money-requests/$id/reject';
+  static String moneyRequestCancel(String id) => '/payments/money-requests/$id/cancel';
 
   // Promotions & Referrals & Feedback
   static const String promotions = '/promotions';

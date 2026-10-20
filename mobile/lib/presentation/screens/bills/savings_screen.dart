@@ -9,7 +9,9 @@ import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class SavingsScreen extends StatefulWidget {
   const SavingsScreen({super.key});
@@ -154,6 +156,16 @@ class _SavingsScreenState extends State<SavingsScreen> {
 
   Future<void> _handleOpenSavings() async {
     if (_isSubmitting) return;
+
+    // MOB-007: BE chưa có API sổ tiết kiệm (BE-REQ-06) => chặn mở sổ.
+    if (!BackendCapabilities.bills) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Mở sổ tiết kiệm',
+        reason: 'Backend chưa cung cấp API sổ tiết kiệm (BE-REQ-06).',
+      );
+      return;
+    }
 
     final depositAmount = double.tryParse(_amountCtrl.text) ?? 0;
     final minDeposit = _savingsProducts[_selectedProductIdx]['minDeposit'] as double;
@@ -1090,8 +1102,17 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                   TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Giữ lại sổ')),
                                   ElevatedButton(
                                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                                    onPressed: () {
+                                    onPressed: () async {
                                       Navigator.pop(ctx);
+                                      // MOB-007: BE chưa có API sổ tiết kiệm (BE-REQ-06).
+                                      if (!BackendCapabilities.bills) {
+                                        await showFeatureUnavailable(
+                                          context,
+                                          feature: 'Tất toán sổ tiết kiệm',
+                                          reason: 'Backend chưa cung cấp API sổ tiết kiệm (BE-REQ-06).',
+                                        );
+                                        return;
+                                      }
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(content: Text('Đã gửi yêu cầu tất toán sổ ${pb['code']}')),
                                       );
@@ -1111,7 +1132,16 @@ class _SavingsScreenState extends State<SavingsScreen> {
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
+                            // MOB-007: BE chưa có API sổ tiết kiệm (BE-REQ-06).
+                            if (!BackendCapabilities.bills) {
+                              await showFeatureUnavailable(
+                                context,
+                                feature: 'Nạp tích lũy sổ tiết kiệm',
+                                reason: 'Backend chưa cung cấp API sổ tiết kiệm (BE-REQ-06).',
+                              );
+                              return;
+                            }
                             context.push(
                               '/bills/confirm?service=${Uri.encodeComponent('Nạp tích lũy sổ tiết kiệm')}&provider=SenHongBank&code=${Uri.encodeComponent(pb['code'] as String)}&amount=5000000',
                             );

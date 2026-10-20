@@ -6,6 +6,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class ChangePinScreen extends StatefulWidget {
   const ChangePinScreen({super.key});
@@ -118,49 +119,17 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // Cập nhật mã PIN vào hệ thống bảo mật
-      await Future.delayed(const Duration(milliseconds: 600));
+      // Backend chưa có API đổi PIN trên server (BE-REQ-03)
       if (!mounted) return;
-      HapticFeedback.mediumImpact();
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen, size: 26),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Đổi Mã PIN Thành Công',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.textPrimaryLight),
-                ),
-              ),
-            ],
-          ),
-          content: const Text(
-            'Mã PIN giao dịch của quý khách đã được cập nhật thành công và kích hoạt bảo mật tức thời cho mọi giao dịch tài chính.',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight, height: 1.4),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.pop();
-              },
-              child: const Text('Hoàn tất'),
-            ),
-          ],
-        ),
+      await showFeatureUnavailable(
+        context,
+        feature: 'Đổi mã PIN giao dịch',
+        reason: 'Backend chưa hỗ trợ API cập nhật mã PIN trên máy chủ (BE-REQ-03). Tính năng quản lý mã PIN máy chủ đang được nâng cấp.',
       );
-    } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
-      });
+      context.pop();
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -194,6 +163,27 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
                 child: Column(
                   children: [
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.warningBg,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.warningBorder),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Tính năng quản lý mã PIN trên máy chủ đang được nâng cấp (BE-REQ-03).',
+                              style: TextStyle(color: AppColors.warningText, fontSize: 12, height: 1.3),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     // Step Progress Indicator
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,

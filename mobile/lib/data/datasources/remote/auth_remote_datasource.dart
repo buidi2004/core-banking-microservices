@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/network/push_notification_service.dart';
 import '../auth_local_datasource.dart';
 import 'api_response.dart';
 
@@ -102,6 +104,55 @@ class AuthRemoteDataSource {
       } catch (_) {}
     } else {
       await _local.saveFullName(fullName);
+    }
+  }
+
+  Future<void> refreshToken() async {
+    final currentRefresh = await _local.getRefreshToken();
+    if (currentRefresh == null || currentRefresh.isEmpty) {
+      throw Exception('No refresh token available');
+    }
+    final response = await _dio.post(
+      ApiConstants.refresh,
+      data: {'refreshToken': currentRefresh},
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    final data = json['data'] as Map<String, dynamic>?;
+    if (json['success'] != true || data == null) throw apiException(json);
+    final String? accessToken = data['accessToken'] as String? ?? data['token'] as String?;
+    final String? refreshToken = data['refreshToken'] as String?;
+    if (accessToken == null) throw apiException(json);
+    await _local.saveTokens(
+      accessToken: accessToken,
+      refreshToken: refreshToken ?? currentRefresh,
+    );
+  }
+
+  Future<void> logout({String? deviceId}) async {
+    try {
+      // 1. Unregister FCM token với backend TRƯỚC khi token bị blacklist
+      try {
+        await PushNotificationService().unregisterDeviceFromBackend();
+      } catch (e) {
+        debugPrint('[AuthRemoteDataSource] Unregister FCM error: $e');
+      }
+
+      // 2. Gọi API logout backend để blacklist access token trong Redis
+      final token = await _local.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        await _dio.post(
+          ApiConstants.logout,
+          queryParameters: {
+            if (deviceId != null && deviceId.isNotEmpty) 'deviceId': deviceId,
+          },
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        );
+      }
+    } catch (e) {
+      debugPrint('[AuthRemoteDataSource] Logout network/backend error: $e');
+    } finally {
+      // 3. Luôn luôn xóa token và thông tin cục bộ
+      await _local.clearTokens();
     }
   }
 

@@ -24,7 +24,6 @@ import '../screens/auth/terms_of_service_screen.dart';
 import '../screens/transfer/choose_recipient_screen.dart';
 import '../screens/transfer/enter_amount_screen.dart';
 import '../screens/transfer/confirm_transfer_screen.dart';
-import '../screens/transfer/transfer_confirm_screen.dart';
 import '../screens/transfer/transfer_result_screen.dart';
 import '../screens/transfer/request_transfer_screen.dart';
 import '../screens/transfer/beneficiaries_screen.dart';
@@ -329,16 +328,22 @@ final GoRouter appRouter = GoRouter(
         );
       },
     ),
+    // MOB-019: gộp luồng xác nhận chuyển tiền. Route legacy /transfer/2fa-otp
+    // giờ dùng chung ConfirmTransferScreen (numpad PIN) thay vì màn OTP trùng chức năng.
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/transfer/2fa-otp',
       name: 'transfer-2fa-otp',
       builder: (context, state) {
         final recipient = state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
+        final phoneNumber = state.uri.queryParameters['phoneNumber'];
+        final walletId = state.uri.queryParameters['walletId'];
         final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
         final note = state.uri.queryParameters['note'] ?? 'Chuyen tien';
-        return TransferConfirmScreen(
+        return ConfirmTransferScreen(
           recipient: recipient,
+          phoneNumber: phoneNumber,
+          walletId: walletId,
           amount: amount,
           note: note,
         );

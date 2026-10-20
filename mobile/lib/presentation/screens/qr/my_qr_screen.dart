@@ -6,6 +6,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
@@ -13,6 +14,7 @@ import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.
 import 'package:sen_hong_bank/data/datasources/remote/qr_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class MyQRScreen extends StatefulWidget {
   const MyQRScreen({super.key});
@@ -64,6 +66,8 @@ class _MyQRScreenState extends State<MyQRScreen> {
   }
 
   Future<void> _loadMyQr() async {
+    // MOB-007: BE chưa có API VietQR (BE-REQ-06) => không gọi API không tồn tại.
+    if (!BackendCapabilities.vietQr) return;
     try {
       final qr = await QrRemoteDataSource().getMyQr();
       if (mounted) setState(() => _defaultQrData = qr);
@@ -204,6 +208,15 @@ class _MyQRScreenState extends State<MyQRScreen> {
                     height: 50,
                     child: ElevatedButton(
                     onPressed: () async {
+                      // MOB-007: BE chưa có API VietQR (BE-REQ-06) => chặn tạo mã động.
+                      if (!BackendCapabilities.vietQr) {
+                        await showFeatureUnavailable(
+                          context,
+                          feature: 'Tạo mã VietQR',
+                          reason: 'Backend chưa cung cấp API VietQR (BE-REQ-06).',
+                        );
+                        return;
+                      }
                       final amt = double.tryParse(amtCtrl.text);
                       final note = noteCtrl.text.trim();
                       Navigator.pop(ctx);

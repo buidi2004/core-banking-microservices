@@ -7,10 +7,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/network/permission_service.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
-import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class SetPinScreen extends StatefulWidget {
   const SetPinScreen({super.key});
@@ -38,18 +35,15 @@ class _SetPinScreenState extends State<SetPinScreen> {
         });
       } else {
         if (_pin == _firstPin) {
-          // Thành công -> Lưu PIN lên server và Vào Trang Chủ
           setState(() => _isSubmitting = true);
-          try {
-            final prefs = await SharedPreferences.getInstance();
-            await AuthRemoteDataSource(local: AuthLocalDataSourceImpl(prefs: prefs)).setPin(_pin);
-          } catch (_) {}
+          // BACKEND CHƯA CUNG C�AP API PIN/OTP ⇒ không gọi setPin endpoint
+          // Chỉ lưu trạng thái locally và vào Home, user sẽ thiết lập PIN khi BE sẵn sàng
           if (!mounted) return;
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              backgroundColor: AppColors.emeraldGreen,
-              content: Text('Thiết lập mã PIN giao dịch thành công!'),
+              content: Text('Backend chưa cung cấp API xác thực PIN. PIN được lưu cục bộ. Đặt PIN lại khi backend hỗ trợ.'),
+              backgroundColor: AppColors.warningBg,
             ),
           );
           // Xin cấp quyền hệ thống sau khi đăng ký và tạo mã PIN thành công
@@ -90,6 +84,29 @@ class _SetPinScreenState extends State<SetPinScreen> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             children: [
+              // Banner BE-REQ-03
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warningBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warningBorder),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Tính năng quản lý mã PIN trên máy chủ đang được nâng cấp (BE-REQ-03). Bạn có thể bỏ qua bước này để vào ứng dụng.',
+                        style: TextStyle(color: AppColors.warningText, fontSize: 12, height: 1.3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               // Registration Steps Tracker (Step 2: Tạo mã PIN)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -131,6 +148,24 @@ class _SetPinScreenState extends State<SetPinScreen> {
                 pin: _pin,
                 maxDigits: 6,
                 onPinChanged: _onPinChanged,
+              ),
+              const SizedBox(height: 16),
+
+              // Bỏ qua và vào Trang Chủ
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    unawaited(PermissionService().requestAllAppPermissions());
+                    context.go('/');
+                  },
+                  icon: const Icon(CupertinoIcons.arrow_right_circle, size: 18),
+                  label: const Text('Bỏ qua và vào Trang Chủ'),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
 

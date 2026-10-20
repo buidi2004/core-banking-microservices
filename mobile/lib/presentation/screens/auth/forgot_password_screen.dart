@@ -4,11 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
-import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -32,15 +29,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await AuthRemoteDataSource(local: AuthLocalDataSourceImpl(prefs: prefs)).forgotPassword(_phoneController.text.trim());
+      // BE chưa hỗ trợ OTP/PIN cho forgot password ⇒ hiển thị hướng dẫn liên hệ CSKH
       if (!mounted) return;
-      context.push('/auth/reset-password?phone=${Uri.encodeComponent(_phoneController.text.trim())}');
+      await showFeatureUnavailable(
+        context,
+        feature: 'Khôi phục mật khẩu qua OTP',
+        reason: 'Backend chưa cung cấp API OTP/PIN khôi phục mật khẩu (BE-REQ-04). Vui lòng liên hệ Hotline 1900 6688 để được hỗ trợ.',
+      );
+      // Không gọi forgotPassword endpoint, quay lại màn hình đăng nhập
+      if (!mounted) return;
+      context.go('/auth/login');
+      return;
     } catch (error) {
       if (mounted) {
         AppAlerts.showError(
           context,
-          extractErrorMessage(error),
+          error.toString(),
           title: 'Khôi phục mật khẩu thất bại',
         );
       }

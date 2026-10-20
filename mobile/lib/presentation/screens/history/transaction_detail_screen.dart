@@ -4,6 +4,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
+import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
@@ -12,6 +14,7 @@ import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasou
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final String? id;
@@ -50,6 +53,15 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   Future<void> _loadDetails() async {
+    // MOB-015: đọc walletId để truy vấn chi tiết giao dịch đúng góc nhìn ví.
+    String? walletId;
+    try {
+      walletId = await AppSecureStorage.safeRead(
+        AppSecureStorage.instance,
+        key: AppConstants.keyWalletId,
+      );
+    } catch (_) {}
+
     try {
       final profile = await ProfileRemoteDataSource().getMe();
       if (mounted) {
@@ -77,7 +89,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
     if (widget.id != null && widget.id!.isNotEmpty) {
       try {
-        final detail = await TransactionRemoteDataSource().getTransaction(widget.id!);
+        final detail = await TransactionRemoteDataSource().getTransaction(widget.id!, walletId: walletId);
         if (mounted) {
           setState(() {
             _fetchedDetail = detail;
@@ -91,6 +103,15 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
   }
 
   Future<void> _downloadReceipt(String txId) async {
+    // MOB-007: BE chưa có endpoint biên lai PDF (BE-REQ-06).
+    if (!BackendCapabilities.receiptAndExport) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Biên lai điện tử',
+        reason: 'Backend chưa cung cấp API biên lai/xuất sao kê (BE-REQ-06).',
+      );
+      return;
+    }
     try {
       final bytes = await TransactionRemoteDataSource().getReceipt(txId);
       if (mounted) {

@@ -1,0 +1,114 @@
+# Backend endpoint inventory (from source, commit 75bf273)
+
+## backend/services/identity-service/src/main/java/com/fintech/identity/controller/AuthController.java
+  16:@RequestMapping("/api/v1/auth")
+  22:    @PostMapping("/register")
+  30:    @PostMapping("/login")
+  41:    @PostMapping("/refresh")
+  47:    @PostMapping("/logout")
+
+## backend/services/identity-service/src/main/java/com/fintech/identity/controller/InternalUserController.java
+  21:@RequestMapping("/api/v1/internal/users")
+  27:    @GetMapping("/by-phone")
+  35:    @GetMapping("/{id}")
+
+## backend/services/identity-service/src/main/java/com/fintech/identity/controller/KycController.java
+  19:@RequestMapping("/api/v1/kyc")
+  25:    @PostMapping("/submit")
+  35:    @GetMapping("/status")
+  42:    @PutMapping("/{kycId}/review")
+
+## backend/services/identity-service/src/main/java/com/fintech/identity/controller/SessionController.java
+  18:@RequestMapping("/api/v1/sessions")
+  24:    @GetMapping
+  33:    @DeleteMapping("/{sessionId}")
+
+## backend/services/identity-service/src/main/java/com/fintech/identity/controller/StaffController.java
+  18:@RequestMapping("/api/v1/staff")
+  31:    @GetMapping("/branch/{branchId}")
+
+## backend/services/identity-service/src/main/java/com/fintech/identity/controller/UserController.java
+  18:@RequestMapping("/api/v1/users")
+  24:    @GetMapping("/me")
+  32:    @PutMapping("/profile")
+
+## backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/controller/LedgerController.java
+  25:@RequestMapping("/api/v1/ledger")
+  43:    @GetMapping({"/summary", "/turnover-summary"})
+  49:    @GetMapping("/accounts")
+  54:    @GetMapping("/accounts/balance-check")
+  65:    @GetMapping("/statement/{walletId}")
+  76:    @GetMapping("/statement/{walletId}/account")
+  87:    @GetMapping("/entries")
+  92:    @GetMapping("/entries/{entryId}")
+  99:    @GetMapping("/transactions/{transactionId}")
+
+## backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/controller/LedgerQueryController.java
+  21:@RequestMapping("/api/v1/ledger")
+  35:    @GetMapping({"/cash-summary", "/cash-deposit/summary"})
+
+## backend/services/notification-service/src/main/java/com/fintech/notification/controller/DeviceController.java
+  18:@RequestMapping("/api/v1/devices")
+  27:    @PostMapping("/register")
+  37:    @DeleteMapping("/unregister")
+
+## backend/services/notification-service/src/main/java/com/fintech/notification/controller/NotificationController.java
+  20:@RequestMapping("/api/v1/notifications")
+  29:    @GetMapping
+  40:    @GetMapping("/unread-count")
+  48:    @PatchMapping("/{id}/read")
+  57:    @PatchMapping("/read-all")
+  66:    @PutMapping("/settings")
+
+## backend/services/notification-service/src/main/java/com/fintech/notification/controller/PromotionController.java
+  19:@RequestMapping("/api/v1/promotions")
+  28:    @GetMapping
+  34:    @GetMapping("/campaigns")
+  40:    @PostMapping("/redeem")
+  49:    @PostMapping("/apply")
+  59:    @GetMapping("/my-vouchers")
+
+## backend/services/notification-service/src/main/java/com/fintech/notification/controller/SupportController.java
+  22:@RequestMapping("/api/v1/support")
+  31:    @PostMapping("/tickets")
+  43:    @GetMapping("/tickets")
+  50:    @GetMapping("/tickets/{id}")
+  60:    @PostMapping("/tickets/{id}/messages")
+  70:    @GetMapping("/faq")
+
+## backend/services/payment-service/src/main/java/com/fintech/payment/controller/BankController.java
+  13:@RequestMapping("/api/v1/payments/banks")
+  22:    @GetMapping
+
+## backend/services/payment-service/src/main/java/com/fintech/payment/controller/CashDepositController.java
+  28:@RequestMapping("/api/v1/cash")
+  49:    @PostMapping("/deposits")
+  138:    @PostMapping("/deposits/{id}/approve")
+  205:    @PostMapping("/deposits/{id}/reject")
+  261:    @GetMapping("/deposits")
+  289:    @GetMapping("/vault/summary")
+
+## backend/services/payment-service/src/main/java/com/fintech/payment/controller/MoneyRequestController.java
+  18:@RequestMapping("/api/v1/payments/money-requests")
+  27:    @PostMapping
+  55:    @PostMapping("/{id}/accept")
+  69:    @PostMapping("/{id}/reject")
+  83:    @GetMapping("/user/{userId}")
+
+## backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransactionHistoryController.java
+  30:@RequestMapping("/api/v1/transactions")
+  39:    @GetMapping
+  68:    @GetMapping("/{id}")
+
+## backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransferController.java
+  13:@RequestMapping("/api/v1/payments/transfer")
+  22:    @PostMapping
+  35:    @GetMapping("/{transactionId}")
+
+## backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/web/WalletRestController.java
+  29:@RequestMapping("/api/v1/wallets")
+  43:    @GetMapping("/me")
+  56:    @GetMapping("/{walletId}")
+  68:    @GetMapping("/recipient-info")
+  110:    @GetMapping("/fees/estimate")
+

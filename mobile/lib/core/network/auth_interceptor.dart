@@ -11,13 +11,15 @@ import '../../presentation/routes/app_router.dart';
 
 class AuthInterceptor extends Interceptor {
   final FlutterSecureStorage _storage;
+  final String? deviceId;
+  final HttpClientAdapter? clientAdapter;
 
   /// Completer dùng làm khóa (lock/mutex) để đồng bộ hóa việc làm mới token.
   /// Khi nhiều request nhận 401 cùng lúc, chỉ 1 request thực sự gọi BE /auth/refresh,
   /// các request khác đợi completer hoàn thành và dùng token mới để retry.
   static Completer<String?>? _refreshCompleter;
 
-  AuthInterceptor({FlutterSecureStorage? storage})
+  AuthInterceptor({FlutterSecureStorage? storage, this.deviceId, this.clientAdapter})
       : _storage = storage ?? AppSecureStorage.instance;
 
   @override
@@ -82,6 +84,7 @@ class AuthInterceptor extends Interceptor {
           request.headers['Authorization'] = 'Bearer $newAccessToken';
           request.extra['retried'] = true;
           final retryDio = Dio(BaseOptions(baseUrl: request.baseUrl));
+          if (clientAdapter != null) retryDio.httpClientAdapter = clientAdapter!;
           final retryResponse = await retryDio.fetch(request);
           return handler.resolve(retryResponse);
         } else {
@@ -140,29 +143,67 @@ class AuthInterceptor extends Interceptor {
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
       ));
+      if (clientAdapter != null) refreshDio.httpClientAdapter = clientAdapter!;
+
+      final activeDeviceId = deviceId ?? await AppSecureStorage.safeRead(_storage, key: 'device_id');
 
       final response = await refreshDio.post(
         ApiConstants.refresh,
-        queryParameters: {'refreshToken': refreshToken},
+        data: {
+          'refreshToken': refreshToken,
+          if (activeDeviceId != null && activeDeviceId.isNotEmpty) 'deviceId': activeDeviceId,
+        },
       );
 
-      final envelope = response.data as Map<String, dynamic>;
-      final data = envelope['data'] as Map<String, dynamic>?;
-      final newAccessToken = data?['accessToken'] as String?;
-      final newRefreshToken = data?['refreshToken'] as String?;
+      if (response.data is! Map) {
+        debugPrint('[AuthInterceptor] Refresh failed: response is not a JSON Map');
+        await _clearTokensAndRedirect();
+        _refreshCompleter?.complete(null);
+        return null;
+      }
+
+      final envelope = Map<String, dynamic>.from(response.data as Map);
+      final rawData = envelope['data'];
+      final Map<String, dynamic> data = (rawData is Map)
+          ? Map<String, dynamic>.from(rawData)
+          : envelope;
+
+      String? newAccessToken;
+      String? newRefreshToken;
+
+      final rawToken = data['token'];
+      if (rawToken is String) {
+        newAccessToken = rawToken;
+      } else if (rawToken is Map) {
+        newAccessToken = (rawToken['accessToken'] ?? rawToken['token']) as String?;
+        newRefreshToken = rawToken['refreshToken'] as String?;
+      }
+
+      if (data['accessToken'] is String) {
+        newAccessToken = data['accessToken'] as String;
+      }
+      if (data['refreshToken'] is String) {
+        newRefreshToken = data['refreshToken'] as String;
+      }
 
       if (newAccessToken != null && newAccessToken.isNotEmpty) {
         await AppSecureStorage.safeWrite(_storage, key: AppConstants.keyAccessToken, value: newAccessToken);
         if (newRefreshToken != null && newRefreshToken.isNotEmpty) {
           await AppSecureStorage.safeWrite(_storage, key: AppConstants.keyRefreshToken, value: newRefreshToken);
         }
+        debugPrint('[AuthInterceptor] Silent refresh token succeeded');
         _refreshCompleter?.complete(newAccessToken);
         return newAccessToken;
       } else {
+        debugPrint('[AuthInterceptor] Refresh failed: token missing in payload');
+        // Token refresh failed ⇒ clear session và điều hướng login
+        await _clearTokensAndRedirect();
         _refreshCompleter?.complete(null);
         return null;
       }
     } catch (e) {
+      debugPrint('[AuthInterceptor] Silent refresh error: $e');
+      await _clearTokensAndRedirect();
       _refreshCompleter?.complete(null);
       return null;
     } finally {

@@ -5,10 +5,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class BankCardsScreen extends StatefulWidget {
   const BankCardsScreen({super.key});
@@ -256,6 +258,15 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                     onPressed: isSubmitting
                         ? null
                         : () async {
+                            // MOB-007: BE chưa có API bank-accounts (BE-REQ-06).
+                            if (!BackendCapabilities.bankAccounts) {
+                              await showFeatureUnavailable(
+                                context,
+                                feature: 'Liên kết tài khoản ngân hàng',
+                                reason: 'Backend chưa cung cấp API tài khoản ngân hàng (BE-REQ-06).',
+                              );
+                              return;
+                            }
                             final acc = accCtrl.text.trim();
                             final holder = holderCtrl.text.trim();
                             if (acc.isEmpty) {
@@ -350,6 +361,15 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                 title: const Text('Hủy liên kết tài khoản này', style: TextStyle(color: AppColors.error)),
                 onTap: () async {
                   Navigator.pop(ctx);
+                  // MOB-007: BE chưa có API bank-accounts (BE-REQ-06).
+                  if (!BackendCapabilities.bankAccounts) {
+                    await showFeatureUnavailable(
+                      context,
+                      feature: 'Hủy liên kết tài khoản',
+                      reason: 'Backend chưa cung cấp API tài khoản ngân hàng (BE-REQ-06).',
+                    );
+                    return;
+                  }
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (dialogCtx) => AlertDialog(

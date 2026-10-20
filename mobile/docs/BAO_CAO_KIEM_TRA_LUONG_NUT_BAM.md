@@ -1,295 +1,191 @@
 # BÁO CÁO KIỂM TRA LUỒNG NÚT BẤM - SEN HỒNG BANK FLUTTER
 
 **Ngày kiểm tra:** 05/09/2026  
-**Tài liệu tham chiếu:** `tailieuchuyendoi.md` - 50 màn hình yêu cầu
+**Tài liệu tham chiếu:** `tailieuchuyendoi.md` - 50 màn hình yêu cầu  
+**Ngày đính chính:** 20/10/2026 (Audit AUDIT-MOB-BE-001)
 
 ---
 
-## 📊 TỔNG QUAN
+## ⚠️ SUPERSEDED — NỘI DUNG DƯỚI ĐÂY LÀ BÁO CÁO LỊCH SỬ, KHÔNG PHẢN ÁNH TRẠNG THÁI BACKEND THỰC TẾ
+
+> **QUAN TRỌNG:** Báo cáo này khẳng định "51/51 màn hình, không thiếu luồng" — **ĐÚNG về mặt UI/Navigation** nhưng **SAI về mặt tích hợp backend**. Nhiều màn hình có đầy đủ nút bấm và luồng điều hướng, nhưng **gọi API không tồn tại** hoặc **mô phỏng dữ liệu giả** (`Future.delayed`).
+>
+> **Xem thực tế tích hợp:** `.agents_workspace/01_ISSUES_AND_TASKS.md` Phụ lục A + `mobile/README.md` (đã đính chính).
+
+---
+
+## 📊 TỔNG QUAN (ĐÃ CẬP NHẬT)
 
 ### Kết quả tổng hợp:
 - **Tổng màn hình theo tài liệu:** 51 màn hình (bao gồm MainTabs container)
-- **Đã implement đầy đủ:** ✅ **51/51 màn hình (100%)**
-- **Thiếu luồng nút bấm:** ❌ **KHÔNG CÓ** - Tất cả các luồng đã được implement
+- **Đã implement đầy đủ UI/Navigation:** ✅ **51/51 màn hình (100%)**
+- **Thiếu luồng nút bấm (UI):** ❌ **KHÔNG CÓ** - Tất cả các luồng đã được implement
+- **🆕 Tích hợp Backend Thực Tế:** ⚠️ **CHỈ 24/69 API KHỚP** — 38 endpoint không tồn tại, 7 sai hợp đồng
 
 ---
 
-## ✅ CHI TIẾT CÁC MÀN HÌNH ĐÃ IMPLEMENT
+## ✅ CHI TIẾT CÁC MÀN HÌNH ĐÃ IMPLEMENT (UI/NAVIGATION)
 
-### **Phân hệ 1: Auth & Onboarding (8/8)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 1 | LoginScreen | `/auth/login` | ✅ Có |
-| 2 | RegisterScreen | `/auth/register` | ✅ Có |
-| 3 | OtpVerificationScreen | `/auth/otp` | ✅ Có |
-| 4 | SetPinScreen | `/auth/set-pin` | ✅ Có |
-| 5 | ForgotPinScreen | `/auth/forgot-pin` | ✅ Có |
-| 6 | ForgotPasswordScreen | `/auth/forgot-password` | ✅ Có |
-| 7 | ResetPasswordScreen | `/auth/reset-password` | ✅ Có |
-| 8 | TermsOfServiceScreen | `/auth/terms` | ✅ Có |
+> **Lưu ý:** Các màn hình dưới đây **CÓ UI, CÓ NAVIGATION**, nhưng trạng thái **Tích Hợp Backend** được ghi rõ.
 
-**Nút bấm điều hướng:**
-- LoginScreen → Register: ✅
-- LoginScreen → ForgotPassword: ✅
-- Register → OTP → SetPin → MainTabs: ✅
-- ForgotPassword → ResetPassword → Login: ✅
+### **Phân hệ 1: Auth & Onboarding (8/8)** ✅ UI — ⚠️ **3/8 Gọi API BE-GAP**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 1 | LoginScreen | `/auth/login` | ✅ Có | ✅ `/auth/login` tồn tại |
+| 2 | RegisterScreen | `/auth/register` | ✅ Có | ✅ `/auth/register` tồn tại |
+| 3 | OtpVerificationScreen | `/auth/otp` | ✅ Có | ❌ **BE-GAP**: `/auth/otp/*` không tồn tại (BE-REQ-04) |
+| 4 | SetPinScreen | `/auth/set-pin` | ✅ Có | ❌ **BE-GAP**: `/users/pin/set` không tồn tại (BE-REQ-03) |
+| 5 | ForgotPinScreen | `/auth/forgot-pin` | ✅ Có | ❌ **BE-GAP**: `/users/pin/*` không tồn tại |
+| 6 | ForgotPasswordScreen | `/auth/forgot-password` | ✅ Có | ❌ **BE-GAP**: `/auth/forgot-password` không tồn tại |
+| 7 | ResetPasswordScreen | `/auth/reset-password` | ✅ Có | ❌ **BE-GAP**: `/auth/reset-password` không tồn tại |
+| 8 | TermsOfServiceScreen | `/auth/terms` | ✅ Có | ✅ `/legal/terms` tồn tại |
 
----
-
-### **Phân hệ 2: Core Shell & Main Tabs (5/5)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 9 | MainTabs (Container) | `StatefulShellRoute` | ✅ Có với FloatingGlassBottomBar |
-| 10 | HomeScreen | `/` (tab 1) | ✅ Có |
-| 11 | CardsScreen | Đã có trong code | ✅ Có (xem phân hệ 7) |
-| 12 | PromotionsScreen | `/promotions` (tab 3) | ✅ Có |
-| 13 | MoreScreen | `/more` (tab 4) | ✅ Có |
-
-**Lưu ý:** Tài liệu ghi 5 tab (Home, Cards, QR, Gift, Menu) nhưng code hiện tại dùng 4 tab:
-- Tab 1: Home ✅
-- Tab 2: History ✅ (thay vì Cards - Cards được truy cập qua HomeScreen)
-- Tab 3: Promotions ✅ (Gift/Ưu đãi)
-- Tab 4: More ✅ (Menu)
-- QR: Được truy cập qua nút trên VietnamHeroHeader trong HomeScreen ✅
+**Xử lý mobile (sau audit):**
+- Register → Home trực tiếp (bỏ OTP/PIN bắt buộc)
+- OTP/SetPin/ForgotPin screens: hiển thị "Backend chưa hỗ trợ" + nút quay lại
+- Forgot/Reset password: hướng dẫn liên hệ CSKH
 
 ---
 
-### **Phân hệ 3: Chuyển Tiền & QR Flow (8/8)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 14 | ChooseRecipientScreen | `/transfer` | ✅ Có |
-| 15 | EnterAmountScreen | `/transfer/amount` | ✅ Có |
-| 16 | ConfirmTransferScreen | `/transfer/confirm` | ✅ Có |
-| 17 | TransferConfirmScreen (2FA OTP) | `/transfer/2fa-otp` | ✅ Có |
-| 18 | TransferResultScreen | `/transfer/result` | ✅ Có |
-| 19 | ScanQRScreen | `/scan-qr`, `/qr-scanner` | ✅ Có (2 route alias) |
-| 20 | QRMyScreen (MyQRScreen) | `/my-qr` | ✅ Có |
-| 21 | RequestTransferScreen | `/transfer/request` | ✅ Có |
-
-**Nút bấm điều hướng từ HomeScreen:**
-- VietnamHeroHeader "Chuyển tiền" → `/transfer` ✅
-- VietnamHeroHeader "QR" → `/my-qr` ✅
-- Quick Services "Chuyển tiền" → `/transfer` ✅
-- TransferResult "Giao dịch mới" → quay về `/transfer` ✅
+### **Phân hệ 2: Core Shell & Main Tabs (5/5)** ✅ UI — ✅ **API Thực**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 9 | MainTabs (Container) | `StatefulShellRoute` | ✅ Có | N/A (Shell) |
+| 10 | HomeScreen | `/` (tab 1) | ✅ Có | ✅ `/wallets/me`, `/users/me` |
+| 11 | CardsScreen | `/cards` | ✅ Có | ✅ `/wallets/me` (ví thẻ) |
+| 12 | PromotionsScreen | `/promotions` (tab 3) | ✅ Có | ✅ `/promotions`, `/promotions/my-vouchers` |
+| 13 | MoreScreen | `/more` (tab 4) | ✅ Có | N/A (Menu) |
 
 ---
 
-### **Phân hệ 4: Nạp & Rút Tiền (4/4)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 22 | DepositScreen | `/deposit` | ✅ Có |
-| 23 | DepositConfirmScreen | `/deposit/confirm` | ✅ Có |
-| 24 | WithdrawScreen | `/withdraw` | ✅ Có |
-| 25 | WithdrawConfirmScreen | `/withdraw/confirm` | ✅ Có |
+### **Phân hệ 3: Chuyển Tiền & QR Flow (8/8)** ✅ UI — ⚠️ **PIN/OTP BE-GAP**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 14 | ChooseRecipientScreen | `/transfer` | ✅ Có | ✅ `/wallets/recipient-info` |
+| 15 | EnterAmountScreen | `/transfer/amount` | ✅ Có | ✅ `/wallets/fees/estimate` |
+| 16 | ConfirmTransferScreen | `/transfer/confirm` | ✅ Có | ❌ **CHẶN** — BE thiếu PIN/OTP auth (MOB-002) |
+| 17 | TransferConfirmScreen (2FA OTP) | `/transfer/2fa-otp` | ✅ Có | ❌ **CHẶN** — BE thiếu PIN/OTP auth |
+| 18 | TransferResultScreen | `/transfer/result` | ✅ Có | Tùy kết quả transfer |
+| 19 | ScanQRScreen | `/scan-qr`, `/qr-scanner` | ✅ Có | ❌ **BE-GAP**: `/payments/vietqr/decode` không tồn tại |
+| 20 | QRMyScreen (MyQRScreen) | `/my-qr` | ✅ Có | ❌ **BE-GAP**: `/users/me/qrcode` không tồn tại |
+| 21 | RequestTransferScreen | `/transfer/request` | ✅ Có | ⚠️ Sai path: mobile `/money-requests*` vs BE `/payments/money-requests` |
 
-**Nút bấm điều hướng từ HomeScreen:**
-- VietnamHeroHeader "Nạp tiền" → `/deposit` ✅
-- VietnamHeroHeader "Rút tiền" → `/withdraw` ✅
-
----
-
-### **Phân hệ 5: Lịch Sử & Biên Lai (2/2)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 26 | TransactionHistoryScreen | `/history` (tab 2) | ✅ Có |
-| 27 | TransactionDetailScreen | `/history/detail` | ✅ Có |
-
-**Nút bấm điều hướng từ HomeScreen:**
-- Recent Transactions "Xem tất cả" → `/history` ✅
-- Recent Transaction item click → `/history/detail?id=...` ✅
+**Xử lý mobile (sau audit):**
+- ConfirmTransferScreen: **CHẶN TRƯỚC KHI GỌI SAGA** — hiển thị dialog "Backend chưa cung cấp API xác thực PIN/OTP"
+- TransferConfirmScreen: Tương tự chặn
+- VietQR/MyQR: Gate tại nút decode/generate
 
 ---
 
-### **Phân hệ 6: Hóa Đơn & Tiện Ích (7/7)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 28 | BillPaymentScreen | `/bills` | ✅ Có |
-| 29 | BillInputScreen | `/bills/input` | ✅ Có |
-| 30 | BillConfirmScreen | `/bills/confirm` | ✅ Có |
-| 31 | PhoneRechargeScreen | `/bills/phone-recharge` | ✅ Có |
-| 32 | LotteryScreen | `/bills/lottery` | ✅ Có |
-| 33 | SavingsScreen | `/bills/savings`, `/savings` | ✅ Có (2 route alias) |
-| 34 | QuickLoanScreen | `/bills/quick-loan` | ✅ Có |
+### **Phân hệ 4: Nạp & Rút Tiền (4/4)** ✅ UI — ❌ **100% BE-GAP**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 22 | DepositScreen | `/deposit` | ✅ Có | ❌ **BE-GAP**: `/wallets/deposit` không tồn tại (BE-REQ-06) |
+| 23 | DepositConfirmScreen | `/deposit/confirm` | ✅ Có | ❌ **BE-GAP** |
+| 24 | WithdrawScreen | `/withdraw` | ✅ Có | ❌ **BE-GAP**: `/wallets/withdraw` không tồn tại (BE-REQ-06) |
+| 25 | WithdrawConfirmScreen | `/withdraw/confirm` | ✅ Có | ❌ **BE-GAP** |
 
-**Nút bấm điều hướng từ HomeScreen:**
-- Quick Services "Nạp ĐT" → `/bills/phone-recharge` ✅
-- Quick Services "Điện nước" → `/bills/input?service=ELECTRICITY` ✅
-- Quick Services "Tiết kiệm" → `/bills/savings` ✅
-- Quick Services "Vay nhanh" → `/bills/quick-loan` ✅
-- Quick Services "Vietlott" → `/bills/lottery` ✅
+**Xử lý mobile:** Gate tại nút xác nhận/nạp/rút — dialog "Tính năng chưa sẵn sàng: Backend chưa cung cấp API nạp/rút tiền (BE-REQ-06)"
 
 ---
 
-### **Phân hệ 7: Thẻ & Nguồn Tiền & Thụ Hưởng (4/4)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 35 | PaymentMethodsScreen | `/payment-methods` | ✅ Có |
-| 36 | BankCardsScreen | `/bank-cards` | ✅ Có |
-| 37 | BeneficiariesScreen | `/beneficiaries` | ✅ Có |
-| - | CardsScreen (từ phân hệ 2) | `/cards` | ✅ Có |
+### **Phân hệ 5: Lịch Sử & Biên Lai (2/2)** ✅ UI — ⚠️ **Biên Lai BE-GAP**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 26 | TransactionHistoryScreen | `/history` (tab 2) | ✅ Có | ✅ `/transactions` (nhưng thiếu `walletId` query) |
+| 27 | TransactionDetailScreen | `/history/detail` | ✅ Có | ⚠️ `/transactions/{id}` thiếu `walletId` ⇒ sai `runningBalance` |
 
-**Nút bấm điều hướng từ HomeScreen:**
-- Quick Services "Quản lý thẻ" → `/cards` ✅
-
-**Nút bấm điều hướng từ MoreScreen:**
-- "Phương thức thanh toán & Nguồn tiền" → `/payment-methods` ✅
-- "Tài khoản ngân hàng liên kết" → `/bank-cards` ✅
-- "Danh bạ người thụ hưởng" → `/beneficiaries` ✅
+**Xử lý mobile:** Thêm `walletId` query vào `getTransaction` (MOB-015). Biên lai PDF/Export: Gate (BE-REQ-06).
 
 ---
 
-### **Phân hệ 8: Hồ Sơ Cá Nhân & eKYC (6/6)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 38 | UserProfileScreen | `/profile` | ✅ Có |
-| 39 | IdentityDocumentScreen | `/profile/identity` | ✅ Có |
-| 40 | KycLevelScreen | `/profile/kyc-level` | ✅ Có |
-| 41 | EKycScreen | `/profile/ekyc` | ✅ Có |
-| 42 | DigitalSignatureScreen | `/profile/digital-signature` | ✅ Có |
-| 43 | EmailSettingsScreen | `/profile/email-settings` | ✅ Có |
+### **Phân hệ 6: Hóa Đơn & Tiện Ích (7/7)** ✅ UI — ❌ **100% BE-GAP**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 28 | BillPaymentScreen | `/bills` | ✅ Có | ❌ **BE-GAP**: `/bills/*` không tồn tại (BE-REQ-06) |
+| 29 | BillInputScreen | `/bills/input` | ✅ Có | ❌ **BE-GAP** |
+| 30 | BillConfirmScreen | `/bills/confirm` | ✅ Có | ❌ **BE-GAP** |
+| 31 | PhoneRechargeScreen | `/bills/phone-recharge` | ✅ Có | ❌ **BE-GAP** |
+| 32 | LotteryScreen | `/bills/lottery` | ✅ Có | ❌ **BE-GAP** |
+| 33 | SavingsScreen | `/bills/savings`, `/savings` | ✅ Có | ❌ **BE-GAP** |
+| 34 | QuickLoanScreen | `/bills/quick-loan` | ✅ Có | ❌ **BE-GAP** (mô phỏng `Future.delayed`) |
 
-**Nút bấm điều hướng từ MoreScreen:**
-- User Card click → `/profile` ✅
-- "Hồ sơ & Định danh (eKYC)" → `/profile/ekyc` ✅
-
----
-
-### **Phân hệ 9: Cài Đặt, Bảo Mật & Thiết Bị (4/4)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 44 | SecuritySettingsScreen | `/settings/security` | ✅ Có |
-| 45 | DeviceManagementScreen | `/settings/devices` | ✅ Có |
-| 46 | SettingsScreen | `/settings` | ✅ Có |
-| 47 | ConfigScreen | `/settings/config` | ✅ Có |
-
-**Nút bấm điều hướng từ MoreScreen:**
-- "Cài đặt bảo mật & Smart OTP" → `/settings/security` ✅
-- "Quản lý phiên & Thiết bị đăng nhập" → `/settings/devices` ✅
-- "Cài đặt giao diện & Hình nền app" → `/settings` ✅
-- "Cấu hình Server API" → `/settings/config` ✅
+**Xử lý mobile:** Tất cả gate tại nút xác nhận/thanh toán.
 
 ---
 
-### **Phân hệ 10: Thông Báo & Trợ Giúp (4/4)** ✅
-| STT | Màn hình tài liệu | Route Flutter | Trạng thái |
-|-----|------------------|---------------|-----------|
-| 48 | NotificationsScreen | `/notifications` | ✅ Có |
-| 49 | HelpCenterScreen | `/support/help-center`, `/help-center` | ✅ Có (2 route alias) |
-| 50 | SearchScreen | `/search` | ✅ Có |
-| 51 | ReferralScreen | `/referral` | ✅ Có |
-
-**Lưu ý:** LiveChatScreen (`/support/live-chat`, `/live-chat`) cũng đã có route riêng.
-
-**Nút bấm điều hướng từ HomeScreen:**
-- VietnamHeroHeader "Notifications icon" → `/notifications` ✅
-- VietnamHeroHeader "Search icon" → `/search` ✅
-
-**Nút bấm điều hướng từ MoreScreen:**
-- AppBar Search icon → `/search` ✅
-- "Giới thiệu bạn bè nhận thưởng" → `/referral` ✅
-- "Trung tâm trợ giúp & Live Chat CSKH" → `/support/help-center` ✅
+### **Phân hệ 7: Thẻ & Nguồn Tiền & Thụ Hưởng (4/4)** ✅ UI — ❌ **100% BE-GAP**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 35 | PaymentMethodsScreen | `/payment-methods` | ✅ Có | ❌ **BE-GAP**: `/funding-sources` không tồn tại |
+| 36 | BankCardsScreen | `/bank-cards` | ✅ Có | ❌ **BE-GAP**: `/bank-accounts` không tồn tại |
+| 37 | BeneficiariesScreen | `/beneficiaries` | ✅ Có | ❌ **BE-GAP**: `/beneficiaries` không tồn tại |
+| 38 | CardsScreen (từ phân hệ 2) | `/cards` | ✅ Có | ✅ `/wallets/me` (ví thẻ) |
 
 ---
 
-## 🎯 KẾT LUẬN
-
-### ✅ **KHÔNG CÓ LUỒNG NÚT BẤM NÀO BỊ THIẾU**
-
-Tất cả 51 màn hình theo tài liệu `tailieuchuyendoi.md` đã được implement đầy đủ trong code Flutter hiện tại:
-
-1. **Auth & Onboarding:** 8/8 màn hình ✅
-2. **Core Shell & Main Tabs:** 5/5 màn hình ✅
-3. **Chuyển Tiền & QR Flow:** 8/8 màn hình ✅
-4. **Nạp & Rút Tiền:** 4/4 màn hình ✅
-5. **Lịch Sử & Biên Lai:** 2/2 màn hình ✅
-6. **Hóa Đơn & Tiện Ích:** 7/7 màn hình ✅
-7. **Thẻ & Nguồn Tiền:** 4/4 màn hình ✅
-8. **Hồ Sơ & eKYC:** 6/6 màn hình ✅
-9. **Cài Đặt & Bảo Mật:** 4/4 màn hình ✅
-10. **Thông Báo & Trợ Giúp:** 4/4 màn hình ✅
-
-### 📌 LƯU Ý KIẾN TRÚC
-
-#### Bottom Tab Bar (khác biệt nhỏ so với tài liệu):
-**Tài liệu gốc (React Native):** 5 tabs
-- Tab 1: Trang chủ
-- Tab 2: **Thẻ**
-- Tab 3: **Quét QR**
-- Tab 4: Ưu đãi
-- Tab 5: Menu
-
-**Flutter hiện tại:** 4 tabs
-- Tab 1: Trang chủ ✅
-- Tab 2: **Lịch sử** (thay vì Thẻ)
-- Tab 3: Ưu đãi ✅
-- Tab 4: Menu ✅
-
-**Lý do thay đổi hợp lý:**
-- **Thẻ** vẫn truy cập được qua HomeScreen Quick Services "Quản lý thẻ" → `/cards`
-- **Quét QR** vẫn truy cập được qua VietnamHeroHeader nút "QR" → `/my-qr` và `/scan-qr`
-- **Lịch sử** được promote lên tab chính vì đây là tính năng quan trọng trong app ngân hàng (xem sao kê thường xuyên)
-
-#### Side Menu Drawer:
-- Code có `SideMenuDrawer` component được gọi từ HomeScreen khi click avatar
-- Tài liệu gốc có `SideMenuDrawer.tsx` → Flutter đã implement ✅
+### **Phân hệ 8: Hồ Sơ Cá Nhân & eKYC (6/6)** ✅ UI — ⚠️ **SAI PATH**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 39 | UserProfileScreen | `/profile` | ✅ Có | ⚠️ Sai: `PUT /users/me?query` vs BE `PUT /users/profile` JSON |
+| 40 | IdentityDocumentScreen | `/profile/identity` | ✅ Có | ❌ **BE-GAP**: Upload ảnh không có API |
+| 41 | KycLevelScreen | `/profile/kyc-level` | ✅ Có | ⚠️ Sai path: `/users/kyc*` vs BE `/kyc/*` |
+| 42 | EKycScreen | `/profile/ekyc` | ✅ Có | ⚠️ Sai payload KYC |
+| 43 | DigitalSignatureScreen | `/profile/digital-signature` | ✅ Có | ❌ **BE-GAP**: Chữ ký số không có API |
+| 44 | EmailSettingsScreen | `/profile/email-settings` | ✅ Có | ⚠️ Phần của `/users/profile` |
 
 ---
 
-## 🔍 PHÂN TÍCH LUỒNG NÚT BẤM CHÍNH
+### **Phân hệ 9: Cài Đặt, Bảo Mật & Thiết Bị (4/4)** ✅ UI — ⚠️ **Thiết Bị HARDCODE**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 45 | SecuritySettingsScreen | `/settings/security` | ✅ Có | ✅ Local auth (biometric) |
+| 46 | DeviceManagementScreen | `/settings/devices` | ✅ Có | ❌ **HARDCODE GIẢ** — mobile tạo Samsung/iPhone/iPad + lịch sử đăng nhập giả thay vì gọi `/sessions` |
+| 47 | SettingsScreen | `/settings` | ✅ Có | Local only |
+| 48 | ConfigScreen | `/settings/config` | ✅ Có | Local only |
 
-### Từ HomeScreen (màn hình trọng tâm):
-```
-HomeScreen
-├─ VietnamHeroHeader
-│  ├─ Notifications icon → /notifications ✅
-│  ├─ Search icon → /search ✅
-│  ├─ Profile avatar → SideMenuDrawer ✅
-│  ├─ Nút "Chuyển tiền" → /transfer ✅
-│  ├─ Nút "Nạp tiền" → /deposit ✅
-│  ├─ Nút "Rút tiền" → /withdraw ✅
-│  └─ Nút "QR" → /my-qr ✅
-│
-├─ Quick Services Grid (8 nút)
-│  ├─ Chuyển tiền → /transfer ✅
-│  ├─ Nạp ĐT → /bills/phone-recharge ✅
-│  ├─ Điện nước → /bills/input?service=ELECTRICITY ✅
-│  ├─ Tiết kiệm → /bills/savings ✅
-│  ├─ Vay nhanh → /bills/quick-loan ✅
-│  ├─ Vietlott → /bills/lottery ✅
-│  ├─ Quản lý thẻ → /cards ✅
-│  └─ Xem thêm → /more ✅
-│
-├─ Recent Transactions
-│  ├─ "Xem tất cả" → /history ✅
-│  └─ Transaction item → /history/detail?id=... ✅
-│
-└─ CurvedPromoBanner
-   └─ Tap → /promotions ✅
-```
-
-### Từ MoreScreen (menu tiện ích):
-```
-MoreScreen
-├─ User Card → /profile ✅
-├─ Tài khoản & Thẻ
-│  ├─ Hồ sơ & eKYC → /profile/ekyc ✅
-│  ├─ Phương thức thanh toán → /payment-methods ✅
-│  ├─ Tài khoản ngân hàng → /bank-cards ✅
-│  └─ Danh bạ thụ hưởng → /beneficiaries ✅
-├─ Bảo mật & Ứng dụng
-│  ├─ Bảo mật → /settings/security ✅
-│  ├─ Quản lý thiết bị → /settings/devices ✅
-│  ├─ Cài đặt giao diện → /settings ✅
-│  ├─ Cấu hình Server → /settings/config ✅
-│  ├─ Giới thiệu bạn bè → /referral ✅
-│  ├─ Trợ giúp & Chat → /support/help-center ✅
-│  └─ Điều khoản → /auth/terms ✅
-└─ Đăng xuất → /auth/login ✅
-```
+**Xử lý mobile (sau audit):** DeviceManagementScreen dùng thật `GET /sessions`, `DELETE /sessions/{id}`.
 
 ---
 
-## 📊 THỐNG KÊ ROUTES
+### **Phân hệ 10: Thông Báo & Trợ Giúp (4/4)** ✅ UI — ✅ **API Thực (Phần Lớn)**
+| STT | Màn hình tài liệu | Route Flutter | Trạng Thái UI | Tích Hợp BE |
+|-----|------------------|---------------|---------------|-------------|
+| 49 | NotificationsScreen | `/notifications` | ✅ Có | ✅ `/notifications`, `/notifications/settings` |
+| 50 | HelpCenterScreen | `/support/help-center`, `/help-center` | ✅ Có | ✅ `/support/faq`, `/support/tickets` |
+| 51 | SearchScreen | `/search` | ✅ Có | Local only |
+| 52 | ReferralScreen | `/referral` | ✅ Có | ❌ **BE-GAP**: `/referrals/*` không tồn tại |
+
+---
+
+## 🎯 KẾT LUẬN (CẬP NHẬT SAU AUDIT)
+
+### ✅ **UI/NAVIGATION: KHÔNG CÓ LUỒNG NÚT BẤM NÀO BỊ THIẾU**
+
+Tất cả 51 màn hình theo tài liệu `tailieuchuyendoi.md` đã được implement đầy đủ với đầy đủ navigation flows.
+
+### ⚠️ **TÍCH HỢP BACKEND: CHỈ 24/69 ENDPOINT KHỚP**
+
+| Trạng Thái | Số Lượng | Mô Tả |
+|------------|----------|-------|
+| ✅ Khớp hoàn toàn | 24 | Auth login/register/refresh/logout, Wallet me/recipient-info/fees, Transfer `/payments/transfer`, Transactions list/detail, Sessions, Notifications, Devices, Promotions, Banks (`/payments/banks`), Support |
+| ⚠️ Sai path/payload | 7 | Profile update, KYC, Money requests, Banks path |
+| ❌ Không tồn tại (BE-GAP) | 38 | OTP, PIN, Deposit/Withdraw, Bills, VietQR, Bank-accounts, Funding-sources, Beneficiaries, Receipt/Export, Config limits, Referral, Legal, Feedback... |
+
+### 📌 HÀNH ĐỘNG MOBILE (ĐÃ TRIỂN KHAI SAU AUDIT)
+1. **Gate mọi mutation BE-GAP** bằng `BackendCapabilities` + `FeatureUnavailable` dialog
+2. **Chặn chuyển tiền** khi `serverSideTransferAuth = false` (MOB-002)
+3. **Sửa refresh token** gửi JSON body (MOB-001)
+4. **Sửa profile update** đúng path/body (MOB-004)
+5. **Sửa KYC** đúng path/payload (MOB-005)
+6. **Sửa money requests** đúng base/payload (MOB-006)
+7. **DeviceManagementScreen** dùng thật `/sessions` API (MOB-008)
+8. **Logout** gọi thật `/auth/logout` + unregister FCM (MOB-009)
+9. **Notification settings** sync BE (MOB-010)
+
+---
+
+## 📊 THỐNG KÊ ROUTES (GIỮ NGUYÊN)
 
 **Tổng số routes trong app_router.dart:** 56 routes
 - StatefulShellRoute (MainTabs): 4 branches
@@ -311,14 +207,16 @@ MoreScreen
 
 ---
 
-## ✅ XÁC NHẬN CUỐI CÙNG
+## ✅ XÁC NHẬN CUỐI CÙNG (CẬP NHẬT)
 
-**KHÔNG CÓ LUỒNG NÚT BẤM NÀO BỊ THIẾU.**
+**UI/NAVIGATION:** KHÔNG CÓ LUỒNG NÚT BẤM NÀO BỊ THIẾU — 51/51 màn hình đầy đủ.
 
-Tất cả 51 màn hình trong tài liệu `tailieuchuyendoi.md` đã được implement đầy đủ với đầy đủ navigation flows. App Flutter hiện tại đã hoàn thiện 100% các màn hình và luồng điều hướng so với tài liệu thiết kế ban đầu.
+**BACKEND INTEGRATION:** **CHƯA CHUẨN** — 38 endpoint không tồn tại, 7 sai hợp đồng. Mobile đã triển khai gate + chặn theo audit AUDIT-MOB-BE-001. Xem `mobile/README.md` và `.agents_workspace/05_MOBILE_BE_AUDIT_FINAL.md` cho trạng thái mới nhất.
 
 ---
 
-**Người kiểm tra:** Kiro AI  
-**Ngày:** 05/09/2026  
-**Trạng thái:** ✅ HOÀN THÀNH - KHÔNG THIẾU LUỒNG NÀO
+**Người kiểm tra ban đầu:** Kiro AI  
+**Ngày ban đầu:** 05/09/2026  
+**Người đính chính:** Con 4 (Worker Agent 3)  
+**Ngày đính chính:** 20/10/2026  
+**Trạng thái:** ⚠️ SUPERSEDED — UI hoàn chỉnh, BE integration cần backend bổ sung (BE-REQ-03/04/06)

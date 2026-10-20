@@ -5,12 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
-import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? phone;
@@ -66,12 +63,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   void _resendOtp() {
     _startTimer();
-    AppAlerts.showSuccess(context, 'Đã gửi lại mã OTP qua tin nhắn SMS!');
+    // BE chưa hỗ trợ OTP cho reset password ⇒ thông báo
+    AppAlerts.showInfo(
+      context,
+      'Backend chưa cung cấp API OTP cho việc đặt lại mật khẩu. Vui lòng liên hệ Hotline 1900 6688.',
+    );
   }
 
   void _requestVoiceOtp() {
     _startTimer();
-    AppAlerts.showSuccess(context, 'Tổng đài tự động SenBank đang gọi đến số điện thoại của bạn...');
+    // BE chưa hỗ trợ Voice OTP cho reset password
+    AppAlerts.showInfo(
+      context,
+      'Backend chưa cung cấp Voice OTP cho đặt lại mật khẩu. Vui lòng liên hệ Hotline 1900 6688.',
+    );
   }
 
   @override
@@ -98,26 +103,18 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-    final phone = widget.phone;
-    if (phone == null || phone.isEmpty) {
-      AppAlerts.showError(context, 'Thiếu số điện thoại khôi phục', title: 'Lỗi');
-      return;
-    }
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await AuthRemoteDataSource(local: AuthLocalDataSourceImpl(prefs: prefs)).resetPassword(
-        phoneNumber: phone,
-        otp: _otpController.text,
-        newPassword: _passController.text,
-      );
+      // BE chưa hỗ trợ reset password qua OTP ⇒ hiển thị hướng dẫn liên hệ CSKH
       if (!mounted) return;
-      AppAlerts.showSuccess(context, 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', title: 'Thành công');
+      await showFeatureUnavailable(
+        context,
+        feature: 'Đặt lại mật khẩu qua OTP',
+        reason: 'Backend chưa cung cấp API reset password (BE-REQ-04). Vui lòng liên hệ Hotline 1900 6688 để được hỗ trợ.',
+      );
+      // Không gọi resetPassword endpoint
+      if (!mounted) return;
       context.go('/auth/login');
-    } catch (error) {
-      if (mounted) {
-        AppAlerts.showError(context, extractErrorMessage(error), title: 'Đặt lại mật khẩu thất bại');
-      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

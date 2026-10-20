@@ -1,0 +1,8 @@
+# Baseline environment
+2026-10-20T16:04:56+07:00
+
+75bf273cd707571c13073a625390a78adfa320ce
+
+Flutter 3.50.0-0.1.pre • channel beta • https://github.com/flutter/flutter.git
+Framework • revision 07502c7de3 (6 ngày trước) • 2026-10-13 19:03:20 -0700
+Engine • hash 067e4c6bd069b5ad3774ce0d5568867cd0589660 (revision b890cddcf8) (6 days ago) • 2026-10-13 22:16:08.000Z

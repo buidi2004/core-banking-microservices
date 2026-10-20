@@ -1,12 +1,13 @@
 import 'package:dio/dio.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/constants/backend_capabilities.dart';
 import '../../../core/network/dio_client.dart';
 import 'api_response.dart';
 
 class TransactionRemoteDataSource {
   final Dio _dio;
 
-  TransactionRemoteDataSource({Dio? dio}) : _dio = dio ?? DioClient().dio;
+  TransactionRemoteDataSource({Dio? dio}) : _dio = dio ?? DioClient.sharedDio;
 
   Future<List<Map<String, dynamic>>> getTransactions({
     required String walletId,
@@ -66,14 +67,26 @@ class TransactionRemoteDataSource {
     };
   }
 
-  Future<Map<String, dynamic>> getTransaction(String id) async {
-    final response = await _dio.get(ApiConstants.transactionDetail(id));
+  /// MOB-015: truyền `walletId` để BE đối chiếu góc nhìn ví. Nếu không truyền,
+  /// BE mặc định `sourceWalletId` khiến giao dịch nhận bị hiển thị như chuyển đi.
+  Future<Map<String, dynamic>> getTransaction(String id, {String? walletId}) async {
+    final hasWallet = walletId != null && walletId.isNotEmpty;
+    final response = await _dio.get(
+      ApiConstants.transactionDetail(id),
+      queryParameters: hasWallet ? {'walletId': walletId} : null,
+    );
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true || json['data'] is! Map) throw apiException(json);
     return _mapTransaction(Map<String, dynamic>.from(json['data'] as Map));
   }
 
+  /// MOB-007: BE chưa có endpoint export (BE-REQ-06) => không gọi 404.
   Future<List<int>> exportTransactions({required String walletId, required String format}) async {
+    if (!BackendCapabilities.receiptAndExport) {
+      throw UnsupportedError(
+        'Backend chưa cung cấp API xuất sao kê (BE-REQ-06).',
+      );
+    }
     final response = await _dio.get<List<int>>(
       ApiConstants.exportTransactions(format),
       queryParameters: {'walletId': walletId},
@@ -83,7 +96,13 @@ class TransactionRemoteDataSource {
     return response.data!;
   }
 
+  /// MOB-007: BE chưa có endpoint biên lai PDF (BE-REQ-06) => không gọi 404.
   Future<List<int>> getReceipt(String transactionId) async {
+    if (!BackendCapabilities.receiptAndExport) {
+      throw UnsupportedError(
+        'Backend chưa cung cấp API biên lai điện tử (BE-REQ-06).',
+      );
+    }
     final response = await _dio.get<List<int>>(
       ApiConstants.receiptPdf(transactionId),
       options: Options(responseType: ResponseType.bytes),

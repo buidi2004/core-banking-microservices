@@ -134,6 +134,20 @@ class NotificationRemoteDataSource {
     _check(response.data);
   }
 
+  Future<void> updateSettings({
+    required bool transactionEnabled,
+    required bool promoEnabled,
+  }) async {
+    final response = await _dio.put(
+      ApiConstants.notificationSettings,
+      queryParameters: {
+        'transactionEnabled': transactionEnabled,
+        'promoEnabled': promoEnabled,
+      },
+    );
+    _check(response.data);
+  }
+
   void _check(dynamic raw) {
     final json = Map<String, dynamic>.from(raw as Map);
     if (json['success'] != true) throw apiException(json);

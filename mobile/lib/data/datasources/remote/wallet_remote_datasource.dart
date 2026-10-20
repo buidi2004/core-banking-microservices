@@ -60,9 +60,11 @@ class WalletRemoteDataSource {
     if (json['success'] != true || data == null) throw apiException(json);
     return WalletEntity(
       walletId: data['id'] as String,
-      userId: data['ownerId'] as String,
+      userId: (data['ownerId'] ?? data['userId'] ?? '') as String,
       balance: (data['balance'] as num).toDouble(),
       currency: data['currency'] as String? ?? 'VND',
+      dailyLimit: (data['dailyLimit'] as num?)?.toDouble() ?? 50000000.0,
+      status: data['status'] as String? ?? 'ACTIVE',
     );
   }
 }

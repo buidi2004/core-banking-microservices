@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -6,11 +5,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
-import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
-import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String? phone;
@@ -23,34 +18,8 @@ class OtpVerificationScreen extends StatefulWidget {
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   String _otp = '';
-  int _secondsRemaining = 60;
-  Timer? _timer;
   bool _isSmartOtp = false;
   bool _isVerifying = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startTimer();
-  }
-
-  void _startTimer() {
-    _timer?.cancel();
-    setState(() => _secondsRemaining = 60);
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_secondsRemaining > 0) {
-        setState(() => _secondsRemaining--);
-      } else {
-        _timer?.cancel();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
 
   Future<void> _onOtpChanged(String value) async {
     setState(() => _otp = value);
@@ -58,58 +27,24 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       if (_isVerifying) return;
       setState(() => _isVerifying = true);
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final verified = await AuthRemoteDataSource(local: AuthLocalDataSourceImpl(prefs: prefs)).verifyOtp(
-          phoneNumber: widget.phone ?? '',
-          otp: value,
+        if (!mounted) return;
+        await showFeatureUnavailable(
+          context,
+          feature: 'Xác thực OTP',
+          reason: 'Backend chưa cung cấp API xác thực OTP (BE-REQ-04). '
+                  'Vui lòng quay lại màn hình đăng nhập hoặc đăng ký.',
         );
-        if (!verified) throw Exception('Mã OTP không chính xác');
-        if (mounted) context.push('/auth/set-pin');
-      } catch (error) {
-        if (mounted) {
-          AppAlerts.showError(
-            context,
-            extractErrorMessage(error),
-            title: 'Xác thực OTP thất bại',
-          );
+        if (!mounted) return;
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/auth/register');
         }
+        return;
       } finally {
         if (mounted) setState(() => _isVerifying = false);
       }
     }
-  }
-
-  Future<void> _resendOtp() async {
-    if (_secondsRemaining > 0) return;
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await AuthRemoteDataSource(local: AuthLocalDataSourceImpl(prefs: prefs)).sendOtp(widget.phone ?? '');
-      if (!mounted) return;
-      _startTimer();
-    } catch (error) {
-      if (mounted) {
-        AppAlerts.showError(
-          context,
-          extractErrorMessage(error),
-          title: 'Không thể gửi lại OTP',
-        );
-      }
-      return;
-    }
-    if (!mounted) return;
-    AppAlerts.showSuccess(
-      context,
-      'Đã gửi lại mã OTP 6 số mới qua tin nhắn SMS!',
-      title: 'Đã gửi mã',
-    );
-  }
-
-  void _requestVoiceOtp() {
-    AppAlerts.showInfo(
-      context,
-      'Tổng đài tự động SenBank đang kết nối đến số điện thoại của quý khách để đọc mã xác thực...',
-      title: 'Xác thực qua cuộc gọi',
-    );
   }
 
   @override
@@ -132,6 +67,28 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             children: [
+              // Banner BE-REQ-04
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warningBg,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warningBorder),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Tính năng xác thực OTP qua SMS/Voice chưa được hỗ trợ trên hệ thống máy chủ (BE-REQ-04). Vui lòng đăng nhập hoặc đăng ký trực tiếp.',
+                        style: TextStyle(color: AppColors.warningText, fontSize: 12, height: 1.3),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 10),
               // Method toggle: SMS OTP vs Smart OTP
               Container(
@@ -251,7 +208,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ),
               const SizedBox(height: 18),
 
-              // PIN Numpad
+              // PIN Numpad (Disabled visually & functionally via BE-REQ-04 notification)
               CustomPinNumpad(
                 pin: _otp,
                 maxDigits: 6,
@@ -264,19 +221,19 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton.icon(
-                    onPressed: _secondsRemaining == 0 ? _resendOtp : null,
+                    onPressed: () => showFeatureUnavailable(context, feature: 'Gửi lại OTP', reason: 'BE-REQ-04: Backend chưa hỗ trợ SMS OTP gateway.'),
                     icon: const Icon(CupertinoIcons.arrow_2_circlepath, size: 16),
-                    label: Text(
-                      _secondsRemaining > 0 ? 'Gửi lại OTP ($_secondsRemaining s)' : 'Gửi lại mã OTP SMS',
+                    label: const Text(
+                      'Gửi lại mã OTP SMS',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: _secondsRemaining > 0 ? AppColors.textSecondaryLight : AppColors.primary,
+                        color: AppColors.textSecondaryLight,
                       ),
                     ),
                   ),
                   const Text(' • ', style: TextStyle(color: AppColors.textSecondaryLight)),
                   TextButton.icon(
-                    onPressed: _requestVoiceOtp,
+                    onPressed: () => showFeatureUnavailable(context, feature: 'Cuộc gọi OTP', reason: 'BE-REQ-04: Backend chưa hỗ trợ Voice OTP service.'),
                     icon: const Icon(CupertinoIcons.phone_arrow_up_right, size: 16),
                     label: const Text('Nhận cuộc gọi OTP', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
                   ),
@@ -284,13 +241,35 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Confirm Button
+              // Quay lại Đăng nhập button
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton(
-                  onPressed: _otp.length == 6 ? () => context.push('/auth/set-pin') : null,
-                  child: const Text('Xác nhận & Thiết lập mã PIN'),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    } else {
+                      context.go('/auth/login');
+                    }
+                  },
+                  icon: const Icon(CupertinoIcons.arrow_left, size: 18),
+                  label: const Text('Quay lại Đăng nhập'),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Về Trang Chủ button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () => context.go('/'),
+                  icon: const Icon(CupertinoIcons.home, size: 18),
+                  label: const Text('Về Trang Chủ'),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.primary),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -328,7 +307,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.doc_text_fill,
-                        label: 'Xem Điều khoản dịch vụ & Chính sách NHNN',
+                        label: 'Xem Điều khoản dịch vụ & Quy định bảo mật',
                         onTap: () => context.push('/auth/terms'),
                       ),
                       const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
@@ -368,4 +347,3 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     );
   }
 }
-

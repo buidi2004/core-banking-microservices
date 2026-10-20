@@ -1,0 +1,25 @@
+# Test configuration for Sen Hồng Bank Mobile
+# This file declares custom test tags and timeout settings.
+
+tags:
+  # E2E tests require a running backend stack (API Gateway :8080, PostgreSQL, Redis, Kafka, etc.)
+  # Run with: RUN_E2E=true flutter test --tags e2e
+  e2e:
+
+# Default timeout for tests (in seconds)
+# E2E tests may need longer timeouts for network operations
+timeout: 30s
+
+# Platforms to test on (default: all)
+# platforms:
+#   - android
+#   - ios
+#   - linux
+#   - macos
+#   - windows
+#   - web
+
+# Exclude patterns (optional)
+# exclude:
+#   - "**/e2e/**"
+#   - "**/*_e2e_test.dart"

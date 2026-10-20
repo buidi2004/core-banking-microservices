@@ -7,11 +7,11 @@ import 'package:sen_hong_bank/core/constants/api_constants.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
 import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transfer_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/device_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_datasource.dart';
 
 class MockHttpClientAdapter implements HttpClientAdapter {
   late ResponseBody Function(RequestOptions options) handler;
@@ -130,13 +130,17 @@ void main() {
     dio.httpClientAdapter = mockAdapter;
   });
 
-  group('AuthRemoteDataSource Tests', () {
+  group('AuthRemoteDataSource Tests (Real Backend Contract)', () {
     test('login success saves tokens and identity', () async {
       final fakeLocal = FakeAuthLocalDataSource();
       final authDs = AuthRemoteDataSource(dio: dio, local: fakeLocal);
 
       mockAdapter.handler = (options) {
         expect(options.path, equals(ApiConstants.login));
+        expect(options.data, isA<Map>());
+        expect(options.data['phoneNumber'], equals('0987654321'));
+        expect(options.data['password'], equals('password'));
+        expect(options.data['deviceId'], equals('dev-1'));
         return jsonResponse({
           'success': true,
           'message': 'Login successful',
@@ -173,9 +177,34 @@ void main() {
         throwsA(isA<Exception>()),
       );
     });
+
+    test('refresh token sends JSON body (not query params) per BE contract', () async {
+      final fakeLocal = FakeAuthLocalDataSource();
+      fakeLocal.refreshToken = 'refresh-xyz';
+      final authDs = AuthRemoteDataSource(dio: dio, local: fakeLocal);
+
+      mockAdapter.handler = (options) {
+        expect(options.path, equals(ApiConstants.refresh));
+        // BE expects JSON body with refreshToken
+        expect(options.data, isA<Map>());
+        expect(options.data['refreshToken'], equals('refresh-xyz'));
+        expect(options.queryParameters, isEmpty);
+        return jsonResponse({
+          'success': true,
+          'data': {
+            'accessToken': 'new-token-abc',
+            'refreshToken': 'new-refresh-xyz',
+          },
+        });
+      };
+
+      await authDs.refreshToken();
+      expect(fakeLocal.accessToken, equals('new-token-abc'));
+      expect(fakeLocal.refreshToken, equals('new-refresh-xyz'));
+    });
   });
 
-  group('WalletRemoteDataSource Tests', () {
+  group('WalletRemoteDataSource Tests (Real Backend Contract)', () {
     test('getMyWallet fallback to recipient-info and wallet detail', () async {
       final fakeStorage = FakeSecureStorage();
       await fakeStorage.write(key: AppConstants.keyPhoneNumber, value: '0987654321');
@@ -215,7 +244,7 @@ void main() {
     });
   });
 
-  group('TransferRemoteDataSource Tests', () {
+  group('TransferRemoteDataSource Tests (Real Backend Contract)', () {
     test('getRecipient by phoneNumber and walletId', () async {
       final transferDs = TransferRemoteDataSource(dio: dio);
 
@@ -252,140 +281,103 @@ void main() {
       expect(fee, equals(5500.0));
     });
 
-    test('initTransfer sends request and receives PENDING_CONFIRMATION', () async {
-      final transferDs = TransferRemoteDataSource(dio: dio);
+    test('initTransfer calls POST /payments/transfer (single-step, not init/confirm)', () async {
+      // REAL BACKEND CONTRACT: POST /payments/transfer is a single-step transfer
+      // Old mobile code used /wallets/transfer/init + /confirm which DON'T EXIST in backend
+      final transferDs = TransferRemoteDataSource(dio: dio, serverSideTransferAuth: true);
 
       mockAdapter.handler = (options) {
-        expect(options.path, equals(ApiConstants.transferInit));
+        // Should call the REAL endpoint
+        expect(options.path, equals(ApiConstants.paymentTransfer));
+        expect(options.data, isA<Map>());
+        // Backend expects sourceUserId, targetUserId, amount, etc.
+        expect(options.data['sourceUserId'], isNotNull);
+        expect(options.data['targetUserId'], isNotNull);
+        expect(options.data['amount'], equals(500000));
         return jsonResponse({
           'success': true,
           'data': {
-            'transactionId': 'tx-init-1',
-            'status': 'PENDING_CONFIRMATION',
-            'amount': 500000.0,
-          },
-        });
-      };
-
-      final res = await transferDs.initTransfer(
-        sourceWalletId: 'w-1',
-        targetWalletId: 'w-2',
-        amount: 500000.0,
-        note: 'Tra tien an',
-      );
-      expect(res['transactionId'], equals('tx-init-1'));
-      expect(res['status'], equals('PENDING_CONFIRMATION'));
-    });
-
-    test('confirmTransfer confirms transaction and returns updated balance', () async {
-      final transferDs = TransferRemoteDataSource(dio: dio);
-
-      mockAdapter.handler = (options) {
-        expect(options.path, equals(ApiConstants.transferConfirm('tx-init-1')));
-        expect(options.queryParameters['pin'], equals('123456'));
-        return jsonResponse({
-          'success': true,
-          'data': {
-            'transactionId': 'tx-init-1',
+            'transactionId': 'tx-real-1',
             'status': 'SUCCESS',
+            'amount': 500000.0,
             'balance': 4500000.0,
           },
         });
       };
 
-      final res = await transferDs.confirmTransfer(transactionId: 'tx-init-1', pin: '123456');
-      expect(res['status'], equals('SUCCESS'));
-      expect(res['balance'], equals(4500000.0));
-    });
-  });
-
-  group('WalletTransactionRemoteDataSource Tests', () {
-    test('deposit returns transaction details', () async {
-      final txDs = WalletTransactionRemoteDataSource(dio: dio);
-
-      mockAdapter.handler = (options) {
-        expect(options.path, equals(ApiConstants.deposit));
-        return jsonResponse({
-          'success': true,
-          'data': {
-            'transactionId': 'tx-dep-1',
-            'status': 'SUCCESS',
-            'amount': 1000000.0,
-          },
-        });
-      };
-
-      final res = await txDs.deposit(walletId: 'w-1', amount: 1000000.0);
-      expect(res['transactionId'], equals('tx-dep-1'));
-    });
-
-    test('verifyPin returns pinToken', () async {
-      final txDs = WalletTransactionRemoteDataSource(dio: dio);
-
-      mockAdapter.handler = (options) {
-        expect(options.path, equals(ApiConstants.verifyPin));
-        return jsonResponse({
-          'success': true,
-          'data': 'sample-pin-token-12345',
-        });
-      };
-
-      final pinToken = await txDs.verifyPin('654321');
-      expect(pinToken, equals('sample-pin-token-12345'));
-    });
-
-    test('withdraw with pinToken returns success transaction', () async {
-      final txDs = WalletTransactionRemoteDataSource(dio: dio);
-
-      mockAdapter.handler = (options) {
-        expect(options.path, equals(ApiConstants.withdraw));
-        return jsonResponse({
-          'success': true,
-          'data': {
-            'transactionId': 'tx-with-1',
-            'status': 'SUCCESS',
-            'balance': 950000.0,
-          },
-        });
-      };
-
-      final res = await txDs.withdraw(
-        walletId: 'w-1',
-        bankAccountId: 'ba-1',
-        amount: 50000.0,
-        pinToken: 'sample-pin-token-12345',
+      final res = await transferDs.initTransfer(
+        sourceUserId: 'u-1',
+        targetUserId: 'u-2',
+        sourceWalletId: 'w-1',
+        targetWalletId: 'w-2',
+        amount: 500000.0,
+        note: 'Tra tien an',
       );
+      expect(res['transactionId'], equals('tx-real-1'));
       expect(res['status'], equals('SUCCESS'));
-      expect(res['balance'], equals(950000.0));
+    });
+
+    test('confirmTransfer is NOT a separate endpoint - single step transfer', () async {
+      // This test documents that confirmTransfer as a separate call does NOT exist in backend
+      // The real transfer is done in one call to /payments/transfer
+      // If the datasource still has a confirmTransfer method, it should throw UnsupportedError
+      // or be removed. This test expects the old behavior to fail.
+      final transferDs = TransferRemoteDataSource(dio: dio);
+
+      // Old endpoint that doesn't exist
+      expect(() => transferDs.confirmTransfer(transactionId: 'tx-init-1', pin: '123456'),
+          throwsA(isA<UnsupportedError>()));
     });
   });
 
-  group('BankAccountRemoteDataSource Tests', () {
-    test('getAccounts returns list of mapped bank accounts', () async {
+  group('WalletTransactionRemoteDataSource Tests (BE-GAP Endpoints)', () {
+    test('deposit - BE-GAP: throws UnsupportedError when gated', () async {
+      final txDs = WalletTransactionRemoteDataSource(dio: dio);
+      expect(
+        () => txDs.deposit(walletId: 'w-1', amount: 1000000.0),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+
+    test('verifyPin - BE-GAP: throws UnsupportedError when gated', () async {
+      final txDs = WalletTransactionRemoteDataSource(dio: dio);
+      expect(
+        () => txDs.verifyPin('654321'),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+
+    test('withdraw - BE-GAP: throws UnsupportedError when gated', () async {
+      final txDs = WalletTransactionRemoteDataSource(dio: dio);
+      expect(
+        () => txDs.withdraw(
+          walletId: 'w-1',
+          bankAccountId: 'ba-1',
+          amount: 50000.0,
+          pinToken: 'sample-pin-token-12345',
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+  });
+
+  group('BankAccountRemoteDataSource Tests (BE-GAP Endpoints)', () {
+    test('getAccounts - BE-GAP: endpoint does not exist in backend', () async {
       final bankDs = BankAccountRemoteDataSource(dio: dio);
 
       mockAdapter.handler = (options) {
         expect(options.path, equals(ApiConstants.bankAccounts));
         return jsonResponse({
-          'success': true,
-          'data': [
-            {
-              'id': 'ba-1',
-              'bankCode': 'VCB',
-              'accountNumber': '001100998877',
-              'accountHolderName': 'NGUYEN VAN A',
-            },
-          ],
-        });
+          'success': false,
+          'message': 'Not Found',
+        }, statusCode: 404);
       };
 
-      final accounts = await bankDs.getAccounts();
-      expect(accounts.length, equals(1));
-      expect(accounts.first['bankCode'], equals('VCB'));
+      expect(() => bankDs.getAccounts(), throwsA(isA<Exception>()));
     });
   });
 
-  group('DeviceRemoteDataSource Tests', () {
+  group('DeviceRemoteDataSource Tests (Real Backend Contract)', () {
     test('registerDevice and unregisterDevice succeed', () async {
       final deviceDs = DeviceRemoteDataSource(dio: dio);
 

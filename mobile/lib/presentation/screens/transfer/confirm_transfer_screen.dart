@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
+import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
@@ -12,6 +15,7 @@ import 'package:sen_hong_bank/data/datasources/remote/transfer_remote_datasource
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class ConfirmTransferScreen extends StatefulWidget {
   final String recipient;
@@ -42,9 +46,14 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
 
   double _walletBalance = 0.0;
   String _sourceWalletId = '';
+  String _sourceUserId = '';
   String _recipientName = '';
   String _recipientPhone = '';
   String _targetWalletId = '';
+  String _targetUserId = '';
+
+  /// MOB-017: idempotency key sinh MỘT lần khi người dùng bắt đầu xác nhận.
+  String? _idempotencyKey;
 
   @override
   void initState() {
@@ -61,10 +70,18 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
   Future<void> _loadWalletAndRecipient() async {
     try {
       final wallet = await WalletRemoteDataSource().getMyWallet();
+      // MOB-014/OPT-01: lấy userId từ session/secure storage, fallback về ví.
+      final storedUserId = await AppSecureStorage.safeRead(
+        AppSecureStorage.instance,
+        key: AppConstants.keyUserId,
+      );
       if (mounted) {
         setState(() {
           _walletBalance = wallet.balance;
           _sourceWalletId = wallet.walletId;
+          _sourceUserId = (storedUserId != null && storedUserId.isNotEmpty)
+              ? storedUserId
+              : wallet.userId;
           _isLoadingWallet = false;
         });
       }
@@ -81,6 +98,8 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
             _recipientName = (info['fullName'] ?? info['maskedName'] ?? widget.recipient).toString();
             _recipientPhone = (info['phoneNumber'] ?? _recipientPhone).toString();
             _targetWalletId = (info['walletId'] ?? '').toString();
+            // recipient-info trả ownerId => không cần GET /wallets/{id} nữa.
+            _targetUserId = (info['ownerId'] ?? '').toString();
           });
         }
       } catch (_) {}
@@ -101,39 +120,66 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
     setState(() => _pin = val);
     if (val.length == 6) {
       HapticFeedback.mediumImpact();
+      _ensureIdempotencyKey();
       await _submitTransfer(val);
     }
   }
 
+  /// MOB-017: sinh idempotency key MỘT lần khi người dùng bắt đầu xác nhận;
+  /// mọi retry mạng phải dùng lại đúng key này.
+  void _ensureIdempotencyKey() {
+    _idempotencyKey ??=
+        'MOBILE-$_sourceUserId-$_targetUserId-${DateTime.now().microsecondsSinceEpoch}';
+  }
+
   Future<void> _submitTransfer(String pin) async {
     if (_isSubmitting) return;
+
+    // MOB-002 (P0): chặn TRƯỚC khi gọi saga khi BE chưa có xác thực server-side.
+    if (!BackendCapabilities.serverSideTransferAuth) {
+      await showFeatureUnavailable(
+        context,
+        feature: 'Xác thực chuyển tiền',
+        reason: 'Backend chưa cung cấp API xác thực PIN/OTP (BE-REQ-03). '
+            'Giao dịch được tạm khóa để tránh rủi ro mất tiền.',
+      );
+      return;
+    }
+
+    _ensureIdempotencyKey();
     setState(() => _isSubmitting = true);
     try {
       final transferApi = TransferRemoteDataSource();
-      String sourceId = _sourceWalletId;
-      if (sourceId.isEmpty) {
+
+      // MOB-014 / OPT-01: dùng userId (session + recipient-info) thay vì tra ví.
+      String sourceUserId = _sourceUserId;
+      if (sourceUserId.isEmpty) {
         final wallet = await WalletRemoteDataSource().getMyWallet();
-        sourceId = wallet.walletId;
+        sourceUserId = wallet.userId;
       }
-      String targetId = _targetWalletId;
-      if (targetId.isEmpty) {
+      String targetUserId = _targetUserId;
+      if (targetUserId.isEmpty) {
         final query = _recipientPhone.isNotEmpty ? _recipientPhone : widget.recipient;
         final recipient = await transferApi.getRecipient(query);
-        targetId = recipient['walletId'] as String;
+        targetUserId = (recipient['ownerId'] ?? '').toString();
       }
+
       final initialized = await transferApi.initTransfer(
-        sourceWalletId: sourceId,
-        targetWalletId: targetId,
+        sourceUserId: sourceUserId,
+        targetUserId: targetUserId,
         amount: widget.amount,
         note: widget.note,
+        idempotencyKey: _idempotencyKey,
+        sourceWalletId: _sourceWalletId,
+        targetWalletId: _targetWalletId,
       );
       final transactionId = (initialized['transactionId'] ?? initialized['id'] ?? '').toString();
       final result = await transferApi.confirmTransfer(transactionId: transactionId, pin: pin);
 
-      if (_saveBeneficiary && _recipientPhone.isNotEmpty) {
+      if (_saveBeneficiary && _recipientPhone.isNotEmpty && BackendCapabilities.beneficiaries) {
         try {
           await BeneficiaryRemoteDataSource().add({
-            'beneficiaryWalletId': targetId,
+            'beneficiaryWalletId': _targetWalletId,
             'nickname': _recipientName,
             'bankCode': 'SENHONG',
             'accountNumber': _recipientPhone,

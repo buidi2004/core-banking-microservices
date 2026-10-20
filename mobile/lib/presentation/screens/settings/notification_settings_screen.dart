@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
+import 'package:sen_hong_bank/data/datasources/remote/notification_remote_datasource.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
@@ -80,35 +81,72 @@ class _NotificationSettingsScreenState
     await prefs.setDouble('notif_min_threshold', _minAmountThreshold);
     await prefs.setBool('notif_dnd_night', _dndNightEnabled);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(
-                CupertinoIcons.checkmark_alt_circle_fill,
-                color: AppColors.emeraldGreen,
-                size: 22,
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Cấu hình thông báo đã được lưu thành công!',
-                  style: TextStyle(color: Colors.white, fontSize: 13),
+    try {
+      await NotificationRemoteDataSource().updateSettings(
+        transactionEnabled: _balanceChangeNotif,
+        promoEnabled: _promoRewardNotif,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(
+                  CupertinoIcons.checkmark_alt_circle_fill,
+                  color: AppColors.emeraldGreen,
+                  size: 22,
                 ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Đã lưu và đồng bộ cài đặt thông báo với máy chủ thành công!',
+                    style: TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.primaryDark,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: AppColors.bottomBarCyan.withValues(alpha: 0.3),
               ),
-            ],
-          ),
-          backgroundColor: AppColors.primaryDark,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: AppColors.bottomBarCyan.withValues(alpha: 0.3),
             ),
           ),
-        ),
-      );
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(
+                  CupertinoIcons.exclamationmark_triangle_fill,
+                  color: AppColors.error,
+                  size: 22,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Lỗi đồng bộ máy chủ: $e',
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.primaryDark,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: AppColors.error.withValues(alpha: 0.3),
+              ),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -210,23 +248,23 @@ class _NotificationSettingsScreenState
                           children: [
                             _buildInfoBanner(),
                             const SizedBox(height: 20),
-                            _buildSectionHeader('KÊNH NHẬN THÔNG BÁO'),
+                            _buildSectionHeader('KÊNH NHẬN THÔNG BÁO (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
                             const SizedBox(height: 10),
                             _buildChannelsCard(),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('ÂM THANH & RUNG HIỆU ỨNG'),
+                            _buildSectionHeader('ÂM THANH & RUNG HIỆU ỨNG (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
                             const SizedBox(height: 10),
                             _buildSoundCard(),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('LOẠI NỘI DUNG NHẬN TIN'),
+                            _buildSectionHeader('LOẠI NỘI DUNG NHẬN TIN (ĐỒNG BỘ MÁY CHỦ)'),
                             const SizedBox(height: 10),
                             _buildTypesCard(),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('NGƯỠNG GIAO DỊCH THÔNG BÁO'),
+                            _buildSectionHeader('NGƯỠNG GIAO DỊCH THÔNG BÁO (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
                             const SizedBox(height: 10),
                             _buildThresholdCard(),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('CHẾ ĐỘ YÊN LẶNG BAN ĐÊM'),
+                            _buildSectionHeader('CHẾ ĐỘ YÊN LẶNG BAN ĐÊM (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
                             const SizedBox(height: 10),
                             _buildDndCard(),
                             const SizedBox(height: 36),
@@ -574,7 +612,7 @@ class _NotificationSettingsScreenState
               icon: CupertinoIcons.money_dollar_circle_fill,
               iconColor: AppColors.emeraldGreen,
               title: 'Biến động số dư tài khoản',
-              subtitle: 'Tiền vào, chuyển khoản, thanh toán QR, nạp/rút tiền',
+              subtitle: 'Tiền vào, chuyển khoản, nạp/rút (Đồng bộ máy chủ)',
               value: _balanceChangeNotif,
               onChanged: (val) {
                 setState(() => _balanceChangeNotif = val);
@@ -585,7 +623,7 @@ class _NotificationSettingsScreenState
               icon: CupertinoIcons.doc_text_fill,
               iconColor: AppColors.bottomBarCyan,
               title: 'Nhắc hẹn hóa đơn điện & nước',
-              subtitle: 'Thông báo trước 3 ngày khi có hóa đơn sinh hoạt mới',
+              subtitle: 'Thông báo trước 3 ngày khi có hóa đơn mới (Chỉ áp dụng trên thiết bị này)',
               value: _billReminderNotif,
               onChanged: (val) {
                 setState(() => _billReminderNotif = val);
@@ -605,7 +643,7 @@ class _NotificationSettingsScreenState
               icon: CupertinoIcons.tag_fill,
               iconColor: AppColors.accentGold,
               title: 'Ưu đãi & Điểm thưởng SenClub',
-              subtitle: 'Voucher hoàn tiền 20%, quà sinh nhật thành viên',
+              subtitle: 'Voucher hoàn tiền, ưu đãi thành viên (Đồng bộ máy chủ)',
               value: _promoRewardNotif,
               onChanged: (val) {
                 setState(() => _promoRewardNotif = val);
@@ -616,7 +654,7 @@ class _NotificationSettingsScreenState
               icon: CupertinoIcons.archivebox_fill,
               iconColor: const Color(0xFFF472B6),
               title: 'Đáo hạn sổ tiết kiệm & Khoản vay',
-              subtitle: 'Nhắc tái tục hoặc thanh toán kỳ hạn đến hạn',
+              subtitle: 'Nhắc tái tục hoặc thanh toán kỳ hạn (Chỉ áp dụng trên thiết bị này)',
               value: _savingsMaturityNotif,
               onChanged: (val) {
                 setState(() => _savingsMaturityNotif = val);
