@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
+import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -30,6 +33,16 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     final oldPassCtrl = TextEditingController();
     final newPassCtrl = TextEditingController();
     final confirmPassCtrl = TextEditingController();
+    final otpCtrl = TextEditingController();
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+
+    // Trạng thái của bottom sheet: OTP Gmail bắt buộc trước khi đổi mật khẩu.
+    bool sheetOpen = true;
+    bool otpSent = false;
+    String maskedEmail = '';
+    bool isSendingOtp = false;
+    bool isSubmitting = false;
 
     showModalBottomSheet(
       context: context,
@@ -37,129 +50,326 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       backgroundColor: const Color(0xFF0D1B2A),
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-            24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          Future<void> sendOtp() async {
+            setSheetState(() => isSendingOtp = true);
+            try {
+              final data =
+                  await AuthRemoteDataSource().requestChangePasswordOtp();
+              if (!sheetOpen || !mounted) return;
+              setSheetState(() {
+                otpSent = true;
+                maskedEmail = (data['maskedEmail'] as String?) ?? '';
+              });
+            } catch (e) {
+              if (!sheetOpen || !mounted) return;
+              messenger.showSnackBar(
+                SnackBar(
+                  backgroundColor: AppColors.error,
+                  content: Text('Không thể gửi mã OTP: $e'),
+                ),
+              );
+            } finally {
+              if (sheetOpen && mounted) setSheetState(() => isSendingOtp = false);
+            }
+          }
+
+          Future<void> submit() async {
+            if (oldPassCtrl.text.isEmpty) {
+              messenger.showSnackBar(const SnackBar(
+                backgroundColor: AppColors.error,
+                content: Text('Vui lòng nhập mật khẩu hiện tại'),
+              ));
+              return;
+            }
+            if (newPassCtrl.text.length < 6) {
+              messenger.showSnackBar(const SnackBar(
+                backgroundColor: AppColors.error,
+                content: Text('Mật khẩu mới phải có tối thiểu 6 ký tự'),
+              ));
+              return;
+            }
+            if (newPassCtrl.text != confirmPassCtrl.text) {
+              messenger.showSnackBar(const SnackBar(
+                backgroundColor: AppColors.error,
+                content: Text('Mật khẩu mới xác nhận không khớp'),
+              ));
+              return;
+            }
+            if (!otpSent) {
+              messenger.showSnackBar(const SnackBar(
+                backgroundColor: AppColors.error,
+                content: Text(
+                    'Vui lòng nhấn "Gửi mã OTP qua Gmail" để xác thực trước khi lưu'),
+              ));
+              return;
+            }
+            if (otpCtrl.text.trim().length < 6) {
+              messenger.showSnackBar(const SnackBar(
+                backgroundColor: AppColors.error,
+                content: Text('Vui lòng nhập đủ 6 chữ số mã OTP'),
+              ));
+              return;
+            }
+
+            setSheetState(() => isSubmitting = true);
+            try {
+              // Đổi mã OTP 6 số thành otpToken JWT trước khi gửi lên backend.
+              String otpToken = otpCtrl.text.trim();
+              final phone = await AppSecureStorage.safeRead(
+                  AppSecureStorage.instance, key: AppConstants.keyPhoneNumber);
+              if (phone != null && phone.isNotEmpty) {
+                final verifyRes = await AuthRemoteDataSource().verifyOtpFull(
+                  phoneNumber: phone,
+                  otp: otpToken,
+                  purpose: 'CHANGE_PASSWORD',
+                );
+                otpToken = (verifyRes['otpToken'] ??
+                        verifyRes['tempToken'] ??
+                        otpToken)
+                    as String;
+              }
+
+              await AuthRemoteDataSource().changePassword(
+                oldPassword: oldPassCtrl.text,
+                newPassword: newPassCtrl.text,
+                otp: otpToken,
+              );
+              if (!mounted) return;
+              sheetOpen = false;
+              if (ctx.mounted) Navigator.pop(ctx);
+              messenger.showSnackBar(
+                const SnackBar(
+                  backgroundColor: AppColors.emeraldGreen,
+                  content: Text(
+                      'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.'),
+                ),
+              );
+              router.go('/auth/login');
+            } catch (e) {
+              if (!mounted) return;
+              messenger.showSnackBar(
+                SnackBar(
+                  backgroundColor: AppColors.error,
+                  content: Text('Lỗi: $e'),
+                ),
+              );
+            } finally {
+              if (sheetOpen && mounted) setSheetState(() => isSubmitting = false);
+            }
+          }
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+                24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'Đổi Mật Khẩu Đăng Nhập',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Đổi Mật Khẩu Đăng Nhập',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
+                      IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                            color: Colors.white38),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Vì lý do bảo mật, chúng tôi sẽ gửi mã OTP 6 số tới Gmail chính chủ để xác thực trước khi đổi mật khẩu.',
+                    style: TextStyle(
+                        color: Colors.white54, fontSize: 12, height: 1.35),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: oldPassCtrl,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Mật khẩu hiện tại',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(CupertinoIcons.lock_fill,
+                          color: AppColors.bottomBarCyan),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.1)),
+                      ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    icon: const Icon(CupertinoIcons.xmark_circle_fill,
-                        color: Colors.white38),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: newPassCtrl,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Mật khẩu mới (tối thiểu 6 ký tự)',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(CupertinoIcons.lock_fill,
+                          color: AppColors.bottomBarCyan),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: confirmPassCtrl,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Xác nhận mật khẩu mới',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill,
+                          color: AppColors.bottomBarCyan),
+                      filled: true,
+                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Bước 1: Gửi mã OTP tới Gmail chính chủ
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: isSendingOtp ? null : sendOtp,
+                      icon: isSendingOtp
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(CupertinoIcons.mail_solid, size: 18),
+                      label: Text(
+                        otpSent ? 'Gửi lại mã OTP qua Gmail' : 'Gửi mã OTP qua Gmail',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  if (otpSent) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.emeraldGreen.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.emeraldGreen.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(CupertinoIcons.checkmark_shield_fill,
+                              color: AppColors.emeraldGreen, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              maskedEmail.isNotEmpty
+                                  ? 'Mã OTP đã gửi tới Gmail $maskedEmail (hiệu lực 180s). Vui lòng kiểm tra Hộp thư đến / Thư rác.'
+                                  : 'Mã OTP đã gửi tới Gmail chính chủ (hiệu lực 180s).',
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: otpCtrl,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          letterSpacing: 8,
+                          fontWeight: FontWeight.bold),
+                      decoration: InputDecoration(
+                        counterText: '',
+                        labelText: 'Mã OTP (6 số)',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        prefixIcon: const Icon(CupertinoIcons.number_circle_fill,
+                            color: AppColors.bottomBarCyan),
+                        filled: true,
+                        fillColor: Colors.white.withValues(alpha: 0.05),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
+                      ),
+                      onPressed: isSubmitting ? null : submit,
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Text('Xác Nhận OTP & Lưu Mật Khẩu Mới',
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      context.push('/auth/forgot-password');
+                    },
+                    icon: const Icon(CupertinoIcons.arrow_counterclockwise_circle_fill,
+                        size: 16, color: AppColors.bottomBarCyan),
+                    label: const Text(
+                      'Quên mật khẩu? Khôi phục qua Gmail',
+                      style: TextStyle(
+                          color: AppColors.bottomBarCyan,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: oldPassCtrl,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Mật khẩu hiện tại',
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(CupertinoIcons.lock_fill,
-                      color: AppColors.bottomBarCyan),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: newPassCtrl,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Mật khẩu mới (tối thiểu 6 ký tự)',
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(CupertinoIcons.lock_fill,
-                      color: AppColors.bottomBarCyan),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: confirmPassCtrl,
-                obscureText: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  labelText: 'Xác nhận mật khẩu mới',
-                  labelStyle: const TextStyle(color: Colors.white70),
-                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill,
-                      color: AppColors.bottomBarCyan),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide:
-                        BorderSide(color: Colors.white.withValues(alpha: 0.1)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                  ),
-                  onPressed: () {
-                    if (newPassCtrl.text != confirmPassCtrl.text) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          backgroundColor: AppColors.error,
-                          content: Text('Mật khẩu mới xác nhận không khớp'),
-                        ),
-                      );
-                      return;
-                    }
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: AppColors.emeraldGreen,
-                        content: Text('Đổi mật khẩu thành công!'),
-                      ),
-                    );
-                  },
-                  child: const Text('Lưu Mật Khẩu Mới',
-                      style:
-                          TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

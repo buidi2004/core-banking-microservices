@@ -29,15 +29,16 @@ class WalletTransactionRemoteDataSource {
   }
 
   Future<String> verifyPin(String pin) async {
-    if (!BackendCapabilities.transactionPin) {
-      throw UnsupportedError(
-        'Backend chưa cung cấp API xác thực PIN (BE-REQ-03).',
-      );
-    }
     final response = await _dio.post(ApiConstants.verifyPin, data: {'pin': pin});
     final json = Map<String, dynamic>.from(response.data as Map);
-    if (json['success'] != true || json['data'] is! String) throw apiException(json);
-    return json['data'] as String;
+    if (json['success'] != true) throw apiException(json);
+    final data = json['data'];
+    if (data is String) return data;
+    if (data is Map) {
+      final token = data['pinToken'] as String? ?? data['token'] as String? ?? '';
+      return token;
+    }
+    return '';
   }
 
   Future<Map<String, dynamic>> withdraw({

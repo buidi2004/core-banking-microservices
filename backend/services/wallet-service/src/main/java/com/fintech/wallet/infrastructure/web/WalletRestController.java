@@ -110,13 +110,14 @@ public class WalletRestController {
     @GetMapping("/fees/estimate")
     public ResponseEntity<Map<String, Object>> estimateFee(
             @RequestParam(required = false) String type,
-            @RequestParam(defaultValue = "0") long amount,
+            @RequestParam(defaultValue = "0") double amount,
             @RequestParam(defaultValue = "VND") String currency) {
+        long roundedAmount = Math.round(amount);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("type", type != null ? type : "TRANSFER");
-        data.put("amount", amount);
+        data.put("amount", roundedAmount);
         data.put("feeAmount", 0);
-        data.put("totalAmount", amount);
+        data.put("totalAmount", roundedAmount);
         data.put("currency", currency);
         return ResponseEntity.ok(ok("Fee estimated", data));
     }

@@ -12,6 +12,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -50,7 +51,7 @@ class OtpControllerTest {
                 .message("Mã OTP đã được gửi")
                 .build();
 
-        when(otpService.sendOtp(eq("0987654321"), eq("FORGOT_PASSWORD"))).thenReturn(resp);
+        when(otpService.sendOtp(eq("0987654321"), eq("FORGOT_PASSWORD"), any())).thenReturn(resp);
 
         mockMvc.perform(post("/api/v1/auth/otp/send")
                         .contentType(MediaType.APPLICATION_JSON)

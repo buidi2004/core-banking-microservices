@@ -1,16 +1,27 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sen_hong_bank/core/network/permission_service.dart';
+import 'package:sen_hong_bank/core/storage/app_session.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
-import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String? phone;
+  final String? email;
 
-  const OtpVerificationScreen({super.key, this.phone});
+  /// Dữ liệu đăng ký (fullName, password, deviceId) — chỉ có trong luồng đăng ký.
+  /// Tài khoản chỉ được tạo SAU KHI mã OTP được xác thực thành công.
+  final Map<String, dynamic>? extra;
+
+  const OtpVerificationScreen({super.key, this.phone, this.email, this.extra});
 
   @override
   State<OtpVerificationScreen> createState() => _OtpVerificationScreenState();
@@ -18,8 +29,46 @@ class OtpVerificationScreen extends StatefulWidget {
 
 class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   String _otp = '';
-  bool _isSmartOtp = false;
+  int _selectedChannel = 0; // 0: Gmail, 1: SMS, 2: Smart OTP
   bool _isVerifying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Ưu tiên chọn Gmail nếu có email được truyền từ luồng đăng ký/quên mật khẩu
+    if (widget.email != null && widget.email!.isNotEmpty) {
+      _selectedChannel = 0;
+    } else {
+      _selectedChannel = 1;
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    final phone = widget.phone ?? '';
+    if (phone.isEmpty) return;
+    try {
+      await AuthRemoteDataSource().sendOtp(phone, purpose: 'REGISTER', email: widget.email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.email != null && widget.email!.isNotEmpty
+                ? 'Mã OTP mới đã được gửi tới Gmail ${widget.email} (hiệu lực 180s)'
+                : 'Mã OTP mới đã được gửi thành công (hiệu lực 180s)',
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể gửi mã OTP: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
 
   Future<void> _onOtpChanged(String value) async {
     setState(() => _otp = value);
@@ -27,20 +76,74 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       if (_isVerifying) return;
       setState(() => _isVerifying = true);
       try {
-        if (!mounted) return;
-        await showFeatureUnavailable(
-          context,
-          feature: 'Xác thực OTP',
-          reason: 'Backend chưa cung cấp API xác thực OTP (BE-REQ-04). '
-                  'Vui lòng quay lại màn hình đăng nhập hoặc đăng ký.',
+        final phone = widget.phone ?? '';
+        final success = await AuthRemoteDataSource().verifyOtp(
+          phoneNumber: phone,
+          otp: value,
+          purpose: 'REGISTER',
         );
         if (!mounted) return;
-        if (context.canPop()) {
-          context.pop();
+        if (success) {
+          // Luồng đăng ký: chỉ tạo tài khoản SAU KHI xác thực Gmail thành công.
+          final extra = widget.extra;
+          final isRegistration =
+              extra != null && (extra['password'] as String?)?.isNotEmpty == true;
+          if (isRegistration) {
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await AuthRemoteDataSource(
+                local: AuthLocalDataSourceImpl(prefs: prefs),
+              ).register(
+                phoneNumber: widget.phone ?? '',
+                fullName: (extra['fullName'] as String?) ?? '',
+                password: extra['password'] as String,
+                deviceId: (extra['deviceId'] as String?) ??
+                    'flutter-${DateTime.now().millisecondsSinceEpoch}',
+                email: widget.email,
+              );
+              if (!mounted) return;
+              AppSession.unlocked = true;
+              unawaited(PermissionService().requestAllAppPermissions());
+            } catch (e) {
+              if (!mounted) return;
+              HapticFeedback.vibrate();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Tạo tài khoản không thành công: $e'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+              return;
+            }
+          }
+          HapticFeedback.mediumImpact();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Xác thực mã OTP thành công! Tiến hành thiết lập mã PIN 6 số.'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          context.go('/auth/set-pin');
         } else {
-          context.go('/auth/register');
+          HapticFeedback.vibrate();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Mã OTP không chính xác hoặc đã hết hạn'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          setState(() => _otp = '');
         }
-        return;
+      } catch (e) {
+        if (!mounted) return;
+        HapticFeedback.vibrate();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi xác thực: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+        setState(() => _otp = '');
       } finally {
         if (mounted) setState(() => _isVerifying = false);
       }
@@ -67,30 +170,44 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             children: [
-              // Banner BE-REQ-04
+              // Registration Steps Tracker (3 Steps: 1 Thông tin -> 2 OTP Gmail -> 3 Tạo mã PIN)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildStepIndicator(1, 'Thông tin', isActive: false, isDone: true),
+                  _buildStepConnector(isDone: true),
+                  _buildStepIndicator(2, 'OTP Gmail', isActive: true, isDone: false),
+                  _buildStepConnector(isDone: false),
+                  _buildStepIndicator(3, 'Tạo mã PIN', isActive: false, isDone: false),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Banner Thông tin OTP
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warningBg,
+                  color: AppColors.primary.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.warningBorder),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 20),
+                    Icon(CupertinoIcons.shield_fill, color: AppColors.primary, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Tính năng xác thực OTP qua SMS/Voice chưa được hỗ trợ trên hệ thống máy chủ (BE-REQ-04). Vui lòng đăng nhập hoặc đăng ký trực tiếp.',
-                        style: TextStyle(color: AppColors.warningText, fontSize: 12, height: 1.3),
+                        'Mã xác thực OTP gồm 6 chữ số có hiệu lực trong 180 giây. Vui lòng kiểm tra Gmail hoặc SMS và nhập mã bên dưới.',
+                        style: TextStyle(color: AppColors.primary, fontSize: 12, height: 1.3, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 10),
-              // Method toggle: SMS OTP vs Smart OTP
+
+              // Method toggle: Gmail OTP vs SMS OTP vs Smart OTP
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
@@ -102,23 +219,47 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   children: [
                     Expanded(
                       child: InkWell(
-                        onTap: () => setState(() => _isSmartOtp = false),
+                        onTap: () => setState(() => _selectedChannel = 0),
                         borderRadius: BorderRadius.circular(10),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
-                            color: !_isSmartOtp ? Colors.white : Colors.transparent,
+                            color: _selectedChannel == 0 ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
-                            boxShadow: !_isSmartOtp
+                            boxShadow: _selectedChannel == 0
                                 ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))]
                                 : null,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(CupertinoIcons.chat_bubble_text_fill, size: 16, color: !_isSmartOtp ? AppColors.primary : AppColors.textSecondaryLight),
-                              const SizedBox(width: 6),
-                              Text('SMS OTP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: !_isSmartOtp ? AppColors.primary : AppColors.textSecondaryLight)),
+                              Icon(CupertinoIcons.mail_solid, size: 15, color: _selectedChannel == 0 ? AppColors.primary : AppColors.textSecondaryLight),
+                              const SizedBox(width: 4),
+                              Text('Gmail OTP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _selectedChannel == 0 ? AppColors.primary : AppColors.textSecondaryLight)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedChannel = 1),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _selectedChannel == 1 ? Colors.white : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: _selectedChannel == 1
+                                ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(CupertinoIcons.chat_bubble_text_fill, size: 15, color: _selectedChannel == 1 ? AppColors.primary : AppColors.textSecondaryLight),
+                              const SizedBox(width: 4),
+                              Text('SMS OTP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _selectedChannel == 1 ? AppColors.primary : AppColors.textSecondaryLight)),
                             ],
                           ),
                         ),
@@ -127,7 +268,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     Expanded(
                       child: InkWell(
                         onTap: () {
-                          setState(() => _isSmartOtp = true);
+                          setState(() => _selectedChannel = 2);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Chế độ Smart OTP: Mã sinh tự động bảo mật cao theo chuẩn PKI.')),
                           );
@@ -136,18 +277,18 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           decoration: BoxDecoration(
-                            color: _isSmartOtp ? Colors.white : Colors.transparent,
+                            color: _selectedChannel == 2 ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
-                            boxShadow: _isSmartOtp
+                            boxShadow: _selectedChannel == 2
                                 ? [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4, offset: const Offset(0, 2))]
                                 : null,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(CupertinoIcons.shield_lefthalf_fill, size: 16, color: _isSmartOtp ? AppColors.primary : AppColors.textSecondaryLight),
-                              const SizedBox(width: 6),
-                              Text('Smart OTP PKI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isSmartOtp ? AppColors.primary : AppColors.textSecondaryLight)),
+                              Icon(CupertinoIcons.shield_lefthalf_fill, size: 15, color: _selectedChannel == 2 ? AppColors.primary : AppColors.textSecondaryLight),
+                              const SizedBox(width: 4),
+                              Text('Smart OTP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _selectedChannel == 2 ? AppColors.primary : AppColors.textSecondaryLight)),
                             ],
                           ),
                         ),
@@ -167,7 +308,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    _isSmartOtp ? CupertinoIcons.lock_shield_fill : CupertinoIcons.device_phone_portrait,
+                    _selectedChannel == 0
+                        ? CupertinoIcons.mail_solid
+                        : (_selectedChannel == 2 ? CupertinoIcons.lock_shield_fill : CupertinoIcons.device_phone_portrait),
                     color: AppColors.primary,
                     size: 30,
                   ),
@@ -177,9 +320,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               Text('Nhập Mã Xác Thực 6 Số', style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 6),
               Text(
-                _isSmartOtp
-                    ? 'Mã bảo mật Smart OTP được sinh tự động trên thiết bị chính chủ của bạn'
-                    : 'Mã xác thực một lần (OTP) đã gửi qua SMS tới số $displayPhone',
+                _selectedChannel == 0 && widget.email != null && widget.email!.isNotEmpty
+                    ? 'Mã xác thực OTP đã được gửi đến Gmail:\n${widget.email}\n(Vui lòng kiểm tra Hộp thư đến hoặc Thư rác/Spam)'
+                    : (_selectedChannel == 2
+                        ? 'Mã bảo mật Smart OTP được sinh tự động trên thiết bị chính chủ của bạn'
+                        : 'Mã xác thực một lần (OTP) đã gửi qua SMS tới số $displayPhone'),
                 textAlign: TextAlign.center,
                 style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
               ),
@@ -208,7 +353,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ),
               const SizedBox(height: 18),
 
-              // PIN Numpad (Disabled visually & functionally via BE-REQ-04 notification)
+              // PIN Numpad
               CustomPinNumpad(
                 pin: _otp,
                 maxDigits: 6,
@@ -221,19 +366,28 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton.icon(
-                    onPressed: () => showFeatureUnavailable(context, feature: 'Gửi lại OTP', reason: 'BE-REQ-04: Backend chưa hỗ trợ SMS OTP gateway.'),
+                    onPressed: _resendOtp,
                     icon: const Icon(CupertinoIcons.arrow_2_circlepath, size: 16),
-                    label: const Text(
-                      'Gửi lại mã OTP SMS',
-                      style: TextStyle(
+                    label: Text(
+                      widget.email != null && widget.email!.isNotEmpty
+                          ? 'Gửi lại OTP Gmail'
+                          : 'Gửi lại mã OTP SMS',
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textSecondaryLight,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),
                   const Text(' • ', style: TextStyle(color: AppColors.textSecondaryLight)),
                   TextButton.icon(
-                    onPressed: () => showFeatureUnavailable(context, feature: 'Cuộc gọi OTP', reason: 'BE-REQ-04: Backend chưa hỗ trợ Voice OTP service.'),
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Tính năng nhận cuộc gọi OTP đang được phát triển. Vui lòng nhận mã qua Gmail hoặc SMS.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    },
                     icon: const Icon(CupertinoIcons.phone_arrow_up_right, size: 16),
                     label: const Text('Nhận cuộc gọi OTP', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
                   ),
@@ -241,7 +395,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Quay lại Đăng nhập button
+              // Quay lại Đăng ký button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -250,11 +404,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     if (context.canPop()) {
                       context.pop();
                     } else {
-                      context.go('/auth/login');
+                      context.go('/auth/register');
                     }
                   },
                   icon: const Icon(CupertinoIcons.arrow_left, size: 18),
-                  label: const Text('Quay lại Đăng nhập'),
+                  label: const Text('Quay lại Thông tin Đăng ký'),
                 ),
               ),
               const SizedBox(height: 12),
@@ -325,6 +479,30 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildStepIndicator(int step, String label, {required bool isActive, required bool isDone}) {
+    final color = isDone ? AppColors.emeraldGreen : (isActive ? AppColors.primary : AppColors.textMutedLight);
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 11,
+          backgroundColor: color,
+          child: Text('$step', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+        ),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: color)),
+      ],
+    );
+  }
+
+  Widget _buildStepConnector({required bool isDone}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      width: 36,
+      height: 2,
+      color: isDone ? AppColors.emeraldGreen : AppColors.borderSubtle,
     );
   }
 

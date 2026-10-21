@@ -14,6 +14,8 @@ public class OtpSendRequest {
     @NotBlank(message = "Số điện thoại không được để trống")
     private String phoneNumber;
 
+    private String email;
+
     @Builder.Default
     private String purpose = "FORGOT_PASSWORD";
 }

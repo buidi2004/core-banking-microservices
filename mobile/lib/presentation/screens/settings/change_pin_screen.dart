@@ -6,6 +6,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
@@ -147,15 +148,22 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // Backend chưa có API đổi PIN trên server (BE-REQ-03)
+      await AuthRemoteDataSource().setPin(_newPin);
       if (!mounted) return;
-      await showFeatureUnavailable(
-        context,
-        feature: 'Đổi mã PIN giao dịch',
-        reason: 'Backend chưa hỗ trợ API cập nhật mã PIN trên máy chủ (BE-REQ-03). Tính năng quản lý mã PIN máy chủ đang được nâng cấp.',
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đổi mã PIN giao dịch thành công!'),
+          backgroundColor: AppColors.success,
+        ),
       );
-      if (!mounted) return;
       context.pop();
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.vibrate();
+      setState(() {
+        _errorMessage = 'Không thể đổi mã PIN: $e';
+      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -195,18 +203,18 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.warningBg,
+                        color: AppColors.primary.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.warningBorder),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                       ),
                       child: const Row(
                         children: [
-                          Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 20),
+                          Icon(CupertinoIcons.shield_fill, color: AppColors.primary, size: 20),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Tính năng quản lý mã PIN trên máy chủ đang được nâng cấp (BE-REQ-03).',
-                              style: TextStyle(color: AppColors.warningText, fontSize: 12, height: 1.3),
+                              'Để đảm bảo an toàn tài chính, không chia sẻ mã PIN cho bất kỳ ai.',
+                              style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, height: 1.3),
                             ),
                           ),
                         ],
@@ -323,9 +331,12 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
 
                     TextButton.icon(
                       onPressed: () => context.push('/auth/forgot-pin'),
-                      icon: const Icon(CupertinoIcons.question_circle_fill, size: 16),
-                      label: const Text('Quên mã PIN hiện tại?'),
-                      style: TextButton.styleFrom(foregroundColor: AppColors.primary),
+                      icon: const Icon(CupertinoIcons.mail_solid, size: 16),
+                      label: const Text('Quên mã PIN hiện tại? Nhận OTP qua Gmail để cấp lại mã PIN'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                      ),
                     ),
                   ],
                 ),

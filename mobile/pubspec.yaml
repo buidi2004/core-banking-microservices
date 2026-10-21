@@ -46,7 +46,7 @@ dependencies:
   permission_handler: ^11.3.1
   image_picker: ^1.2.3
   morphnext: ^0.6.1
-
+  lucide_icons_flutter: ^4.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

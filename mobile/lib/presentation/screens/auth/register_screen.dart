@@ -1,19 +1,14 @@
-import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
-import 'package:sen_hong_bank/core/network/permission_service.dart';
-import 'package:sen_hong_bank/core/storage/app_session.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
-import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -25,6 +20,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
   bool _agreeTerms = true;
@@ -35,6 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _phoneController.dispose();
     _nameController.dispose();
+    _emailController.dispose();
     _passController.dispose();
     _referralController.dispose();
     super.dispose();
@@ -81,13 +78,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Registration Steps Tracker (2 Steps)
+              // Registration Steps Tracker (3 Steps: 1 Thông tin -> 2 OTP Gmail -> 3 Tạo mã PIN)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildStepIndicator(1, 'Thông tin', isActive: true, isDone: false),
                   _buildStepConnector(isDone: false),
-                  _buildStepIndicator(2, 'Tạo mã PIN', isActive: false, isDone: false),
+                  _buildStepIndicator(2, 'OTP Gmail', isActive: false, isDone: false),
+                  _buildStepConnector(isDone: false),
+                  _buildStepIndicator(3, 'Tạo mã PIN', isActive: false, isDone: false),
                 ],
               ),
               const SizedBox(height: 20),
@@ -123,6 +122,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   labelText: 'Họ và tên (như trên CCCD)',
                   labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
                   prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primary),
+                  filled: true,
+                  fillColor: AppColors.surfaceLight,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Email / Gmail Field
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  labelText: 'Địa chỉ Gmail (nhận mã OTP & bảo mật)',
+                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
+                  hintText: 'vidu@gmail.com',
+                  prefixIcon: const Icon(CupertinoIcons.mail_solid, color: AppColors.primary),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -256,6 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ? () async {
                           final phone = _phoneController.text.trim();
                           final name = _nameController.text.trim();
+                          final email = _emailController.text.trim();
                           final pass = _passController.text;
                           if (phone.isEmpty) {
                             HapticFeedback.vibrate();
@@ -289,6 +307,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             );
                             return;
                           }
+                          if (email.isEmpty) {
+                            HapticFeedback.vibrate();
+                            AppAlerts.showWarning(
+                              context,
+                              'Vui lòng nhập địa chỉ Gmail để nhận mã xác thực OTP kích hoạt ví và bảo mật.',
+                              title: 'Chưa nhập Gmail',
+                            );
+                            return;
+                          }
+                          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          if (!emailRegex.hasMatch(email)) {
+                            HapticFeedback.vibrate();
+                            AppAlerts.showWarning(
+                              context,
+                              'Địa chỉ Email không đúng định dạng. Vui lòng kiểm tra lại (ví dụ: tenban@gmail.com).',
+                              title: 'Email không hợp lệ',
+                            );
+                            return;
+                          }
                           if (pass.length < 6) {
                             HapticFeedback.vibrate();
                             AppAlerts.showWarning(
@@ -300,21 +337,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           }
                           setState(() => _isLoading = true);
                           final router = GoRouter.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
                           try {
-                            final prefs = await SharedPreferences.getInstance();
-                            await AuthRemoteDataSource(
-                              local: AuthLocalDataSourceImpl(prefs: prefs),
-                            ).register(
-                              phoneNumber: phone,
-                              fullName: _nameController.text.trim(),
-                              password: _passController.text,
-                              deviceId: 'flutter-${DateTime.now().millisecondsSinceEpoch}',
-                            );
+                            // Bước 1 -> 2: Gửi OTP xác thực Gmail TRƯỚC khi tạo tài khoản.
+                            // Tài khoản chỉ được tạo ở màn hình OTP sau khi xác thực thành công.
+                            await AuthRemoteDataSource().sendOtp(phone, purpose: 'REGISTER', email: email);
                             if (!mounted) return;
-                            // BE trả token ngay sau register ⇒ mở khóa phiên, cấp quyền và vào Trang Chủ
-                            AppSession.unlocked = true;
-                            unawaited(PermissionService().requestAllAppPermissions());
-                            router.go('/');
+
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text('Mã OTP đã gửi tới Gmail $email. Vui lòng nhập OTP để hoàn tất đăng ký và tạo mã PIN 6 số.'),
+                                backgroundColor: AppColors.success,
+                              ),
+                            );
+                            router.push(
+                              '/auth/otp?phone=${Uri.encodeComponent(phone)}&email=${Uri.encodeComponent(email)}',
+                              extra: {
+                                'fullName': name,
+                                'password': pass,
+                                'deviceId': 'flutter-${DateTime.now().millisecondsSinceEpoch}',
+                              },
+                            );
                           } catch (error) {
                             if (!mounted || !context.mounted) return;
                             AppAlerts.showError(

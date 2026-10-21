@@ -13,9 +13,9 @@ import 'package:sen_hong_bank/data/datasources/remote/beneficiary_remote_datasou
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transfer_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
-import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class ConfirmTransferScreen extends StatefulWidget {
   final String recipient;
@@ -135,13 +135,15 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
   Future<void> _submitTransfer(String pin) async {
     if (_isSubmitting) return;
 
-    // MOB-002 (P0): chặn TRƯỚC khi gọi saga khi BE chưa có xác thực server-side.
-    if (!BackendCapabilities.serverSideTransferAuth) {
-      await showFeatureUnavailable(
+    final totalRequired = widget.amount + _fee;
+    if (!_isLoadingWallet && _walletBalance < totalRequired) {
+      HapticFeedback.vibrate();
+      AppAlerts.showError(
         context,
-        feature: 'Xác thực chuyển tiền',
-        reason: 'Backend chưa cung cấp API xác thực PIN/OTP (BE-REQ-03). '
-            'Giao dịch được tạm khóa để tránh rủi ro mất tiền.',
+        'Số dư ví (${CurrencyFormatter.formatVND(_walletBalance)}) không đủ để chuyển ${CurrencyFormatter.formatVND(totalRequired)} (bao gồm phí). Vui lòng nạp thêm tiền.',
+        title: 'Số dư không đủ',
+        actionLabel: 'Nạp tiền',
+        onAction: () => context.push('/deposit'),
       );
       return;
     }
@@ -150,6 +152,9 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
     setState(() => _isSubmitting = true);
     try {
       final transferApi = TransferRemoteDataSource();
+
+      // Xác thực mã PIN trước với Identity Service để nhận pinToken
+      final pinToken = await WalletTransactionRemoteDataSource().verifyPin(pin);
 
       // MOB-014 / OPT-01: dùng userId (session + recipient-info) thay vì tra ví.
       String sourceUserId = _sourceUserId;
@@ -172,9 +177,22 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
         idempotencyKey: _idempotencyKey,
         sourceWalletId: _sourceWalletId,
         targetWalletId: _targetWalletId,
+        pinToken: pinToken,
       );
       final transactionId = (initialized['transactionId'] ?? initialized['id'] ?? '').toString();
-      final result = await transferApi.confirmTransfer(transactionId: transactionId, pin: pin);
+      final result = await transferApi.confirmTransfer(
+        transactionId: transactionId,
+        pin: pin,
+        pinToken: pinToken,
+      );
+
+      final status = (result['status'] ?? '').toString().toUpperCase();
+      if (status == 'FAILED') {
+        final reason = (result['failureReason'] ?? result['message'] ?? 'Số dư khả dụng không đủ').toString();
+        throw Exception(reason.contains('INSUFFICIENT') || reason.contains('<')
+            ? 'Số dư khả dụng trong ví không đủ để thực hiện giao dịch này.'
+            : reason);
+      }
 
       if (_saveBeneficiary && _recipientPhone.isNotEmpty && BackendCapabilities.beneficiaries) {
         try {
@@ -266,6 +284,9 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final totalRequired = widget.amount + _fee;
+    final isInsufficientBalance = !_isLoadingWallet && _walletBalance < totalRequired;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -310,13 +331,23 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
 
               const SizedBox(height: 18),
 
-              const InlineWarningBanner(
-                title: 'Cảnh báo an toàn chuyển tiền',
-                message: 'Quý khách vui lòng kiểm tra kỹ số tài khoản và họ tên người nhận. Tuyệt đối không chia sẻ mã PIN hay OTP cho bất kỳ ai (kể cả nhân viên SenBank).',
-                type: AlertType.warning,
-              ),
-
-              const SizedBox(height: 16),
+              if (isInsufficientBalance) ...[
+                InlineWarningBanner(
+                  title: 'Số dư khả dụng không đủ',
+                  message: 'Tổng số tiền cần thanh toán (${CurrencyFormatter.formatVND(totalRequired)}) vượt quá số dư ví hiện có (${CurrencyFormatter.formatVND(_walletBalance)}). Vui lòng nạp thêm tiền để tiếp tục.',
+                  type: AlertType.error,
+                  actionLabel: 'Nạp tiền ngay',
+                  onAction: () => context.push('/deposit'),
+                ),
+                const SizedBox(height: 16),
+              ] else ...[
+                const InlineWarningBanner(
+                  title: 'Cảnh báo an toàn chuyển tiền',
+                  message: 'Quý khách vui lòng kiểm tra kỹ số tài khoản và họ tên người nhận. Tuyệt đối không chia sẻ mã PIN hay OTP cho bất kỳ ai (kể cả nhân viên SenBank).',
+                  type: AlertType.warning,
+                ),
+                const SizedBox(height: 16),
+              ],
 
               // Details Card (GlassCard)
               GlassCard(
@@ -342,6 +373,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                         _isLoadingWallet
                             ? 'Ví chính (Đang tải...)'
                             : 'Ví chính (Khả dụng: ${CurrencyFormatter.formatVND(_walletBalance)})',
+                        valueColor: isInsufficientBalance ? AppColors.error : null,
                       ),
                     ],
                   ),
@@ -376,9 +408,37 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                    onPressed: _isSubmitting ? null : () => setState(() => _showPinModal = true),
-                    icon: const Icon(CupertinoIcons.lock_shield_fill, size: 18),
-                    label: const Text('Xác nhận & Ký mã PIN'),
+                    onPressed: isInsufficientBalance
+                        ? () {
+                            HapticFeedback.vibrate();
+                            AppAlerts.showError(
+                              context,
+                              'Số dư ví không đủ để thực hiện giao dịch (${CurrencyFormatter.formatVND(_walletBalance)} < ${CurrencyFormatter.formatVND(totalRequired)}). Vui lòng nạp thêm tiền.',
+                              title: 'Số dư không đủ',
+                              actionLabel: 'Nạp tiền',
+                              onAction: () => context.push('/deposit'),
+                            );
+                          }
+                        : (_isSubmitting ? null : () => setState(() => _showPinModal = true)),
+                    icon: Icon(
+                      isInsufficientBalance
+                          ? CupertinoIcons.exclamationmark_triangle_fill
+                          : CupertinoIcons.lock_shield_fill,
+                      size: 18,
+                    ),
+                    label: Text(
+                      isInsufficientBalance
+                          ? 'Số dư không đủ để chuyển tiền'
+                          : 'Xác nhận & Ký mã PIN',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isInsufficientBalance
+                          ? AppColors.cardBorderLight
+                          : AppColors.primary,
+                      foregroundColor: isInsufficientBalance
+                          ? Colors.white38
+                          : Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),

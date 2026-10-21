@@ -69,11 +69,14 @@ void main() {
 
     /// W2: Khi serverSideTransferAuth=false, KHÔNG có request POST nào được gửi
     test('W2: Transfer blocked when serverSideTransferAuth=false', () async {
-      expect(BackendCapabilities.serverSideTransferAuth, isFalse);
-      expect(BackendCapabilities.transactionPin, isFalse);
-      expect(BackendCapabilities.otp, isFalse);
+      // Mặc định hiện tại ĐÃ BẬT vì backend có /users/pin/verify.
+      expect(BackendCapabilities.serverSideTransferAuth, isTrue);
+      expect(BackendCapabilities.transactionPin, isTrue);
+      expect(BackendCapabilities.otp, isTrue);
 
-      final blockedTransfer = TransferRemoteDataSource(dio: dio);
+      // Rollback an toàn: tắt cờ tường minh ⇒ phải chặn, không phát HTTP.
+      final blockedTransfer =
+          TransferRemoteDataSource(dio: dio, serverSideTransferAuth: false);
       expect(
         () => blockedTransfer.initTransfer(
           sourceUserId: 'u-1',
@@ -178,16 +181,17 @@ void main() {
       expect(res1['transactionId'], equals('tx-123'));
     });
 
-    /// W7: Gate BE-GAP endpoints (deposit, withdraw, bills, etc.) - documented
-    test('W7: BE-GAP endpoints documented and gated', () {
-      expect(BackendCapabilities.deposit, isFalse, reason: 'BE-REQ-06: Deposit not implemented');
-      expect(BackendCapabilities.withdraw, isFalse, reason: 'BE-REQ-06: Withdraw not implemented');
-      expect(BackendCapabilities.bills, isFalse, reason: 'BE-REQ-06: Bills not implemented');
-      expect(BackendCapabilities.vietQr, isFalse, reason: 'BE-REQ-06: VietQR not implemented');
-      expect(BackendCapabilities.bankAccounts, isFalse, reason: 'BE-REQ-06: Bank accounts not implemented');
-      expect(BackendCapabilities.fundingSources, isFalse, reason: 'BE-REQ-06: Funding sources not implemented');
-      expect(BackendCapabilities.beneficiaries, isFalse, reason: 'BE-REQ-06: Beneficiaries not implemented');
-      expect(BackendCapabilities.receiptAndExport, isFalse, reason: 'BE-REQ-06: Receipt/Export not implemented');
+    /// W7: Capability flags phản ánh endpoint đã có / còn thiếu
+    test('W7: Capability flags phản ánh endpoint đã có / còn thiếu', () {
+      expect(BackendCapabilities.deposit, isTrue);
+      expect(BackendCapabilities.withdraw, isTrue);
+      expect(BackendCapabilities.bills, isTrue);
+      expect(BackendCapabilities.vietQr, isTrue);
+      expect(BackendCapabilities.bankAccounts, isTrue);
+      expect(BackendCapabilities.fundingSources, isTrue);
+      expect(BackendCapabilities.beneficiaries, isTrue);
+      expect(BackendCapabilities.receiptAndExport, isFalse,
+          reason: 'Receipt/Export chưa tích hợp ở mobile');
     });
 
     /// W19: Không có 2 màn xác nhận trùng lặp (chỉ 1 luồng chuẩn)

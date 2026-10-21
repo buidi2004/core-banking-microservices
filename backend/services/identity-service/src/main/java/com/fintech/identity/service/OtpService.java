@@ -25,6 +25,7 @@ public class OtpService {
     private final UserSessionRepository userSessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider tokenProvider;
+    private final EmailService emailService;
 
     private static final String OTP_PREFIX = "identity:otp:";
     private static final String ATTEMPTS_PREFIX = "identity:otp:attempts:";
@@ -34,6 +35,10 @@ public class OtpService {
     private final SecureRandom random = new SecureRandom();
 
     public OtpSendResponse sendOtp(String phoneNumber, String purpose) {
+        return sendOtp(phoneNumber, purpose, null);
+    }
+
+    public OtpSendResponse sendOtp(String phoneNumber, String purpose, String explicitEmail) {
         String cleanPhone = phoneNumber.trim();
         String resolvedPurpose = (purpose != null && !purpose.isBlank()) ? purpose : "FORGOT_PASSWORD";
 
@@ -46,16 +51,62 @@ public class OtpService {
         redisTemplate.opsForValue().set(key, code, Duration.ofSeconds(OTP_EXPIRY_SECONDS));
         redisTemplate.delete(attemptsKey);
 
+        // Gửi OTP qua Email (Gmail chính chủ của tài khoản). KHÔNG dùng email dự phòng cứng.
+        String targetEmail = explicitEmail;
+        if (targetEmail == null || targetEmail.isBlank()) {
+            targetEmail = userRepository.findByPhoneNumber(cleanPhone)
+                    .map(UserEntity::getEmail)
+                    .filter(e -> e != null && !e.isBlank())
+                    .orElse(null);
+        }
+
+        if (targetEmail != null && !targetEmail.isBlank()) {
+            emailService.sendOtpEmail(targetEmail, code, resolvedPurpose);
+        } else {
+            log.warn("[In-House Core Banking OTP] Không tìm thấy Gmail của người dùng SĐT={} để gửi OTP (purpose={})",
+                    cleanPhone, resolvedPurpose);
+        }
+
         String refId = "REF-" + System.currentTimeMillis();
-        log.info("[In-House Core Banking OTP] Sinh mã OTP cho SĐT={}, purpose={}: code={} (Hết hạn trong {}s)",
-                cleanPhone, resolvedPurpose, code, OTP_EXPIRY_SECONDS);
+        log.info("[In-House Core Banking OTP] Sinh mã OTP cho SĐT={}, purpose={}: code={} (Đã bắn email tới {})",
+                cleanPhone, resolvedPurpose, code, maskEmail(targetEmail));
 
         return OtpSendResponse.builder()
                 .phoneNumber(cleanPhone)
                 .expiresInSeconds(OTP_EXPIRY_SECONDS)
                 .referenceId(refId)
-                .message("Mã xác thực OTP đã được gửi đến số điện thoại của bạn")
+                .maskedEmail(maskEmail(targetEmail))
+                .message("Mã xác thực OTP đã được gửi đến Gmail chính chủ của Quý khách")
                 .build();
+    }
+
+    /**
+     * Gửi OTP tới Gmail chính chủ của người dùng đang đăng nhập (định danh qua X-User-Id).
+     * Dùng cho nghiệp vụ đổi mật khẩu trong phiên đăng nhập.
+     */
+    public OtpSendResponse sendOtpForUser(String userId, String purpose) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng"));
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            throw new IllegalStateException("Tài khoản chưa liên kết Gmail. Vui lòng cập nhật email trước khi đổi mật khẩu.");
+        }
+        return sendOtp(user.getPhoneNumber(), purpose, user.getEmail());
+    }
+
+    /**
+     * Che mờ một phần email để hiển thị an toàn.
+     * VD: buidi7170@gmail.com -> bu***70@gmail.com
+     */
+    private String maskEmail(String email) {
+        if (email == null || email.isBlank()) return null;
+        int at = email.indexOf('@');
+        if (at <= 0) return email;
+        String local = email.substring(0, at);
+        String domain = email.substring(at);
+        if (local.length() <= 4) {
+            return local.charAt(0) + "***" + domain;
+        }
+        return local.substring(0, 2) + "***" + local.substring(local.length() - 2) + domain;
     }
 
     public OtpVerifyResponse verifyOtp(String phoneNumber, String code, String purpose) {
@@ -100,10 +151,13 @@ public class OtpService {
 
     public OtpSendResponse forgotPassword(String phoneNumber) {
         String cleanPhone = phoneNumber.trim();
-        userRepository.findByPhoneNumber(cleanPhone)
+        UserEntity user = userRepository.findByPhoneNumber(cleanPhone)
                 .orElseThrow(() -> new IllegalArgumentException("Số điện thoại không tồn tại trong hệ thống."));
 
-        return sendOtp(cleanPhone, "FORGOT_PASSWORD");
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            log.warn("Tài khoản SĐT={} chưa liên kết Gmail. Không thể gửi OTP khôi phục mật khẩu.", cleanPhone);
+        }
+        return sendOtp(cleanPhone, "FORGOT_PASSWORD", user.getEmail());
     }
 
     @Transactional

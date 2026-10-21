@@ -60,49 +60,56 @@ void main() {
       walletTx = WalletTransactionRemoteDataSource(dio: dio);
     });
 
-    test('verifyPin KHÔNG phát HTTP khi transactionPin=false', () async {
-      expect(BackendCapabilities.transactionPin, isFalse);
+    test('verifyPin gọi POST /users/pin/verify khi transactionPin=true', () async {
+      expect(BackendCapabilities.transactionPin, isTrue);
+      mockAdapter.handler = (_) => jsonResponse({
+            'success': true,
+            'data': {'pinToken': 'pin-token-1'},
+          });
 
-      await expectLater(
-        walletTx.verifyPin('123456'),
-        throwsA(isA<UnsupportedError>()),
-      );
+      final token = await walletTx.verifyPin('123456');
 
-      expect(mockAdapter.calls, isEmpty,
-          reason: 'Không được phát bất kỳ HTTP request nào tới endpoint BE-GAP.');
+      expect(token, equals('pin-token-1'));
+      expect(mockAdapter.calls, hasLength(1));
+      expect(mockAdapter.calls.single.path, equals(ApiConstants.verifyPin));
     });
 
-    test('deposit KHÔNG phát HTTP khi deposit=false', () async {
-      expect(BackendCapabilities.deposit, isFalse);
+    test('deposit gọi POST /wallets/deposit khi deposit=true', () async {
+      expect(BackendCapabilities.deposit, isTrue);
+      mockAdapter.handler = (_) => jsonResponse({
+            'success': true,
+            'data': {'transactionId': 'tx-deposit-1'},
+          });
 
-      await expectLater(
-        walletTx.deposit(walletId: 'w-1', amount: 10000),
-        throwsA(isA<UnsupportedError>()),
-      );
+      final res = await walletTx.deposit(walletId: 'w-1', amount: 10000);
 
-      expect(mockAdapter.calls, isEmpty);
+      expect(res['transactionId'], equals('tx-deposit-1'));
+      expect(mockAdapter.calls, hasLength(1));
+      expect(mockAdapter.calls.single.path, equals(ApiConstants.deposit));
     });
 
-    test('withdraw KHÔNG phát HTTP khi withdraw=false', () async {
-      expect(BackendCapabilities.withdraw, isFalse);
+    test('withdraw gọi POST /wallets/withdraw khi withdraw=true', () async {
+      expect(BackendCapabilities.withdraw, isTrue);
+      mockAdapter.handler = (_) => jsonResponse({
+            'success': true,
+            'data': {'transactionId': 'tx-withdraw-1'},
+          });
 
-      await expectLater(
-        walletTx.withdraw(
-          walletId: 'w-1',
-          bankAccountId: 'b-1',
-          amount: 10000,
-          pinToken: 'token',
-        ),
-        throwsA(isA<UnsupportedError>()),
+      final res = await walletTx.withdraw(
+        walletId: 'w-1',
+        bankAccountId: 'b-1',
+        amount: 10000,
+        pinToken: 'token',
       );
 
-      expect(mockAdapter.calls, isEmpty);
+      expect(res['transactionId'], equals('tx-withdraw-1'));
+      expect(mockAdapter.calls, hasLength(1));
+      expect(mockAdapter.calls.single.path, equals(ApiConstants.withdraw));
     });
 
-    test('confirmTransfer/initTransfer bị chặn hoàn toàn khi serverSideTransferAuth=false', () async {
-      expect(BackendCapabilities.serverSideTransferAuth, isFalse);
-
-      final transfer = TransferRemoteDataSource(dio: dio);
+    test('initTransfer bị chặn hoàn toàn khi serverSideTransferAuth=false', () async {
+      final transfer =
+          TransferRemoteDataSource(dio: dio, serverSideTransferAuth: false);
 
       await expectLater(
         transfer.initTransfer(
@@ -115,19 +122,32 @@ void main() {
       );
 
       expect(mockAdapter.calls, isEmpty,
-          reason: 'Không được giả lập giao dịch chuyển tiền thành công khi backend chưa hỗ trợ xác thực.');
+          reason: 'Không được giả lập giao dịch chuyển tiền khi tắt xác thực server-side.');
     });
 
-    test('mọi hằng route BE-GAP đều nằm trong knownBackendGaps', () {
+    test('chỉ các hằng route thực sự chưa tích hợp mới nằm trong knownBackendGaps', () {
       final gapConstants = <String>[
+        ApiConstants.receiptPdf('x'),
+        ApiConstants.exportTransactions('csv'),
+        ApiConstants.limitStatus,
+        ApiConstants.configLimits,
+      ];
+
+      for (final path in gapConstants) {
+        expect(
+          BackendCapabilities.hasEndpoint(path),
+          isFalse,
+          reason: 'Route "$path" chưa tích hợp nhưng chưa được đánh dấu BE-GAP.',
+        );
+      }
+
+      final implementedConstants = <String>[
         ApiConstants.otpVerify,
         ApiConstants.otpSend,
         ApiConstants.setPin,
         ApiConstants.verifyPin,
         ApiConstants.deposit,
         ApiConstants.withdraw,
-        ApiConstants.receiptPdf('x'),
-        ApiConstants.exportTransactions('csv'),
         ApiConstants.decodeVietQr,
         ApiConstants.generateVietQr,
         ApiConstants.billLookup,
@@ -138,15 +158,13 @@ void main() {
         ApiConstants.bankAccounts,
         ApiConstants.bankAccountsLink,
         ApiConstants.bankAccountDetail('x'),
-        ApiConstants.limitStatus,
-        ApiConstants.configLimits,
       ];
 
-      for (final path in gapConstants) {
+      for (final path in implementedConstants) {
         expect(
           BackendCapabilities.hasEndpoint(path),
-          isFalse,
-          reason: 'Route "$path" chưa có ở backend baseline nhưng chưa được đánh dấu BE-GAP.',
+          isTrue,
+          reason: 'Route "$path" đã có ở backend nhưng vẫn bị chặn nhầm.',
         );
       }
     });

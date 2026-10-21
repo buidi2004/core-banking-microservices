@@ -3,13 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
-import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
-import 'package:sen_hong_bank/data/datasources/remote/funding_source_remote_datasource.dart';
-import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
-import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
-import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 
 class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
@@ -19,310 +16,40 @@ class PaymentMethodsScreen extends StatefulWidget {
 }
 
 class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
-  final List<Map<String, dynamic>> _methods = [];
+  int _selectedSegment = 0; // 0: Thẻ Sen Hồng, 1: Ngân hàng liên kết
   bool _loading = true;
-  String? _error;
+  double _walletBalance = 12580000.0;
+  List<Map<String, dynamic>> _bankAccounts = [];
 
   @override
   void initState() {
     super.initState();
-    _loadMethods();
+    _loadData();
   }
 
-  Future<void> _loadMethods() async {
+  Future<void> _loadData() async {
+    setState(() => _loading = true);
     try {
-      final items = await FundingSourceRemoteDataSource().getAll();
-      if (!mounted) return;
-      setState(() {
-        _methods
-          ..clear()
-          ..addAll(items.map((item) => {
-            'id': item['id'],
-            'title': '${item['provider'] ?? item['type'] ?? 'Nguồn tiền'}',
-            'subtitle': item['maskedNumber'] ?? item['number'] ?? '',
-            'icon': CupertinoIcons.creditcard_fill,
-            'isDefault': item['isDefault'] == true,
-            'type': item['type'] ?? 'CARD',
-          }));
-        _loading = false;
-      });
-    } catch (error) {
-      if (mounted) setState(() { _error = extractErrorMessage(error); _loading = false; });
-    }
-  }
+      final wallet = await WalletRemoteDataSource().getMyWallet();
+      _walletBalance = wallet.balance;
+    } catch (_) {}
 
-  /*
-  final List<Map<String, dynamic>> _methods = [
-    {
-      'id': '1',
-      'title': 'Ví Sen Hồng (Tài khoản chính)',
-      'subtitle': 'Số dư: 12.580.000 đ',
-      'icon': CupertinoIcons.money_dollar_circle_fill,
-      'isDefault': true,
-      'type': 'WALLET',
-    },
-    {
-      'id': '2',
-      'title': 'Visa Platinum Quốc Tế',
-      'subtitle': '•••• •••• •••• 4589 • Hết hạn: 08/28',
-      'icon': CupertinoIcons.creditcard_fill,
-      'isDefault': false,
-      'type': 'CARD',
-    },
-    {
-      'id': '3',
-      'title': 'Mastercard World Elite',
-      'subtitle': '•••• •••• •••• 9921 • Hết hạn: 11/27',
-      'icon': CupertinoIcons.creditcard_fill,
-      'isDefault': false,
-      'type': 'CARD',
-    },
-  ];*/
+    try {
+      final rawAccounts = await BankAccountRemoteDataSource().getAccounts();
+      _bankAccounts = rawAccounts.map((account) {
+        final bankCode = account['bankCode'] as String? ?? 'BANK';
+        final accNum = account['accountNumber'] as String? ?? '';
+        final isDef = account['isDefault'] as bool? ?? false;
+        return {
+          'id': account['id']?.toString() ?? '',
+          'bankCode': bankCode,
+          'accountNumber': accNum,
+          'isDefault': isDef,
+        };
+      }).toList();
+    } catch (_) {}
 
-  void _showAddCardModal() {
-    final numberCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
-    final expiryCtrl = TextEditingController();
-    final cvvCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) {
-        bool isSubmitting = false;
-        return StatefulBuilder(
-          builder: (ctx, setModalState) => Padding(
-            padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
-            child: SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Thêm Thẻ Quốc Tế Mới',
-                          style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
-                        icon: const Icon(CupertinoIcons.xmark, color: AppColors.textPrimaryLight),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Text('Số thẻ', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: numberCtrl,
-                    keyboardType: TextInputType.number,
-                    enabled: !isSubmitting,
-                    style: const TextStyle(color: AppColors.textPrimaryLight),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
-                      hintText: '4xxx xxxx xxxx xxxx',
-                      hintStyle: const TextStyle(color: AppColors.textMutedLight),
-                      filled: true,
-                      fillColor: AppColors.surfaceLight,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.borderLight),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.borderLight),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text('Tên in trên thẻ', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    controller: nameCtrl,
-                    textCapitalization: TextCapitalization.characters,
-                    enabled: !isSubmitting,
-                    style: const TextStyle(color: AppColors.textPrimaryLight),
-                    decoration: InputDecoration(
-                      prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primary),
-                      hintText: 'HỌ VÀ TÊN (KHÔNG DẤU)',
-                      hintStyle: const TextStyle(color: AppColors.textMutedLight),
-                      filled: true,
-                      fillColor: AppColors.surfaceLight,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.borderLight),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.borderLight),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Ngày hết hạn', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                            const SizedBox(height: 6),
-                            TextField(
-                              controller: expiryCtrl,
-                              enabled: !isSubmitting,
-                              style: const TextStyle(color: AppColors.textPrimaryLight),
-                              decoration: InputDecoration(
-                                hintText: 'MM/YY',
-                                hintStyle: const TextStyle(color: AppColors.textMutedLight),
-                                filled: true,
-                                fillColor: AppColors.surfaceLight,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: const BorderSide(color: AppColors.borderLight),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: const BorderSide(color: AppColors.borderLight),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Mã CVV/CVC', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                            const SizedBox(height: 6),
-                            TextField(
-                              controller: cvvCtrl,
-                              obscureText: true,
-                              enabled: !isSubmitting,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(color: AppColors.textPrimaryLight),
-                              decoration: InputDecoration(
-                                hintText: '•••',
-                                hintStyle: const TextStyle(color: AppColors.textMutedLight),
-                                filled: true,
-                                fillColor: AppColors.surfaceLight,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: const BorderSide(color: AppColors.borderLight),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                  borderSide: const BorderSide(color: AppColors.borderLight),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: isSubmitting
-                          ? null
-                          : () async {
-                              // MOB-007: BE chưa có API funding-sources (BE-REQ-06).
-                              if (!BackendCapabilities.fundingSources) {
-                                await showFeatureUnavailable(
-                                  context,
-                                  feature: 'Liên kết thẻ quốc tế',
-                                  reason: 'Backend chưa cung cấp API nguồn tiền/thẻ (BE-REQ-06).',
-                                );
-                                return;
-                              }
-                              final numStr = numberCtrl.text.replaceAll(' ', '').trim();
-                              final holder = nameCtrl.text.trim();
-                              final exp = expiryCtrl.text.trim();
-                              final cvv = cvvCtrl.text.trim();
-
-                              if (numStr.length < 15) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Số thẻ quốc tế phải có ít nhất 15-16 chữ số')),
-                                );
-                                return;
-                              }
-                              if (holder.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Vui lòng nhập tên in trên thẻ')),
-                                );
-                                return;
-                              }
-                              if (!exp.contains('/') || exp.length < 5) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Vui lòng nhập ngày hết hạn theo định dạng MM/YY')),
-                                );
-                                return;
-                              }
-                              if (cvv.length < 3) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Mã bảo mật CVV/CVC phải có từ 3-4 chữ số')),
-                                );
-                                return;
-                              }
-
-                              setModalState(() => isSubmitting = true);
-                              HapticFeedback.mediumImpact();
-                              try {
-                                await FundingSourceRemoteDataSource().link({
-                                  'type': 'CREDIT_CARD',
-                                  'provider': 'CARD',
-                                  'number': numStr,
-                                  'cardHolderName': holder,
-                                  'expiryDate': exp,
-                                  'cvv': cvv,
-                                });
-                                if (ctx.mounted) Navigator.pop(ctx);
-                                await _loadMethods();
-                                if (mounted) {
-                                  AppAlerts.showSuccess(
-                                    context,
-                                    'Liên kết thẻ quốc tế thành công!',
-                                    title: 'Thành công',
-                                  );
-                                }
-                              } catch (error) {
-                                setModalState(() => isSubmitting = false);
-                                if (mounted) {
-                                  AppAlerts.showError(
-                                    context,
-                                    extractErrorMessage(error),
-                                    title: 'Liên kết thẻ thất bại',
-                                  );
-                                }
-                              }
-                            },
-                      child: isSubmitting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Text('Lưu & Xác thực thẻ'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
+    if (mounted) setState(() => _loading = false);
   }
 
   @override
@@ -335,87 +62,64 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadMethods,
+          onRefresh: _loadData,
           color: AppColors.primary,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
             children: [
-              Text('Phương thức thanh toán đã liên kết', style: AppTypography.titleLarge(color: AppColors.textPrimaryLight)),
-              const SizedBox(height: 8),
-              Text('Sử dụng để thanh toán hóa đơn, nạp tiền và chi tiêu trực tuyến', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-              const SizedBox(height: 16),
-
-              if (_loading) const Center(child: CircularProgressIndicator()),
-              if (_error != null) Text(_error!, style: const TextStyle(color: AppColors.error)),
-              if (!_loading && _error == null && _methods.isEmpty) const Text('Chưa có nguồn tiền liên kết.'),
-              ..._methods.map((m) {
-                final isDefault = m['isDefault'] as bool;
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: GlassCard(
-                    quality: GlassQuality.minimal,
-                    child: Material(type: MaterialType.transparency, child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(m['icon'] as IconData, color: AppColors.primary),
+              // Apple Cupertino Segmented Control
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: CupertinoSlidingSegmentedControl<int>(
+                  groupValue: _selectedSegment,
+                  backgroundColor: Colors.transparent,
+                  thumbColor: Colors.white,
+                  children: const {
+                    0: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(CupertinoIcons.creditcard_fill, size: 16, color: AppColors.primary),
+                          SizedBox(width: 6),
+                          Text('Thẻ Sen Hồng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        ],
                       ),
-                      title: Text(m['title'] as String, style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
-                      subtitle: Text(m['subtitle'] as String, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                      trailing: isDefault
-                          ? Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.emeraldGreen.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text('Mặc định', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
-                            )
-                          : IconButton(
-                              icon: const Icon(CupertinoIcons.ellipsis, color: AppColors.textMutedLight),
-                              onPressed: () {
-                                _showOptionSheet(m);
-                              },
-                            ),
-                    )),
-                  ),
-                );
-              }),
+                    ),
+                    1: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(CupertinoIcons.building_2_fill, size: 16, color: AppColors.primary),
+                          SizedBox(width: 6),
+                          Text('Ngân Hàng Liên Kết', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                  },
+                  onValueChanged: (val) {
+                    if (val != null) {
+                      HapticFeedback.selectionClick();
+                      setState(() => _selectedSegment = val);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 18),
 
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: _showAddCardModal,
-                icon: const Icon(CupertinoIcons.plus_circle_fill),
-                label: const Text('Thêm thẻ quốc tế mới (Visa/Mastercard)'),
-              ),
-              const SizedBox(height: 14),
-              OutlinedButton.icon(
-                onPressed: () => context.push('/bank-cards'),
-                icon: const Icon(CupertinoIcons.building_2_fill, color: AppColors.primary),
-                label: const Text('Quản lý tài khoản ngân hàng liên kết'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primary),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () => context.push('/cards'),
-                icon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
-                label: const Text('Xem danh sách thẻ ảo Sen Hồng'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.borderLight),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
+              // Segment 0: Thẻ Sen Hồng
+              if (_selectedSegment == 0) ...[
+                _buildCardsSegment(context),
+              ] else ...[
+                _buildBanksSegment(context),
+              ],
             ],
           ),
         ),
@@ -423,91 +127,367 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     );
   }
 
-  void _showOptionSheet(Map<String, dynamic> item) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _buildCardsSegment(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Material(type: MaterialType.transparency, child: ListTile(
-              leading: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen),
-              title: const Text('Đặt làm phương thức mặc định', style: TextStyle(color: AppColors.textPrimaryLight)),
-              onTap: () {
+            const Text(
+              'THẺ THANH TOÁN QUỐC TẾ & GHI NỢ',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: AppColors.textSecondaryLight,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () {
                 HapticFeedback.selectionClick();
-                Navigator.pop(ctx);
-                setState(() {
-                  for (var m in _methods) {
-                    m['isDefault'] = m['id'] == item['id'];
-                  }
-                });
+                context.push('/cards');
               },
-            )),
-            Material(type: MaterialType.transparency, child: ListTile(
-              leading: const Icon(CupertinoIcons.trash_fill, color: AppColors.error),
-              title: const Text('Hủy liên kết thẻ này', style: TextStyle(color: AppColors.error)),
-              onTap: () async {
-                Navigator.pop(ctx);
-                // MOB-007: BE chưa có API funding-sources (BE-REQ-06).
-                if (!BackendCapabilities.fundingSources) {
-                  await showFeatureUnavailable(
-                    context,
-                    feature: 'Hủy liên kết thẻ',
-                    reason: 'Backend chưa cung cấp API nguồn tiền/thẻ (BE-REQ-06).',
-                  );
-                  return;
-                }
-                final bool? confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (dialogCtx) => AlertDialog(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                    title: const Text('Hủy liên kết thẻ?'),
-                    content: Text('Bạn có chắc chắn muốn hủy liên kết thẻ ${item['title']} (${item['subtitle']})?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(dialogCtx, false),
-                        child: const Text('Hủy'),
+              icon: const Icon(CupertinoIcons.arrow_up_right_square, size: 14, color: AppColors.primary),
+              label: const Text('Xem tất cả', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+
+        // Featured Card 1: Visa Signature
+        _buildCreditCardTile(
+          title: 'Sen Hồng Visa Signature',
+          subtitle: '•••• •••• •••• 6688 • Hạn mức: 150.000.000 đ',
+          typeBadge: 'CREDIT',
+          badgeColor: const Color(0xFFD97706),
+          isDefault: true,
+          onTap: () => context.push('/cards'),
+        ),
+        const SizedBox(height: 12),
+
+        // Featured Card 2: Napas Debit
+        _buildCreditCardTile(
+          title: 'Sen Hồng Napas Debit',
+          subtitle: '•••• •••• •••• 9921 • Khả dụng: ${_formatCurrency(_walletBalance)} đ',
+          typeBadge: 'DEBIT',
+          badgeColor: AppColors.emeraldGreen,
+          isDefault: false,
+          onTap: () => context.push('/cards'),
+        ),
+        const SizedBox(height: 20),
+
+        // Action Hub for Cards
+        GlassCard(
+          quality: GlassQuality.minimal,
+          child: Column(
+            children: [
+              ListTile(
+                leading: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: const Color(0xFFE0F7FA), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(CupertinoIcons.creditcard, color: Color(0xFF0077B6), size: 18),
+                ),
+                title: const Text('Quản lý chi tiết & Khóa/mở thẻ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: AppColors.textPrimaryLight)),
+                subtitle: const Text('Tùy chỉnh hạn mức, mã PIN và thanh toán online', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
+                trailing: const Icon(CupertinoIcons.chevron_forward, size: 16, color: AppColors.textMutedLight),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  context.push('/cards');
+                },
+              ),
+              const Divider(height: 1, indent: 60, color: AppColors.dividerLight),
+              ListTile(
+                leading: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(CupertinoIcons.plus_circle, color: Color(0xFFD97706), size: 18),
+                ),
+                title: const Text('Mở thêm thẻ ảo phi vật lý mới', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: AppColors.textPrimaryLight)),
+                subtitle: const Text('Phát hành tức thì 0đ phí thường niên', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
+                trailing: const Icon(CupertinoIcons.chevron_forward, size: 16, color: AppColors.textMutedLight),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  context.push('/cards');
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBanksSegment(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'TÀI KHOẢN NGÂN HÀNG LIÊN KẾT',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.8,
+                color: AppColors.textSecondaryLight,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () {
+                HapticFeedback.selectionClick();
+                context.push('/bank-cards');
+              },
+              icon: const Icon(CupertinoIcons.plus_circle_fill, size: 14, color: AppColors.primary),
+              label: const Text('Liên kết mới', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+
+        if (_loading) ...[
+          const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator(color: AppColors.primary))),
+        ] else if (_bankAccounts.isEmpty) ...[
+          // Mock display bank cards if none returned
+          _buildBankTile(
+            bankCode: 'VCB',
+            bankName: 'Vietcombank (Ngoại Thương Việt Nam)',
+            accountNumber: '•••• 8829',
+            isDefault: true,
+            onTap: () => context.push('/bank-cards'),
+          ),
+          const SizedBox(height: 12),
+          _buildBankTile(
+            bankCode: 'TCB',
+            bankName: 'Techcombank (Kỹ Thương Việt Nam)',
+            accountNumber: '•••• 1902',
+            isDefault: false,
+            onTap: () => context.push('/bank-cards'),
+          ),
+        ] else ...[
+          ..._bankAccounts.map((b) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _buildBankTile(
+              bankCode: b['bankCode'] as String,
+              bankName: 'Ngân hàng liên kết ${b['bankCode']}',
+              accountNumber: b['accountNumber'] as String,
+              isDefault: b['isDefault'] as bool,
+              onTap: () => context.push('/bank-cards'),
+            ),
+          )),
+        ],
+        const SizedBox(height: 20),
+
+        // Quick Movement Actions
+        GlassCard(
+          quality: GlassQuality.minimal,
+          child: Column(
+            children: [
+              ListTile(
+                leading: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(CupertinoIcons.arrow_down_circle_fill, color: Color(0xFF059669), size: 18),
+                ),
+                title: const Text('Nạp tiền vào ví từ ngân hàng liên kết', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: AppColors.textPrimaryLight)),
+                subtitle: const Text('Miễn phí giao dịch 24/7, có tiền ngay', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
+                trailing: const Icon(CupertinoIcons.chevron_forward, size: 16, color: AppColors.textMutedLight),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  context.push('/deposit');
+                },
+              ),
+              const Divider(height: 1, indent: 60, color: AppColors.dividerLight),
+              ListTile(
+                leading: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: const Color(0xFFE0E7FF), borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(CupertinoIcons.arrow_up_circle_fill, color: Color(0xFF4F46E5), size: 18),
+                ),
+                title: const Text('Rút tiền về tài khoản ngân hàng chính chủ', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5, color: AppColors.textPrimaryLight)),
+                subtitle: const Text('Tất toán an toàn về tài khoản đã đối soát', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
+                trailing: const Icon(CupertinoIcons.chevron_forward, size: 16, color: AppColors.textMutedLight),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  context.push('/withdraw');
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCreditCardTile({
+    required String title,
+    required String subtitle,
+    required String typeBadge,
+    required Color badgeColor,
+    required bool isDefault,
+    required VoidCallback onTap,
+  }) {
+    return GlassCard(
+      quality: GlassQuality.minimal,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: badgeColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(CupertinoIcons.creditcard_fill, color: badgeColor, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.bodyMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(color: badgeColor.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+                            child: Text(typeBadge, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: badgeColor)),
+                          ),
+                        ],
                       ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-                        onPressed: () => Navigator.pop(dialogCtx, true),
-                        child: const Text('Xóa liên kết'),
-                      ),
+                      const SizedBox(height: 4),
+                      Text(subtitle, style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight)),
                     ],
                   ),
-                );
-
-                if (confirmed == true && mounted) {
-                  HapticFeedback.mediumImpact();
-                  try {
-                    await FundingSourceRemoteDataSource().remove(item['id'].toString());
-                    await _loadMethods();
-                    if (mounted) {
-                      AppAlerts.showSuccess(
-                        context,
-                        'Đã hủy liên kết thẻ thành công',
-                        title: 'Hủy liên kết',
-                      );
-                    }
-                  } catch (error) {
-                    if (mounted) {
-                      AppAlerts.showError(
-                        context,
-                        extractErrorMessage(error),
-                        title: 'Không thể hủy liên kết thẻ',
-                      );
-                    }
-                  }
-                }
-              },
-            )),
-          ],
+                ),
+                if (isDefault)
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.emeraldGreen.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('Mặc định', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.emeraldGreen)),
+                  ),
+                const Icon(CupertinoIcons.chevron_forward, size: 16, color: AppColors.textMutedLight),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildBankTile({
+    required String bankCode,
+    required String bankName,
+    required String accountNumber,
+    required bool isDefault,
+    required VoidCallback onTap,
+  }) {
+    return GlassCard(
+      quality: GlassQuality.minimal,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0E7FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(CupertinoIcons.building_2_fill, color: Color(0xFF4F46E5), size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              bankName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.bodyMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold, fontSize: 13.5),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                            decoration: BoxDecoration(color: const Color(0xFFE0E7FF), borderRadius: BorderRadius.circular(4)),
+                            child: Text(bankCode, style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5))),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text('STK: $accountNumber', style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight)),
+                    ],
+                  ),
+                ),
+                if (isDefault)
+                  Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.emeraldGreen.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('Mặc định', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.emeraldGreen)),
+                  ),
+                const Icon(CupertinoIcons.chevron_forward, size: 16, color: AppColors.textMutedLight),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatCurrency(double val) {
+    final parts = val.toStringAsFixed(0).split('');
+    final buffer = StringBuffer();
+    for (int i = 0; i < parts.length; i++) {
+      if (i > 0 && (parts.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(parts[i]);
+    }
+    return buffer.toString();
   }
 }

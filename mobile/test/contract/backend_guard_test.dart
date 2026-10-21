@@ -174,18 +174,25 @@ void main() {
     });
   });
 
-  group('Backend Capabilities — mặc định an toàn (R2-P1-02)', () {
-    test('mọi capability flag mặc định là false (backend baseline chưa có API)', () {
-      expect(BackendCapabilities.serverSideTransferAuth, isFalse);
-      expect(BackendCapabilities.transactionPin, isFalse);
-      expect(BackendCapabilities.otp, isFalse);
-      expect(BackendCapabilities.deposit, isFalse);
-      expect(BackendCapabilities.withdraw, isFalse);
-      expect(BackendCapabilities.bills, isFalse);
-      expect(BackendCapabilities.vietQr, isFalse);
-      expect(BackendCapabilities.bankAccounts, isFalse);
-      expect(BackendCapabilities.fundingSources, isFalse);
-      expect(BackendCapabilities.beneficiaries, isFalse);
+  group('Backend Capabilities — phản ánh đúng backend hiện tại (R2-P1-02)', () {
+    test('capability flag bật khi API đã có, tắt khi chưa tích hợp', () {
+      // Identity & PIN: đã có API thật trong identity-service
+      expect(BackendCapabilities.serverSideTransferAuth, isTrue);
+      expect(BackendCapabilities.transactionPin, isTrue);
+      expect(BackendCapabilities.otp, isTrue);
+
+      // Payment-service: deposit/withdraw/bills/vietqr/bank-accounts/...
+      expect(BackendCapabilities.deposit, isTrue);
+      expect(BackendCapabilities.withdraw, isTrue);
+      expect(BackendCapabilities.bills, isTrue);
+      expect(BackendCapabilities.vietQr, isTrue);
+      expect(BackendCapabilities.bankAccounts, isTrue);
+      expect(BackendCapabilities.fundingSources, isTrue);
+      expect(BackendCapabilities.beneficiaries, isTrue);
+      expect(BackendCapabilities.savings, isTrue);
+      expect(BackendCapabilities.loans, isTrue);
+
+      // Chưa tích hợp đầy đủ ở mobile ⇒ vẫn tắt để fail-safe
       expect(BackendCapabilities.receiptAndExport, isFalse);
       expect(BackendCapabilities.referrals, isFalse);
       expect(BackendCapabilities.legalDocuments, isFalse);
@@ -194,22 +201,27 @@ void main() {
       expect(BackendCapabilities.moneyRequestCancel, isFalse);
     });
 
-    test('hasEndpoint() chặn đúng các route BE-GAP và cho qua các route có thật', () {
-      // Route backend baseline KHÔNG có ⇒ phải bị chặn
-      expect(BackendCapabilities.hasEndpoint('/auth/otp/verify'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/auth/otp/send'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/users/pin/set'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/users/pin/verify'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/wallets/deposit'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/wallets/withdraw'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/bills/pay'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/payments/vietqr/decode'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/bank-accounts'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/funding-sources'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/beneficiaries'), isFalse);
-      expect(BackendCapabilities.hasEndpoint('/config/limits'), isFalse);
+    test('hasEndpoint() chỉ chặn các route thực sự chưa tích hợp', () {
+      // Các route backend ĐÃ có ⇒ phải cho qua
+      expect(BackendCapabilities.hasEndpoint('/auth/otp/verify'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/auth/otp/send'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/users/pin/set'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/users/pin/verify'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/wallets/deposit'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/wallets/withdraw'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/bills/pay'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/payments/vietqr/decode'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/bank-accounts'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/funding-sources'), isTrue);
+      expect(BackendCapabilities.hasEndpoint('/beneficiaries'), isTrue);
 
-      // Route backend baseline CÓ thật ⇒ không được chặn
+      // Route chưa tích hợp ⇒ phải bị chặn
+      expect(BackendCapabilities.hasEndpoint('/transactions/export/csv'), isFalse);
+      expect(BackendCapabilities.hasEndpoint('/transactions/tx-1/receipt.pdf'), isFalse);
+      expect(BackendCapabilities.hasEndpoint('/config/limits'), isFalse);
+      expect(BackendCapabilities.hasEndpoint('/config/limits/status'), isFalse);
+
+      // Route backend CÓ thật ⇒ không được chặn nhầm
       expect(BackendCapabilities.hasEndpoint('/auth/login'), isTrue);
       expect(BackendCapabilities.hasEndpoint('/auth/refresh'), isTrue);
       expect(BackendCapabilities.hasEndpoint('/payments/transfer'), isTrue);

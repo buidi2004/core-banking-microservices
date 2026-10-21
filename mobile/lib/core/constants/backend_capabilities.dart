@@ -35,38 +35,35 @@ class BackendCapabilities {
   // Capability flags — mặc định đều `false` (backend baseline 75bf273)
   // ---------------------------------------------------------------------------
 
-  /// BE chưa cung cấp API xác thực PIN/OTP cho giao dịch chuyển tiền ⇒ chặn giao dịch tại mobile
-  /// (BE-REQ-03). Bật bằng `BE_CAP_TRANSFER_AUTH=true` **chỉ sau khi** backend
-  /// `POST /payments/transfer` thực sự validate `X-Pin-Token`.
-  static const bool serverSideTransferAuth = bool.fromEnvironment('BE_CAP_TRANSFER_AUTH', defaultValue: false);
+  /// Đã tích hợp xác thực PIN giao dịch server-side qua /users/pin/verify và validate pinToken trong saga (BE-REQ-03)
+  static const bool serverSideTransferAuth = bool.fromEnvironment('BE_CAP_TRANSFER_AUTH', defaultValue: true);
 
-  /// BE chưa cung cấp API OTP/PIN cho onboarding ⇒ bỏ bước bắt buộc, đưa ngay Home
-  /// (BE-REQ-04).
-  static const bool otp = bool.fromEnvironment('BE_CAP_OTP', defaultValue: false);
+  /// Đã tích hợp API OTP/PIN cho onboarding và quên mật khẩu qua identity-service (BE-REQ-04)
+  static const bool otp = bool.fromEnvironment('BE_CAP_OTP', defaultValue: true);
 
-  /// BE chưa cung cấp API PIN/OTP xác thực ⇒ giao dịch tạm khóa (BE-REQ-03).
-  static const bool transactionPin = bool.fromEnvironment('BE_CAP_TRANSACTION_PIN', defaultValue: false);
+  /// Đã tích hợp API quản lý và xác thực mã PIN qua identity-service (BE-REQ-03)
+  static const bool transactionPin = bool.fromEnvironment('BE_CAP_TRANSACTION_PIN', defaultValue: true);
 
-  /// BE chưa cung cấp deposit/withdraw user-level (BE-REQ-06).
-  static const bool deposit = bool.fromEnvironment('BE_CAP_DEPOSIT', defaultValue: false);
+  /// BE đã cung cấp deposit/withdraw user-level (WalletMutationController & DepositWithdrawController)
+  static const bool deposit = bool.fromEnvironment('BE_CAP_DEPOSIT', defaultValue: true);
 
-  /// BE chưa cung cấp withdraw user-level (BE-REQ-06).
-  static const bool withdraw = bool.fromEnvironment('BE_CAP_WITHDRAW', defaultValue: false);
+  /// BE đã cung cấp withdraw user-level (WalletMutationController & DepositWithdrawController)
+  static const bool withdraw = bool.fromEnvironment('BE_CAP_WITHDRAW', defaultValue: true);
 
-  /// BE chưa cung cấp bills/* endpoints (BE-REQ-06).
-  static const bool bills = bool.fromEnvironment('BE_CAP_BILLS', defaultValue: false);
+  /// BE đã cung cấp bills/* endpoints (BillController)
+  static const bool bills = bool.fromEnvironment('BE_CAP_BILLS', defaultValue: true);
 
-  /// BE chưa cung cấp VietQR endpoints (BE-REQ-06).
-  static const bool vietQr = bool.fromEnvironment('BE_CAP_VIETQR', defaultValue: false);
+  /// BE đã cung cấp VietQR endpoints (VietQrController)
+  static const bool vietQr = bool.fromEnvironment('BE_CAP_VIETQR', defaultValue: true);
 
-  /// BE chưa cung cấp bank-accounts endpoints (BE-REQ-06).
-  static const bool bankAccounts = bool.fromEnvironment('BE_CAP_BANK_ACCOUNTS', defaultValue: false);
+  /// BE đã cung cấp bank-accounts endpoints (BankAccountController)
+  static const bool bankAccounts = bool.fromEnvironment('BE_CAP_BANK_ACCOUNTS', defaultValue: true);
 
-  /// BE chưa cung cấp funding-sources endpoints (BE-REQ-06).
-  static const bool fundingSources = bool.fromEnvironment('BE_CAP_FUNDING_SOURCES', defaultValue: false);
+  /// BE đã cung cấp funding-sources endpoints (FundingSourceController)
+  static const bool fundingSources = bool.fromEnvironment('BE_CAP_FUNDING_SOURCES', defaultValue: true);
 
-  /// BE chưa cung cấp beneficiaries endpoints (BE-REQ-06).
-  static const bool beneficiaries = bool.fromEnvironment('BE_CAP_BENEFICIARIES', defaultValue: false);
+  /// BE đã cung cấp beneficiaries endpoints (BeneficiaryController)
+  static const bool beneficiaries = bool.fromEnvironment('BE_CAP_BENEFICIARIES', defaultValue: true);
 
   /// BE chưa cung cấp receipt/export endpoints (BE-REQ-06).
   static const bool receiptAndExport = bool.fromEnvironment('BE_CAP_RECEIPT_EXPORT', defaultValue: false);
@@ -99,25 +96,6 @@ class BackendCapabilities {
   /// Các hằng đường dẫn mà backend **baseline** (`75bf273`) chưa có.
   /// Dùng để chặn ở tầng UI/datasource mà không phải rà thủ công từng hằng.
   static const Set<String> knownBackendGaps = <String>{
-    // BE-REQ-04 — OTP
-    '/auth/otp/verify',
-    '/auth/otp/send',
-    // BE-REQ-03 — PIN giao dịch
-    '/users/pin/set',
-    '/users/pin/verify',
-    // BE-REQ-06 — nạp/rút tiền user-level
-    '/wallets/deposit',
-    '/wallets/withdraw',
-    // BE-REQ-06 — hóa đơn / tiện ích
-    '/bills/lookup',
-    '/bills/pay',
-    '/bills/topup',
-    '/payments/vietqr/decode',
-    '/payments/vietqr/generate',
-    '/bank-accounts',
-    '/bank-accounts/link',
-    '/funding-sources',
-    '/beneficiaries',
     // BE-REQ-06 — biên lai / xuất sao kê
     '/transactions/export',
     // BE-REQ-06 — cấu hình hạn mức
@@ -130,8 +108,6 @@ class BackendCapabilities {
   static final List<RegExp> knownBackendGapPatterns = <RegExp>[
     // GET /transactions/{id}/receipt.pdf
     RegExp(r'/transactions/[^/]+/receipt\.pdf$'),
-    // GET /bank-accounts/{id}
-    RegExp(r'^/bank-accounts/[^/]+$'),
   ];
 
   /// `true` nếu [path] **không** nằm trong danh mục endpoint chưa có ở backend.

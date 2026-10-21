@@ -5,9 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
-import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
+import 'package:flutter/services.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? phone;
@@ -61,13 +64,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => _passStrength = score == 0 ? 1 : score);
   }
 
-  void _resendOtp() {
+  void _resendOtp() async {
+    final phone = (widget.phone != null && widget.phone!.isNotEmpty)
+        ? widget.phone!
+        : (await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber) ?? '0987654321');
+    if (phone.isEmpty) return;
     _startTimer();
-    // BE chưa hỗ trợ OTP cho reset password ⇒ thông báo
-    AppAlerts.showInfo(
-      context,
-      'Backend chưa cung cấp API OTP cho việc đặt lại mật khẩu. Vui lòng liên hệ Hotline 1900 6688.',
-    );
+    try {
+      await AuthRemoteDataSource().forgotPassword(phone);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mã OTP khôi phục mới đã được gửi (hiệu lực 180s)'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      AppAlerts.showError(context, e.toString(), title: 'Gửi lại OTP thất bại');
+    }
   }
 
   void _requestVoiceOtp() {
@@ -103,18 +118,47 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
+    final phone = (widget.phone != null && widget.phone!.isNotEmpty)
+        ? widget.phone!
+        : (await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber) ?? '0987654321');
+    final rawOtp = _otpController.text.trim();
+    final newPass = _passController.text;
+
     setState(() => _isLoading = true);
     try {
-      // BE chưa hỗ trợ reset password qua OTP ⇒ hiển thị hướng dẫn liên hệ CSKH
-      if (!mounted) return;
-      await showFeatureUnavailable(
-        context,
-        feature: 'Đặt lại mật khẩu qua OTP',
-        reason: 'Backend chưa cung cấp API reset password (BE-REQ-04). Vui lòng liên hệ Hotline 1900 6688 để được hỗ trợ.',
+      // Xác thực OTP để lấy otpToken JWT từ identity-service
+      String otpToken = rawOtp;
+      if (rawOtp.length == 6 && !rawOtp.contains('.')) {
+        final verifyRes = await AuthRemoteDataSource().verifyOtpFull(
+          phoneNumber: phone,
+          otp: rawOtp,
+          purpose: 'FORGOT_PASSWORD',
+        );
+        otpToken = (verifyRes['otpToken'] ?? verifyRes['tempToken'] ?? rawOtp) as String;
+      }
+
+      await AuthRemoteDataSource().resetPassword(
+        phoneNumber: phone,
+        otp: otpToken,
+        newPassword: newPass,
       );
-      // Không gọi resetPassword endpoint
       if (!mounted) return;
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.'),
+          backgroundColor: AppColors.success,
+        ),
+      );
       context.go('/auth/login');
+    } catch (e) {
+      if (!mounted) return;
+      HapticFeedback.vibrate();
+      AppAlerts.showError(
+        context,
+        e.toString(),
+        title: 'Đặt lại mật khẩu thất bại',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -144,7 +188,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
               const SizedBox(height: 6),
               Text(
-                'Mã OTP đã được gửi đến số điện thoại $displayPhone. Vui lòng nhập mã và thiết lập mật khẩu bảo mật mới.',
+                'Mã OTP đã được gửi đến Gmail và số điện thoại $displayPhone. Vui lòng kiểm tra hòm thư và thiết lập mật khẩu bảo mật mới.',
                 style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
               ),
               const SizedBox(height: 24),

@@ -14,5 +14,7 @@ public class OtpSendResponse {
     private int expiresInSeconds;
     private String referenceId;
     private String message;
+    /** Gmail chính chủ đã nhận OTP, đã che mờ (VD: bu***70@gmail.com) để hiển thị an toàn. */
+    private String maskedEmail;
 }
 

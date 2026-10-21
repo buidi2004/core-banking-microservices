@@ -4,6 +4,7 @@ import com.fintech.identity.domain.entity.UserEntity;
 import com.fintech.identity.domain.entity.UserProfileEntity;
 import com.fintech.identity.domain.entity.UserSessionEntity;
 import com.fintech.identity.dto.AuthResponse;
+import com.fintech.identity.dto.ChangePasswordRequest;
 import com.fintech.identity.dto.LoginRequest;
 import com.fintech.identity.dto.RefreshTokenRequest;
 import com.fintech.identity.dto.RegisterRequest;
@@ -52,10 +53,17 @@ public class AuthService {
         if (userRepository.existsByPhoneNumber(phone)) {
             throw new IllegalArgumentException("Số điện thoại " + phone + " đã tồn tại trong hệ thống.");
         }
-        if (request.getEmail() != null && !request.getEmail().isBlank()) {
-            if (userRepository.existsByEmail(request.getEmail().trim())) {
-                throw new IllegalArgumentException("Email " + request.getEmail() + " đã được sử dụng.");
-            }
+
+        // Email (Gmail) là bắt buộc: dùng để gửi OTP xác thực & bảo mật các nghiệp vụ sau này.
+        String email = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Địa chỉ Gmail là bắt buộc để xác thực tài khoản.");
+        }
+        if (!email.matches("^[A-Za-z0-9+_.\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}$")) {
+            throw new IllegalArgumentException("Địa chỉ email không hợp lệ.");
+        }
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email " + email + " đã được sử dụng.");
         }
 
         String userId = UUID.randomUUID().toString();
@@ -66,7 +74,7 @@ public class AuthService {
                 .id(userId)
                 .phoneNumber(phone)
                 .fullName(request.getFullName().trim())
-                .email(request.getEmail() != null ? request.getEmail().trim() : null)
+                .email(email)
                 .passwordHash(passwordHash)
                 .role("ROLE_USER")
                 .status("ACTIVE")
@@ -249,6 +257,52 @@ public class AuthService {
                 .branchId(user.getBranchId())
                 .kycTier(user.getKycTier())
                 .build();
+    }
+
+    @Transactional
+    public void changePassword(String bearerToken, String headerUserId, ChangePasswordRequest request) {
+        String userId = headerUserId;
+        if (userId == null || userId.isBlank()) {
+            if (bearerToken != null && !bearerToken.isBlank()) {
+                String token = bearerToken.startsWith("Bearer ") ? bearerToken.substring(7) : bearerToken;
+                Claims claims = tokenProvider.parseAndValidateToken(token);
+                userId = claims.getSubject();
+            }
+        }
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("Không xác định được danh tính người dùng");
+        }
+
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không chính xác");
+        }
+
+        // Đối soát mã OTP Gmail (CHANGE_PASSWORD) trước khi cập nhật mật khẩu mới.
+        String otp = request.getOtp();
+        if (otp == null || otp.isBlank()) {
+            throw new IllegalArgumentException("Mã OTP xác thực là bắt buộc");
+        }
+        if (!tokenProvider.validateOtpToken(otp, user.getPhoneNumber(), "CHANGE_PASSWORD")) {
+            throw new IllegalArgumentException("Mã OTP xác thực không hợp lệ hoặc đã hết hạn");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Blacklist token hiện tại & thu hồi sessions
+        if (bearerToken != null && !bearerToken.isBlank()) {
+            String token = bearerToken.startsWith("Bearer ") ? bearerToken.substring(7) : bearerToken;
+            tokenProvider.blacklistToken(token);
+        }
+        userSessionRepository.findByUserIdAndIsRevokedFalse(userId).forEach(s -> {
+            s.setIsRevoked(true);
+            userSessionRepository.save(s);
+        });
+
+        log.info("Đổi mật khẩu thành công cho userId={}, phone={}", user.getId(), user.getPhoneNumber());
     }
 
     @Transactional

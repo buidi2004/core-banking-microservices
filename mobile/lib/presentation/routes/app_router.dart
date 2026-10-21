@@ -244,7 +244,11 @@ final GoRouter appRouter = GoRouter(
       name: 'otp',
       builder: (context, state) {
         final phone = state.uri.queryParameters['phone'];
-        return OtpVerificationScreen(phone: phone);
+        final email = state.uri.queryParameters['email'];
+        final extra = state.extra is Map<String, dynamic>
+            ? state.extra as Map<String, dynamic>
+            : null;
+        return OtpVerificationScreen(phone: phone, email: email, extra: extra);
       },
     ),
     GoRoute(

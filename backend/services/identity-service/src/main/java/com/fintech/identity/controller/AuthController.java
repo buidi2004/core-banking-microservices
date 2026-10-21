@@ -60,11 +60,12 @@ public class AuthController {
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(required = false) String purpose) {
         String phone = (request != null && request.getPhoneNumber() != null) ? request.getPhoneNumber() : phoneNumber;
+        String email = (request != null) ? request.getEmail() : null;
         String purp = (request != null && request.getPurpose() != null) ? request.getPurpose() : purpose;
         if (phone == null || phone.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Số điện thoại không được để trống"));
         }
-        OtpSendResponse response = otpService.sendOtp(phone, purp);
+        OtpSendResponse response = otpService.sendOtp(phone, purp, email);
         return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
     }
 
@@ -112,6 +113,31 @@ public class AuthController {
         }
         otpService.resetPassword(phone, token, newPass);
         return ResponseEntity.ok(ApiResponse.ok(null, "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại."));
+    }
+
+    /**
+     * Yêu cầu gửi mã OTP tới Gmail chính chủ của người dùng đang đăng nhập
+     * (định danh qua header tin cậy X-User-Id do API Gateway inject).
+     * OTP này dùng để xác thực khi đổi mật khẩu (purpose=CHANGE_PASSWORD).
+     */
+    @PostMapping("/change-password/otp")
+    public ResponseEntity<ApiResponse<OtpSendResponse>> requestChangePasswordOtp(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Không xác định được danh tính người dùng"));
+        }
+        OtpSendResponse response = otpService.sendOtpForUser(userId, "CHANGE_PASSWORD");
+        return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authHeader,
+            @RequestHeader(value = "X-User-Id", required = false) String headerUserId,
+            @RequestBody @jakarta.validation.Valid ChangePasswordRequest request) {
+        authService.changePassword(authHeader, headerUserId, request);
+        return ResponseEntity.ok(ApiResponse.ok(null, "Đổi mật khẩu thành công. Vui lòng đăng nhập lại."));
     }
 
     private String getClientIp(HttpServletRequest request) {

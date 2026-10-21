@@ -15,6 +15,7 @@ import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_dataso
 
 class MockHttpClientAdapter implements HttpClientAdapter {
   late ResponseBody Function(RequestOptions options) handler;
+  final List<RequestOptions> calls = <RequestOptions>[];
 
   @override
   Future<ResponseBody> fetch(
@@ -22,6 +23,7 @@ class MockHttpClientAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    calls.add(options);
     return handler(options);
   }
 
@@ -317,47 +319,98 @@ void main() {
       expect(res['status'], equals('SUCCESS'));
     });
 
-    test('confirmTransfer is NOT a separate endpoint - single step transfer', () async {
-      // This test documents that confirmTransfer as a separate call does NOT exist in backend
-      // The real transfer is done in one call to /payments/transfer
-      // If the datasource still has a confirmTransfer method, it should throw UnsupportedError
-      // or be removed. This test expects the old behavior to fail.
+    test('confirmTransfer không phát HTTP và trả lại kết quả saga đã chạy ở init', () async {
+      final transferDs =
+          TransferRemoteDataSource(dio: dio, serverSideTransferAuth: true);
+
+      mockAdapter.handler = (options) {
+        expect(options.path, equals(ApiConstants.paymentTransfer));
+        return jsonResponse({
+          'success': true,
+          'data': {
+            'transactionId': 'tx-saga-1',
+            'status': 'SUCCESS',
+            'amount': 500000.0,
+          },
+        });
+      };
+
+      await transferDs.initTransfer(
+        sourceUserId: 'u-1',
+        targetUserId: 'u-2',
+        amount: 500000.0,
+        note: 'Saga một bước',
+      );
+
+      final confirm = await transferDs.confirmTransfer(transactionId: 'tx-saga-1');
+
+      expect(confirm['transactionId'], equals('tx-saga-1'));
+      expect(confirm['status'], equals('SUCCESS'));
+      expect(mockAdapter.calls, hasLength(1),
+          reason: 'confirmTransfer không được phát thêm HTTP request nào.');
+    });
+
+    test('confirmTransfer ném lỗi thay vì giả lập thành công khi thiếu kết quả saga', () async {
       final transferDs = TransferRemoteDataSource(dio: dio);
 
-      // Old endpoint that doesn't exist
-      expect(() => transferDs.confirmTransfer(transactionId: 'tx-init-1', pin: '123456'),
-          throwsA(isA<UnsupportedError>()));
+      await expectLater(
+        transferDs.confirmTransfer(transactionId: 'tx-khong-ton-tai', pin: '123456'),
+        throwsA(isA<StateError>()),
+      );
+      expect(mockAdapter.calls, isEmpty);
     });
   });
 
-  group('WalletTransactionRemoteDataSource Tests (BE-GAP Endpoints)', () {
-    test('deposit - BE-GAP: throws UnsupportedError when gated', () async {
+  group('WalletTransactionRemoteDataSource Tests (Real Backend Contract)', () {
+    test('deposit calls POST /wallets/deposit', () async {
       final txDs = WalletTransactionRemoteDataSource(dio: dio);
-      expect(
-        () => txDs.deposit(walletId: 'w-1', amount: 1000000.0),
-        throwsA(isA<UnsupportedError>()),
-      );
+      mockAdapter.handler = (options) {
+        expect(options.path, equals(ApiConstants.deposit));
+        expect(options.data['walletId'], equals('w-1'));
+        expect(options.data['amount'], equals(1000000.0));
+        return jsonResponse({
+          'success': true,
+          'data': {'transactionId': 'tx-d-1'},
+        });
+      };
+
+      final res = await txDs.deposit(walletId: 'w-1', amount: 1000000.0);
+      expect(res['transactionId'], equals('tx-d-1'));
     });
 
-    test('verifyPin - BE-GAP: throws UnsupportedError when gated', () async {
+    test('verifyPin calls POST /users/pin/verify and returns pinToken', () async {
       final txDs = WalletTransactionRemoteDataSource(dio: dio);
-      expect(
-        () => txDs.verifyPin('654321'),
-        throwsA(isA<UnsupportedError>()),
-      );
+      mockAdapter.handler = (options) {
+        expect(options.path, equals(ApiConstants.verifyPin));
+        expect(options.data['pin'], equals('654321'));
+        return jsonResponse({
+          'success': true,
+          'data': {'pinToken': 'pin-token-1'},
+        });
+      };
+
+      final token = await txDs.verifyPin('654321');
+      expect(token, equals('pin-token-1'));
     });
 
-    test('withdraw - BE-GAP: throws UnsupportedError when gated', () async {
+    test('withdraw calls POST /wallets/withdraw with pinToken', () async {
       final txDs = WalletTransactionRemoteDataSource(dio: dio);
-      expect(
-        () => txDs.withdraw(
-          walletId: 'w-1',
-          bankAccountId: 'ba-1',
-          amount: 50000.0,
-          pinToken: 'sample-pin-token-12345',
-        ),
-        throwsA(isA<UnsupportedError>()),
+      mockAdapter.handler = (options) {
+        expect(options.path, equals(ApiConstants.withdraw));
+        expect(options.data['pinToken'], equals('sample-pin-token-12345'));
+        return jsonResponse({
+          'success': true,
+          'data': {'transactionId': 'tx-w-1'},
+        });
+      };
+
+      final res = await txDs.withdraw(
+        walletId: 'w-1',
+        bankAccountId: 'ba-1',
+        amount: 50000.0,
+        pinToken: 'sample-pin-token-12345',
       );
+      expect(res['transactionId'], equals('tx-w-1'));
     });
   });
 

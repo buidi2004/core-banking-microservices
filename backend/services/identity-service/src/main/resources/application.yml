@@ -50,6 +50,23 @@ spring:
         initial-interval: 1000ms
         max-attempts: 3
         multiplier: 2.0
+  mail:
+    host: ${SPRING_MAIL_HOST:smtp.gmail.com}
+    port: ${SPRING_MAIL_PORT:587}
+    # Bắt buộc cấu hình qua biến môi trường — KHÔNG hardcode credential trong repo.
+    # Ví dụ: export SPRING_MAIL_USERNAME=you@gmail.com SPRING_MAIL_PASSWORD=<gmail-app-password>
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
 wallet:
   jwt:

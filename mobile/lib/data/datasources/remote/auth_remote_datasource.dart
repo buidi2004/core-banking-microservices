@@ -8,9 +8,9 @@ import 'api_response.dart';
 
 class AuthRemoteDataSource {
   final Dio _dio;
-  final AuthLocalDataSource _local;
+  final AuthLocalDataSource? _local;
 
-  AuthRemoteDataSource({Dio? dio, required AuthLocalDataSource local})
+  AuthRemoteDataSource({Dio? dio, AuthLocalDataSource? local})
       : _dio = dio ?? DioClient().dio,
         _local = local;
 
@@ -26,13 +26,13 @@ class AuthRemoteDataSource {
     final String? accessToken = data['accessToken'] as String? ?? data['token'] as String?;
     final String? refreshToken = data['refreshToken'] as String?;
     if (accessToken == null || refreshToken == null) throw apiException(json);
-    await _local.saveTokens(
+    await _local?.saveTokens(
       accessToken: accessToken,
       refreshToken: refreshToken,
     );
-    await _local.saveIdentity(userId: data['userId'] as String, phoneNumber: data['phoneNumber'] as String? ?? phoneNumber);
+    await _local?.saveIdentity(userId: data['userId'] as String, phoneNumber: data['phoneNumber'] as String? ?? phoneNumber);
     if (data['fullName'] != null && (data['fullName'] as String).isNotEmpty) {
-      await _local.saveFullName(data['fullName'] as String);
+      await _local?.saveFullName(data['fullName'] as String);
     }
 
     // Bước 1: Sau khi login, lấy walletId và profile fullName
@@ -46,7 +46,7 @@ class AuthRemoteDataSource {
       final meData = meJson['data'] as Map<String, dynamic>?;
       final fullName = meData?['fullName'] as String?;
       if (fullName != null && fullName.isNotEmpty) {
-        await _local.saveFullName(fullName);
+        await _local?.saveFullName(fullName);
       }
 
       final walletRes = await _dio.get(
@@ -57,17 +57,24 @@ class AuthRemoteDataSource {
       final walletData = walletJson['data'] as Map<String, dynamic>?;
       final walletId = walletData?['id'] as String?;
       if (walletId != null && walletId.isNotEmpty) {
-        await _local.saveWalletId(walletId);
+        await _local?.saveWalletId(walletId);
       }
     } catch (_) {}
   }
 
-  Future<void> register({required String phoneNumber, required String fullName, required String password, required String deviceId}) async {
+  Future<void> register({
+    required String phoneNumber,
+    required String fullName,
+    required String password,
+    required String deviceId,
+    String? email,
+  }) async {
     final response = await _dio.post(ApiConstants.register, data: {
       'phoneNumber': phoneNumber,
       'fullName': fullName,
       'password': password,
       'deviceId': deviceId,
+      if (email != null && email.isNotEmpty) 'email': email,
     });
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
@@ -77,14 +84,14 @@ class AuthRemoteDataSource {
       final accessToken = (data['accessToken'] ?? data['token']) as String?;
       final refreshToken = data['refreshToken'] as String?;
       if (accessToken != null && refreshToken != null) {
-        await _local.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
+        await _local?.saveTokens(accessToken: accessToken, refreshToken: refreshToken);
       }
       final userId = data['userId'] as String?;
       if (userId != null) {
-        await _local.saveIdentity(userId: userId, phoneNumber: phoneNumber);
+        await _local?.saveIdentity(userId: userId, phoneNumber: phoneNumber);
       }
       if (fullName.isNotEmpty) {
-        await _local.saveFullName(fullName);
+        await _local?.saveFullName(fullName);
       }
 
       // Pre-fetch walletId sau khi đăng ký
@@ -98,17 +105,17 @@ class AuthRemoteDataSource {
           final walletData = walletJson['data'] as Map<String, dynamic>?;
           final walletId = walletData?['id'] as String?;
           if (walletId != null && walletId.isNotEmpty) {
-            await _local.saveWalletId(walletId);
+            await _local?.saveWalletId(walletId);
           }
         }
       } catch (_) {}
     } else {
-      await _local.saveFullName(fullName);
+      await _local?.saveFullName(fullName);
     }
   }
 
   Future<void> refreshToken() async {
-    final currentRefresh = await _local.getRefreshToken();
+    final currentRefresh = await _local?.getRefreshToken();
     if (currentRefresh == null || currentRefresh.isEmpty) {
       throw Exception('No refresh token available');
     }
@@ -122,7 +129,7 @@ class AuthRemoteDataSource {
     final String? accessToken = data['accessToken'] as String? ?? data['token'] as String?;
     final String? refreshToken = data['refreshToken'] as String?;
     if (accessToken == null) throw apiException(json);
-    await _local.saveTokens(
+    await _local?.saveTokens(
       accessToken: accessToken,
       refreshToken: refreshToken ?? currentRefresh,
     );
@@ -138,7 +145,7 @@ class AuthRemoteDataSource {
       }
 
       // 2. Gọi API logout backend để blacklist access token trong Redis
-      final token = await _local.getAccessToken();
+      final token = await _local?.getAccessToken();
       if (token != null && token.isNotEmpty) {
         await _dio.post(
           ApiConstants.logout,
@@ -152,21 +159,65 @@ class AuthRemoteDataSource {
       debugPrint('[AuthRemoteDataSource] Logout network/backend error: $e');
     } finally {
       // 3. Luôn luôn xóa token và thông tin cục bộ
-      await _local.clearTokens();
+      await _local?.clearTokens();
     }
   }
 
-  Future<void> sendOtp(String phoneNumber) async {
-    final response = await _dio.post(ApiConstants.otpSend, data: {'phoneNumber': phoneNumber});
+  Future<void> sendOtp(String phoneNumber, {String? purpose, String? email}) async {
+    final response = await _dio.post(ApiConstants.otpSend, data: {
+      'phoneNumber': phoneNumber,
+      if (purpose != null) 'purpose': purpose,
+      if (email != null && email.isNotEmpty) 'email': email,
+    });
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
   }
 
-  Future<bool> verifyOtp({required String phoneNumber, required String otp}) async {
-    final response = await _dio.post(ApiConstants.otpVerify, data: {'phoneNumber': phoneNumber, 'code': otp});
+  /// Yêu cầu gửi mã OTP tới Gmail chính chủ (định danh qua X-User-Id do Gateway inject).
+  /// Trả về thông tin đã che mờ (maskedEmail) để UI hiển thị cho người dùng.
+  Future<Map<String, dynamic>> requestChangePasswordOtp() async {
+    final response = await _dio.post(ApiConstants.changePasswordOtp);
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
-    return json['data']?['verified'] == true || json['data'] == true;
+    return Map<String, dynamic>.from(json['data'] as Map? ?? {});
+  }
+
+  /// Đổi mật khẩu đăng nhập: yêu cầu OTP (otpToken) đã xác thực qua Gmail.
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+    String otp = '',
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.changePassword,
+      data: {
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+        'otp': otp,
+      },
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true) throw apiException(json);
+  }
+
+  Future<bool> verifyOtp({required String phoneNumber, required String otp, String? purpose}) async {
+    final data = await verifyOtpFull(phoneNumber: phoneNumber, otp: otp, purpose: purpose);
+    return data['verified'] == true || data.isNotEmpty;
+  }
+
+  Future<Map<String, dynamic>> verifyOtpFull({
+    required String phoneNumber,
+    required String otp,
+    String? purpose,
+  }) async {
+    final response = await _dio.post(ApiConstants.otpVerify, data: {
+      'phoneNumber': phoneNumber,
+      'code': otp,
+      if (purpose != null) 'purpose': purpose,
+    });
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map? ?? {});
   }
 
   Future<void> forgotPassword(String phoneNumber) async {

@@ -72,6 +72,18 @@ public class TransferController {
                 request.getNote(),
                 idempotencyKey
         );
+        if (!"SUCCESS".equals(ctx.getStatus())) {
+            String failureReason = ctx.getFailureReason() != null ? ctx.getFailureReason() : "Giao dịch chuyển tiền không thành công";
+            log.warn("Chuyển tiền P2P thất bại cho sourceUserId={}, reason={}", sourceUserId, failureReason);
+            String lower = failureReason.toLowerCase();
+            boolean isInsufficient = lower.contains("insufficient") || failureReason.contains("<") || lower.contains("không đủ") || lower.contains("số dư");
+            String errorCode = isInsufficient ? "INSUFFICIENT_BALANCE" : "TRANSFER_FAILED";
+            String errorMessage = isInsufficient 
+                    ? "Số dư khả dụng trong ví không đủ để thực hiện giao dịch này" 
+                    : failureReason;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.error(errorCode, errorMessage));
+        }
         return ResponseEntity.ok(ApiResponse.success("P2P transfer processed", TransferResponse.from(ctx)));
     }
 

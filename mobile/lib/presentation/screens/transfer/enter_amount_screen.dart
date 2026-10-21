@@ -117,11 +117,14 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
     super.dispose();
   }
 
+  double _parseAmount(String text) {
+    final clean = text.replaceAll(RegExp(r'[^0-9]'), '');
+    return double.tryParse(clean) ?? 0.0;
+  }
+
   void _addAmount(double add) {
     HapticFeedback.selectionClick();
-    final current =
-        double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ??
-            0;
+    final current = _parseAmount(_amountController.text);
     final total = current + add;
     setState(() {
       _amountController.text = total.toStringAsFixed(0);
@@ -138,8 +141,10 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final amountVal = double.tryParse(_amountController.text) ?? 0;
+    final amountVal = _parseAmount(_amountController.text);
     final remainingLimit = (_dailyLimit - _usedLimitToday).clamp(0.0, _dailyLimit);
+    final isExceededBalance = !_isLoadingBalance && amountVal > _balance;
+    final isExceededLimit = amountVal > remainingLimit;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -164,7 +169,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
 
               // 2. Amount Input Card
               _buildAmountInputCard(amountVal),
-              if (_balance > 0 && amountVal > _balance) ...[
+              if (isExceededBalance) ...[
                 const SizedBox(height: 12),
                 InlineWarningBanner(
                   title: 'Số dư khả dụng không đủ',
@@ -173,7 +178,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   actionLabel: 'Nạp tiền',
                   onAction: () => context.push('/deposit'),
                 ),
-              ] else if (amountVal > remainingLimit) ...[
+              ] else if (isExceededLimit) ...[
                 const SizedBox(height: 12),
                 InlineWarningBanner(
                   title: 'Vượt hạn mức trong ngày',
@@ -326,6 +331,9 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     child: TextField(
                       controller: _amountController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                       autofocus: true,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
@@ -431,7 +439,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                         : 'Số dư khả dụng: ${CurrencyFormatter.formatVND(_balance)}',
                     style: const TextStyle(color: Colors.white60, fontSize: 12),
                   ),
-                  if (amountVal > _balance && _balance > 0) ...[
+                  if (amountVal > _balance && !_isLoadingBalance) ...[
                     const SizedBox(width: 6),
                     InkWell(
                       onTap: () => context.push('/deposit'),
@@ -447,7 +455,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   ],
                 ],
               ),
-              if (amountVal > _balance && _balance > 0) ...[
+              if (amountVal > _balance && !_isLoadingBalance) ...[
                 const SizedBox(height: 10),
                 Container(
                   padding:
@@ -891,9 +899,12 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
   }
 
   Widget _buildSubmitButton(double amountVal, double remainingLimit) {
-    final isExceededBalance = _balance > 0 && amountVal > _balance;
+    final isExceededBalance = !_isLoadingBalance && amountVal > _balance;
     final isExceededLimit = amountVal > remainingLimit;
-    final isEnabled = amountVal > 0 && !isExceededBalance && !isExceededLimit;
+    final isEnabled = !_isLoadingBalance &&
+        amountVal > 0 &&
+        !isExceededBalance &&
+        !isExceededLimit;
 
     return SizedBox(
       width: double.infinity,
@@ -913,7 +924,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 HapticFeedback.mediumImpact();
                 final params = <String, String>{
                   'recipient': widget.recipient,
-                  'amount': amountVal.toString(),
+                  'amount': amountVal.toStringAsFixed(0),
                   'note': _noteController.text,
                   if (widget.phoneNumber != null)
                     'phoneNumber': widget.phoneNumber!,
@@ -925,7 +936,13 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
               }
             : () {
                 HapticFeedback.vibrate();
-                if (isExceededBalance) {
+                if (_isLoadingBalance) {
+                  AppAlerts.showWarning(
+                    context,
+                    'Đang kiểm tra số dư ví. Vui lòng đợi trong giây lát.',
+                    title: 'Đang tải dữ liệu',
+                  );
+                } else if (isExceededBalance) {
                   AppAlerts.showError(
                     context,
                     'Số tiền chuyển vượt quá số dư khả dụng (${CurrencyFormatter.formatVND(_balance)}). Vui lòng nạp thêm tiền.',
@@ -942,11 +959,13 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 }
               },
         child: Text(
-          isExceededBalance
-              ? 'Số tiền vượt số dư khả dụng ví'
-              : isExceededLimit
-                  ? 'Vượt hạn mức chuyển tiền ngày'
-                  : 'Tiếp tục xác nhận giao dịch',
+          _isLoadingBalance
+              ? 'Đang kiểm tra số dư ví...'
+              : isExceededBalance
+                  ? 'Số tiền vượt số dư khả dụng ví'
+                  : isExceededLimit
+                      ? 'Vượt hạn mức chuyển tiền ngày'
+                      : 'Tiếp tục xác nhận giao dịch',
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
         ),
       ),

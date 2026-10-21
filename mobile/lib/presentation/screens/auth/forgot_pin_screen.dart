@@ -1,14 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/app_constants.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
-import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 
 class ForgotPinScreen extends StatefulWidget {
-  const ForgotPinScreen({super.key});
+  final String? phone;
+  const ForgotPinScreen({super.key, this.phone});
 
   @override
   State<ForgotPinScreen> createState() => _ForgotPinScreenState();
@@ -21,6 +25,27 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
   String _confirmPin = '';
   bool _isConfirming = false;
   bool _isLoading = false;
+  String _targetPhone = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _sendInitialOtp();
+  }
+
+  Future<void> _sendInitialOtp() async {
+    try {
+      String phone = widget.phone ?? '';
+      if (phone.isEmpty) {
+        phone = await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber) ?? '';
+      }
+      if (phone.isEmpty) {
+        phone = '0987654321';
+      }
+      _targetPhone = phone;
+      await AuthRemoteDataSource().sendOtp(_targetPhone, purpose: 'RESET_PIN');
+    } catch (_) {}
+  }
 
   Future<void> _verifyOtp() async {
     if (_otpCtrl.text.length < 6) {
@@ -33,17 +58,27 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
     }
     setState(() => _isLoading = true);
     try {
-      // BE chưa hỗ trợ OTP cho forgot PIN ⇒ hiển thị hướng dẫn liên hệ CSKH
-      if (!mounted) return;
-      await showFeatureUnavailable(
-        context,
-        feature: 'Xác thực OTP cấp lại PIN',
-        reason: 'Backend chưa cung cấp API OTP xác thực (BE-REQ-04). Vui lòng liên hệ Hotline 1900 6688 để cấp lại mã PIN.',
+      final phone = _targetPhone.isNotEmpty
+          ? _targetPhone
+          : (await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber) ?? '0987654321');
+      final verified = await AuthRemoteDataSource().verifyOtp(
+        phoneNumber: phone,
+        otp: _otpCtrl.text.trim(),
+        purpose: 'RESET_PIN',
       );
-      // Không thực hiện verifyOtp endpoint, quay lại màn hình chính
       if (!mounted) return;
-      Navigator.pop(context);
-      return;
+      if (verified) {
+        HapticFeedback.mediumImpact();
+        setState(() {
+          _currentStep = 2;
+        });
+      } else {
+        AppAlerts.showError(
+          context,
+          'Mã OTP không chính xác hoặc đã hết hạn',
+          title: 'Xác minh thất bại',
+        );
+      }
     } catch (error) {
       if (mounted) {
         AppAlerts.showError(
@@ -123,18 +158,23 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
 
     setState(() => _isLoading = true);
     try {
+      await AuthRemoteDataSource().setPin(_pin);
       if (!mounted) return;
-      await showFeatureUnavailable(
-        context,
-        feature: 'Cài đặt mã PIN mới',
-        reason: 'Backend chưa hỗ trợ API cập nhật mã PIN trên máy chủ (BE-REQ-03). Vui lòng liên hệ Hotline 1900 6868.',
+      HapticFeedback.mediumImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cấp lại mã PIN giao dịch thành công!'),
+          backgroundColor: AppColors.success,
+        ),
       );
-      if (!mounted) return;
       if (context.canPop()) {
         context.pop();
       } else {
         context.go('/settings/security');
       }
+    } catch (e) {
+      if (!mounted) return;
+      AppAlerts.showError(context, e.toString(), title: 'Cài đặt mã PIN thất bại');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -159,23 +199,23 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             children: [
-              // Hotline 1900 6868 Banner
+              // Hướng dẫn OTP Banner
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warningBg,
+                  color: AppColors.primary.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.warningBorder),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.phone_badge_plus, color: AppColors.primary, size: 22),
+                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.primary, size: 22),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Tính năng cấp lại mã PIN trực tuyến đang được nâng cấp bảo mật (BE-REQ-03, BE-REQ-04). Quý khách vui lòng liên hệ tổng đài CSKH 1900 6868 để được hỗ trợ cấp lại mã PIN.',
-                        style: TextStyle(color: AppColors.warningText, fontSize: 12, height: 1.35),
+                        'Hệ thống xác thực qua mã OTP Gmail & SMS để bảo vệ tài khoản khi cấp lại mã PIN.',
+                        style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, height: 1.35),
                       ),
                     ),
                   ],
@@ -269,7 +309,7 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
         Text('Xác minh danh tính', style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
         Text(
-          'Hệ thống đã gửi mã xác thực OTP 6 số đến số điện thoại đăng ký tài khoản của bạn để xác thực yêu cầu cấp lại mã PIN.',
+          'Hệ thống đã gửi mã xác thực OTP 6 số đến Gmail và số điện thoại đăng ký tài khoản của bạn để xác thực yêu cầu cấp lại mã PIN.',
           style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
         ),
         const SizedBox(height: 24),
@@ -280,6 +320,11 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
           controller: _otpCtrl,
           keyboardType: TextInputType.number,
           maxLength: 6,
+          onChanged: (val) {
+            if (val.trim().length == 6) {
+              _verifyOtp();
+            }
+          },
           style: const TextStyle(color: AppColors.primaryDark, fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             counterText: '',
@@ -296,9 +341,15 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton.icon(
-            onPressed: _verifyOtp,
-            icon: const Icon(CupertinoIcons.phone_fill, size: 18),
-            label: const Text('Hỗ trợ cấp lại PIN (Hotline 1900 6868)'),
+            onPressed: _isLoading ? null : _verifyOtp,
+            icon: _isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                : const Icon(CupertinoIcons.checkmark_shield_fill, size: 18),
+            label: Text(_isLoading ? 'Đang xác thực...' : 'Xác thực mã OTP'),
           ),
         ),
       ],

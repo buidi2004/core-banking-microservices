@@ -45,12 +45,15 @@ class OtpServiceTest {
     @Mock
     private JwtTokenProvider tokenProvider;
 
+    @Mock
+    private EmailService emailService;
+
     private OtpService otpService;
 
     @BeforeEach
     void setUp() {
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        otpService = new OtpService(redisTemplate, userRepository, userSessionRepository, passwordEncoder, tokenProvider);
+        otpService = new OtpService(redisTemplate, userRepository, userSessionRepository, passwordEncoder, tokenProvider, emailService);
     }
 
     @Test

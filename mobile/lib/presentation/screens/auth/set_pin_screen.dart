@@ -7,6 +7,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/network/permission_service.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
 
 class SetPinScreen extends StatefulWidget {
@@ -36,19 +37,36 @@ class _SetPinScreenState extends State<SetPinScreen> {
       } else {
         if (_pin == _firstPin) {
           setState(() => _isSubmitting = true);
-          // BACKEND CHƯA CUNG C�AP API PIN/OTP ⇒ không gọi setPin endpoint
-          // Chỉ lưu trạng thái locally và vào Home, user sẽ thiết lập PIN khi BE sẵn sàng
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Backend chưa cung cấp API xác thực PIN. PIN được lưu cục bộ. Đặt PIN lại khi backend hỗ trợ.'),
-              backgroundColor: AppColors.warningBg,
-            ),
-          );
-          // Xin cấp quyền hệ thống sau khi đăng ký và tạo mã PIN thành công
-          unawaited(PermissionService().requestAllAppPermissions());
-          context.go('/');
+          try {
+            await AuthRemoteDataSource().setPin(_pin);
+            if (!mounted) return;
+            HapticFeedback.mediumImpact();
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Thiết lập mã PIN giao dịch thành công!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+            unawaited(PermissionService().requestAllAppPermissions());
+            context.go('/');
+          } catch (e) {
+            if (!mounted) return;
+            HapticFeedback.vibrate();
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Lỗi thiết lập mã PIN: $e'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+            setState(() {
+              _pin = '';
+              _firstPin = null;
+              _isConfirm = false;
+              _isSubmitting = false;
+            });
+          }
         } else {
           // Không khớp -> Làm lại
           HapticFeedback.vibrate();
@@ -84,36 +102,38 @@ class _SetPinScreenState extends State<SetPinScreen> {
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
           child: Column(
             children: [
-              // Banner BE-REQ-03
+              // Banner Bảo mật
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warningBg,
+                  color: AppColors.primary.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.warningBorder),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 20),
+                    Icon(CupertinoIcons.shield_fill, color: AppColors.primary, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Tính năng quản lý mã PIN trên máy chủ đang được nâng cấp (BE-REQ-03). Bạn có thể bỏ qua bước này để vào ứng dụng.',
-                        style: TextStyle(color: AppColors.warningText, fontSize: 12, height: 1.3),
+                        'Mã PIN gồm 6 chữ số dùng để xác thực an toàn cho mọi giao dịch chuyển tiền và thanh toán.',
+                        style: TextStyle(color: AppColors.primary, fontSize: 12, height: 1.3, fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
                 ),
               ),
 
-              // Registration Steps Tracker (Step 2: Tạo mã PIN)
+              // Registration Steps Tracker (3 Steps: 1 Thông tin -> 2 OTP Gmail -> 3 Tạo mã PIN)
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _buildStepIndicator(1, 'Thông tin', isActive: false, isDone: true),
                   _buildStepConnector(isDone: true),
-                  _buildStepIndicator(2, 'Tạo mã PIN', isActive: true, isDone: false),
+                  _buildStepIndicator(2, 'OTP Gmail', isActive: false, isDone: true),
+                  _buildStepConnector(isDone: true),
+                  _buildStepIndicator(3, 'Tạo mã PIN', isActive: true, isDone: false),
                 ],
               ),
               const SizedBox(height: 16),

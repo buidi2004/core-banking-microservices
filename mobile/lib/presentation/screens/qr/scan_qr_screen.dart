@@ -240,6 +240,31 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                 ? MobileScanner(
                     controller: _controller,
                     onDetect: _onDetect,
+                    errorBuilder: (context, error, child) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(CupertinoIcons.camera, color: Colors.orangeAccent, size: 48),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Máy ảnh không khả dụng trên thiết bị',
+                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                error.errorDetails?.message ?? error.errorCode.name,
+                                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   )
                 : Center(
                     child: Padding(

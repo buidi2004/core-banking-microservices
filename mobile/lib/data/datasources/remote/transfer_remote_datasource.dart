@@ -68,7 +68,7 @@ class TransferRemoteDataSource {
   Future<double> estimateFee(double amount) async {
     final response = await _dio.get(
       ApiConstants.estimateFee,
-      queryParameters: {'type': 'TRANSFER', 'amount': amount, 'currency': 'VND'},
+      queryParameters: {'type': 'TRANSFER', 'amount': amount.round(), 'currency': 'VND'},
     );
     final data = _unwrap(response.data);
     return (data['feeAmount'] as num?)?.toDouble() ?? 0;
@@ -90,6 +90,7 @@ class TransferRemoteDataSource {
     String? sourceWalletId,
     String? targetWalletId,
     String? bankCode,
+    String? pinToken,
   }) async {
     if (!_serverSideTransferAuth) {
       throw UnsupportedError(
@@ -122,9 +123,20 @@ class TransferRemoteDataSource {
         'currency': 'VND',
         'note': note,
         'idempotencyKey': key,
+        if (pinToken != null && pinToken.isNotEmpty) 'pinToken': pinToken,
       },
+      options: (pinToken != null && pinToken.isNotEmpty)
+          ? Options(headers: {'X-Pin-Token': pinToken})
+          : null,
     );
     final data = _unwrap(response.data);
+    final status = (data['status'] ?? '').toString().toUpperCase();
+    if (status == 'FAILED') {
+      final reason = (data['failureReason'] ?? data['message'] ?? 'Giao dịch chuyển tiền không thành công').toString();
+      throw Exception(reason.contains('INSUFFICIENT') || reason.contains('<')
+          ? 'Số dư khả dụng trong ví không đủ để thực hiện giao dịch này.'
+          : reason);
+    }
     final txId = (data['transactionId'] ?? data['id'] ?? '').toString();
     if (txId.isNotEmpty) {
       _rememberTransfer(txId, data);
@@ -134,31 +146,23 @@ class TransferRemoteDataSource {
 
   /// Bước xác nhận giao dịch.
   ///
-  /// **MOB-002:** BE không có endpoint xác thực PIN/OTP (BE-REQ-03) nên mobile
-  /// KHÔNG được giả vờ "thành công" từ map local. Khi BE bổ sung endpoint thật,
-  /// thay nhánh dưới bằng lệnh gọi endpoint tương ứng.
+  /// Đã tích hợp pinToken xác thực từ /users/pin/verify.
   Future<Map<String, dynamic>> confirmTransfer({
     required String transactionId,
     String? pin,
     String? otp,
+    String? pinToken,
   }) async {
-    if (!_serverSideTransferAuth) {
-      throw UnsupportedError(
-        'Backend chưa cung cấp API xác thực PIN/OTP (BE-REQ-03). '
-        'Không thể xác nhận giao dịch.',
-      );
-    }
-
-    // MOB-017: đọc và xóa sau khi dùng; nếu phiên đã mất (app khởi động lại
-    // giữa init và confirm) thì KHÔNG giả vờ thành công.
     final result = _completedTransfers.remove(transactionId);
-    if (result == null) {
-      throw StateError(
-        'Không xác nhận được giao dịch (phiên đã hết hoặc ứng dụng khởi động lại). '
-        'Vui lòng kiểm tra lịch sử giao dịch.',
-      );
+    if (result != null) {
+      return result;
     }
-    return result;
+    // KHÔNG giả lập thành công: không có kết quả saga từ bước init nghĩa là
+    // giao dịch chưa từng chạy (hoặc đã mất khỏi cache) ⇒ phải báo lỗi.
+    throw StateError(
+      'Không tìm thấy kết quả giao dịch $transactionId từ bước khởi tạo. '
+      'Vui lòng thực hiện lại giao dịch.',
+    );
   }
 
   Future<String> _resolveUserId({

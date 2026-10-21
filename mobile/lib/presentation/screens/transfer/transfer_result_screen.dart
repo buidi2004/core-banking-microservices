@@ -215,6 +215,8 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isSuccess = widget.status.toUpperCase() == 'SUCCESS';
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -247,36 +249,50 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Success Animated Circle Icon
+              // Animated Circle Icon (Success / Error)
               Container(
                 width: 76,
                 height: 76,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      AppColors.emeraldGreen.withOpacity(0.2),
-                      AppColors.bottomBarCyan.withOpacity(0.15),
-                    ],
+                    colors: isSuccess
+                        ? [
+                            AppColors.emeraldGreen.withOpacity(0.2),
+                            AppColors.bottomBarCyan.withOpacity(0.15),
+                          ]
+                        : [
+                            AppColors.error.withOpacity(0.2),
+                            AppColors.errorBg,
+                          ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.emeraldGreen, width: 2.5),
+                  border: Border.all(
+                    color: isSuccess ? AppColors.emeraldGreen : AppColors.error,
+                    width: 2.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.emeraldGreen.withOpacity(0.3),
+                      color: (isSuccess ? AppColors.emeraldGreen : AppColors.error).withOpacity(0.3),
                       blurRadius: 18,
                       spreadRadius: 2,
                     ),
                   ],
                 ),
-                child: const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 44),
+                child: Icon(
+                  isSuccess ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.xmark_circle_fill,
+                  color: isSuccess ? AppColors.emeraldGreen : AppColors.error,
+                  size: 44,
+                ),
               ),
               const SizedBox(height: 12),
 
               Text(
-                'Giao Dịch Thành Công',
-                style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                isSuccess ? 'Giao Dịch Thành Công' : 'Giao Dịch Thất Bại',
+                style: AppTypography.displaySmall(
+                  color: isSuccess ? AppColors.textPrimaryLight : AppColors.error,
+                ).copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
               Text(_timestamp, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
@@ -284,7 +300,9 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
 
               Text(
                 CurrencyFormatter.formatVND(widget.amount),
-                style: AppTypography.displayLarge(color: AppColors.emeraldGreen).copyWith(
+                style: AppTypography.displayLarge(
+                  color: isSuccess ? AppColors.emeraldGreen : AppColors.error,
+                ).copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
                 ),
@@ -307,18 +325,26 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.08),
+                          color: (isSuccess ? AppColors.primary : AppColors.error).withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                          border: Border.all(color: (isSuccess ? AppColors.primary : AppColors.error).withOpacity(0.3)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.primary, size: 16),
+                            Icon(
+                              isSuccess ? CupertinoIcons.lock_shield_fill : CupertinoIcons.exclamationmark_triangle_fill,
+                              color: isSuccess ? AppColors.primary : AppColors.error,
+                              size: 16,
+                            ),
                             const SizedBox(width: 6),
                             Text(
-                              'CHỨNG TỪ ĐIỆN TỬ - SMART OTP XÁC THỰC',
-                              style: AppTypography.bodySmall(color: AppColors.primary).copyWith(
+                              isSuccess
+                                  ? 'CHỨNG TỪ ĐIỆN TỬ - SMART OTP XÁC THỰC'
+                                  : 'GIAO DỊCH BỊ TỪ CHỐI BỞI HỆ THỐNG',
+                              style: AppTypography.bodySmall(
+                                color: isSuccess ? AppColors.primary : AppColors.error,
+                              ).copyWith(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 10,
                                 letterSpacing: 0.5,

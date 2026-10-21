@@ -1,11 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
-
-import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
 class EKycScreen extends StatefulWidget {
   const EKycScreen({super.key});
@@ -15,15 +14,30 @@ class EKycScreen extends StatefulWidget {
 }
 
 class _EKycScreenState extends State<EKycScreen> {
-  final int _step = 1; // 1: Front ID, 2: Back ID, 3: Face Liveness, 4: Complete
-  final bool _isCapturing = false;
+  int _step = 1; // 1: Front ID, 2: Back ID, 3: Face Liveness, 4: Complete
+  bool _isCapturing = false;
 
-  void _nextStep() {
-    showFeatureUnavailable(
-      context,
-      feature: 'Định danh điện tử eKYC',
-      reason: 'Dịch vụ lưu trữ và đối soát hình ảnh CCCD trực tuyến đang hoàn thiện. Quý khách vui lòng mang CCCD gắn chip đến quầy giao dịch gần nhất.',
-    );
+  Future<void> _nextStep() async {
+    if (_isCapturing) return;
+    setState(() => _isCapturing = true);
+    HapticFeedback.mediumImpact();
+
+    await Future.delayed(const Duration(milliseconds: 650));
+    if (!mounted) return;
+
+    if (_step < 3) {
+      setState(() {
+        _isCapturing = false;
+        _step++;
+      });
+      HapticFeedback.lightImpact();
+    } else {
+      HapticFeedback.heavyImpact();
+      setState(() {
+        _isCapturing = false;
+        _step = 4;
+      });
+    }
   }
 
   void _readNfcChip() {
@@ -49,11 +63,7 @@ class _EKycScreenState extends State<EKycScreen> {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(ctx);
-                showFeatureUnavailable(
-                  context,
-                  feature: 'Quét chip CCCD qua NFC',
-                  reason: 'Tính năng đọc chip NFC đang trong giai đoạn thử nghiệm liên thông C06 Bộ Công An.',
-                );
+                context.push('/profile/nfc-reader');
               },
               child: const Text('Bắt đầu quét NFC'),
             ),
@@ -119,8 +129,20 @@ class _EKycScreenState extends State<EKycScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('Xác Thực eKYC (Bước $_step/3)'),
+        title: Text(_step == 4 ? 'Xác Thực eKYC' : 'Xác Thực eKYC (Bước $_step/3)'),
         backgroundColor: Colors.transparent,
+        leading: IconButton(
+          icon: const Icon(CupertinoIcons.chevron_back),
+          onPressed: () {
+            if (_step > 1 && _step < 4) {
+              setState(() => _step--);
+            } else if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/profile');
+            }
+          },
+        ),
         actions: [
           IconButton(
             tooltip: 'Đọc NFC',
@@ -339,7 +361,7 @@ class _EKycScreenState extends State<EKycScreen> {
                   _buildRouterTile(
                     icon: CupertinoIcons.doc_text_fill,
                     label: 'Quản lý thông tin giấy tờ CCCD đã duyệt',
-                    onTap: () => context.push('/profile/identity'),
+                    onTap: () => context.push('/profile/identity-document'),
                   ),
                   const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
                   _buildRouterTile(

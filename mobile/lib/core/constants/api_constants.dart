@@ -22,6 +22,8 @@ class ApiConstants {
   static const String otpSend = '/auth/otp/send';
   static const String forgotPassword = '/auth/forgot-password';
   static const String resetPassword = '/auth/reset-password';
+  static const String changePassword = '/auth/change-password';
+  static const String changePasswordOtp = '/auth/change-password/otp';
   static const String logout = '/auth/logout';
   // BE-GAP (BE-REQ-03): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String setPin = '/users/pin/set';
