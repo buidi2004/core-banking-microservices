@@ -4,6 +4,7 @@ import { INITIAL_DEPOSITS, CUSTOMER_ACCOUNTS, STAFF_ACCOUNTS, OPENING_VAULT_BALA
 import { generateReceiptHash } from './utils';
 import { RoleSwitcher } from './components/RoleSwitcher';
 import { TellerForm } from './components/TellerForm';
+import { TransferForm } from './components/TransferForm';
 import { ManagerQueue } from './components/ManagerQueue';
 import { VaultSummaryWidget } from './components/VaultSummaryWidget';
 import { TransactionHistory } from './components/TransactionHistory';
@@ -133,6 +134,43 @@ export default function App() {
     setDeposits(prev => prev.map(d => d.id === id ? { ...d, status: 'REJECTED', rejectionReason: reason } : d));
   };
 
+  const handleP2PTransfer = (data: {
+    senderPhone: string;
+    receiverPhone: string;
+    amount: number;
+    note: string;
+  }) => {
+    // Gọi BE API để thực hiện P2P transfer
+    // Sử dụng fetch thông qua Gateway proxy
+    fetch('http://localhost:8080/api/v1/payments/transfer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Token sẽ tự động gửi qua proxy hoặc cần auth header
+      },
+      body: JSON.stringify({
+        senderPhone: data.senderPhone,
+        receiverPhone: data.receiverPhone,
+        amount: data.amount,
+        note: data.note || 'Chuyển tiền ví điện tử'
+      })
+    })
+    .then(async response => {
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.message || 'Lỗi không xác định');
+      }
+      // Refresh deposits và transaction history
+      // TODO: Implement proper state refresh
+      alert('✅ ' + result.message);
+      console.log('P2P Transfer result:', result);
+    })
+    .catch(error => {
+      console.error('P2P Transfer error:', error);
+      alert('❌ ' + error.message);
+    });
+  };
+
   const closeReceipt = () => setReceiptDeposit(null);
 
   // Nếu chưa đăng nhập -> Hiển thị Màn hình Đăng nhập
@@ -226,7 +264,10 @@ export default function App() {
         <div className="grid-layout">
           <div>
             {role === 'TELLER' ? (
-              <TellerForm onSubmit={handleCreateDeposit} accounts={accounts} />
+              <>
+                <TellerForm onSubmit={handleCreateDeposit} accounts={accounts} />
+                <TransferForm onTransfer={handleP2PTransfer} accounts={accounts} />
+              </>
             ) : (
               <ManagerQueue
                 deposits={deposits.filter(d => d.status === 'PENDING_APPROVAL')}

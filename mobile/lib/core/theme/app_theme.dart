@@ -41,7 +41,9 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          // Nền nút CTA: primaryDark #0077B6 thay cho primary #00B4D8.
+          // Chữ trắng trên #0077B6 đạt 4.87:1 (WCAG AA); trên #00B4D8 chỉ 2.46:1.
+          backgroundColor: AppColors.primaryDark,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -98,7 +100,7 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDark,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 52),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

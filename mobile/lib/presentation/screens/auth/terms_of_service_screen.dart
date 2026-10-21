@@ -49,10 +49,10 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), shape: BoxShape.circle),
-                  child: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.primary, size: 24),
+                  child: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.primaryText, size: 24),
                 ),
                 const SizedBox(width: 12),
-                Text('Phòng Pháp Chế & CSKH', style: AppTypography.titleLarge(color: AppColors.primaryDark)),
+                Text('Phòng Pháp Chế & CSKH', style: AppTypography.titleLarge(color: AppColors.primaryText)),
               ],
             ),
             const SizedBox(height: 16),
@@ -63,7 +63,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
             const SizedBox(height: 14),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(CupertinoIcons.phone_fill, color: AppColors.emeraldGreen),
+              leading: const Icon(CupertinoIcons.phone_fill, color: AppColors.successTextLight),
               title: const Text('Hotline Pháp Lý 24/7', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: const Text('1900 6868 (1.000đ/phút) - Nhánh 3'),
               trailing: ElevatedButton(
@@ -78,7 +78,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
             ),
             const ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: Icon(CupertinoIcons.mail, color: AppColors.primary),
+              leading: Icon(CupertinoIcons.mail, color: AppColors.primaryText),
               title: Text('Hộp Thư Tiếp Nhận Khiếu Nại', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               subtitle: Text('legal@senhongbank.vn'),
             ),
@@ -98,12 +98,12 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
         actions: [
           IconButton(
             tooltip: 'Tải văn bản PDF',
-            icon: const Icon(CupertinoIcons.arrow_down_doc_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.arrow_down_doc_fill, color: AppColors.primaryLight),
             onPressed: _downloadTermsPdf,
           ),
           IconButton(
             tooltip: 'Liên hệ pháp lý',
-            icon: const Icon(CupertinoIcons.question_circle_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.question_circle_fill, color: AppColors.primaryLight),
             onPressed: _contactLegalSupport,
           ),
         ],
@@ -144,19 +144,19 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                             color: AppColors.bottomBarCyan.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.bottomBarCyan, size: 20),
+                          child: const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primaryText, size: 20),
                         ),
                         const SizedBox(width: 10),
                         const Text(
                           'CƠ SỞ PHÁP LÝ & AN NINH TÀI CHÍNH',
-                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                          style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
                     const Text(
                       'Hệ thống Ví điện tử và Dịch vụ Ngân hàng số Sen Hồng tuân thủ nghiêm ngặt theo Giấy phép Hoạt động Cung ứng Dịch vụ Trung gian Thanh toán do Ngân hàng Nhà nước Việt Nam cấp, Nghị định 13/2023/NĐ-CP và Quyết định 2345/QĐ-NHNN.',
-                      style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.4),
+                      style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11.5, height: 1.4),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -225,7 +225,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('ĐIỀU KHOẢN & ĐIỀU KIỆN SỬ DỤNG VÍ ĐIỆN TỬ SEN HỒNG', style: AppTypography.titleLarge(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.bold)),
+                      Text('ĐIỀU KHOẢN & ĐIỀU KIỆN SỬ DỤNG VÍ ĐIỆN TỬ SEN HỒNG', style: AppTypography.titleLarge(color: AppColors.primaryText).copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       Text('Phiên bản 2.4 • Cập nhật: 01/01/2026 • Ban hành kèm Quyết định số 108/2026/QĐ-SHB', style: AppTypography.bodySmall(color: AppColors.textMutedLight)),
                       const Divider(height: 24, color: AppColors.cardBorderLight),
@@ -421,7 +421,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

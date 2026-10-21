@@ -235,7 +235,8 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                       gradient: AppColors.primaryGradient,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(CupertinoIcons.building_2_fill, color: Colors.white, size: 16),
+                    child: const Icon(CupertinoIcons.building_2_fill,
+                        color: AppColors.textPrimaryLight, size: 16),
                   ),
                   const SizedBox(width: 8),
                   Text(

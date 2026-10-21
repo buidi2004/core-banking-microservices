@@ -124,12 +124,12 @@ class _BillInputScreenState extends State<BillInputScreen> {
                             onTap: () => setState(() => _selectedProviderIdx = idx),
                             leading: CircleAvatar(
                               backgroundColor: AppColors.primary.withOpacity(0.12),
-                              child: Icon(_getProviderIcon(p['name']!), color: AppColors.primaryDark, size: 18),
+                              child: Icon(_getProviderIcon(p['name']!), color: AppColors.primaryText, size: 18),
                             ),
                             title: Text(p['name']!, style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
                             subtitle: Text(p['area']!, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
                             trailing: isSelected
-                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen)
+                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight)
                                 : const Icon(CupertinoIcons.circle, color: AppColors.textMutedLight),
                           ),
                         ),
@@ -156,7 +156,7 @@ class _BillInputScreenState extends State<BillInputScreen> {
                         style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold),
                         onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
-                          prefixIcon: const Icon(CupertinoIcons.barcode_viewfinder, color: AppColors.primary),
+                          prefixIcon: const Icon(CupertinoIcons.barcode_viewfinder, color: AppColors.primaryLight),
                           suffixIcon: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -169,7 +169,7 @@ class _BillInputScreenState extends State<BillInputScreen> {
                                   },
                                 ),
                               IconButton(
-                                icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryDark),
+                                icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryLight),
                                 tooltip: 'Quét mã trên giấy báo cước',
                                 onPressed: () => context.push('/scan-qr'),
                               ),
@@ -241,7 +241,7 @@ class _BillInputScreenState extends State<BillInputScreen> {
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(CupertinoIcons.arrow_2_circlepath_circle_fill, color: Colors.white, size: 26),
+                      child: const Icon(CupertinoIcons.arrow_2_circlepath_circle_fill, color: AppColors.textPrimaryLight, size: 26),
                     ),
                     const SizedBox(width: 14),
                     const Expanded(
@@ -250,12 +250,12 @@ class _BillInputScreenState extends State<BillInputScreen> {
                         children: [
                           Text(
                             'TRÍCH NỢ TỰ ĐỘNG (AUTO-DEBIT)',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
+                            style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
                           ),
                           SizedBox(height: 3),
                           Text(
                             'Tự động trừ tiền khi có hóa đơn mới, không bao giờ lo cắt điện/nước.',
-                            style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.3),
+                            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, height: 1.3),
                           ),
                         ],
                       ),
@@ -286,7 +286,7 @@ class _BillInputScreenState extends State<BillInputScreen> {
                           },
                           leading: CircleAvatar(
                             backgroundColor: AppColors.primary.withOpacity(0.12),
-                            child: const Icon(CupertinoIcons.bookmark_fill, color: AppColors.primaryDark, size: 16),
+                            child: const Icon(CupertinoIcons.bookmark_fill, color: AppColors.primaryText, size: 16),
                           ),
                           title: Text(saved['label']!, style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
                           subtitle: Text('${saved['provider']} • ${saved['code']}', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
@@ -363,14 +363,14 @@ class _BillInputScreenState extends State<BillInputScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(CupertinoIcons.question_circle, color: AppColors.primary, size: 16),
+                  const Icon(CupertinoIcons.question_circle, color: AppColors.primaryLight, size: 16),
                   const SizedBox(width: 6),
                   Text('Cần hỗ trợ tra cước? ', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                   InkWell(
                     onTap: () => context.push('/support/live-chat'),
                     child: const Text(
                       'Chat với CSKH 24/7',
-                      style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 12),
+                      style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 12),
                     ),
                   ),
                 ],
@@ -388,7 +388,7 @@ class _BillInputScreenState extends State<BillInputScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(CupertinoIcons.chat_bubble_2_fill, color: AppColors.primary, size: 18),
+        const Icon(CupertinoIcons.chat_bubble_2_fill, color: AppColors.primaryText, size: 18),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -408,7 +408,7 @@ class _BillInputScreenState extends State<BillInputScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 18),
+        const Icon(CupertinoIcons.info_circle_fill, color: AppColors.primaryText, size: 18),
         const SizedBox(width: 10),
         Expanded(
           child: Column(

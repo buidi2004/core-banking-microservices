@@ -203,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             child: Icon(
                               item['icon'] as IconData,
-                              color: AppColors.primary,
+                              color: AppColors.primaryText,
                               size: 24,
                             ),
                           ),
@@ -266,7 +266,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     TextButton(
                       onPressed: () => context.push('/history'),
-                      child: const Text('Xem tất cả', style: TextStyle(color: AppColors.primary)),
+                      child: const Text('Xem tất cả', style: TextStyle(color: AppColors.primaryLight)),
                     ),
                   ],
                 ),
@@ -279,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryLight),
                   ),
                 ),
               )
@@ -348,7 +348,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     : AppColors.primary.withOpacity(0.12),
                                 child: Icon(
                                   isPositive ? CupertinoIcons.arrow_down_left : CupertinoIcons.arrow_up_right,
-                                  color: isPositive ? AppColors.emeraldGreen : AppColors.primary,
+                                  color: isPositive ? AppColors.emeraldGreenLight : AppColors.primaryLight,
                                   size: 18,
                                 ),
                               ),
@@ -369,7 +369,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ? '••••••••'
                                     : '${isPositive ? '+' : ''}${CurrencyFormatter.formatVND(amountNum)}',
                                 style: AppTypography.titleMedium(
-                                  color: isPositive ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+                                  color: isPositive ? AppColors.emeraldGreenLight : AppColors.textPrimaryLight,
                                 ),
                               ),
                             ),

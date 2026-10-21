@@ -51,15 +51,18 @@ class CustomPinNumpad extends StatelessWidget {
               height: isFilled ? 18 : 14,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isFilled ? AppColors.primary : Colors.transparent,
+                // primaryDark để chấm PIN nổi rõ trên nền sáng (primary #00B4D8 chỉ 2.46:1).
+                color: isFilled ? AppColors.primaryDark : Colors.transparent,
                 border: Border.all(
-                  color: isFilled ? AppColors.primary : AppColors.cardBorderDark,
+                  color: isFilled
+                      ? AppColors.primaryDark
+                      : AppColors.borderSubtle,
                   width: 2,
                 ),
                 boxShadow: isFilled
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.5),
+                          color: AppColors.primaryDark.withOpacity(0.5),
                           blurRadius: 8,
                           spreadRadius: 1,
                         ),
@@ -141,10 +144,16 @@ class CustomPinNumpad extends StatelessWidget {
       width: 72,
       height: 72,
       child: Material(
-        color: Colors.transparent,
+        // Nền đậm đồng bộ với phím số + icon sáng: trước đây nền trong suốt +
+        // icon trắng khiến nút FaceID / Xóa bị "phản quan" (invisible) trên nền sáng.
+        color: AppColors.cardDark,
+        shape: const CircleBorder(
+          side: BorderSide(color: AppColors.cardBorderDark, width: 1),
+        ),
         child: InkWell(
           customBorder: const CircleBorder(),
           onTap: onPressed,
+          splashColor: AppColors.primary.withOpacity(0.3),
           child: Center(
             child: Icon(icon, color: AppColors.textPrimaryDark, size: 28),
           ),

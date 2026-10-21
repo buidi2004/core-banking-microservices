@@ -102,7 +102,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               children: [
                 CircleAvatar(
                   radius: 18,
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.primaryDark,
                   child: Icon(CupertinoIcons.person_fill, color: Colors.white, size: 20),
                 ),
                 Positioned(
@@ -117,7 +117,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('CSKH Sen Hồng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text('Trực tuyến 24/7 • Phản hồi tức thì', style: TextStyle(fontSize: 11, color: AppColors.emeraldGreen)),
+                Text('Trực tuyến 24/7 • Phản hồi tức thì', style: TextStyle(fontSize: 11, color: AppColors.emeraldGreenLight)),
               ],
             ),
           ],
@@ -186,7 +186,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                             SizedBox(
                               width: 12,
                               height: 12,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryText),
                             ),
                           ],
                         ),
@@ -225,12 +225,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           if (!isUser)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(msg['name']!, style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                              child: Text(msg['name']!, style: const TextStyle(fontSize: 11, color: AppColors.primaryText, fontWeight: FontWeight.bold)),
                             ),
                           Text(
                             msg['text']!,
                             style: TextStyle(
-                              color: isUser ? Colors.white : AppColors.textPrimaryLight,
+                              color: isUser ? AppColors.textPrimaryLight : AppColors.textPrimaryLight,
                               fontSize: 14,
                               height: 1.35,
                             ),
@@ -238,7 +238,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           const SizedBox(height: 4),
                           Text(
                             msg['time']!,
-                            style: TextStyle(color: isUser ? Colors.white70 : AppColors.textMutedLight, fontSize: 10),
+                            style: TextStyle(color: isUser ? AppColors.textSecondaryLight : AppColors.textMutedLight, fontSize: 10),
                           ),
                         ],
                       ),
@@ -277,7 +277,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(CupertinoIcons.paperclip, color: AppColors.primary),
+                    icon: const Icon(CupertinoIcons.paperclip, color: AppColors.primaryText),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -317,7 +317,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(CupertinoIcons.paperplane_fill, color: Colors.white, size: 18),
+                      icon: const Icon(CupertinoIcons.paperplane_fill, color: AppColors.textPrimaryLight, size: 18),
                       onPressed: () => _sendMessage(_msgCtrl.text),
                     ),
                   ),

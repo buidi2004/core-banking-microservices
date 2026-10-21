@@ -231,12 +231,12 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
         actions: [
           IconButton(
             tooltip: 'Quét mã QR',
-            icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryText),
             onPressed: () => context.push('/scan-qr'),
           ),
           IconButton(
             tooltip: 'Danh bạ',
-            icon: const Icon(CupertinoIcons.person_2_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.person_2_fill, color: AppColors.primaryText),
             onPressed: () => context.push('/beneficiaries'),
           ),
         ],
@@ -278,7 +278,11 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            gradient: _selectedTab == 0 ? AppColors.primaryGradient : null,
+                            // primaryDark (#0077B6) để chữ trắng đạt 4.87:1.
+                            // Gradient cyan (#26E5DC→#00B4D8) chỉ đạt ~1.96:1.
+                            color: _selectedTab == 0
+                                ? AppColors.primaryDark
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: _selectedTab == 0
                                 ? [
@@ -294,7 +298,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                             'Ví tới Ví (Nội bộ)',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: _selectedTab == 0 ? Colors.white : AppColors.textSecondaryLight,
+                              color: _selectedTab == 0 ? AppColors.textPrimaryLight : AppColors.textSecondaryLight,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -314,7 +318,9 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            gradient: _selectedTab == 1 ? AppColors.primaryGradient : null,
+                            color: _selectedTab == 1
+                                ? AppColors.primaryDark
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: _selectedTab == 1
                                 ? [
@@ -330,7 +336,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                             'Liên ngân hàng (Napas)',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: _selectedTab == 1 ? Colors.white : AppColors.textSecondaryLight,
+                              color: _selectedTab == 1 ? AppColors.textPrimaryLight : AppColors.textSecondaryLight,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -351,7 +357,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                 decoration: InputDecoration(
                   hintText: _selectedTab == 0 ? 'Nhập SĐT hoặc STK Sen Hồng...' : 'Nhập số tài khoản ngân hàng...',
                   hintStyle: const TextStyle(color: AppColors.textMutedLight),
-                  prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.primaryText),
                   suffixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -367,7 +373,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                       else
                         IconButton(
                           tooltip: 'Dán từ bộ nhớ tạm',
-                          icon: const Icon(CupertinoIcons.doc_on_clipboard, color: AppColors.primary, size: 18),
+                          icon: const Icon(CupertinoIcons.doc_on_clipboard, color: AppColors.primaryText, size: 18),
                           onPressed: () async {
                             final data = await Clipboard.getData(Clipboard.kTextPlain);
                             final text = data?.text?.trim() ?? '';
@@ -380,7 +386,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         ),
                       IconButton(
                         tooltip: 'Quét QR',
-                        icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primary),
+                        icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryText),
                         onPressed: () => context.push('/scan-qr'),
                       ),
                     ],
@@ -405,11 +411,11 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                     ),
                     child: const Row(
                       children: [
-                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryText)),
                         SizedBox(width: 10),
                         Text(
                           'Đang tự động nhận diện tên chủ tài khoản...',
-                          style: TextStyle(fontSize: 12, color: AppColors.primaryDark, fontWeight: FontWeight.w500),
+                          style: TextStyle(fontSize: 12, color: AppColors.primaryText, fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -440,7 +446,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                             shape: BoxShape.circle,
                             color: AppColors.emeraldGreen.withOpacity(0.15),
                           ),
-                          child: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen, size: 24),
+                          child: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight, size: 24),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -452,7 +458,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
-                                  color: AppColors.emeraldGreen,
+                                  color: AppColors.successTextLight,
                                 ),
                               ),
                               const SizedBox(height: 2),
@@ -466,7 +472,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         ElevatedButton(
                           onPressed: _continueToAmount,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: AppColors.primaryDark,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             minimumSize: Size.zero,
@@ -490,12 +496,12 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(CupertinoIcons.info_circle_fill, color: AppColors.error, size: 16),
+                        const Icon(CupertinoIcons.info_circle_fill, color: AppColors.errorText, size: 16),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             _lookupError!,
-                            style: const TextStyle(fontSize: 12, color: AppColors.error, fontWeight: FontWeight.w500),
+                            style: const TextStyle(fontSize: 12, color: AppColors.errorText, fontWeight: FontWeight.w500),
                           ),
                         ),
                       ],
@@ -532,7 +538,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(CupertinoIcons.qrcode_viewfinder, size: 16, color: AppColors.primaryDark),
+                            Icon(CupertinoIcons.qrcode_viewfinder, size: 16, color: AppColors.primaryText),
                             SizedBox(width: 6),
                             Text('Quét QR', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
@@ -555,7 +561,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(CupertinoIcons.person_2_fill, size: 16, color: AppColors.primary),
+                            Icon(CupertinoIcons.person_2_fill, size: 16, color: AppColors.primaryText),
                             SizedBox(width: 6),
                             Text('Danh bạ', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
@@ -578,7 +584,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(CupertinoIcons.person_2_fill, size: 16, color: AppColors.warning),
+                            Icon(CupertinoIcons.person_2_fill, size: 16, color: AppColors.warningTextLight),
                             SizedBox(width: 6),
                             Text('Chia tiền', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
@@ -601,7 +607,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(CupertinoIcons.qrcode, size: 16, color: AppColors.emeraldGreen),
+                            Icon(CupertinoIcons.qrcode, size: 16, color: AppColors.successTextLight),
                             SizedBox(width: 4),
                             Text('Mã QR', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
@@ -635,7 +641,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                         ),
                         child: Text(
                           bank['short']!,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryDark),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryText),
                         ),
                       ),
                     );
@@ -652,7 +658,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2),
+                    child: CircularProgressIndicator(color: AppColors.primaryLight, strokeWidth: 2),
                   ),
                 ),
               ] else if (_beneficiaries.isEmpty) ...[
@@ -666,16 +672,16 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                   ),
                   child: Column(
                     children: [
-                      Icon(CupertinoIcons.person_crop_circle_badge_exclam, size: 40, color: AppColors.textMutedLight.withOpacity(0.5)),
+                      const Icon(CupertinoIcons.person_crop_circle_badge_exclam, size: 40, color: AppColors.textSecondaryLight),
                       const SizedBox(height: 8),
                       Text(
                         'Chưa có người thụ hưởng đã lưu',
-                        style: AppTypography.bodyMedium(color: AppColors.textMutedLight),
+                        style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Nhập SĐT hoặc STK ở trên để tự động nhận diện và chuyển tiền',
-                        style: AppTypography.bodySmall(color: AppColors.textMutedLight.withOpacity(0.7)),
+                        style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -701,7 +707,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                             backgroundColor: AppColors.primary.withOpacity(0.15),
                             child: Text(
                               name.isNotEmpty ? name[0].toUpperCase() : 'S',
-                              style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold),
                             ),
                           ),
                           title: Text(name.toUpperCase(), style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
@@ -779,7 +785,7 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

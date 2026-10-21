@@ -51,7 +51,7 @@ class AppColors {
   // Status Surfaces & Accents (Thông báo, Cảnh báo, Trạng thái chuẩn hệ thống)
   static const Color warningBg = Color(0xFFFFFBEB);
   static const Color warningBorder = Color(0xFFFDE68A);
-  static const Color warningText = Color(0xFFB45309);
+  static const Color warningText = Color(0xFF7C2D12); // 6.0:1 (nâng từ #B45309 — 3.86:1)
 
   static const Color errorBg = Color(0xFFFEF2F2);
   static const Color errorBorder = Color(0xFFFECACA);
@@ -59,7 +59,7 @@ class AppColors {
 
   static const Color successBg = Color(0xFFF0FDF4);
   static const Color successBorder = Color(0xFFBBF7D0);
-  static const Color successText = Color(0xFF15803D);
+  static const Color successText = Color(0xFF166534); // 5.49:1 (nâng từ #15803D — 3.86:1)
 
   static const Color infoBg = Color(0xFFEFF6FF);
   static const Color infoBorder = Color(0xFFBFDBFE);
@@ -70,9 +70,28 @@ class AppColors {
   static const Color infoTealText = Color(0xFF0F766E);
 
   // Text Colors (Light Mode)
+  // Lưu ý (AUDIT-TP-CONTRAST-001): nền app là ảnh SÁNG (#E0E2E1) và mọi
+  // GlassCard ở chế độ sáng chỉ phủ lớp kính rất nhạt → bề mặt vẫn sáng.
+  // Các token dưới đây đã hiệu chỉnh để đạt WCAG AA trên nền sáng:
+  //   textPrimaryLight   13.7:1
+  //   textSecondaryLight  5.8:1  (nâng từ #64748B — chỉ 3.66:1)
+  //   textMutedLight     4.57:1  (nâng từ #94A3B8 — chỉ 2.56:1)
   static const Color textPrimaryLight = Color(0xFF0F172A);
-  static const Color textSecondaryLight = Color(0xFF64748B);
-  static const Color textMutedLight = Color(0xFF94A3B8);
+  static const Color textSecondaryLight = Color(0xFF475569);
+  static const Color textMutedLight = Color(0xFF55657A);
+
+  // Màu nhấn dùng cho CHỮ trên nền sáng (WCAG AA ≥ 4.5:1).
+  // AppColors.primary #00B4D8 chỉ đạt 2.46:1 → không dùng làm màu chữ.
+  static const Color primaryText = Color(0xFF075985); // 5.8:1 (nền sáng) · 4.8:1 (nền xanh nhạt)
+  // Xanh lá dạng chữ (emeraldGreen #10B981 chỉ đạt 1.95:1).
+  static const Color successTextLight = Color(0xFF166534); // 5.49:1
+  // Cam dạng chữ (warningText #B45309 chỉ đạt 3.86:1).
+  static const Color warningTextLight = Color(0xFF7C2D12); // 6.0:1 (nền sáng) · 5.9:1 (nền cam nhạt)
+  // Tím dạng chữ (softPurple #8B5CF6 chỉ đạt 3.25:1).
+  static const Color softPurpleText = Color(0xFF6D28D9); // 6.32:1
+
+  // Xanh lá sáng — dùng cho CHỮ/ICON trên nền TỐI (card công nghệ).
+  static const Color emeraldGreenLight = Color(0xFF34D399); // 5.4:1 trên nền #36414E
 
   // Text Colors (Dark Mode)
   static const Color textPrimaryDark = Color(0xFFF8FAFC);

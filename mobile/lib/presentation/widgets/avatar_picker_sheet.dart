@@ -209,7 +209,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                 children: [
                   Text(
                     'Thay Đổi Ảnh Đại Diện',
-                    style: AppTypography.titleMedium(color: AppColors.primaryDark).copyWith(
+                    style: AppTypography.titleMedium(color: AppColors.primaryText).copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -276,7 +276,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 0.5,
-                    color: AppColors.primary.withOpacity(0.8),
+                    color: AppColors.primaryText.withOpacity(0.8),
                   ),
                 ),
               ),
@@ -335,7 +335,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                                 },
                                 errorBuilder: (_, __, ___) => const Icon(
                                   CupertinoIcons.person_crop_circle_fill,
-                                  color: AppColors.primary,
+                                  color: AppColors.primaryText,
                                 ),
                               ),
                             ),
@@ -350,7 +350,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                                   color: AppColors.emeraldGreen,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(CupertinoIcons.checkmark, size: 10, color: Colors.white),
+                                child: const Icon(CupertinoIcons.checkmark, size: 10, color: AppColors.textPrimaryLight),
                               ),
                             ),
                         ],
@@ -361,7 +361,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected ? AppColors.emeraldGreen : AppColors.primaryDark,
+                          color: isSelected ? AppColors.successTextLight : AppColors.primaryText,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -386,7 +386,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                   Icon(
                     _showUrlInput ? CupertinoIcons.arrow_up : CupertinoIcons.link,
                     size: 16,
-                    color: AppColors.primary,
+                    color: AppColors.primaryText,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -394,7 +394,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+                      color: AppColors.primaryText,
                     ),
                   ),
                 ],
@@ -435,7 +435,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                 ElevatedButton(
                   onPressed: _submitCustomUrl,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primaryDark,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -484,7 +484,7 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: Colors.white, size: 20),
+                  child: Icon(icon, color: AppColors.textPrimaryLight, size: 20),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
