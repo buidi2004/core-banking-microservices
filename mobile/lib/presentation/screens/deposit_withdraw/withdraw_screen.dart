@@ -147,14 +147,14 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('SỐ DƯ KHẢ DỤNG CỦA VÍ', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold)),
+                          const Text('SỐ DƯ KHẢ DỤNG CỦA VÍ', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
                             child: Text(
                               CurrencyFormatter.formatVND(_availableBalance),
-                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                              style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 24, fontWeight: FontWeight.w900),
                             ),
                           ),
                         ],
@@ -190,7 +190,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreen, size: 28),
+                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.successTextLight, size: 28),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -221,7 +221,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                       TextField(
                         controller: _amountCtrl,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(color: AppColors.primaryDark, fontSize: 28, fontWeight: FontWeight.w900),
+                        style: const TextStyle(color: AppColors.primaryLight, fontSize: 28, fontWeight: FontWeight.w900),
                         onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
                           suffixIcon: _amountCtrl.text.isNotEmpty
@@ -234,7 +234,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                                 )
                               : null,
                           suffixText: 'đ',
-                          suffixStyle: const TextStyle(color: AppColors.primaryDark, fontSize: 22, fontWeight: FontWeight.bold),
+                          suffixStyle: const TextStyle(color: AppColors.primaryLight, fontSize: 22, fontWeight: FontWeight.bold),
                           filled: true,
                           fillColor: AppColors.surfaceLight,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -246,7 +246,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
                           'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(double.tryParse(_amountCtrl.text) ?? 0)} đồng',
-                          style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                          style: AppTypography.bodySmall(color: AppColors.primaryLight).copyWith(
                             fontStyle: FontStyle.italic,
                             fontWeight: FontWeight.w600,
                           ),
@@ -354,7 +354,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                             },
                             leading: CircleAvatar(
                               backgroundColor: AppColors.primary.withOpacity(0.12),
-                              child: Text(b['logo']!, style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 11)),
+                              child: Text(b['logo']!, style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 11)),
                             ),
                             title: Text(
                               '${b['bank']} - ${b['acc']}',
@@ -369,7 +369,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             trailing: isSelected
-                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen)
+                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight)
                                 : const Icon(CupertinoIcons.circle, color: AppColors.textMutedLight),
                           ),
                         ),
@@ -480,7 +480,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                                 color: AppColors.primary.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(CupertinoIcons.arrow_up_circle_fill, color: AppColors.primaryDark, size: 20),
+                              child: const Icon(CupertinoIcons.arrow_up_circle_fill, color: AppColors.primaryText, size: 20),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -507,11 +507,11 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                               children: [
                                 Text(
                                   '-${CurrencyFormatter.formatVND(item['amount'] as double)}',
-                                  style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 13),
                                 ),
                                 Text(
                                   item['status'] as String,
-                                  style: const TextStyle(color: AppColors.emeraldGreen, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(color: AppColors.successTextLight, fontSize: 10, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),

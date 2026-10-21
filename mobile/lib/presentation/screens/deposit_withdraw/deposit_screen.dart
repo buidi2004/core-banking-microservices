@@ -211,12 +211,12 @@ class _DepositScreenState extends State<DepositScreen> {
               const Row(
                 children: [
                   Icon(CupertinoIcons.checkmark_shield_fill,
-                      color: AppColors.emeraldGreen, size: 20),
+                      color: AppColors.emeraldGreenLight, size: 20),
                   SizedBox(width: 8),
                   Text(
                     'HẠN MỨC NẠP TIỀN TRONG NGÀY',
                     style: TextStyle(
-                      color: AppColors.emeraldGreen,
+                      color: AppColors.emeraldGreenLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       letterSpacing: 0.5,
@@ -315,15 +315,15 @@ class _DepositScreenState extends State<DepositScreen> {
                 children: [
                   Icon(m['icon'] as IconData,
                       color: isSelected
-                          ? AppColors.bottomBarCyan
-                          : Colors.white60,
+                          ? AppColors.primaryText
+                          : AppColors.textSecondaryLight,
                       size: 22),
                   const SizedBox(height: 6),
                   Text(
                     m['title'] as String,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
+                      color: isSelected ? AppColors.textPrimaryLight : AppColors.textSecondaryLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 11.5,
                     ),
@@ -333,7 +333,7 @@ class _DepositScreenState extends State<DepositScreen> {
                     m['sub'] as String,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: isSelected ? AppColors.bottomBarCyan : Colors.white38,
+                      color: isSelected ? AppColors.primaryText : AppColors.textMutedLight,
                       fontSize: 9.5,
                     ),
                   ),
@@ -356,14 +356,14 @@ class _DepositScreenState extends State<DepositScreen> {
           children: [
             const Text(
               'Nhập số tiền cần nạp',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
             ),
             const SizedBox(height: 8),
             TextField(
               controller: _amountCtrl,
               keyboardType: TextInputType.number,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
               ),
@@ -372,7 +372,7 @@ class _DepositScreenState extends State<DepositScreen> {
                 suffixIcon: _amountCtrl.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(CupertinoIcons.clear_circled_solid,
-                            color: Colors.white38, size: 20),
+                            color: AppColors.textMutedLight, size: 20),
                         onPressed: () {
                           HapticFeedback.selectionClick();
                           setState(() => _amountCtrl.clear());
@@ -381,7 +381,7 @@ class _DepositScreenState extends State<DepositScreen> {
                     : null,
                 suffixText: ' đ',
                 suffixStyle: const TextStyle(
-                  color: AppColors.bottomBarCyan,
+                  color: AppColors.primaryText,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -415,7 +415,7 @@ class _DepositScreenState extends State<DepositScreen> {
                   child: Text(
                     'Bằng chữ: $words đồng',
                     style: const TextStyle(
-                      color: AppColors.accentGold,
+                      color: AppColors.warningTextLight,
                       fontStyle: FontStyle.italic,
                       fontSize: 12,
                     ),
@@ -432,7 +432,7 @@ class _DepositScreenState extends State<DepositScreen> {
                   label: Text(
                     CurrencyFormatter.formatVND(amt),
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -465,7 +465,7 @@ class _DepositScreenState extends State<DepositScreen> {
             const Text(
               'Chọn tài khoản nguồn tiền',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 fontWeight: FontWeight.bold,
                 fontSize: 13.5,
               ),
@@ -475,12 +475,12 @@ class _DepositScreenState extends State<DepositScreen> {
               child: const Row(
                 children: [
                   Icon(CupertinoIcons.plus_circle,
-                      color: AppColors.bottomBarCyan, size: 14),
+                      color: AppColors.primaryText, size: 14),
                   SizedBox(width: 4),
                   Text(
                     'Thêm liên kết',
                     style: TextStyle(
-                      color: AppColors.bottomBarCyan,
+                      color: AppColors.primaryText,
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -522,7 +522,7 @@ class _DepositScreenState extends State<DepositScreen> {
                       child: Text(
                         s['logo']!,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimaryLight,
                           fontWeight: FontWeight.bold,
                           fontSize: 11,
                         ),
@@ -532,7 +532,7 @@ class _DepositScreenState extends State<DepositScreen> {
                   title: Text(
                     '${s['bank']} (${s['num']})',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -540,15 +540,15 @@ class _DepositScreenState extends State<DepositScreen> {
                   subtitle: Text(
                     s['type']!,
                     style: const TextStyle(
-                        color: Colors.white54, fontSize: 11),
+                        color: AppColors.textSecondaryLight, fontSize: 11),
                   ),
                   trailing: Icon(
                     isSelected
                         ? CupertinoIcons.checkmark_circle_fill
                         : CupertinoIcons.circle,
                     color: isSelected
-                        ? AppColors.bottomBarCyan
-                        : Colors.white24,
+                        ? AppColors.primaryText
+                        : AppColors.textMutedLight,
                   ),
                 ),
               ),
@@ -565,7 +565,7 @@ class _DepositScreenState extends State<DepositScreen> {
       height: 52,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDark,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -628,7 +628,7 @@ class _DepositScreenState extends State<DepositScreen> {
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
+                    color: AppColors.textPrimaryLight, strokeWidth: 2))
             : const Text(
                 'Tiếp tục xác nhận nạp tiền',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
@@ -688,13 +688,13 @@ class _DepositScreenState extends State<DepositScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12)),
         Row(
           children: [
             Text(
               value,
               style: const TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 fontWeight: FontWeight.bold,
                 fontSize: 12.5,
               ),
@@ -712,7 +712,7 @@ class _DepositScreenState extends State<DepositScreen> {
                 );
               },
               child: const Icon(CupertinoIcons.doc_on_clipboard,
-                  color: AppColors.bottomBarCyan, size: 14),
+                  color: AppColors.primaryText, size: 14),
             ),
           ],
         ),
@@ -782,7 +782,7 @@ class _DepositScreenState extends State<DepositScreen> {
       child: Row(
         children: [
           const Icon(CupertinoIcons.location_solid,
-              color: AppColors.accentGold, size: 18),
+              color: AppColors.warningTextLight, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -791,14 +791,14 @@ class _DepositScreenState extends State<DepositScreen> {
                 Text(
                   name,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
                 ),
                 Text(
                   address,
-                  style: const TextStyle(color: Colors.white54, fontSize: 10.5),
+                  style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 10.5),
                 ),
               ],
             ),
@@ -887,7 +887,7 @@ class _DepositScreenState extends State<DepositScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11.5)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11.5)),
         Text(
           value,
           style: TextStyle(
@@ -907,7 +907,7 @@ class _DepositScreenState extends State<DepositScreen> {
         const Text(
           'Lịch Sử Nạp Tiền Gần Đây',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
             fontSize: 13.5,
           ),
@@ -918,7 +918,7 @@ class _DepositScreenState extends State<DepositScreen> {
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Center(
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppColors.bottomBarCyan)),
+                    strokeWidth: 2, color: AppColors.primaryText)),
           )
         else if (_recentDeposits.isEmpty)
           Container(
@@ -931,7 +931,7 @@ class _DepositScreenState extends State<DepositScreen> {
             child: const Center(
               child: Text(
                 'Chưa có lịch sử nạp tiền gần đây.',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
+                style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
               ),
             ),
           )
@@ -953,7 +953,7 @@ class _DepositScreenState extends State<DepositScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(CupertinoIcons.arrow_down_circle_fill,
-                            color: AppColors.emeraldGreen, size: 18),
+                            color: AppColors.successTextLight, size: 18),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -963,7 +963,7 @@ class _DepositScreenState extends State<DepositScreen> {
                             Text(
                               item['bank'] as String,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.textPrimaryLight,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12.5,
                               ),
@@ -971,7 +971,7 @@ class _DepositScreenState extends State<DepositScreen> {
                             Text(
                               item['time'] as String,
                               style: const TextStyle(
-                                  color: Colors.white54, fontSize: 11),
+                                  color: AppColors.textSecondaryLight, fontSize: 11),
                             ),
                           ],
                         ),
@@ -982,7 +982,7 @@ class _DepositScreenState extends State<DepositScreen> {
                           Text(
                             '+${CurrencyFormatter.formatVND(item['amount'] as double)}',
                             style: const TextStyle(
-                              color: AppColors.emeraldGreen,
+                              color: AppColors.successTextLight,
                               fontWeight: FontWeight.bold,
                               fontSize: 12.5,
                             ),
@@ -990,7 +990,7 @@ class _DepositScreenState extends State<DepositScreen> {
                           const Text(
                             'Thành công',
                             style: TextStyle(
-                              color: AppColors.emeraldGreen,
+                              color: AppColors.successTextLight,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1018,12 +1018,12 @@ class _DepositScreenState extends State<DepositScreen> {
       child: const Row(
         children: [
           Icon(CupertinoIcons.info_circle_fill,
-              color: AppColors.bottomBarCyan, size: 20),
+              color: AppColors.primaryText, size: 20),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Nạp tiền từ tài khoản ngân hàng liên kết hoàn toàn miễn phí. Chỉ áp dụng nạp từ tài khoản ngân hàng chính chủ trùng khớp họ tên với CCCD đã xác thực eKYC.',
-              style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.35),
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, height: 1.35),
             ),
           ),
         ],

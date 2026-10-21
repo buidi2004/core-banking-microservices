@@ -120,7 +120,7 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                 controller: otpCtrl,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 8, color: AppColors.primaryDark),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 8, color: AppColors.primaryText),
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   hintText: '••••••',
@@ -146,10 +146,10 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.primaryDark,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Xác nhận OTP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text('Xác nhận OTP', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -189,7 +189,7 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
               keyboardType: TextInputType.emailAddress,
               style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
-                prefixIcon: const Icon(CupertinoIcons.mail, color: AppColors.primary),
+                prefixIcon: const Icon(CupertinoIcons.mail, color: AppColors.primaryLight),
                 suffixIcon: GestureDetector(
                   onTap: _verifyEmailOtp,
                   child: Container(
@@ -203,9 +203,9 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 14),
+                        Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight, size: 14),
                         SizedBox(width: 4),
-                        Text('Đã xác minh', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text('Đã xác minh', style: TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -289,7 +289,7 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                       const Divider(height: 16, color: AppColors.cardBorderLight),
                       Row(
                         children: [
-                          const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.emeraldGreen, size: 20),
+                          const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.emeraldGreenLight, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -385,7 +385,7 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                             color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(item['icon'] as IconData, color: AppColors.primary, size: 20),
+                          child: Icon(item['icon'] as IconData, color: AppColors.primaryText, size: 20),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -404,7 +404,7 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
                             color: AppColors.emeraldGreen.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Text('Thành công', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                          child: const Text('Thành công', style: TextStyle(color: AppColors.successTextLight, fontSize: 10, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),

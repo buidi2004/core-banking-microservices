@@ -101,13 +101,13 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
             const SizedBox(height: 24),
 
             // Transaction Types Breakdown Matrix
-            Text('Chi Tiết Hạn Mức Từng Loại Giao Dịch', style: AppTypography.titleMedium(color: AppColors.primaryDark)),
+            Text('Chi Tiết Hạn Mức Từng Loại Giao Dịch', style: AppTypography.titleMedium(color: AppColors.primaryLight)),
             const SizedBox(height: 12),
             _buildLimitBreakdownCard(),
             const SizedBox(height: 24),
 
             // KYC Tiers
-            Text('Các Cấp Độ Định Danh Khách Hàng', style: AppTypography.titleMedium(color: AppColors.primaryDark)),
+            Text('Các Cấp Độ Định Danh Khách Hàng', style: AppTypography.titleMedium(color: AppColors.primaryLight)),
             const SizedBox(height: 12),
 
 
@@ -167,7 +167,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
             // Secondary Actions
             OutlinedButton.icon(
               onPressed: () => context.push('/profile/ekyc'),
-              icon: const Icon(CupertinoIcons.camera_viewfinder, color: AppColors.primary),
+              icon: const Icon(CupertinoIcons.camera_viewfinder, color: AppColors.primaryLight),
               label: const Text('Cập nhật lại eKYC CCCD & Khuôn mặt'),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.borderLight),
@@ -197,7 +197,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
                   children: [
                     Text('HẠN MỨC GIAO DỊCH HÔM NAY', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(letterSpacing: 0.5)),
                     const SizedBox(height: 4),
-                    Text(CurrencyFormatter.formatVND(_customDailyLimit), style: const TextStyle(color: AppColors.primaryDark, fontSize: 24, fontWeight: FontWeight.bold)),
+                    Text(CurrencyFormatter.formatVND(_customDailyLimit), style: const TextStyle(color: AppColors.primaryLight, fontSize: 24, fontWeight: FontWeight.bold)),
                   ],
                 ),
                 Container(
@@ -206,7 +206,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
                     color: AppColors.emeraldGreen.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text('CẤP 2 - CHUẨN', style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 11)),
+                  child: const Text('CẤP 2 - CHUẨN', style: TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 11)),
                 ),
               ],
             ),
@@ -228,7 +228,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Đã dùng: ${CurrencyFormatter.formatVND(_usedToday)}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
-                Text('Còn lại: ${CurrencyFormatter.formatVND(remainingToday)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.emeraldGreen)),
+                Text('Còn lại: ${CurrencyFormatter.formatVND(remainingToday)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.emeraldGreenLight)),
               ],
             ),
           ],
@@ -247,9 +247,9 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
           children: [
             Row(
               children: [
-                const Icon(CupertinoIcons.slider_horizontal_3, color: AppColors.bottomBarCyan, size: 20),
+                const Icon(CupertinoIcons.slider_horizontal_3, color: AppColors.primaryText, size: 20),
                 const SizedBox(width: 8),
-                Text('Tự Điều Chỉnh Hạn Mức An Toàn', style: AppTypography.titleSmall(color: AppColors.primaryDark)),
+                Text('Tự Điều Chỉnh Hạn Mức An Toàn', style: AppTypography.titleSmall(color: AppColors.primaryText)),
               ],
             ),
             const SizedBox(height: 4),
@@ -271,7 +271,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
             Center(
               child: Text(
                 'Hạn mức thiết lập: ${CurrencyFormatter.formatVND(_customDailyLimit)} / ngày',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryText),
               ),
             ),
           ],
@@ -351,7 +351,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             const Text('Hạn mức ngày', style: TextStyle(fontSize: 10, color: AppColors.textSecondaryLight)),
-            Text(perDay, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+            Text(perDay, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
           ],
         ),
       ],
@@ -385,7 +385,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
                 Flexible(
                   child: Text(
                     title,
-                    style: AppTypography.titleMedium(color: isCurrent ? AppColors.emeraldGreen : AppColors.textPrimaryLight),
+                    style: AppTypography.titleMedium(color: isCurrent ? AppColors.successTextLight : AppColors.textPrimaryLight),
                   ),
                 ),
                 if (isCurrent)
@@ -395,12 +395,12 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
                       color: AppColors.emeraldGreen.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text('Hiện tại', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                    child: const Text('Hiện tại', style: TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
                   ),
               ],
             ),
             const SizedBox(height: 6),
-            Text(limit, style: AppTypography.displaySmall(color: isCurrent ? AppColors.primary : AppColors.textPrimaryLight)),
+            Text(limit, style: AppTypography.displaySmall(color: isCurrent ? AppColors.primaryText : AppColors.textPrimaryLight)),
             const SizedBox(height: 4),
             Text(desc, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
             const Divider(height: 24, color: AppColors.cardBorderLight),
@@ -414,7 +414,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
                         child: Icon(
                           isCompleted ? CupertinoIcons.checkmark_alt_circle_fill : CupertinoIcons.circle,
                           size: 15,
-                          color: isCompleted ? AppColors.emeraldGreen : AppColors.textMutedLight,
+                          color: isCompleted ? AppColors.successTextLight : AppColors.textMutedLight,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -469,20 +469,20 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.accentGold),
                 ),
-                child: const Text('SEN PREMIER BANKING', style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold)),
+                child: const Text('SEN PREMIER BANKING', style: TextStyle(color: AppColors.warningTextLight, fontSize: 10, fontWeight: FontWeight.bold)),
               ),
-              const Icon(CupertinoIcons.star_circle_fill, color: AppColors.accentGold, size: 24),
+              const Icon(CupertinoIcons.star_circle_fill, color: AppColors.warningTextLight, size: 24),
             ],
           ),
           const SizedBox(height: 10),
           const Text(
             'Hạn Mức Khách Hàng Ưu Tiên: 2.000.000.000 đ / ngày',
-            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+            style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 15, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           const Text(
             'Đặc quyền Giám đốc quan hệ khách hàng riêng (Private Banker), miễn 100% phí giao dịch quốc tế và phòng chờ thương gia sân bay Lotus Lounge.',
-            style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
+            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11.5, height: 1.35),
           ),
           const SizedBox(height: 12),
           OutlinedButton(

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/utils/notification_parser.dart';
 import 'api_response.dart';
 
 class NotificationRemoteDataSource {
@@ -65,30 +66,26 @@ class NotificationRemoteDataSource {
 
       final content = (value['content'] ?? value['body'] ?? value['message'] ?? '').toString();
       final isRead = (value['isRead'] ?? value['read'] ?? false) == true;
-
-      // Format body thực tế của BE:
-      // "TK <phone> GD thành công. PS: -100.000 VND. SD: 18.900.000 VND - Đến: ... - ND: ..."
-      final psMatch = RegExp(r'PS:\s*([+-]?[\d.,]+)').firstMatch(content);
-      final sdMatch = RegExp(r'\bSD:\s*([\d.,]+)').firstMatch(content);
-      final tkMatch = RegExp(r'\bTK\s+([^\s]+)').firstMatch(content);
-      final ndMatch = RegExp(r'\bND:\s*([^\n]+)').firstMatch(content);
-
-      final rawAmount = metadata['transactionAmount'] ?? metadata['amount'];
-      double amount = rawAmount is num
-          ? rawAmount.toDouble()
-          : (double.tryParse(rawAmount?.toString() ?? '') ?? 0.0);
-      if (psMatch != null) {
-        final clean = psMatch.group(1)!.replaceAll('.', '').replaceAll(',', '');
-        amount = double.tryParse(clean) ?? amount;
-      }
-      // BE có thể trả amount dạng dương kèm type TRANSFER_OUT -> đảo dấu cho đúng chiều tiền.
       final payloadType = (metadata['type'] ?? value['type'] ?? '').toString().toUpperCase();
-      if (amount > 0 && (payloadType == 'TRANSFER_OUT' || payloadType == 'WITHDRAWAL' || payloadType == 'PAYMENT')) {
-        amount = -amount;
-      }
 
-      final balanceRaw = sdMatch?.group(1)?.replaceAll('.', '').replaceAll(',', '') ??
-          metadata['newBalance']?.toString();
+      // M-02, M-03: Chuẩn hóa parse qua NotificationParser
+      final amount = NotificationParser.parseAmount(
+        metadata: metadata,
+        body: content,
+        type: payloadType,
+      );
+      final balanceRaw = NotificationParser.parseEndingBalance(
+        metadata: metadata,
+        body: content,
+      );
+      final accountNumber = NotificationParser.parseAccountNumber(
+        metadata: metadata,
+        body: content,
+      );
+      final note = NotificationParser.parseNote(
+        metadata: metadata,
+        body: content,
+      );
 
       return {
         'id': value['id']?.toString() ?? '',
@@ -103,10 +100,10 @@ class NotificationRemoteDataSource {
         'read': isRead,
         'txId': (metadata['transactionId'] ?? value['transactionId'])?.toString() ?? '',
         'amount': amount,
-        'accountNumber': tkMatch?.group(1)?.trim() ?? metadata['walletId']?.toString(),
+        'accountNumber': accountNumber,
         'endingBalance': balanceRaw,
         'transactionTime': metadata['timestamp']?.toString() ?? value['createdAt']?.toString(),
-        'note': ndMatch?.group(1)?.trim() ?? metadata['note']?.toString(),
+        'note': note,
         'metadata': metadata,
         'raw': value,
       };

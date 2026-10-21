@@ -78,7 +78,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.warningTextLight, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -116,9 +116,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(CupertinoIcons.chat_bubble_text_fill, size: 16, color: !_isSmartOtp ? AppColors.primary : AppColors.textSecondaryLight),
+                              Icon(CupertinoIcons.chat_bubble_text_fill, size: 16, color: !_isSmartOtp ? AppColors.primaryText : AppColors.textSecondaryLight),
                               const SizedBox(width: 6),
-                              Text('SMS OTP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: !_isSmartOtp ? AppColors.primary : AppColors.textSecondaryLight)),
+                              Text('SMS OTP', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: !_isSmartOtp ? AppColors.primaryText : AppColors.textSecondaryLight)),
                             ],
                           ),
                         ),
@@ -145,9 +145,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(CupertinoIcons.shield_lefthalf_fill, size: 16, color: _isSmartOtp ? AppColors.primary : AppColors.textSecondaryLight),
+                              Icon(CupertinoIcons.shield_lefthalf_fill, size: 16, color: _isSmartOtp ? AppColors.primaryText : AppColors.textSecondaryLight),
                               const SizedBox(width: 6),
-                              Text('Smart OTP PKI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isSmartOtp ? AppColors.primary : AppColors.textSecondaryLight)),
+                              Text('Smart OTP PKI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: _isSmartOtp ? AppColors.primaryText : AppColors.textSecondaryLight)),
                             ],
                           ),
                         ),
@@ -168,7 +168,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                   ),
                   child: Icon(
                     _isSmartOtp ? CupertinoIcons.lock_shield_fill : CupertinoIcons.device_phone_portrait,
-                    color: AppColors.primary,
+                    color: AppColors.primaryText,
                     size: 30,
                   ),
                 ),
@@ -195,7 +195,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.error, size: 18),
+                    Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.errorText, size: 18),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -335,7 +335,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

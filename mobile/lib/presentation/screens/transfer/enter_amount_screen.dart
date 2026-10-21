@@ -42,41 +42,50 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
   final double _dailyLimit = 50000000;
   final double _usedLimitToday = 15000000;
 
+  // 'color' = màu trang trí (nền/viền khi được chọn)
+  // 'iconColor' = màu ICON hiển thị thực tế → phải đạt ≥ 3:1 trên nền sáng
+  //                (AUDIT-TP-CONTRAST-001: cyan/vàng/xanh lá sáng chỉ 0.7–2.5:1).
   final List<Map<String, dynamic>> _greetingCards = [
     {
       'title': 'Mặc định',
       'icon': CupertinoIcons.money_dollar_circle_fill,
       'color': AppColors.bottomBarCyan,
+      'iconColor': AppColors.primaryText,
       'defaultNote': 'Chuyen tien',
     },
     {
       'title': 'Sinh Nhật',
       'icon': CupertinoIcons.gift_fill,
       'color': AppColors.primary,
+      'iconColor': AppColors.softPurple,
       'defaultNote': 'Chuc mung sinh nhat! Tuoi moi van su nhu y',
     },
     {
       'title': 'Cảm Ơn',
       'icon': CupertinoIcons.heart_fill,
       'color': const Color(0xFFFF5252),
+      'iconColor': const Color(0xFFE53935),
       'defaultNote': 'Cam on ban rat nhieu vi da giup do',
     },
     {
       'title': 'Cafe / Ăn Trưa',
       'icon': CupertinoIcons.bag_fill,
       'color': AppColors.accentGold,
+      'iconColor': AppColors.warningTextLight,
       'defaultNote': 'Gui tien cafe an trua hom nay nhe',
     },
     {
       'title': 'Khai Trương',
       'icon': CupertinoIcons.star_fill,
       'color': const Color(0xFFFF9800),
+      'iconColor': const Color(0xFFC2410C),
       'defaultNote': 'Chuc mung khai truong hong phat tai loc',
     },
     {
       'title': 'Tiền Nhà / Trọ',
       'icon': CupertinoIcons.house_fill,
       'color': AppColors.emeraldGreen,
+      'iconColor': AppColors.successTextLight,
       'defaultNote': 'Gui tien thue nha thang nay',
     },
   ];
@@ -220,8 +229,12 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
   Widget _buildRecipientCard() {
     return GlassCard(
       quality: GlassQuality.minimal,
-      child: Padding(
+      child: Container(
         padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: Row(
           children: [
             Container(
@@ -229,7 +242,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
               height: 48,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.bottomBarCyan],
+                  colors: [AppColors.primaryDark, Color(0xFF0086C0)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -243,7 +256,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 ],
               ),
               child: const Icon(CupertinoIcons.person_crop_circle_fill,
-                  color: Colors.white, size: 28),
+                  color: AppColors.textPrimaryLight, size: 28),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -255,7 +268,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -266,7 +279,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                         ? 'SĐT: ${widget.phoneNumber} • Ví Sen Hồng'
                         : 'Ví Sen Hồng • Đã xác thực CCCD eKYC',
                     style: const TextStyle(
-                      color: AppColors.bottomBarCyan,
+                      color: AppColors.primaryText,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -277,21 +290,20 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.emeraldGreen.withValues(alpha: 0.15),
+                color: AppColors.successBg,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                    color: AppColors.emeraldGreen.withValues(alpha: 0.4)),
+                border: Border.all(color: AppColors.successBorder),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(CupertinoIcons.checkmark_seal_fill,
-                      color: AppColors.emeraldGreen, size: 12),
+                      color: AppColors.successText, size: 12),
                   SizedBox(width: 4),
                   Text(
                     'ĐÃ XÁC THỰC',
                     style: TextStyle(
-                      color: AppColors.emeraldGreen,
+                      color: AppColors.successText,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -308,14 +320,19 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
   Widget _buildAmountInputCard(double amountVal) {
     return GlassCard(
       quality: GlassQuality.minimal,
-      child: Padding(
+      child: Container(
         padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 18),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderLight),
+        ),
         child: Center(
           child: Column(
             children: [
               const Text(
                 'Số tiền giao dịch',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
               ),
               const SizedBox(height: 8),
               Row(
@@ -331,16 +348,16 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                       style: const TextStyle(
                         fontSize: 34,
                         fontWeight: FontWeight.w900,
-                        color: Colors.white,
+                        color: AppColors.textPrimaryLight,
                       ),
                       decoration: const InputDecoration(
                         hintText: '0',
-                        hintStyle: TextStyle(color: Colors.white30),
+                        hintStyle: TextStyle(color: AppColors.textMutedLight),
                         suffixText: ' đ',
                         suffixStyle: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.bottomBarCyan,
+                          color: AppColors.primaryText,
                         ),
                         border: InputBorder.none,
                       ),
@@ -357,11 +374,12 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                         margin: const EdgeInsets.only(left: 6),
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: AppColors.surfaceLight,
                           shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.borderLight),
                         ),
                         child: const Icon(CupertinoIcons.clear_thick,
-                            size: 13, color: Colors.white70),
+                            size: 13, color: AppColors.textSecondaryLight),
                       ),
                     ),
                 ],
@@ -371,7 +389,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 Text(
                   CurrencyFormatter.formatVND(amountVal),
                   style: const TextStyle(
-                    color: AppColors.accentGold,
+                    color: AppColors.successText,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
@@ -384,7 +402,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontStyle: FontStyle.italic,
-                      color: Colors.white60,
+                      color: AppColors.textSecondaryLight,
                       fontSize: 12,
                     ),
                   ),
@@ -396,22 +414,21 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.accentGold.withValues(alpha: 0.12),
+                    color: AppColors.warningBg,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: AppColors.accentGold.withValues(alpha: 0.35)),
+                    border: Border.all(color: AppColors.warningBorder),
                   ),
                   child: const Row(
                     children: [
                       Icon(CupertinoIcons.shield_lefthalf_fill,
-                          color: AppColors.accentGold, size: 16),
+                          color: AppColors.warningText, size: 16),
                       SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Theo QĐ 2345/QĐ-NHNN: Giao dịch từ 10.000.000 đ yêu cầu xác thực khuôn mặt sinh trắc học FaceID.',
                           style: TextStyle(
                             fontSize: 11.5,
-                            color: Colors.white,
+                            color: AppColors.warningText,
                             fontWeight: FontWeight.w600,
                             height: 1.3,
                           ),
@@ -429,7 +446,8 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     _isLoadingBalance
                         ? 'Đang tải số dư...'
                         : 'Số dư khả dụng: ${CurrencyFormatter.formatVND(_balance)}',
-                    style: const TextStyle(color: Colors.white60, fontSize: 12),
+                    style: const TextStyle(
+                        color: AppColors.textSecondaryLight, fontSize: 12),
                   ),
                   if (amountVal > _balance && _balance > 0) ...[
                     const SizedBox(width: 6),
@@ -438,7 +456,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                       child: const Text(
                         'Nạp thêm',
                         style: TextStyle(
-                          color: AppColors.bottomBarCyan,
+                          color: AppColors.primaryText,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -509,12 +527,12 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
       children: [
         const Row(
           children: [
-            Icon(CupertinoIcons.sparkles, color: AppColors.accentGold, size: 16),
+            Icon(CupertinoIcons.sparkles, color: AppColors.warningTextLight, size: 16),
             SizedBox(width: 6),
             Text(
               'Thiệp Chúc Mừng Điện Tử (E-Cards)',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 fontWeight: FontWeight.bold,
                 fontSize: 13.5,
               ),
@@ -524,7 +542,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
         const SizedBox(height: 4),
         const Text(
           'Chọn mẫu thiệp để người nhận bất ngờ khi mở biên lai chuyển khoản',
-          style: TextStyle(color: Colors.white54, fontSize: 11.5),
+          style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11.5),
         ),
         const SizedBox(height: 10),
         SizedBox(
@@ -543,13 +561,13 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? (c['color'] as Color).withValues(alpha: 0.25)
-                        : const Color(0xFF0D1B2A).withValues(alpha: 0.7),
+                        ? (c['color'] as Color).withValues(alpha: 0.18)
+                        : Colors.white.withValues(alpha: 0.82),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isSelected
                           ? (c['color'] as Color)
-                          : Colors.white.withValues(alpha: 0.1),
+                          : AppColors.borderLight,
                       width: isSelected ? 1.8 : 1,
                     ),
                   ),
@@ -557,14 +575,14 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(c['icon'] as IconData,
-                          color: c['color'] as Color, size: 24),
+                          color: c['iconColor'] as Color, size: 24),
                       const SizedBox(height: 6),
                       Text(
                         c['title'] as String,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.white70,
+                          color: AppColors.textPrimaryLight,
                           fontSize: 11.5,
                           fontWeight:
                               isSelected ? FontWeight.bold : FontWeight.w500,
@@ -609,7 +627,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
         const Text(
           'Phương thức xử lý lệnh chuyển',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
             fontSize: 13.5,
           ),
@@ -617,96 +635,105 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
         const SizedBox(height: 8),
         GlassCard(
           quality: GlassQuality.minimal,
-          child: Column(
-            children: List.generate(methods.length, (idx) {
-              final m = methods[idx];
-              final isSelected = _selectedTransferType == idx;
-              return Column(
-                children: [
-                  Material(
-                    type: MaterialType.transparency,
-                    child: ListTile(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _selectedTransferType = idx);
-                      },
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.bottomBarCyan.withValues(alpha: 0.2)
-                              : Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          m['icon'] as IconData,
-                          color: isSelected
-                              ? AppColors.bottomBarCyan
-                              : Colors.white60,
-                          size: 18,
-                        ),
-                      ),
-                      title: Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              m['title'] as String,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.w500,
-                                fontSize: 13,
-                              ),
-                            ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderLight),
+            ),
+            child: Column(
+              children: List.generate(methods.length, (idx) {
+                final m = methods[idx];
+                final isSelected = _selectedTransferType == idx;
+                return Column(
+                  children: [
+                    Material(
+                      type: MaterialType.transparency,
+                      child: ListTile(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _selectedTransferType = idx);
+                        },
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary.withValues(alpha: 0.14)
+                                : AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          if (m['badge'] != null) ...[
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.emeraldGreen
-                                    .withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
+                          child: Icon(
+                            m['icon'] as IconData,
+                            color: isSelected
+                                ? AppColors.primaryText
+                                : AppColors.textSecondaryLight,
+                            size: 18,
+                          ),
+                        ),
+                        title: Row(
+                          children: [
+                            Flexible(
                               child: Text(
-                                m['badge'] as String,
-                                style: const TextStyle(
-                                  color: AppColors.emeraldGreen,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
+                                m['title'] as String,
+                                style: TextStyle(
+                                  color: AppColors.textPrimaryLight,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  fontSize: 13,
                                 ),
                               ),
                             ),
+                            if (m['badge'] != null) ...[
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.successBg,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                      color: AppColors.successBorder),
+                                ),
+                                child: Text(
+                                  m['badge'] as String,
+                                  style: const TextStyle(
+                                    color: AppColors.successText,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
-                      ),
-                      subtitle: Text(
-                        m['sub'] as String,
-                        style: const TextStyle(
-                            color: Colors.white54, fontSize: 11),
-                      ),
-                      trailing: Icon(
-                        isSelected
-                            ? CupertinoIcons.checkmark_circle_fill
-                            : CupertinoIcons.circle,
-                        color: isSelected
-                            ? AppColors.bottomBarCyan
-                            : Colors.white24,
-                        size: 20,
+                        ),
+                        subtitle: Text(
+                          m['sub'] as String,
+                          style: const TextStyle(
+                              color: AppColors.textSecondaryLight, fontSize: 11),
+                        ),
+                        trailing: Icon(
+                          isSelected
+                              ? CupertinoIcons.checkmark_circle_fill
+                              : CupertinoIcons.circle,
+                          color: isSelected
+                              ? AppColors.primaryText
+                              : AppColors.textMutedLight,
+                          size: 20,
+                        ),
                       ),
                     ),
-                  ),
-                  if (idx < methods.length - 1)
-                    Divider(
-                      height: 1,
-                      indent: 52,
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
-                ],
-              );
-            }),
+                    if (idx < methods.length - 1)
+                      const Divider(
+                        height: 1,
+                        indent: 52,
+                        color: AppColors.dividerLight,
+                      ),
+                  ],
+                );
+              }),
+            ),
           ),
         ),
       ],
@@ -719,9 +746,9 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0C1929).withValues(alpha: 0.8),
+        color: Colors.white.withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,12 +759,12 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
               const Row(
                 children: [
                   Icon(CupertinoIcons.chart_pie_fill,
-                      color: AppColors.bottomBarCyan, size: 16),
+                      color: AppColors.primaryText, size: 16),
                   SizedBox(width: 8),
                   Text(
                     'Hạn mức chuyển khoản hôm nay',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                       fontWeight: FontWeight.w600,
                       fontSize: 12.5,
                     ),
@@ -747,7 +774,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
               Text(
                 '${(progress * 100).toInt()}%',
                 style: const TextStyle(
-                  color: AppColors.bottomBarCyan,
+                  color: AppColors.primaryText,
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),
@@ -759,9 +786,9 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              backgroundColor: AppColors.dividerLight,
               valueColor: const AlwaysStoppedAnimation<Color>(
-                  AppColors.bottomBarCyan),
+                  AppColors.primary),
               minHeight: 6,
             ),
           ),
@@ -771,12 +798,13 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
             children: [
               Text(
                 'Đã dùng: ${CurrencyFormatter.formatVND(_usedLimitToday)}',
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                style: const TextStyle(
+                    color: AppColors.textSecondaryLight, fontSize: 11),
               ),
               Text(
                 'Còn lại: ${CurrencyFormatter.formatVND(remainingLimit)}',
                 style: const TextStyle(
-                  color: AppColors.emeraldGreen,
+                  color: AppColors.successText,
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
                 ),
@@ -795,26 +823,26 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
         // Note Input
         TextField(
           controller: _noteController,
-          style: const TextStyle(color: Colors.white, fontSize: 13.5),
+          style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 13.5),
           decoration: InputDecoration(
             labelText: 'Lời nhắn / Nội dung chuyển tiền',
-            labelStyle: const TextStyle(color: Colors.white70),
+            labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
             prefixIcon: const Icon(CupertinoIcons.chat_bubble_text_fill,
-                color: AppColors.bottomBarCyan, size: 18),
+                color: AppColors.primaryText, size: 18),
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.05),
+            fillColor: Colors.white.withValues(alpha: 0.88),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+              borderSide: const BorderSide(color: AppColors.borderLight),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: const BorderSide(
-                  color: AppColors.bottomBarCyan, width: 1.5),
+                  color: AppColors.primaryText, width: 1.5),
             ),
           ),
         ),
@@ -823,8 +851,13 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
         // Save Beneficiary Switch
         GlassCard(
           quality: GlassQuality.minimal,
-          child: Padding(
+          child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.72),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.borderLight),
+            ),
             child: Column(
               children: [
                 Row(
@@ -833,7 +866,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     const Row(
                       children: [
                         Icon(CupertinoIcons.bookmark_fill,
-                            color: AppColors.accentGold, size: 18),
+                            color: AppColors.warningTextLight, size: 18),
                         SizedBox(width: 10),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -841,7 +874,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                             Text(
                               'Lưu vào Danh bạ Thụ hưởng',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.textPrimaryLight,
                                 fontWeight: FontWeight.w600,
                                 fontSize: 13,
                               ),
@@ -849,7 +882,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                             Text(
                               'Giúp chuyển nhanh 1-chạm cho các lần sau',
                               style: TextStyle(
-                                  color: Colors.white54, fontSize: 11),
+                                  color: AppColors.textSecondaryLight, fontSize: 11),
                             ),
                           ],
                         ),
@@ -857,7 +890,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                     ),
                     CupertinoSwitch(
                       value: _saveBeneficiary,
-                      activeTrackColor: AppColors.bottomBarCyan,
+                      activeTrackColor: AppColors.primaryText,
                       onChanged: (v) => setState(() => _saveBeneficiary = v),
                     ),
                   ],
@@ -866,18 +899,17 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: _aliasController,
-                    style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                    style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 12.5),
                     decoration: InputDecoration(
                       hintText: 'Nhập biệt danh gợi nhớ (ví dụ: Bạn Thân, Chủ Trọ...)',
-                      hintStyle: const TextStyle(color: Colors.white38, fontSize: 12),
+                      hintStyle: const TextStyle(color: AppColors.textMutedLight, fontSize: 12),
                       filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.05),
+                      fillColor: Colors.white.withValues(alpha: 0.88),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                            color: Colors.white.withValues(alpha: 0.1)),
+                        borderSide: const BorderSide(color: AppColors.borderLight),
                       ),
                     ),
                   ),
@@ -900,10 +932,14 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
       height: 52,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isEnabled ? AppColors.primary : AppColors.cardBorderLight,
-          foregroundColor: isEnabled ? Colors.white : Colors.white38,
+          // primaryDark (#0077B6) để chữ trắng đạt 4.87:1 (primary #00B4D8 chỉ 2.46:1).
+          backgroundColor: isEnabled ? AppColors.primaryDark : AppColors.surfaceLight,
+          foregroundColor: isEnabled ? Colors.white : AppColors.textSecondaryLight,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
+            side: isEnabled
+                ? BorderSide.none
+                : const BorderSide(color: AppColors.borderSubtle),
           ),
           elevation: isEnabled ? 4 : 0,
           shadowColor: AppColors.primary.withValues(alpha: 0.4),
@@ -957,15 +993,15 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AppColors.borderLight),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(CupertinoIcons.checkmark_shield_fill,
-              color: AppColors.emeraldGreen, size: 18),
+              color: AppColors.successText, size: 18),
           SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -974,7 +1010,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 Text(
                   'Cam kết chuyển mạch NAPAS 24/7 & Bảo mật đa tầng',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.bold,
                     fontSize: 11.5,
                   ),
@@ -983,7 +1019,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                 Text(
                   'Giao dịch được mã hóa chuẩn PCI-DSS Level 1. Tiền về tài khoản người nhận trong 3 giây. Hoàn tiền tức thì 100% nếu có gián đoạn kết nối ngân hàng.',
                   style: TextStyle(
-                    color: Colors.white54,
+                    color: AppColors.textSecondaryLight,
                     fontSize: 10.5,
                     height: 1.35,
                   ),
@@ -1003,11 +1039,11 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Colors.white,
+          color: AppColors.textPrimaryLight,
         ),
       ),
-      backgroundColor: const Color(0xFF132A48).withValues(alpha: 0.6),
-      side: BorderSide(color: AppColors.bottomBarCyan.withValues(alpha: 0.3)),
+      backgroundColor: Colors.white.withValues(alpha: 0.86),
+      side: const BorderSide(color: AppColors.borderLight),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       onPressed: () {
         HapticFeedback.selectionClick();

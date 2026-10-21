@@ -78,7 +78,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.5),
                   ),
-                  child: const Icon(CupertinoIcons.lock_circle_fill, color: AppColors.primary, size: 38),
+                  child: const Icon(CupertinoIcons.lock_circle_fill, color: AppColors.primaryText, size: 38),
                 ),
               ),
               const SizedBox(height: 16),
@@ -131,7 +131,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         keyboardType: TextInputType.phone,
                         style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.w600),
                         decoration: InputDecoration(
-                          prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primary),
+                          prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primaryLight),
                           hintText: 'Nhập số điện thoại đăng ký',
                           hintStyle: const TextStyle(color: AppColors.textMutedLight),
                           filled: true,
@@ -170,7 +170,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 24),
+                    const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.warningTextLight, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -214,7 +214,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             color: AppColors.emeraldGreen.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(CupertinoIcons.person_crop_circle_badge_checkmark, color: AppColors.emeraldGreen, size: 22),
+                          child: const Icon(CupertinoIcons.person_crop_circle_badge_checkmark, color: AppColors.successTextLight, size: 22),
                         ),
                         title: Text('Xác thực khuôn mặt & CCCD gắn chip', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Dành cho trường hợp mất số điện thoại hoặc đổi SIM mới', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
@@ -233,7 +233,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(CupertinoIcons.building_2_fill, color: AppColors.primary, size: 22),
+                          child: const Icon(CupertinoIcons.building_2_fill, color: AppColors.primaryText, size: 22),
                         ),
                         title: Text('Đến phòng giao dịch gần nhất', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Hỗ trợ cấp lại thông tin tại hơn 350 chi nhánh toàn quốc', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
@@ -256,7 +256,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             color: AppColors.softPurple.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.softPurple, size: 22),
+                          child: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.softPurpleText, size: 22),
                         ),
                         title: Text('Tổng đài hỗ trợ 24/7 (Miễn phí)', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Hotline: 1900 6868 (Bấm phím 1 để gặp điện thoại viên)', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
@@ -348,8 +348,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       context.go('/auth/login');
                     }
                   },
-                  icon: const Icon(CupertinoIcons.arrow_left, size: 16, color: AppColors.primaryDark),
-                  label: const Text('Quay lại trang đăng nhập', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+                  icon: const Icon(CupertinoIcons.arrow_left, size: 16, color: AppColors.primaryLight),
+                  label: const Text('Quay lại trang đăng nhập', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -374,7 +374,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             child: Text(
               step,
               style: TextStyle(
-                color: isActive || isDone ? Colors.white : AppColors.textMutedLight,
+                color: isActive || isDone ? AppColors.textPrimaryLight : AppColors.textMutedLight,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -385,7 +385,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           title,
           style: TextStyle(
-            color: isActive ? AppColors.primaryDark : AppColors.textSecondaryLight,
+            color: isActive ? AppColors.primaryText : AppColors.textSecondaryLight,
             fontSize: 11,
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
           ),
@@ -415,7 +415,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

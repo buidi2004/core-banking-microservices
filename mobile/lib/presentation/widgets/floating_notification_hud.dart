@@ -9,6 +9,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/network/realtime_notification_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/currency_formatter.dart';
+import '../../core/utils/notification_parser.dart';
 import '../../data/datasources/remote/profile_remote_datasource.dart';
 import '../../data/datasources/remote/wallet_remote_datasource.dart';
 import '../routes/app_router.dart';
@@ -127,33 +128,38 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
     _realtimeSub = RealtimeNotificationService().notificationStream.listen((payload) async {
       final title = (payload['title'] ?? 'Biến động số dư').toString();
       final body = (payload['body'] ?? payload['content'] ?? payload['message'] ?? '').toString();
-      final rawAmount = payload['transactionAmount'] ?? payload['amount'];
-      var amount = rawAmount is num
-          ? rawAmount.toDouble()
-          : (double.tryParse(rawAmount?.toString() ?? '') ?? 0.0);
       final type = (payload['type'] ?? '').toString().toUpperCase();
-      final isDeductType = type == 'TRANSFER_OUT' || type == 'WITHDRAWAL' ||
-          type == 'PAYMENT' || type == 'BILL_PAYMENT' || type == 'TOPUP';
-      if (amount > 0 && isDeductType) {
-        amount = -amount;
-      }
+
+      // M-02, M-03: Dùng NotificationParser đồng bộ
+      final amount = NotificationParser.parseAmount(
+        metadata: payload,
+        body: body,
+        type: type,
+      );
       final txId = (payload['transactionId'] ?? payload['id'])?.toString();
 
       // Payload realtime của BE đã có đủ dữ liệu -> không cần gọi thêm API
       // (trước đây gọi ví + profile mỗi lần nhận thông báo, làm chậm hiển thị).
-      String? account = (payload['accountNumber'] ?? payload['phoneNumber'])?.toString();
+      String? account = NotificationParser.parseAccountNumber(
+        metadata: payload,
+        body: body,
+      );
       String? balanceStr;
-      final newBalance = payload['newBalance'];
-      if (newBalance is num) {
-        balanceStr = CurrencyFormatter.formatVND(newBalance.toDouble());
-      } else if (newBalance != null && newBalance.toString().isNotEmpty) {
-        final parsedBalance = double.tryParse(newBalance.toString());
+      final endingBalance = NotificationParser.parseEndingBalance(
+        metadata: payload,
+        body: body,
+      );
+      if (endingBalance != null && endingBalance.isNotEmpty) {
+        final parsedBalance = double.tryParse(endingBalance);
         balanceStr = parsedBalance != null
             ? CurrencyFormatter.formatVND(parsedBalance)
-            : newBalance.toString();
+            : endingBalance;
       }
       String? timeStr = payload['formattedTime']?.toString() ?? payload['timestamp']?.toString();
-      String? noteStr = payload['note']?.toString();
+      String? noteStr = NotificationParser.parseNote(
+        metadata: payload,
+        body: body,
+      );
 
       _displayNotification(
         FloatingNotificationData(
@@ -581,7 +587,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                             if (notif.userName != null && notif.userName!.isNotEmpty) ...[
                                               Row(
                                                 children: [
-                                                  const Icon(CupertinoIcons.person_fill, size: 12, color: AppColors.primary),
+                                                  const Icon(CupertinoIcons.person_fill, size: 12, color: AppColors.primaryText),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     'Chủ TK: ',
@@ -611,7 +617,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                             if (notif.accountNumber != null && notif.accountNumber!.isNotEmpty) ...[
                                               Row(
                                                 children: [
-                                                  const Icon(CupertinoIcons.creditcard_fill, size: 12, color: AppColors.primary),
+                                                  const Icon(CupertinoIcons.creditcard_fill, size: 12, color: AppColors.primaryText),
                                                   const SizedBox(width: 6),
                                                   Text(
                                                     'Số tài khoản: ',
@@ -643,7 +649,7 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                               children: [
                                                 const Padding(
                                                   padding: EdgeInsets.only(top: 1.5),
-                                                  child: Icon(CupertinoIcons.chat_bubble_text_fill, size: 12, color: AppColors.primary),
+                                                  child: Icon(CupertinoIcons.chat_bubble_text_fill, size: 12, color: AppColors.primaryText),
                                                 ),
                                                 const SizedBox(width: 6),
                                                 Text(
@@ -741,13 +747,13 @@ class _GlobalFloatingNotificationOverlayState extends State<GlobalFloatingNotifi
                                                 'Chạm để xem chi tiết',
                                                 style: GoogleFonts.inter(
                                                   fontSize: 10.5,
-                                                  color: AppColors.primary,
+                                                  color: AppColors.primaryText,
                                                   fontWeight: FontWeight.w700,
                                                   decoration: TextDecoration.none,
                                                 ),
                                               ),
                                               const SizedBox(width: 3),
-                                              const Icon(CupertinoIcons.chevron_right, size: 10, color: AppColors.primary),
+                                              const Icon(CupertinoIcons.chevron_right, size: 10, color: AppColors.primaryText),
                                             ],
                                           ),
                                         ],

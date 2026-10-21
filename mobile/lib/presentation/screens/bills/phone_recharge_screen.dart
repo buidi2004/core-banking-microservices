@@ -268,7 +268,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                   style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold),
                   onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primary),
+                    prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primaryLight),
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -282,7 +282,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                           ),
                         const Padding(
                           padding: EdgeInsets.only(right: 12),
-                          child: Icon(CupertinoIcons.person_crop_circle_fill_badge_plus, color: AppColors.primaryDark),
+                          child: Icon(CupertinoIcons.person_crop_circle_fill_badge_plus, color: AppColors.primaryLight),
                         ),
                       ],
                     ),
@@ -323,7 +323,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                             backgroundColor: AppColors.primary.withOpacity(0.15),
                             child: Text(
                               (c['name'] as String).substring(0, 1),
-                              style: const TextStyle(color: AppColors.primaryDark, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: AppColors.primaryLight, fontSize: 11, fontWeight: FontWeight.bold),
                             ),
                           ),
                           label: Text('${c['name']} (${c['phone']})'),
@@ -383,7 +383,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                           child: Text(
                             t,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : AppColors.textPrimaryLight,
+                              color: isSelected ? AppColors.textPrimaryLight : AppColors.textPrimaryLight,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -433,7 +433,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                             Text(
                               CurrencyFormatter.formatVND(amt),
                               style: TextStyle(
-                                color: isSelected ? AppColors.primaryDark : AppColors.textPrimaryLight,
+                                color: isSelected ? AppColors.primaryText : AppColors.textPrimaryLight,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -441,7 +441,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                             const SizedBox(height: 2),
                             const Text(
                               'Chiết khấu 3%',
-                              style: TextStyle(color: AppColors.emeraldGreen, fontSize: 10, fontWeight: FontWeight.w600),
+                              style: TextStyle(color: AppColors.successTextLight, fontSize: 10, fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
@@ -485,7 +485,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                               child: Text(
                                 pkg['code'] as String,
                                 style: TextStyle(
-                                  color: isSelected ? Colors.white : AppColors.primaryDark,
+                                  color: isSelected ? Colors.white : AppColors.primaryLight,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),
@@ -507,7 +507,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                               children: [
                                 Text(
                                   CurrencyFormatter.formatVND(pkg['price'] as double),
-                                  style: AppTypography.titleMedium(color: AppColors.emeraldGreen).copyWith(fontWeight: FontWeight.bold),
+                                  style: AppTypography.titleMedium(color: AppColors.emeraldGreenLight).copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 Text(pkg['duration'] as String, style: const TextStyle(color: AppColors.textMutedLight, fontSize: 11)),
                               ],
@@ -544,7 +544,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                                   fit: BoxFit.scaleDown,
                                   child: Text(
                                     CurrencyFormatter.formatVND(_finalAmount),
-                                    style: AppTypography.titleLarge(color: AppColors.emeraldGreen).copyWith(fontWeight: FontWeight.bold),
+                                    style: AppTypography.titleLarge(color: AppColors.emeraldGreenLight).copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ],
@@ -568,7 +568,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                         const SizedBox(height: 8),
                         Text(
                           'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(_finalAmount)} đồng',
-                          style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                          style: AppTypography.bodySmall(color: AppColors.primaryLight).copyWith(
                             fontStyle: FontStyle.italic,
                             fontWeight: FontWeight.w600,
                             fontSize: 11,
@@ -609,15 +609,15 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.gift_fill, color: AppColors.accentGold, size: 28),
+                    Icon(CupertinoIcons.gift_fill, color: AppColors.warningTextLight, size: 28),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('HOÀN TIỀN 3% - KHÔNG GIỚI HẠN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text('HOÀN TIỀN 3% - KHÔNG GIỚI HẠN', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13)),
                           SizedBox(height: 2),
-                          Text('Áp dụng tự động cho mọi lần nạp tiền và gói data trên app Sen Hồng.', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          Text('Áp dụng tự động cho mọi lần nạp tiền và gói data trên app Sen Hồng.', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
                         ],
                       ),
                     ),
@@ -660,7 +660,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                               color: AppColors.primary.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            child: const Icon(CupertinoIcons.device_phone_portrait, color: AppColors.primary, size: 20),
+                            child: const Icon(CupertinoIcons.device_phone_portrait, color: AppColors.primaryText, size: 20),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -677,7 +677,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(CurrencyFormatter.formatVND(r['amount'] as double), style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
-                              Text(r['status'] as String, style: const TextStyle(color: AppColors.emeraldGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                              Text(r['status'] as String, style: const TextStyle(color: AppColors.successTextLight, fontSize: 10, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ],
@@ -715,7 +715,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
             child: Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textSecondaryLight,
+                color: isSelected ? AppColors.textPrimaryLight : AppColors.textSecondaryLight,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 fontSize: 13,
               ),

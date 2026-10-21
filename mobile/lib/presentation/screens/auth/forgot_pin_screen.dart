@@ -170,7 +170,7 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.phone_badge_plus, color: AppColors.accentGold, size: 22),
+                    Icon(CupertinoIcons.phone_badge_plus, color: AppColors.warningTextLight, size: 22),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -262,7 +262,7 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
               color: AppColors.primary.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.primary, size: 36),
+            child: const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.primaryText, size: 36),
           ),
         ),
         const SizedBox(height: 20),
@@ -280,7 +280,7 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
           controller: _otpCtrl,
           keyboardType: TextInputType.number,
           maxLength: 6,
-          style: const TextStyle(color: AppColors.primaryDark, fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: AppColors.primaryText, fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             counterText: '',
             hintText: '• • • • • •',
@@ -406,7 +406,7 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

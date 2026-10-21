@@ -227,7 +227,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
               ),
               child: const Icon(
                 CupertinoIcons.chevron_left,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -248,7 +248,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                 Text(
                   'Xổ số điện toán • Bộ Tài Chính cấp phép',
                   style: TextStyle(
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -266,7 +266,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 14),
+                Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.warningTextLight, size: 14),
                 SizedBox(width: 4),
                 Text('100% HỢP PHÁP', style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold)),
               ],
@@ -316,13 +316,13 @@ class _LotteryScreenState extends State<LotteryScreen> {
               Icon(
                 icon,
                 size: 15,
-                color: isSelected ? AppColors.primaryDark : Colors.white60,
+                color: isSelected ? AppColors.primaryText : AppColors.textSecondaryLight,
               ),
               const SizedBox(width: 6),
               Text(
                 title,
                 style: TextStyle(
-                  color: isSelected ? AppColors.primaryDark : Colors.white70,
+                  color: isSelected ? AppColors.primaryText : AppColors.textSecondaryLight,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                   fontSize: 12,
                 ),
@@ -400,7 +400,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                       color: AppColors.accentGold.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(CupertinoIcons.ticket_fill, color: AppColors.accentGold, size: 22),
+                    child: const Icon(CupertinoIcons.ticket_fill, color: AppColors.warningTextLight, size: 22),
                   ),
                   const SizedBox(width: 10),
                   const Column(
@@ -509,7 +509,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                   child: Text(
                     g,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
+                      color: isSelected ? AppColors.textPrimaryLight : AppColors.textSecondaryLight,
                       fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -537,7 +537,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                 Text(
                   'Bộ số đã chọn (${_selectedNumbers.length}/$_requiredCount)',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -554,11 +554,11 @@ class _LotteryScreenState extends State<LotteryScreen> {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(CupertinoIcons.shuffle, color: AppColors.bottomBarCyan, size: 14),
+                        Icon(CupertinoIcons.shuffle, color: AppColors.primaryText, size: 14),
                         SizedBox(width: 4),
                         Text(
                           'Chọn ngẫu nhiên',
-                          style: TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 12),
+                          style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                       ],
                     ),
@@ -604,7 +604,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                     child: Text(
                       val != null ? (val < 10 ? '0$val' : '$val') : '?',
                       style: TextStyle(
-                        color: hasNum ? Colors.white : Colors.white38,
+                        color: hasNum ? AppColors.textPrimaryLight : AppColors.textMutedLight,
                         fontWeight: FontWeight.w900,
                         fontSize: 16,
                       ),
@@ -626,14 +626,14 @@ class _LotteryScreenState extends State<LotteryScreen> {
         Text(
           'Bảng số ma trận (Chạm để chọn / bỏ chọn)',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.w700,
             fontSize: 13.5,
           ),
         ),
         Text(
           'Tối đa 6 số',
-          style: TextStyle(color: Colors.white54, fontSize: 11),
+          style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11),
         ),
       ],
     );
@@ -675,7 +675,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
               child: Text(
                 numVal < 10 ? '0$numVal' : '$numVal',
                 style: TextStyle(
-                  color: isPicked ? AppColors.primaryDark : Colors.white,
+                  color: isPicked ? AppColors.primaryText : AppColors.textPrimaryLight,
                   fontWeight: isPicked ? FontWeight.w900 : FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -700,7 +700,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                 color: AppColors.accentGold.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(CupertinoIcons.repeat, color: AppColors.accentGold, size: 20),
+              child: const Icon(CupertinoIcons.repeat, color: AppColors.warningTextLight, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -709,19 +709,19 @@ class _LotteryScreenState extends State<LotteryScreen> {
                 children: [
                   const Text(
                     'Nuôi số may mắn định kỳ (Auto-Buy)',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                    style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13.5),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Tự động mua bộ số này vào 10:00 sáng các ngày mở thưởng trong tuần',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11.5, height: 1.25),
+                    style: TextStyle(color: AppColors.textPrimaryLight.withValues(alpha: 0.55), fontSize: 11.5, height: 1.25),
                   ),
                 ],
               ),
             ),
             CupertinoSwitch(
               value: _autoRecurring,
-              activeTrackColor: AppColors.accentGold,
+              activeTrackColor: AppColors.warningTextLight,
               onChanged: (val) {
                 setState(() => _autoRecurring = val);
               },
@@ -742,11 +742,11 @@ class _LotteryScreenState extends State<LotteryScreen> {
           children: [
             const Row(
               children: [
-                Icon(CupertinoIcons.chart_bar_circle_fill, color: AppColors.bottomBarCyan, size: 20),
+                Icon(CupertinoIcons.chart_bar_circle_fill, color: AppColors.primaryText, size: 20),
                 SizedBox(width: 8),
                 Text(
                   'Cơ cấu giải thưởng Vietlott Power 6/55',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13.5),
+                  style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w700, fontSize: 13.5),
                 ),
               ],
             ),
@@ -768,8 +768,8 @@ class _LotteryScreenState extends State<LotteryScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
-          Text(val, style: const TextStyle(color: AppColors.accentGold, fontWeight: FontWeight.bold, fontSize: 12)),
+          Text(title, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11.5)),
+          Text(val, style: const TextStyle(color: AppColors.warningTextLight, fontWeight: FontWeight.bold, fontSize: 12)),
         ],
       ),
     );
@@ -786,12 +786,12 @@ class _LotteryScreenState extends State<LotteryScreen> {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.info_circle_fill, color: AppColors.emeraldGreen, size: 18),
+          Icon(CupertinoIcons.info_circle_fill, color: AppColors.successTextLight, size: 18),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Quy định pháp lý: Công dân Việt Nam từ đủ 18 tuổi trở lên. Thuế TNCN 10% áp dụng cho phần giá trị trúng thưởng vượt trên 10.000.000đ theo Thông tư 111/2013/TT-BTC. Tiền thưởng được trả tự động vào Ví SenBank.',
-              style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.35),
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, height: 1.35),
             ),
           ),
         ],
@@ -808,12 +808,12 @@ class _LotteryScreenState extends State<LotteryScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Tổng tiền thanh toán:', style: TextStyle(color: Colors.white60, fontSize: 12)),
+                const Text('Tổng tiền thanh toán:', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12)),
                 const SizedBox(height: 2),
                 Text(
                   CurrencyFormatter.formatVND(_totalPrice),
                   style: const TextStyle(
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primaryText,
                     fontWeight: FontWeight.w900,
                     fontSize: 22,
                   ),
@@ -823,7 +823,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
             Row(
               children: [
                 IconButton(
-                  icon: const Icon(CupertinoIcons.minus_circle_fill, color: Colors.white54),
+                  icon: const Icon(CupertinoIcons.minus_circle_fill, color: AppColors.textSecondaryLight),
                   onPressed: _ticketQuantity > 1
                       ? () {
                           HapticFeedback.selectionClick();
@@ -831,9 +831,9 @@ class _LotteryScreenState extends State<LotteryScreen> {
                         }
                       : null,
                 ),
-                Text('$_ticketQuantity vé', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                Text('$_ticketQuantity vé', style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 14)),
                 IconButton(
-                  icon: const Icon(CupertinoIcons.plus_circle_fill, color: AppColors.bottomBarCyan),
+                  icon: const Icon(CupertinoIcons.plus_circle_fill, color: AppColors.primaryText),
                   onPressed: () {
                     HapticFeedback.selectionClick();
                     setState(() => _ticketQuantity++);
@@ -849,7 +849,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
           height: 52,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.primaryDark,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
@@ -875,12 +875,12 @@ class _LotteryScreenState extends State<LotteryScreen> {
       children: [
         const Text(
           'Danh sách vé đã mua & Chờ kết quả',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+          style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 15),
         ),
         const SizedBox(height: 4),
         const Text(
           'Hệ thống tự động dò số và thông báo ngay khi có kết quả',
-          style: TextStyle(color: Colors.white54, fontSize: 12),
+          style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
         ),
         const SizedBox(height: 14),
         ..._myTickets.map((t) => _buildMyTicketCard(t)),
@@ -931,7 +931,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                 child: Text(
                   t['status'] as String,
                   style: TextStyle(
-                    color: isWaiting ? AppColors.bottomBarCyan : AppColors.emeraldGreen,
+                    color: isWaiting ? AppColors.primaryLight : AppColors.emeraldGreenLight,
                     fontWeight: FontWeight.bold,
                     fontSize: 10.5,
                   ),
@@ -954,7 +954,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
                 child: Center(
                   child: Text(
                     n < 10 ? '0$n' : '$n',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                 ),
               );
@@ -980,7 +980,7 @@ class _LotteryScreenState extends State<LotteryScreen> {
       children: [
         const Text(
           'Kết quả quay thưởng gần nhất',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+          style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 15),
         ),
         const SizedBox(height: 14),
         ..._recentDrawResults.map((r) => _buildResultCard(r)),
@@ -1070,8 +1070,8 @@ class _LotteryScreenState extends State<LotteryScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Giá trị Jackpot: ${r['jackpot1']}', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                Text('Số người trúng: ${r['winnersJ1']}', style: const TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 11)),
+                Text('Giá trị Jackpot: ${r['jackpot1']}', style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
+                Text('Số người trúng: ${r['winnersJ1']}', style: const TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 11)),
               ],
             ),
           ),

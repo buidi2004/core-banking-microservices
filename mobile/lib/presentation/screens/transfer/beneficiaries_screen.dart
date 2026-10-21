@@ -158,7 +158,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                     enabled: !isSubmitting,
                     style: const TextStyle(color: AppColors.textPrimaryLight),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
+                      prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primaryText),
                       hintText: 'Nhập số tài khoản hoặc SĐT ví',
                       hintStyle: const TextStyle(color: AppColors.textMutedLight),
                       filled: true,
@@ -259,7 +259,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                               }
                             },
                       child: isSubmitting
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.textPrimaryLight, strokeWidth: 2))
                           : const Text('Lưu người thụ hưởng'),
                     ),
                   ),
@@ -313,7 +313,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Row(
           children: [
-            Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.error),
+            Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.errorText),
             SizedBox(width: 8),
             Expanded(
               child: Text('Xác nhận xóa thụ hưởng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -354,7 +354,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                 }
               }
             },
-            child: const Text('Xóa', style: TextStyle(color: Colors.white)),
+            child: const Text('Xóa', style: TextStyle(color: AppColors.textPrimaryLight)),
           ),
         ],
       ),
@@ -370,7 +370,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.person_badge_plus_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.person_badge_plus_fill, color: AppColors.primaryText),
             tooltip: 'Thêm người thụ hưởng',
             onPressed: _showAddBeneficiaryModal,
           ),
@@ -388,7 +388,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                     onChanged: (val) => setState(() => _keyword = val),
                     style: const TextStyle(color: AppColors.textPrimaryLight),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.primary),
+                      prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.primaryText),
                       suffixIcon: _keyword.isNotEmpty
                           ? IconButton(
                               icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textMutedLight, size: 18),
@@ -477,21 +477,21 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                                       (b['name'] != null && b['name']!.trim().isNotEmpty)
                                           ? b['name']!.trim().split(' ').last[0].toUpperCase()
                                           : 'S',
-                                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ),
                                 title: Row(
                                   children: [
                                     Expanded(child: Text(b['name']!, style: AppTypography.titleMedium(color: AppColors.textPrimaryLight))),
-                                    const Icon(CupertinoIcons.paperplane_fill, size: 16, color: AppColors.primary),
+                                    const Icon(CupertinoIcons.paperplane_fill, size: 16, color: AppColors.primaryText),
                                   ],
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const SizedBox(height: 2),
-                                    Text(b['nickname']!, style: const TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.w600)),
+                                    Text(b['nickname']!, style: const TextStyle(color: AppColors.warningTextLight, fontSize: 12, fontWeight: FontWeight.w600)),
                                     const SizedBox(height: 2),
                                     Text('${b['bank']} • ${b['acc']}', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                                   ],
@@ -509,7 +509,7 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                                       value: 'edit',
                                       child: Row(
                                         children: [
-                                          Icon(CupertinoIcons.pencil, size: 16, color: AppColors.primary),
+                                          Icon(CupertinoIcons.pencil, size: 16, color: AppColors.primaryText),
                                           SizedBox(width: 8),
                                           Text('Sửa biệt danh', style: TextStyle(color: AppColors.textPrimaryLight)),
                                         ],
@@ -519,9 +519,9 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                                       value: 'delete',
                                       child: Row(
                                         children: [
-                                          Icon(CupertinoIcons.trash, size: 16, color: AppColors.error),
+                                          Icon(CupertinoIcons.trash, size: 16, color: AppColors.errorText),
                                           SizedBox(width: 8),
-                                          Text('Xóa người này', style: TextStyle(color: AppColors.error)),
+                                          Text('Xóa người này', style: TextStyle(color: AppColors.errorText)),
                                         ],
                                       ),
                                     ),

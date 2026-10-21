@@ -107,7 +107,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             const SizedBox(height: 16),
             Text(
               'Mã: $_myRefCode',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primaryDark, letterSpacing: 2),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primaryText, letterSpacing: 2),
             ),
             const SizedBox(height: 6),
             Text(
@@ -171,13 +171,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                     color: Colors.white.withOpacity(0.2),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: const Icon(CupertinoIcons.gift_fill, color: Colors.white, size: 20),
+                                  child: const Icon(CupertinoIcons.gift_fill, color: AppColors.textPrimaryLight, size: 20),
                                 ),
                                 const SizedBox(width: 10),
                                 const Expanded(
                                   child: Text(
                                     'LAN TỎA NIỀM VUI - NHẬN QUÀ KHỦNG',
-                                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                    style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -187,12 +187,12 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             const SizedBox(height: 14),
                             const Text(
                               'Nhận ngay 50.000đ khi mời bạn bè mở tài khoản',
-                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, height: 1.3),
+                              style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold, height: 1.3),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Bạn bè nhận gói voucher 500.000đ thanh toán hóa đơn và nạp thẻ sau khi kích hoạt thành công.',
-                              style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, height: 1.4),
+                              style: TextStyle(color: AppColors.textPrimaryLight.withOpacity(0.9), fontSize: 12, height: 1.4),
                             ),
                           ],
                         ),
@@ -218,7 +218,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                 child: Text(
                                   _myRefCode,
                                   style: const TextStyle(
-                                    color: AppColors.primaryDark,
+                                    color: AppColors.primaryText,
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 4,
@@ -252,8 +252,8 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                     ),
                                     onPressed: () => _showQrModal(context),
-                                    icon: const Icon(CupertinoIcons.qrcode, color: AppColors.primaryDark, size: 18),
-                                    label: const Text('Mã QR', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+                                    icon: const Icon(CupertinoIcons.qrcode, color: AppColors.primaryLight, size: 18),
+                                    label: const Text('Mã QR', style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
                                   ),
                                 ],
                               ),
@@ -305,7 +305,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                       fit: BoxFit.scaleDown,
                                       child: Text(
                                         CurrencyFormatter.formatVND(_totalReward),
-                                        style: AppTypography.titleLarge(color: AppColors.emeraldGreen).copyWith(fontWeight: FontWeight.bold),
+                                        style: AppTypography.titleLarge(color: AppColors.emeraldGreenLight).copyWith(fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ],
@@ -355,7 +355,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                   children: [
                                     Icon(
                                       isReached ? CupertinoIcons.checkmark_seal_fill : CupertinoIcons.circle,
-                                      color: isReached ? AppColors.emeraldGreen : AppColors.textMutedLight,
+                                      color: isReached ? AppColors.emeraldGreenLight : AppColors.textMutedLight,
                                       size: 20,
                                     ),
                                     const SizedBox(width: 12),
@@ -382,7 +382,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                         tier['bonus'] as String,
                                         textAlign: TextAlign.right,
                                         style: TextStyle(
-                                          color: isReached ? AppColors.emeraldGreen : AppColors.textSecondaryLight,
+                                          color: isReached ? AppColors.emeraldGreenLight : AppColors.textSecondaryLight,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,
                                         ),
@@ -441,7 +441,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                     CircleAvatar(
                                       radius: 18,
                                       backgroundColor: AppColors.primary.withOpacity(0.15),
-                                      child: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryDark, size: 16),
+                                      child: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryText, size: 16),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
@@ -471,7 +471,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                                         if (isDone)
                                           Text(
                                             '+${CurrencyFormatter.formatVND(reward)}',
-                                            style: const TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                                            style: const TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 13),
                                           )
                                         else
                                           const Text(
@@ -529,7 +529,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
         CircleAvatar(
           radius: 14,
           backgroundColor: AppColors.primary.withOpacity(0.15),
-          child: Text(step, style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 12)),
+          child: Text(step, style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 12)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -555,7 +555,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('• ', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+        const Text('• ', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
         Expanded(child: Text(text, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12, height: 1.35))),
       ],
     );

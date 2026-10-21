@@ -6,10 +6,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/network/realtime_notification_service.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
+import 'package:sen_hong_bank/core/utils/notification_parser.dart';
 import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/notification_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
@@ -78,14 +80,26 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         if (!mounted) return;
         final title = (data['title'] ?? 'Biến động số dư').toString();
         final body = (data['body'] ?? data['content'] ?? data['message'] ?? '').toString();
-        final rawAmount = data['transactionAmount'] ?? data['amount'];
-        var amount = rawAmount is num
-            ? rawAmount.toDouble()
-            : (double.tryParse(rawAmount?.toString() ?? '') ?? 0.0);
         final type = (data['type'] ?? '').toString().toUpperCase();
-        if (amount > 0 && (type == 'TRANSFER_OUT' || type == 'WITHDRAWAL' || type == 'PAYMENT')) {
-          amount = -amount;
-        }
+
+        // M-02, M-03: Sử dụng NotificationParser thống nhất
+        final amount = NotificationParser.parseAmount(
+          metadata: data,
+          body: body,
+          type: type,
+        );
+        final endingBalance = NotificationParser.parseEndingBalance(
+          metadata: data,
+          body: body,
+        );
+        final accountNumber = NotificationParser.parseAccountNumber(
+          metadata: data,
+          body: body,
+        );
+        final note = NotificationParser.parseNote(
+          metadata: data,
+          body: body,
+        );
         final txId = (data['transactionId'] ?? data['id'] ?? '').toString();
 
         // Chống trùng: cùng 1 giao dịch có thể được đẩy từ wallet topic + user topic,
@@ -100,7 +114,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ..['body'] = body
               ..['content'] = body
               ..['message'] = body
-              ..['amount'] = amount;
+              ..['amount'] = amount
+              ..['endingBalance'] = endingBalance ?? _balanceNotifs[existingIndex]['endingBalance']
+              ..['accountNumber'] = accountNumber ?? _balanceNotifs[existingIndex]['accountNumber']
+              ..['note'] = note ?? _balanceNotifs[existingIndex]['note'];
           });
           return;
         }
@@ -120,6 +137,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             'read': false,
             'txId': txId,
             'amount': amount,
+            'endingBalance': endingBalance,
+            'accountNumber': accountNumber,
+            'note': note,
+            'metadata': data,
           });
         });
 
@@ -155,25 +176,39 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _isLoggedIn = true;
     try {
       final api = NotificationRemoteDataSource();
-      final results = await Future.wait([
-        api.getNotifications('BALANCE'),
-        api.getNotifications('PROMOTION'),
-        api.getNotifications('SYSTEM'),
-      ]);
+      if (!BackendCapabilities.promoAndSystemNotifications) {
+        // M-01: Backend chỉ có producer cho BALANCE, không gọi 2 endpoint PROMOTION và SYSTEM trả rỗng
+        final balanceResults = await api.getNotifications('BALANCE');
+        if (!mounted) return;
+        setState(() {
+          _balanceNotifs
+            ..clear()
+            ..addAll(balanceResults);
+          _promoNotifs.clear();
+          _systemNotifs.clear();
+          _isLoading = false;
+        });
+      } else {
+        final results = await Future.wait([
+          api.getNotifications('BALANCE'),
+          api.getNotifications('PROMOTION'),
+          api.getNotifications('SYSTEM'),
+        ]);
 
-      if (!mounted) return;
-      setState(() {
-        _balanceNotifs
-          ..clear()
-          ..addAll(results[0]);
-        _promoNotifs
-          ..clear()
-          ..addAll(results[1]);
-        _systemNotifs
-          ..clear()
-          ..addAll(results[2]);
-        _isLoading = false;
-      });
+        if (!mounted) return;
+        setState(() {
+          _balanceNotifs
+            ..clear()
+            ..addAll(results[0]);
+          _promoNotifs
+            ..clear()
+            ..addAll(results[1]);
+          _systemNotifs
+            ..clear()
+            ..addAll(results[2]);
+          _isLoading = false;
+        });
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -246,12 +281,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           : (double.tryParse(latest['amount']?.toString() ?? '0') ?? 0.0);
       final txId = latest['txId']?.toString() ?? latest['id']?.toString();
       final time = _formatNotifTime(latest['time']?.toString());
+      final endingRaw = latest['endingBalance']?.toString();
+      String? balanceFormatted;
+      if (endingRaw != null && endingRaw.isNotEmpty) {
+        final endingNum = double.tryParse(endingRaw);
+        if (endingNum != null) {
+          balanceFormatted = CurrencyFormatter.formatVND(endingNum);
+        }
+      }
 
       InAppNotificationManager().show(
         title: title,
         body: body,
         amount: amount,
         txId: txId,
+        accountNumber: latest['accountNumber']?.toString(),
+        currentBalance: balanceFormatted,
+        note: latest['note']?.toString(),
         formattedTime: time.isNotEmpty ? time : null,
       );
     } else {
@@ -309,7 +355,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           IconButton(
             tooltip: 'Thử thông báo nổi',
-            icon: const Icon(CupertinoIcons.bell_fill, color: AppColors.warning),
+            icon: const Icon(CupertinoIcons.bell_fill, color: AppColors.accentGold),
             onPressed: _triggerRealFloatingNotification,
           ),
           if (_isLoggedIn)
@@ -319,7 +365,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryLight),
                     )
                   : const Icon(CupertinoIcons.checkmark_circle),
               onPressed: _isMarkingAllRead ? null : _markAllAsRead,
@@ -369,9 +415,61 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildContent(List<Map<String, dynamic>> currentList) {
+    // M-01: Tab Khuyến mãi & Hệ thống chưa có backend producer (BE-REQ-PROMO)
+    if ((_selectedTab == 1 || _selectedTab == 2) && !BackendCapabilities.promoAndSystemNotifications) {
+      final tabName = _selectedTab == 1 ? 'Khuyến mãi' : 'Hệ thống';
+      return RefreshIndicator(
+        onRefresh: _loadNotifications,
+        color: AppColors.primary,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          children: [
+            SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+            Center(
+              child: GlassCard(
+                quality: GlassQuality.standard,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: (_selectedTab == 1 ? AppColors.accentGold : AppColors.vividTeal).withOpacity(0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          _selectedTab == 1 ? CupertinoIcons.gift_fill : CupertinoIcons.bell_fill,
+                          size: 40,
+                          color: _selectedTab == 1 ? AppColors.accentGold : AppColors.emeraldGreenLight,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Tính năng sắp ra mắt',
+                        style: AppTypography.titleMedium(color: AppColors.textPrimaryLight),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Kênh thông báo $tabName đang được tích hợp cùng máy chủ (BE-REQ-PROMO). Quý khách vui lòng đón chờ ở bản cập nhật tiếp theo!',
+                        style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.primary),
+        child: CircularProgressIndicator(color: AppColors.primaryText),
       );
     }
 
@@ -386,7 +484,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(CupertinoIcons.lock_shield, size: 48, color: AppColors.primary),
+                  const Icon(CupertinoIcons.lock_shield, size: 48, color: AppColors.primaryText),
                   const SizedBox(height: 16),
                   Text('Đăng nhập để xem thông báo', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                   const SizedBox(height: 8),
@@ -547,7 +645,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: isPositive ? AppColors.emeraldGreen : AppColors.error,
+                            color: isPositive ? AppColors.successTextLight : AppColors.errorText,
                           ),
                         ),
                     ],
@@ -562,6 +660,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           color: isRead ? AppColors.textMutedLight : AppColors.textSecondaryLight,
                         ).copyWith(height: 1.35),
                       ),
+                      if (isBalance && item['endingBalance'] != null && item['endingBalance'].toString().isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                          ),
+                          child: Text(
+                            'Số dư sau GD: ${CurrencyFormatter.formatVND(double.tryParse(item['endingBalance'].toString()) ?? 0)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryText,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -570,7 +687,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             _formatNotifTime(timeStr),
                             style: const TextStyle(fontSize: 11, color: AppColors.textMutedLight),
                           ),
-                          const Text('Xem chi tiết ›', style: TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w600)),
+                          const Text('Xem chi tiết ›', style: TextStyle(fontSize: 11, color: AppColors.primaryText, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ],

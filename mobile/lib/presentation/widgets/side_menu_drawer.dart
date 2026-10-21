@@ -100,7 +100,7 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
                         },
                       ),
                       IconButton(
-                        icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Colors.white70),
+                        icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textSecondaryLight),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -116,12 +116,12 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
                       children: [
                         Text(
                           title,
-                          style: AppTypography.titleLarge(color: Colors.white),
+                          style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           sub,
-                          style: AppTypography.bodySmall(color: Colors.white70),
+                          style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
                         ),
                       ],
                     ),
@@ -142,7 +142,7 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
                       ),
                       child: const Text(
                         'Đã Định Danh eKYC Cấp 2',
-                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -274,8 +274,8 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
     required String route,
   }) {
     return Material(type: MaterialType.transparency, child: ListTile(
-      leading: Icon(icon, color: AppColors.primaryLight, size: 20),
-      title: Text(title, style: AppTypography.bodyMedium(color: Colors.white)),
+      leading: Icon(icon, color: AppColors.primaryText, size: 20),
+      title: Text(title, style: AppTypography.bodyMedium(color: AppColors.textPrimaryLight)),
       trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedDark, size: 14),
       onTap: () {
         Navigator.pop(context);

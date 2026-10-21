@@ -93,14 +93,14 @@ class _NotificationSettingsScreenState
               children: [
                 Icon(
                   CupertinoIcons.checkmark_alt_circle_fill,
-                  color: AppColors.emeraldGreen,
+                  color: AppColors.successTextLight,
                   size: 22,
                 ),
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Đã lưu và đồng bộ cài đặt thông báo với máy chủ thành công!',
-                    style: TextStyle(color: Colors.white, fontSize: 13),
+                    style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 13),
                   ),
                 ),
               ],
@@ -124,14 +124,14 @@ class _NotificationSettingsScreenState
               children: [
                 const Icon(
                   CupertinoIcons.exclamationmark_triangle_fill,
-                  color: AppColors.error,
+                  color: AppColors.errorText,
                   size: 22,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Lỗi đồng bộ máy chủ: $e',
-                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                    style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 13),
                   ),
                 ),
               ],
@@ -159,14 +159,14 @@ class _NotificationSettingsScreenState
           children: [
             Icon(
               CupertinoIcons.speaker_2_fill,
-              color: AppColors.bottomBarCyan,
+              color: AppColors.primaryText,
               size: 20,
             ),
             SizedBox(width: 10),
             Text(
               'Ting Ting! Bạn vừa nhận được tiền từ SenBank',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -236,7 +236,7 @@ class _NotificationSettingsScreenState
                   child: _isLoading
                       ? const Center(
                           child: CupertinoActivityIndicator(
-                            color: AppColors.bottomBarCyan,
+                            color: AppColors.primaryLight,
                             radius: 16,
                           ),
                         )
@@ -309,7 +309,7 @@ class _NotificationSettingsScreenState
               ),
               child: const Icon(
                 CupertinoIcons.chevron_left,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -351,14 +351,14 @@ class _NotificationSettingsScreenState
               children: [
                 Icon(
                   CupertinoIcons.shield_fill,
-                  color: AppColors.emeraldGreen,
+                  color: AppColors.successTextLight,
                   size: 13,
                 ),
                 SizedBox(width: 5),
                 Text(
                   '24/7',
                   style: TextStyle(
-                    color: AppColors.emeraldGreen,
+                    color: AppColors.successTextLight,
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
@@ -399,7 +399,7 @@ class _NotificationSettingsScreenState
             ),
             child: const Icon(
               CupertinoIcons.bell_fill,
-              color: AppColors.bottomBarCyan,
+              color: AppColors.primaryText,
               size: 22,
             ),
           ),
@@ -439,7 +439,7 @@ class _NotificationSettingsScreenState
       child: Text(
         title,
         style: const TextStyle(
-          color: AppColors.bottomBarCyan,
+          color: AppColors.primaryText,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
           fontSize: 12,
@@ -510,7 +510,7 @@ class _NotificationSettingsScreenState
                   ),
                   child: const Icon(
                     CupertinoIcons.music_note,
-                    color: AppColors.emeraldGreen,
+                    color: AppColors.successTextLight,
                     size: 20,
                   ),
                 ),
@@ -522,7 +522,7 @@ class _NotificationSettingsScreenState
                       const Text(
                         'Chuông "Ting Ting" độc quyền',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimaryLight,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -530,7 +530,7 @@ class _NotificationSettingsScreenState
                       Text(
                         'Âm báo nhận tiền vui tai đặc trưng SenBank',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: AppColors.textPrimaryLight.withValues(alpha: 0.55),
                           fontSize: 12,
                         ),
                       ),
@@ -539,7 +539,7 @@ class _NotificationSettingsScreenState
                 ),
                 CupertinoSwitch(
                   value: _tingTingSound,
-                  activeTrackColor: AppColors.emeraldGreen,
+                  activeTrackColor: AppColors.successTextLight,
                   onChanged: (val) {
                     setState(() => _tingTingSound = val);
                   },
@@ -567,14 +567,14 @@ class _NotificationSettingsScreenState
                     children: [
                       Icon(
                         CupertinoIcons.play_arrow_solid,
-                        color: AppColors.emeraldGreen,
+                        color: AppColors.successTextLight,
                         size: 14,
                       ),
                       SizedBox(width: 6),
                       Text(
                         'Nghe thử âm báo Ting Ting',
                         style: TextStyle(
-                          color: AppColors.emeraldGreen,
+                          color: AppColors.successTextLight,
                           fontWeight: FontWeight.w700,
                           fontSize: 12,
                         ),
@@ -692,7 +692,7 @@ class _NotificationSettingsScreenState
                   ),
                   child: const Icon(
                     CupertinoIcons.slider_horizontal_3,
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primaryText,
                     size: 20,
                   ),
                 ),
@@ -704,7 +704,7 @@ class _NotificationSettingsScreenState
                       const Text(
                         'Ngưỡng số tiền thông báo',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimaryLight,
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -712,7 +712,7 @@ class _NotificationSettingsScreenState
                       Text(
                         thresholdText,
                         style: const TextStyle(
-                          color: AppColors.bottomBarCyan,
+                          color: AppColors.primaryText,
                           fontWeight: FontWeight.w700,
                           fontSize: 12,
                         ),
@@ -744,7 +744,7 @@ class _NotificationSettingsScreenState
             Text(
               'Các giao dịch nhỏ lẻ dưới ngưỡng đã chọn sẽ chỉ lưu vào lịch sử ví mà không gửi chuông làm phiền.',
               style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: AppColors.textPrimaryLight.withValues(alpha: 0.55),
                 fontSize: 11,
               ),
             ),
@@ -805,7 +805,7 @@ class _NotificationSettingsScreenState
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimaryLight,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
@@ -814,7 +814,7 @@ class _NotificationSettingsScreenState
               Text(
                 subtitle,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: AppColors.textPrimaryLight.withValues(alpha: 0.55),
                   height: 1.25,
                   fontSize: 11.5,
                 ),
@@ -825,7 +825,7 @@ class _NotificationSettingsScreenState
         const SizedBox(width: 8),
         CupertinoSwitch(
           value: value,
-          activeTrackColor: AppColors.bottomBarCyan,
+          activeTrackColor: AppColors.primaryText,
           onChanged: onChanged,
         ),
       ],
@@ -848,7 +848,7 @@ class _NotificationSettingsScreenState
       height: 54,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDark,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
@@ -861,14 +861,14 @@ class _NotificationSettingsScreenState
           children: [
             Icon(
               CupertinoIcons.checkmark_seal_fill,
-              color: Colors.white,
+              color: AppColors.textPrimaryLight,
               size: 20,
             ),
             SizedBox(width: 10),
             Text(
               'Lưu cấu hình thông báo',
               style: TextStyle(
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
               ),

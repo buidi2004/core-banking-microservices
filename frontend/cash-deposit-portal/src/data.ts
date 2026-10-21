@@ -33,6 +33,16 @@ export const STAFF_ACCOUNTS: LoggedInStaff[] = [
 
 export const CUSTOMER_ACCOUNTS: CustomerAccount[] = [
   {
+    accountNumber: 'W-BUIDI-7777',
+    phoneNumber: '0987654321',
+    citizenId: '079204009999',
+    customerName: 'Bùi Văn Dĩ',
+    balance: 10_000_000,
+    status: 'ACTIVE',
+    kycTier: 'VERIFIED_BIOMETRIC',
+    branchName: 'Chi nhánh Quận 1 (TP.HCM)',
+  },
+  {
     accountNumber: 'W-ALICE-1001',
     phoneNumber: '0901234567',
     citizenId: '079204001234',

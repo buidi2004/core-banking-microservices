@@ -271,7 +271,7 @@ class _MoreScreenState extends State<MoreScreen> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen, size: 16),
+                        const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreenLight, size: 16),
                       ],
                     ),
                     const SizedBox(height: 4),
@@ -291,7 +291,7 @@ class _MoreScreenState extends State<MoreScreen> {
                               ),
                             );
                           },
-                          child: const Icon(CupertinoIcons.doc_on_doc, size: 14, color: AppColors.bottomBarCyan),
+                          child: const Icon(CupertinoIcons.doc_on_doc, size: 14, color: AppColors.primaryLight),
                         ),
                       ],
                     ),
@@ -304,7 +304,7 @@ class _MoreScreenState extends State<MoreScreen> {
                       ),
                       child: Text(
                         _kycStatus,
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.accentGold),
+                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.warningTextLight),
                       ),
                     ),
                   ],
@@ -345,7 +345,7 @@ class _MoreScreenState extends State<MoreScreen> {
               color: AppColors.accentGold.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(CupertinoIcons.star_circle_fill, color: AppColors.accentGold, size: 28),
+            child: const Icon(CupertinoIcons.star_circle_fill, color: AppColors.warningTextLight, size: 28),
           ),
           const SizedBox(width: 12),
           const Expanded(
@@ -354,12 +354,12 @@ class _MoreScreenState extends State<MoreScreen> {
               children: [
                 Text(
                   '12.450 SenPoints',
-                  style: TextStyle(color: AppColors.accentGold, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.warningTextLight, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 2),
                 Text(
                   'Đổi voucher Grab, Shopee, Highlands Coffee',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
+                  style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11),
                 ),
               ],
             ),
@@ -416,7 +416,7 @@ class _MoreScreenState extends State<MoreScreen> {
                           color: AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(item['icon'] as IconData, color: AppColors.primary, size: 20),
+                        child: Icon(item['icon'] as IconData, color: AppColors.primaryText, size: 20),
                       ),
                       title: Text(
                         item['title'] as String,
@@ -447,7 +447,7 @@ class _MoreScreenState extends State<MoreScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(CupertinoIcons.suit_diamond_fill, size: 14, color: AppColors.primary),
+            Icon(CupertinoIcons.suit_diamond_fill, size: 14, color: AppColors.primaryText),
             SizedBox(width: 6),
             Text(
               'SEN HỒNG DIGITAL BANK',

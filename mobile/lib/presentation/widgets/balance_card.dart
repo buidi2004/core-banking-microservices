@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
 import 'package:morphnext/morphnext.dart';
 
@@ -234,7 +235,7 @@ class BalanceCard extends StatelessWidget {
                               Text(
                                 (accountNumber != null && accountNumber!.isNotEmpty) ? accountNumber! : 'Ví Sen Hồng',
                                 style: GoogleFonts.plusJakartaSans(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimaryLight,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 1.0,
@@ -243,7 +244,7 @@ class BalanceCard extends StatelessWidget {
                               const SizedBox(width: 5),
                               const Icon(
                                 CupertinoIcons.doc_on_doc,
-                                color: Colors.white70,
+                                color: AppColors.textSecondaryLight,
                                 size: 12,
                               ),
                             ],
@@ -386,7 +387,7 @@ class BalanceCard extends StatelessWidget {
               ),
               child: Icon(
                 icon,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 22,
               ),
             ),
@@ -394,7 +395,7 @@ class BalanceCard extends StatelessWidget {
             Text(
               label,
               style: GoogleFonts.inter(
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 letterSpacing: -0.2,

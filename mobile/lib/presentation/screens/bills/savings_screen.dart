@@ -230,14 +230,14 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       color: AppColors.bottomBarCyan.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(CupertinoIcons.arrow_down_circle_fill, color: AppColors.bottomBarCyan, size: 24),
+                    child: const Icon(CupertinoIcons.arrow_down_circle_fill, color: AppColors.primaryText, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Rút Gốc Từng Phần', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                        const Text('Rút Gốc Từng Phần', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
                         Text('Sổ: ${pb['code']}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight)),
                       ],
                     ),
@@ -254,7 +254,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen, size: 20),
+                    Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -326,7 +326,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 decoration: BoxDecoration(color: AppColors.borderSubtle, borderRadius: BorderRadius.circular(2)),
               ),
             const SizedBox(height: 16),
-            const Icon(CupertinoIcons.doc_text_fill, color: AppColors.bottomBarCyan, size: 48),
+            const Icon(CupertinoIcons.doc_text_fill, color: AppColors.primaryText, size: 48),
             const SizedBox(height: 12),
             const Text('CHỨNG NHẬN TIỀN GỬI ĐIỆN TỬ', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             const Text('E-PASSBOOK CERTIFICATE • SEN HỒNG BANK', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
@@ -403,7 +403,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isBold || isSuccess ? FontWeight.bold : FontWeight.w500,
-                color: isSuccess ? AppColors.emeraldGreen : (isBold ? AppColors.primaryDark : AppColors.textPrimaryLight),
+                color: isSuccess ? AppColors.successTextLight : (isBold ? AppColors.primaryDark : AppColors.textPrimaryLight),
               ),
             ),
           ),
@@ -516,7 +516,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                           ),
                           child: Icon(
                             prod['icon'] as IconData,
-                            color: isSelected ? Colors.white : AppColors.primary,
+                            color: isSelected ? AppColors.textPrimaryLight : AppColors.primaryText,
                             size: 20,
                           ),
                         ),
@@ -532,7 +532,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 15,
-                                      color: isSelected ? AppColors.primaryDark : AppColors.textPrimaryLight,
+                                      color: isSelected ? AppColors.primaryText : AppColors.textPrimaryLight,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -547,7 +547,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                       style: TextStyle(
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
-                                        color: isSelected ? AppColors.emeraldGreen : AppColors.textSecondaryLight,
+                                        color: isSelected ? AppColors.successTextLight : AppColors.textSecondaryLight,
                                       ),
                                     ),
                                   ),
@@ -563,7 +563,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                         ),
                         Icon(
                           isSelected ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
-                          color: isSelected ? AppColors.bottomBarCyan : AppColors.textMutedLight,
+                          color: isSelected ? AppColors.primaryText : AppColors.textMutedLight,
                         ),
                       ],
                     ),
@@ -580,7 +580,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
           TextField(
             controller: _amountCtrl,
             keyboardType: TextInputType.number,
-            style: const TextStyle(color: AppColors.primaryDark, fontSize: 26, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: AppColors.primaryText, fontSize: 26, fontWeight: FontWeight.bold),
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               suffixIcon: _amountCtrl.text.isNotEmpty
@@ -593,7 +593,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     )
                   : null,
               suffixText: ' đ',
-              suffixStyle: const TextStyle(color: AppColors.primaryDark, fontSize: 20, fontWeight: FontWeight.bold),
+              suffixStyle: const TextStyle(color: AppColors.primaryText, fontSize: 20, fontWeight: FontWeight.bold),
               filled: true,
               fillColor: AppColors.surfaceLight,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -606,7 +606,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
               padding: const EdgeInsets.only(top: 6, bottom: 4),
               child: Text(
                 'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(double.tryParse(_amountCtrl.text) ?? 0)} đồng',
-                style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                style: AppTypography.bodySmall(color: AppColors.primaryText).copyWith(
                   fontStyle: FontStyle.italic,
                   fontWeight: FontWeight.w600,
                 ),
@@ -685,16 +685,16 @@ class _SavingsScreenState extends State<SavingsScreen> {
                                 style: TextStyle(
                                   fontSize: 9,
                                   fontWeight: FontWeight.bold,
-                                  color: isSelected ? Colors.white : AppColors.accentGold,
+                                  color: isSelected ? AppColors.textPrimaryLight : AppColors.warningTextLight,
                                 ),
                               ),
                             )
                           else
                             const SizedBox(height: 17),
-                          Text('${t['months']} Tháng', style: TextStyle(color: isSelected ? Colors.white : AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text('${t['months']} Tháng', style: TextStyle(color: isSelected ? AppColors.textPrimaryLight : AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13)),
                           const SizedBox(height: 6),
-                          Text('$rateStr%', style: TextStyle(color: isSelected ? Colors.white : AppColors.emeraldGreen, fontSize: 17, fontWeight: FontWeight.w800)),
-                          Text('/năm', style: TextStyle(color: isSelected ? Colors.white70 : AppColors.textSecondaryLight, fontSize: 10)),
+                          Text('$rateStr%', style: TextStyle(color: isSelected ? AppColors.textPrimaryLight : AppColors.successTextLight, fontSize: 17, fontWeight: FontWeight.w800)),
+                          Text('/năm', style: TextStyle(color: isSelected ? AppColors.textSecondaryLight : AppColors.textSecondaryLight, fontSize: 10)),
                         ],
                       ),
                     ),
@@ -724,7 +724,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Bảng Tính Tăng Trưởng Lãi', style: AppTypography.titleMedium(color: AppColors.primaryDark)),
+                          Text('Bảng Tính Tăng Trưởng Lãi', style: AppTypography.titleMedium(color: AppColors.primaryText)),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
@@ -733,7 +733,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                             ),
                             child: Text(
                               '+${_currentRate.toStringAsFixed(2)}%/năm',
-                              style: const TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 12),
+                              style: const TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 12),
                             ),
                           ),
                         ],
@@ -747,7 +747,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Tổng tiền lãi khi đáo hạn:', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight)),
-                          Text(CurrencyFormatter.formatVND(totalInterest), style: AppTypography.titleLarge(color: AppColors.emeraldGreen)),
+                          Text(CurrencyFormatter.formatVND(totalInterest), style: AppTypography.titleLarge(color: AppColors.emeraldGreenLight)),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -755,7 +755,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text('Tổng gốc + lãi thực nhận:', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
-                          Text(CurrencyFormatter.formatVND(depositAmt + totalInterest), style: AppTypography.titleMedium(color: AppColors.primaryDark)),
+                          Text(CurrencyFormatter.formatVND(depositAmt + totalInterest), style: AppTypography.titleMedium(color: AppColors.primaryLight)),
                         ],
                       ),
                     ],
@@ -822,7 +822,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: _isSubmitting
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.textPrimaryLight, strokeWidth: 2))
                   : const Text('Mở sổ tiết kiệm ngay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
@@ -868,7 +868,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                   errorBuilder: (context, error, stackTrace) => const Icon(
                     CupertinoIcons.archivebox_fill,
                     size: 90,
-                    color: Colors.white24,
+                    color: AppColors.textMutedLight,
                   ),
                 ),
               ),
@@ -891,11 +891,11 @@ class _SavingsScreenState extends State<SavingsScreen> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 12),
+                      Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.warningTextLight, size: 12),
                       SizedBox(width: 4),
                       Text(
                         'TIẾT KIỆM BẢO CHỨNG NHNN',
-                        style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: AppColors.warningTextLight, fontSize: 10, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -903,12 +903,12 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 const SizedBox(height: 8),
                 const Text(
                   'Tiết Kiệm Sen Lộc Phát',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 const Text(
                   'Lãi suất vượt trội đến 7.4%/năm\nRút gốc từng phần bảo toàn lãi suất',
-                  style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.3),
+                  style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12, height: 1.3),
                 ),
               ],
             ),
@@ -922,7 +922,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ActionChip(
-        label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+        label: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryText)),
         backgroundColor: AppColors.dividerLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.borderLight)),
         onPressed: () => _addQuickAmount(amount),
@@ -960,11 +960,11 @@ class _SavingsScreenState extends State<SavingsScreen> {
         children: [
           Row(
             children: [
-              Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreen, size: 18),
+              Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.successTextLight, size: 18),
               SizedBox(width: 8),
               Text(
                 'Bảo Hiểm Tiền Gửi & Chính Sách NHNN',
-                style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                style: TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ],
           ),
@@ -1005,7 +1005,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                           children: [
                             Text(
                               pb['code'] as String,
-                              style: AppTypography.titleMedium(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.bold),
+                              style: AppTypography.titleMedium(color: AppColors.primaryLight).copyWith(fontWeight: FontWeight.bold),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -1027,21 +1027,21 @@ class _SavingsScreenState extends State<SavingsScreen> {
                             color: AppColors.emeraldGreen.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(pb['status'] as String, style: const TextStyle(color: AppColors.emeraldGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                          child: Text(pb['status'] as String, style: const TextStyle(color: AppColors.successTextLight, fontSize: 10, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 14),
                   Text('Tiền gốc gửi tiết kiệm', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                  Text(CurrencyFormatter.formatVND(pb['principal'] as double), style: const TextStyle(color: AppColors.primaryDark, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(CurrencyFormatter.formatVND(pb['principal'] as double), style: const TextStyle(color: AppColors.primaryLight, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(CupertinoIcons.graph_circle, color: AppColors.emeraldGreen, size: 16),
+                      const Icon(CupertinoIcons.graph_circle, color: AppColors.emeraldGreenLight, size: 16),
                       const SizedBox(width: 6),
                       const Text('Lãi lũy kế đến hôm nay: ', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
-                      Text(CurrencyFormatter.formatVND(pb['accruedInterest'] as double), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.emeraldGreen)),
+                      Text(CurrencyFormatter.formatVND(pb['accruedInterest'] as double), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.emeraldGreenLight)),
                     ],
                   ),
                   const Divider(height: 24, color: AppColors.cardBorderLight),
@@ -1171,7 +1171,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
-              color: isGreen ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+              color: isGreen ? AppColors.successTextLight : AppColors.textPrimaryLight,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),

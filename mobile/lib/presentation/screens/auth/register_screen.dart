@@ -105,7 +105,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 decoration: InputDecoration(
                   labelText: 'Số điện thoại đăng ký (Chính chủ)',
                   labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primaryLight),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -122,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 decoration: InputDecoration(
                   labelText: 'Họ và tên (như trên CCCD)',
                   labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryLight),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -140,7 +140,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 decoration: InputDecoration(
                   labelText: 'Mật khẩu (tối thiểu 6 ký tự)',
                   labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.lock_fill, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.lock_fill, color: AppColors.primaryLight),
                   suffixIcon: MorphEyeButton(
                     isHidden: _obscurePass,
                     color: AppColors.textSecondaryLight,
@@ -208,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.emeraldGreen, size: 18),
+                    Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.successTextLight, size: 18),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -238,7 +238,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           children: const [
                             TextSpan(
                               text: 'Điều khoản dịch vụ & Chính sách bảo mật',
-                              style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                              style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
                             ),
                           ],
                         ),
@@ -341,7 +341,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Text('Đã có tài khoản ví?', style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
                   TextButton(
                     onPressed: () => context.push('/auth/login'),
-                    child: const Text('Đăng nhập ngay', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+                    child: const Text('Đăng nhập ngay', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -402,7 +402,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         CircleAvatar(
           radius: 11,
           backgroundColor: color,
-          child: Text('$step', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+          child: Text('$step', style: const TextStyle(fontSize: 10, color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 4),
         Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: color)),
@@ -426,7 +426,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

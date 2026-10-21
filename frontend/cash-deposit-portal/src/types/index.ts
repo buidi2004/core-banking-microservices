@@ -57,3 +57,39 @@ export interface LedgerBalance {
   credit4211: number;
   delta: number;
 }
+
+// --- Transfer (P2P) Types ---
+
+export type TransferStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'REVERSED';
+
+export interface Transfer {
+  id: string;
+  code: string;
+  senderPhone: string;
+  receiverPhone: string;
+  senderAccountNumber: string;
+  receiverAccountNumber: string;
+  amount: number;
+  currency: string;
+  status: TransferStatus;
+  note?: string;
+  createdAt: string;
+  completedAt?: string;
+  failureReason?: string;
+}
+
+export interface TransferRequest {
+  senderPhone: string;
+  receiverPhone: string;
+  amount: number;
+  note?: string;
+  senderAccountNumber?: string; // optional - can be derived from phone
+}
+
+export interface TransferResponse {
+  success: boolean;
+  transfer: Transfer;
+  message: string;
+  newSenderBalance: number;
+  newReceiverBalance: number;
+}

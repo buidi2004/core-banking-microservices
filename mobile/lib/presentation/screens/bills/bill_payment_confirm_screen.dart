@@ -253,7 +253,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textPrimaryLight,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -262,7 +262,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                           Text(
                             'Mã KH: ${widget.customerCode}',
                             style: const TextStyle(
-                              color: Colors.white70,
+                              color: AppColors.textSecondaryLight,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -289,7 +289,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                       const SizedBox(height: 10),
                       _buildDetailRow('Kỳ cước thanh toán', 'Kỳ gần nhất'),
                       const SizedBox(height: 10),
-                      _buildDetailRow('Phí giao dịch', '0 đ (Miễn phí)', valueColor: AppColors.emeraldGreen),
+                      _buildDetailRow('Phí giao dịch', '0 đ (Miễn phí)', valueColor: AppColors.successTextLight),
                       const Divider(height: 24, color: AppColors.cardBorderLight),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -297,7 +297,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                           Text('Tổng tiền thanh toán', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
                           Text(
                             CurrencyFormatter.formatVND(widget.amount),
-                            style: AppTypography.displayMedium(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.w900),
+                            style: AppTypography.displayMedium(color: AppColors.primaryText).copyWith(fontWeight: FontWeight.w900),
                           ),
                         ],
                       ),
@@ -307,7 +307,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                           alignment: Alignment.centerRight,
                           child: Text(
                             'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(widget.amount)} đồng',
-                            style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                            style: AppTypography.bodySmall(color: AppColors.primaryText).copyWith(
                               fontStyle: FontStyle.italic,
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
@@ -338,7 +338,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                               color: AppColors.primary.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(CupertinoIcons.creditcard_fill, color: AppColors.primary, size: 22),
+                            child: const Icon(CupertinoIcons.creditcard_fill, color: AppColors.primaryText, size: 22),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -355,7 +355,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                                       : 'Khả dụng: ${CurrencyFormatter.formatVND(_walletBalance)}',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: hasEnoughBalance ? AppColors.emeraldGreen : AppColors.error,
+                                    color: hasEnoughBalance ? AppColors.successTextLight : AppColors.errorText,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -365,16 +365,16 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                           if (!hasEnoughBalance && !_isLoadingBalance)
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
+                                backgroundColor: AppColors.primaryDark,
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 minimumSize: const Size(0, 32),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               onPressed: () => context.push('/deposit'),
-                              child: const Text('Nạp thêm', style: TextStyle(fontSize: 11, color: Colors.white)),
+                              child: const Text('Nạp thêm', style: TextStyle(fontSize: 11, color: AppColors.textPrimaryLight)),
                             )
                           else
-                            const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 20),
+                            const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight, size: 20),
                         ],
                       ),
                       const Divider(height: 20, color: AppColors.cardBorderLight),
@@ -383,7 +383,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                         children: [
                           const Row(
                             children: [
-                              Icon(CupertinoIcons.arrow_2_circlepath_circle, color: AppColors.primary, size: 18),
+                              Icon(CupertinoIcons.arrow_2_circlepath_circle, color: AppColors.primaryText, size: 18),
                               SizedBox(width: 8),
                               Text('Tự động trừ tiền kỳ tiếp theo', style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight, fontWeight: FontWeight.w500)),
                             ],
@@ -423,7 +423,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
               if (_isSubmitting)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  child: Center(child: CircularProgressIndicator(color: AppColors.primaryLight)),
                 )
               else
                 CustomPinNumpad(
@@ -449,7 +449,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreen, size: 18),
+                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.successTextLight, size: 18),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(

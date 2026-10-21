@@ -86,7 +86,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [
-              Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 28),
+              Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight, size: 28),
               SizedBox(width: 10),
               Expanded(
                 child: Text('Nộp Hồ Sơ Thành Công!', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold)),
@@ -147,16 +147,16 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(CupertinoIcons.sparkles, color: AppColors.accentGold, size: 40),
+                    const Icon(CupertinoIcons.sparkles, color: AppColors.warningTextLight, size: 40),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('HẠN MỨC PHÊ DUYỆT TỰ ĐỘNG AI', style: TextStyle(color: AppColors.accentGold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          const Text('HẠN MỨC PHÊ DUYỆT TỰ ĐỘNG AI', style: TextStyle(color: AppColors.warningTextLight, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                           const SizedBox(height: 2),
-                          const Text('Lên đến 50.000.000 đ', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
-                          Text('Giải ngân thần tốc sau 15 phút • Không cần thế chấp tài sản', style: AppTypography.bodySmall(color: Colors.white70).copyWith(fontSize: 11)),
+                          const Text('Lên đến 50.000.000 đ', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 22, fontWeight: FontWeight.w900)),
+                          Text('Giải ngân thần tốc sau 15 phút • Không cần thế chấp tài sản', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
                         ],
                       ),
                     ),
@@ -189,21 +189,21 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Icon(pkg['icon'] as IconData, color: AppColors.primary, size: 22),
+                                Icon(pkg['icon'] as IconData, color: AppColors.primaryText, size: 22),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: AppColors.primary.withOpacity(0.12),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Text(pkg['tag'] as String, style: const TextStyle(color: AppColors.primaryDark, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  child: Text(pkg['tag'] as String, style: const TextStyle(color: AppColors.primaryText, fontSize: 10, fontWeight: FontWeight.bold)),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Text(pkg['title'] as String, style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
-                            Text('Hạn mức: ${pkg['limit']}', style: const TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.w600, fontSize: 12)),
+                            Text('Hạn mức: ${pkg['limit']}', style: const TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.w600, fontSize: 12)),
                             Text('Lãi suất: ${pkg['rate']}', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
                           ],
                         ),
@@ -226,12 +226,12 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                       const SizedBox(height: 6),
                       Text(
                         CurrencyFormatter.formatVND(_loanAmount),
-                        style: AppTypography.displayMedium(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.w900),
+                        style: AppTypography.displayMedium(color: AppColors.primaryLight).copyWith(fontWeight: FontWeight.w900),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(_loanAmount)} đồng',
-                        style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                        style: AppTypography.bodySmall(color: AppColors.primaryLight).copyWith(
                           fontStyle: FontStyle.italic,
                           fontWeight: FontWeight.w600,
                         ),
@@ -307,7 +307,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Trả hàng tháng (Gốc + Lãi):', style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
-                          Text(CurrencyFormatter.formatVND(_monthlyTotal), style: AppTypography.titleLarge(color: AppColors.emeraldGreen).copyWith(fontWeight: FontWeight.bold)),
+                          Text(CurrencyFormatter.formatVND(_monthlyTotal), style: AppTypography.titleLarge(color: AppColors.emeraldGreenLight).copyWith(fontWeight: FontWeight.bold)),
                         ],
                       ),
                       const Divider(height: 24, color: AppColors.cardBorderLight),
@@ -330,10 +330,10 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                           onPressed: () => context.push('/loan/schedule'),
-                          icon: const Icon(CupertinoIcons.calendar_today, size: 16, color: AppColors.primary),
+                          icon: const Icon(CupertinoIcons.calendar_today, size: 16, color: AppColors.primaryLight),
                           label: const Text(
                             'Xem bảng khấu hao 12 kỳ chi tiết',
-                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ),
                       ),
@@ -448,7 +448,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: isGreen ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+              color: isGreen ? AppColors.successTextLight : AppColors.textPrimaryLight,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -465,7 +465,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
         CircleAvatar(
           radius: 14,
           backgroundColor: AppColors.primary.withOpacity(0.15),
-          child: Text(step, style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 12)),
+          child: Text(step, style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 12)),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -486,7 +486,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.emeraldGreen, size: 18),
+        const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.successTextLight, size: 18),
         const SizedBox(width: 8),
         Expanded(
           child: Text(text, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12, height: 1.35)),

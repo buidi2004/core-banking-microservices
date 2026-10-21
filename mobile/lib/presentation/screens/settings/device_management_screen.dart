@@ -213,7 +213,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
               ),
               child: const Icon(
                 CupertinoIcons.chevron_left,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -234,7 +234,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                 Text(
                   'Kiểm soát phiên đăng nhập & Smart OTP',
                   style: TextStyle(
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -252,7 +252,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(CupertinoIcons.shield_fill, color: AppColors.emeraldGreen, size: 14),
+                Icon(CupertinoIcons.shield_fill, color: AppColors.successTextLight, size: 14),
                 SizedBox(width: 4),
                 Text('AN TOÀN', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
               ],
@@ -266,7 +266,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
   Widget _buildBody() {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: AppColors.bottomBarCyan),
+        child: CircularProgressIndicator(color: AppColors.primaryText),
       );
     }
 
@@ -282,7 +282,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
               Text(
                 _errorMessage!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 14),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -368,7 +368,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
             children: [
               Row(
                 children: [
-                  Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreen, size: 22),
+                  Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreenLight, size: 22),
                   SizedBox(width: 10),
                   Text(
                     'Bảo Mật Phần Cứng Thiết Bị',
@@ -398,13 +398,13 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+          Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12)),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.end,
               style: TextStyle(
-                color: isGreen ? AppColors.emeraldGreen : Colors.white,
+                color: isGreen ? AppColors.successTextLight : AppColors.textPrimaryLight,
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
               ),
@@ -421,7 +421,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
       child: Text(
         title,
         style: const TextStyle(
-          color: AppColors.bottomBarCyan,
+          color: AppColors.primaryText,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
           fontSize: 12,
@@ -465,7 +465,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                     ),
                     child: Icon(
                       isCurrent ? CupertinoIcons.device_phone_portrait : CupertinoIcons.device_laptop,
-                      color: isCurrent ? AppColors.bottomBarCyan : Colors.white70,
+                      color: isCurrent ? AppColors.primaryLight : Colors.white70,
                       size: 22,
                     ),
                   ),
@@ -498,7 +498,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                         color: AppColors.emeraldGreen.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('HIỆN TẠI', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                      child: const Text('HIỆN TẠI', style: TextStyle(color: AppColors.successTextLight, fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
                 ],
               ),
@@ -514,15 +514,15 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(CupertinoIcons.location_solid, color: Colors.white38, size: 13),
+                        const Icon(CupertinoIcons.location_solid, color: AppColors.textMutedLight, size: 13),
                         const SizedBox(width: 4),
-                        Text(d['ip'] as String, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                        Text(d['ip'] as String, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
                       ],
                     ),
                     Text(
                       d['lastActive'] as String,
                       style: TextStyle(
-                        color: isCurrent ? AppColors.emeraldGreen : AppColors.accentGold,
+                        color: isCurrent ? AppColors.successTextLight : AppColors.warningTextLight,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -534,11 +534,11 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                 const SizedBox(height: 8),
                 const Row(
                   children: [
-                    Icon(CupertinoIcons.lock_shield_fill, color: AppColors.bottomBarCyan, size: 13),
+                    Icon(CupertinoIcons.lock_shield_fill, color: AppColors.primaryLight, size: 13),
                     SizedBox(width: 5),
                     Text(
                       'Đã liên kết Smart OTP • Khóa bảo mật phần cứng duy nhất',
-                      style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.primaryLight, fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -582,18 +582,18 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
         children: [
           Row(
             children: [
-              Icon(CupertinoIcons.info_circle_fill, color: AppColors.bottomBarCyan, size: 18),
+              Icon(CupertinoIcons.info_circle_fill, color: AppColors.primaryText, size: 18),
               SizedBox(width: 8),
               Text(
                 'Chính sách tuân thủ Thông tư 50/TT-NHNN',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13),
               ),
             ],
           ),
           SizedBox(height: 8),
           Text(
             '• Mỗi tài khoản SenBank chỉ được cấp quyền sinh mã Smart OTP trên duy nhất 01 thiết bị di động chính chủ tại cùng một thời điểm.',
-            style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
+            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11.5, height: 1.35),
           ),
         ],
       ),
@@ -624,7 +624,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
           const SizedBox(height: 6),
           const Text(
             'Nếu nghi ngờ điện thoại bị mất hoặc có người xâm nhập, hãy kích hoạt khóa khẩn cấp ngay để bảo toàn 100% số dư và tài sản ngân hàng.',
-            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
+            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12, height: 1.35),
           ),
           const SizedBox(height: 14),
           SizedBox(

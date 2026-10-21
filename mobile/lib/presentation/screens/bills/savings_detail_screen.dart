@@ -224,7 +224,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
               isSelected
                   ? CupertinoIcons.checkmark_circle_fill
                   : CupertinoIcons.circle,
-              color: isSelected ? AppColors.bottomBarCyan : Colors.white54,
+              color: isSelected ? AppColors.primaryText : AppColors.textSecondaryLight,
               size: 22,
             ),
             const SizedBox(width: 12),
@@ -235,7 +235,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
                     ),
@@ -244,7 +244,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: AppColors.textPrimaryLight.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -266,11 +266,11 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Row(
           children: [
-            Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.accentGold, size: 24),
+            Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.warningTextLight, size: 24),
             SizedBox(width: 10),
             Text(
               'Tất toán sổ trước hạn?',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -280,7 +280,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
           children: [
             Text(
               'Sổ tiết kiệm ${_data['code']} chưa đến ngày đáo hạn (${_data['maturityDate']}).',
-              style: const TextStyle(color: Colors.white70, height: 1.3),
+              style: const TextStyle(color: AppColors.textSecondaryLight, height: 1.3),
             ),
             const SizedBox(height: 10),
             Container(
@@ -294,16 +294,16 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Gốc hoàn trả:', style: TextStyle(color: Colors.white60, fontSize: 13)),
-                      Text(CurrencyFormatter.formatVND(_data['principal'] as double), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      const Text('Gốc hoàn trả:', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
+                      Text(CurrencyFormatter.formatVND(_data['principal'] as double), style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   const SizedBox(height: 6),
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Lãi không kỳ hạn (0.2%):', style: TextStyle(color: Colors.white60, fontSize: 13)),
-                      Text('+ 16.438 đ', style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold)),
+                      Text('Lãi không kỳ hạn (0.2%):', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
+                      Text('+ 16.438 đ', style: TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ],
@@ -312,14 +312,14 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
             const SizedBox(height: 10),
             const Text(
               'Bạn có chắc chắn muốn tất toán và nhận tiền về ví SenBank ngay bây giờ?',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy bỏ', style: TextStyle(color: Colors.white60)),
+            child: const Text('Hủy bỏ', style: TextStyle(color: AppColors.textSecondaryLight)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -342,7 +342,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                 context.pop();
               });
             },
-            child: const Text('Xác nhận tất toán', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Xác nhận tất toán', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -355,11 +355,11 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(CupertinoIcons.share_up, color: AppColors.bottomBarCyan, size: 20),
+            const Icon(CupertinoIcons.share_up, color: AppColors.primaryText, size: 20),
             const SizedBox(width: 10),
             Text(
               'Đang xuất Chứng chỉ tiền gửi điện tử ${_data['code']} (PDF/QR)...',
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.textPrimaryLight),
             ),
           ],
         ),
@@ -473,7 +473,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
               ),
               child: const Icon(
                 CupertinoIcons.chevron_left,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -494,7 +494,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                 Text(
                   _data['code'] as String,
                   style: const TextStyle(
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -513,7 +513,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
               ),
               child: const Icon(
                 CupertinoIcons.share,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -566,7 +566,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                     ),
                     child: const Icon(
                       CupertinoIcons.sparkles,
-                      color: AppColors.accentGold,
+                      color: AppColors.warningTextLight,
                       size: 20,
                     ),
                   ),
@@ -618,7 +618,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                     Text(
                       _data['status'] as String,
                       style: const TextStyle(
-                        color: AppColors.emeraldGreen,
+                        color: AppColors.successTextLight,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
@@ -654,7 +654,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
               const Text(
                 'VND',
                 style: TextStyle(
-                  color: AppColors.bottomBarCyan,
+                  color: AppColors.primaryLight,
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
@@ -679,7 +679,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                   children: [
                     const Text('Lãi suất áp dụng', style: TextStyle(color: Colors.white54, fontSize: 11)),
                     const SizedBox(height: 2),
-                    Text('$rate% / năm', style: const TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text('$rate% / năm', style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
                 Container(height: 24, width: 1, color: Colors.white12),
@@ -688,7 +688,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                   children: [
                     const Text('Kỳ hạn gửi', style: TextStyle(color: Colors.white54, fontSize: 11)),
                     const SizedBox(height: 2),
-                    Text('${_data['months']} tháng', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text('${_data['months']} tháng', style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
                 Container(height: 24, width: 1, color: Colors.white12),
@@ -697,7 +697,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                   children: [
                     const Text('Ngày đáo hạn', style: TextStyle(color: Colors.white54, fontSize: 11)),
                     const SizedBox(height: 2),
-                    Text(_data['maturityDate'] as String, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                    Text(_data['maturityDate'] as String, style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 15)),
                   ],
                 ),
               ],
@@ -733,12 +733,12 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
           children: [
             const Row(
               children: [
-                Icon(CupertinoIcons.chart_bar_alt_fill, color: AppColors.emeraldGreen, size: 20),
+                Icon(CupertinoIcons.chart_bar_alt_fill, color: AppColors.successTextLight, size: 20),
                 SizedBox(width: 10),
                 Text(
                   'Tiến trình Tích lũy Lợi nhuận',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -757,7 +757,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                     Text(
                       '+ ${CurrencyFormatter.formatVND(accruedInterest)}',
                       style: const TextStyle(
-                        color: AppColors.emeraldGreen,
+                        color: AppColors.successTextLight,
                         fontWeight: FontWeight.w800,
                         fontSize: 18,
                       ),
@@ -772,7 +772,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                     Text(
                       CurrencyFormatter.formatVND(expectedInterest),
                       style: const TextStyle(
-                        color: AppColors.accentGold,
+                        color: AppColors.warningTextLight,
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
                       ),
@@ -795,8 +795,8 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Gửi ngày: ${_data['openDate']}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
-                Text('Đáo hạn: ${_data['maturityDate']}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                Text('Gửi ngày: ${_data['openDate']}', style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                Text('Đáo hạn: ${_data['maturityDate']}', style: const TextStyle(color: AppColors.textMutedLight, fontSize: 11)),
               ],
             ),
             const SizedBox(height: 14),
@@ -813,7 +813,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                   const Text('Tổng tiền thực nhận khi đáo hạn:', style: TextStyle(color: Colors.white70, fontSize: 13)),
                   Text(
                     CurrencyFormatter.formatVND(totalExpected),
-                    style: const TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.w800, fontSize: 15),
+                    style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.w800, fontSize: 15),
                   ),
                 ],
               ),
@@ -834,12 +834,12 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
           children: [
             const Row(
               children: [
-                Icon(CupertinoIcons.doc_plaintext, color: AppColors.bottomBarCyan, size: 20),
+                Icon(CupertinoIcons.doc_plaintext, color: AppColors.primaryText, size: 20),
                 SizedBox(width: 10),
                 Text(
                   'Chi tiết Hợp đồng Điện tử',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -859,11 +859,11 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Chỉ thị khi đáo hạn:', style: TextStyle(color: Colors.white60, fontSize: 13)),
+                        const Text('Chỉ thị khi đáo hạn:', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
                         const SizedBox(height: 2),
                         Text(
                           _data['rollover'] as String,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                          style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600, fontSize: 13),
                         ),
                       ],
                     ),
@@ -880,9 +880,9 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(CupertinoIcons.pencil, color: AppColors.bottomBarCyan, size: 14),
+                          Icon(CupertinoIcons.pencil, color: AppColors.primaryText, size: 14),
                           SizedBox(width: 4),
-                          Text('Thay đổi', style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 12, fontWeight: FontWeight.bold)),
+                          Text('Thay đổi', style: TextStyle(color: AppColors.primaryText, fontSize: 12, fontWeight: FontWeight.bold)),
                         ],
                       ),
                     ),
@@ -905,13 +905,13 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 13)),
+          Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+              style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ),
         ],
@@ -930,12 +930,12 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.emeraldGreen, size: 20),
+          Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.successTextLight, size: 20),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Áp dụng Thông tư 04/2022/TT-NHNN: Khách hàng có thể rút gốc từng phần trước hạn. Số tiền gốc còn lại trong sổ vẫn được hưởng trọn vẹn mức lãi suất kỳ hạn 7.2%/năm ban đầu.',
-              style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12, height: 1.35),
             ),
           ),
         ],
@@ -963,11 +963,11 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(CupertinoIcons.arrow_2_squarepath, color: AppColors.bottomBarCyan, size: 18),
+                Icon(CupertinoIcons.arrow_2_squarepath, color: AppColors.primaryText, size: 18),
                 SizedBox(width: 8),
                 Text(
                   'Đổi phương thức tái tục',
-                  style: TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.w700, fontSize: 15),
+                  style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.w700, fontSize: 15),
                 ),
               ],
             ),
@@ -985,11 +985,11 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
             ),
             onPressed: _isSettling ? null : _handleSettlement,
             child: _isSettling
-                ? const CupertinoActivityIndicator(color: Colors.white)
+                ? const CupertinoActivityIndicator(color: AppColors.textPrimaryLight)
                 : const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(CupertinoIcons.money_dollar_circle, color: Colors.white, size: 20),
+                      Icon(CupertinoIcons.money_dollar_circle, color: AppColors.textPrimaryLight, size: 20),
                       SizedBox(width: 8),
                       Text(
                         'Tất toán sổ về Ví SenBank',

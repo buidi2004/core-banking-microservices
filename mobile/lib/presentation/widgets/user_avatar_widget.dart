@@ -105,7 +105,7 @@ class UserAvatarWidget extends StatelessWidget {
                       color: Colors.black45,
                     ),
                     child: const Center(
-                      child: CupertinoActivityIndicator(color: Colors.white),
+                      child: CupertinoActivityIndicator(color: AppColors.textPrimaryLight),
                     ),
                   ),
                 ),
@@ -132,7 +132,7 @@ class UserAvatarWidget extends StatelessWidget {
                       child: Icon(
                         CupertinoIcons.camera_fill,
                         size: radius > 36 ? 16 : 12,
-                        color: Colors.white,
+                        color: AppColors.textPrimaryLight,
                       ),
                     ),
                   ),
@@ -235,7 +235,7 @@ class UserAvatarWidget extends StatelessWidget {
         child: Icon(
           CupertinoIcons.person_crop_circle_fill,
           size: radius * 1.1,
-          color: AppColors.primary,
+          color: AppColors.primaryText,
         ),
       ),
     );

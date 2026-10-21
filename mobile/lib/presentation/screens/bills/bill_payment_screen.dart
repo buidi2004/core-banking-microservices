@@ -212,7 +212,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
               border: Border.all(color: AppColors.accentGold, width: 1.5),
             ),
             child: const Icon(CupertinoIcons.ticket_fill,
-                color: AppColors.accentGold, size: 26),
+                color: AppColors.warningTextLight, size: 26),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -251,12 +251,12 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
             const Row(
               children: [
                 Icon(CupertinoIcons.bookmark_fill,
-                    color: AppColors.accentGold, size: 16),
+                    color: AppColors.warningTextLight, size: 16),
                 SizedBox(width: 6),
                 Text(
                   'Danh Bạ Hóa Đơn Của Tôi',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.bold,
                     fontSize: 13.5,
                   ),
@@ -266,7 +266,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
             Text(
               '${_savedBills.length} Mẫu đã lưu',
               style: const TextStyle(
-                  color: AppColors.bottomBarCyan,
+                  color: AppColors.primaryText,
                   fontSize: 11,
                   fontWeight: FontWeight.bold),
             ),
@@ -300,7 +300,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                           Text(
                             bill['label'] as String,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textPrimaryLight,
                               fontWeight: FontWeight.bold,
                               fontSize: 13,
                             ),
@@ -309,12 +309,12 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                           Text(
                             '${bill['provider']} • ${bill['code']}',
                             style: const TextStyle(
-                                color: Colors.white54, fontSize: 11),
+                                color: AppColors.textSecondaryLight, fontSize: 11),
                           ),
                           Text(
                             'Hạn cước: ${bill['dueDate']}',
                             style: const TextStyle(
-                                color: AppColors.accentGold,
+                                color: AppColors.warningTextLight,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600),
                           ),
@@ -328,7 +328,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                           CurrencyFormatter.formatVND(
                               bill['amount'] as double),
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimaryLight,
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                           ),
@@ -367,7 +367,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                             child: const Text(
                               'Thanh toán',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.textPrimaryLight,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -401,7 +401,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(CupertinoIcons.arrow_2_circlepath_circle_fill,
-                  color: AppColors.emeraldGreen, size: 24),
+                  color: AppColors.successTextLight, size: 24),
             ),
             const SizedBox(width: 12),
             const Expanded(
@@ -411,7 +411,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                   Text(
                     'Trích Nợ Tự Động (Auto-Debit)',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -419,14 +419,14 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                   SizedBox(height: 2),
                   Text(
                     'Tự động trừ tiền khi nhà cung cấp phát hành cước mới, không lo trễ hạn',
-                    style: TextStyle(color: Colors.white54, fontSize: 11),
+                    style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11),
                   ),
                 ],
               ),
             ),
             CupertinoSwitch(
               value: _autoDebitEnabled,
-              activeTrackColor: AppColors.bottomBarCyan,
+              activeTrackColor: AppColors.primaryText,
               onChanged: (v) {
                 HapticFeedback.selectionClick();
                 setState(() => _autoDebitEnabled = v);
@@ -453,7 +453,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
         const Text(
           'Danh Mục Dịch Vụ Thanh Toán',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
             fontSize: 13.5,
           ),
@@ -552,7 +552,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                         Text(
                           cat['label'] as String,
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimaryLight,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
@@ -563,7 +563,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontSize: 10, color: Colors.white54),
+                              fontSize: 10, color: AppColors.textSecondaryLight),
                         ),
                       ],
                     ),
@@ -594,7 +594,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
               Row(
                 children: [
                   Icon(CupertinoIcons.chart_bar_alt_fill,
-                      color: AppColors.bottomBarCyan, size: 16),
+                      color: AppColors.primaryLight, size: 16),
                   SizedBox(width: 8),
                   Text(
                     'Phân Tích Chi Tiêu Hóa Đơn 3 Tháng',
@@ -629,7 +629,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
         SizedBox(
           width: 86,
           child: Text(month,
-              style: const TextStyle(color: Colors.white70, fontSize: 11)),
+              style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
         ),
         Expanded(
           child: ClipRRect(
@@ -650,7 +650,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
             CurrencyFormatter.formatVND(amount),
             textAlign: TextAlign.end,
             style: const TextStyle(
-              color: Colors.white,
+              color: AppColors.textPrimaryLight,
               fontWeight: FontWeight.bold,
               fontSize: 11.5,
             ),
@@ -673,7 +673,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
         const Text(
           'Lịch Nhắc Cước Định Kỳ Tháng Này',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
             fontSize: 13.5,
           ),
@@ -703,8 +703,8 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                       'Ngày ${r['day']}',
                       style: TextStyle(
                         color: isDone
-                            ? AppColors.emeraldGreen
-                            : AppColors.bottomBarCyan,
+                            ? AppColors.successTextLight
+                            : AppColors.primaryText,
                         fontWeight: FontWeight.w900,
                         fontSize: 15,
                       ),
@@ -716,7 +716,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimaryLight,
                         fontSize: 10.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -725,7 +725,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                     Text(
                       r['status'] as String,
                       style: TextStyle(
-                        color: isDone ? AppColors.emeraldGreen : Colors.white54,
+                        color: isDone ? AppColors.successTextLight : AppColors.textSecondaryLight,
                         fontSize: 9.5,
                       ),
                     ),
@@ -746,7 +746,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
         const Text(
           'Hóa Đơn Đã Thanh Toán Gần Đây',
           style: TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.bold,
             fontSize: 13.5,
           ),
@@ -757,7 +757,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Center(
                 child: CircularProgressIndicator(
-                    strokeWidth: 2, color: AppColors.bottomBarCyan)),
+                    strokeWidth: 2, color: AppColors.primaryText)),
           )
         else if (_recentPaidBills.isEmpty)
           Container(
@@ -770,7 +770,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
             child: const Center(
               child: Text(
                 'Chưa có lịch sử thanh toán hóa đơn trong tháng này.',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
+                style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
               ),
             ),
           )
@@ -792,7 +792,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(CupertinoIcons.checkmark_seal_fill,
-                            color: AppColors.emeraldGreen, size: 18),
+                            color: AppColors.successTextLight, size: 18),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -802,7 +802,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                             Text(
                               item['service'] as String,
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: AppColors.textPrimaryLight,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12.5,
                               ),
@@ -810,7 +810,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                             Text(
                               '${item['provider']} • ${item['code']} • ${item['date']}',
                               style: const TextStyle(
-                                  color: Colors.white54, fontSize: 11),
+                                  color: AppColors.textSecondaryLight, fontSize: 11),
                             ),
                           ],
                         ),
@@ -822,7 +822,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                             CurrencyFormatter.formatVND(
                                 (item['amount'] as num?)?.toDouble() ?? 0.0),
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textPrimaryLight,
                               fontWeight: FontWeight.bold,
                               fontSize: 12.5,
                             ),
@@ -830,7 +830,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                           const Text(
                             'Thành công',
                             style: TextStyle(
-                                color: AppColors.emeraldGreen,
+                                color: AppColors.successTextLight,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold),
                           ),
@@ -857,12 +857,12 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
       child: const Row(
         children: [
           Icon(CupertinoIcons.checkmark_shield_fill,
-              color: AppColors.emeraldGreen, size: 20),
+              color: AppColors.successTextLight, size: 20),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'SenBank miễn 100% phí xử lý thanh toán mọi loại hóa đơn gia đình. Hóa đơn được gạch nợ tức thì với EVN, Sawaco và các nhà mạng viễn thông.',
-              style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.35),
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, height: 1.35),
             ),
           ),
         ],

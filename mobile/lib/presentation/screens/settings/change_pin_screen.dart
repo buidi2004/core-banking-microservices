@@ -173,7 +173,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                       ),
                       child: const Row(
                         children: [
-                          Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                          Icon(CupertinoIcons.info_circle_fill, color: AppColors.warningTextLight, size: 20),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
@@ -200,7 +200,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                     // Title & Description
                     Text(
                       stepTitle,
-                      style: AppTypography.titleLarge(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.bold),
+                      style: AppTypography.titleLarge(color: AppColors.primaryLight).copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -252,12 +252,12 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(CupertinoIcons.exclamationmark_circle_fill, color: AppColors.error, size: 16),
+                            const Icon(CupertinoIcons.exclamationmark_circle_fill, color: AppColors.errorText, size: 16),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(color: AppColors.error, fontSize: 11.5, fontWeight: FontWeight.w600),
+                                style: const TextStyle(color: AppColors.errorText, fontSize: 11.5, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ],
@@ -275,7 +275,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 18),
+                                const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.warningTextLight, size: 18),
                                 const SizedBox(width: 8),
                                 Text(
                                   'Quy tắc bảo mật mã PIN',
@@ -307,7 +307,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(color: AppColors.primary),
+                child: CircularProgressIndicator(color: AppColors.primaryLight),
               )
             else
               // Numpad Light Glass Layout
@@ -330,7 +330,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                           width: 68,
                           height: 68,
                           child: IconButton(
-                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryDark, size: 26),
+                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryLight, size: 26),
                             onPressed: _onBackspace,
                           ),
                         ),
@@ -361,7 +361,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
             child: Text(
               '$step',
               style: TextStyle(
-                color: isActive ? Colors.white : AppColors.textMutedLight,
+                color: isActive ? AppColors.textPrimaryLight : AppColors.textMutedLight,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -374,7 +374,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
           style: TextStyle(
             fontSize: 10.5,
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-            color: isActive ? AppColors.primaryDark : AppColors.textMutedLight,
+            color: isActive ? AppColors.primaryText : AppColors.textMutedLight,
           ),
         ),
       ],
@@ -396,7 +396,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(CupertinoIcons.check_mark, size: 13, color: AppColors.emeraldGreen),
+          const Icon(CupertinoIcons.check_mark, size: 13, color: AppColors.successTextLight),
           const SizedBox(width: 6),
           Expanded(
             child: Text(

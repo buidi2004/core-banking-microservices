@@ -158,13 +158,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
               const SizedBox(height: 16),
               const Row(
                 children: [
-                  Icon(CupertinoIcons.exclamationmark_shield_fill, color: AppColors.error, size: 28),
+                  Icon(CupertinoIcons.exclamationmark_shield_fill, color: AppColors.errorText, size: 28),
                   SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Yêu Cầu Tra Soát Giao Dịch', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                        Text('Yêu Cầu Tra Soát Giao Dịch', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
                         Text('Quy trình xử lý theo Thông tư 28/2019/TT-NHNN', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
                       ],
                     ),
@@ -221,7 +221,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           ),
           child: Row(
             children: [
-              const Icon(CupertinoIcons.arrow_right_circle, size: 16, color: AppColors.bottomBarCyan),
+              const Icon(CupertinoIcons.arrow_right_circle, size: 16, color: AppColors.primaryText),
               const SizedBox(width: 10),
               Expanded(child: Text(text, style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimaryLight))),
             ],
@@ -314,7 +314,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               const Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('SENBANK', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark, letterSpacing: 0.5)),
+                                  Text('SENBANK', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryText, letterSpacing: 0.5)),
                                   Text('NGÂN HÀNG SỐ VIỆT NAM', style: TextStyle(fontSize: 8.5, color: AppColors.textSecondaryLight, letterSpacing: 0.3)),
                                 ],
                               ),
@@ -326,7 +326,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               color: AppColors.bottomBarCyan.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text('NAPAS 24/7', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.bottomBarCyan)),
+                            child: const Text('NAPAS 24/7', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
                           ),
                         ],
                       ),
@@ -340,18 +340,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           color: AppColors.emeraldGreen.withOpacity(0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 40),
+                        child: const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight, size: 40),
                       ),
                       const SizedBox(height: 12),
                       const Text(
                         'GIAO DỊCH THÀNH CÔNG',
-                        style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.6),
+                        style: TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.6),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         '${isPositive ? '+' : ''}${CurrencyFormatter.formatVND(txAmount)}',
                         style: AppTypography.displayMedium(
-                          color: isPositive ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+                          color: isPositive ? AppColors.successTextLight : AppColors.textPrimaryLight,
                         ).copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
@@ -405,7 +405,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                         ? CurrencyFormatter.formatVND(_runningBalance!)
                                         : 'Đang cập nhật')
                                     : '•••••••• đ',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryText),
                               ),
                               IconButton(
                                 constraints: const BoxConstraints(),
@@ -441,7 +441,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: AppColors.borderSubtle),
                               ),
-                              child: const Icon(CupertinoIcons.qrcode, size: 38, color: AppColors.primaryDark),
+                              child: const Icon(CupertinoIcons.qrcode, size: 38, color: AppColors.primaryText),
                             ),
                             const SizedBox(width: 12),
                             const Expanded(
@@ -450,7 +450,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                 children: [
                                   Text(
                                     'SEN HỒNG BANK • DIGITAL VERIFIED',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.emeraldGreen),
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.successTextLight),
                                   ),
                                   SizedBox(height: 2),
                                   Text(
@@ -489,11 +489,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     icon: Icon(
                       _isBeneficiarySaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
                       size: 16,
-                      color: _isBeneficiarySaved ? AppColors.emeraldGreen : AppColors.primary,
+                      color: _isBeneficiarySaved ? AppColors.emeraldGreenLight : AppColors.primaryLight,
                     ),
                     label: Text(
                       _isBeneficiarySaved ? 'Đã lưu trong danh bạ thụ hưởng' : 'Lưu người nhận vào danh bạ',
-                      style: TextStyle(fontSize: 13, color: _isBeneficiarySaved ? AppColors.emeraldGreen : AppColors.primaryDark),
+                      style: TextStyle(fontSize: 13, color: _isBeneficiarySaved ? AppColors.emeraldGreenLight : AppColors.primaryLight),
                     ),
                   ),
                 ),
@@ -508,8 +508,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         side: const BorderSide(color: AppColors.borderSubtle),
                       ),
                       onPressed: () => _downloadReceipt(txId),
-                      icon: const Icon(CupertinoIcons.arrow_down_doc_fill, size: 18, color: AppColors.primary),
-                      label: const Text('Tải file PDF', style: TextStyle(color: AppColors.primary, fontSize: 13)),
+                      icon: const Icon(CupertinoIcons.arrow_down_doc_fill, size: 18, color: AppColors.primaryLight),
+                      label: const Text('Tải file PDF', style: TextStyle(color: AppColors.primaryText, fontSize: 13)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -551,8 +551,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   Expanded(
                     child: TextButton.icon(
                       onPressed: () => context.go('/'),
-                      icon: const Icon(CupertinoIcons.house_fill, size: 16, color: AppColors.bottomBarCyan),
-                      label: const Text('Về Trang Chủ', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.bottomBarCyan)),
+                      icon: const Icon(CupertinoIcons.house_fill, size: 16, color: AppColors.primaryLight),
+                      label: const Text('Về Trang Chủ', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
                     ),
                   ),
                 ],
@@ -584,7 +584,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: isBold || isHighlight ? FontWeight.bold : FontWeight.w600,
-                    color: isHighlight ? AppColors.emeraldGreen : (isBold ? AppColors.primaryDark : AppColors.textPrimaryLight),
+                    color: isHighlight ? AppColors.successTextLight : (isBold ? AppColors.primaryDark : AppColors.textPrimaryLight),
                   ),
                 ),
               ),
@@ -596,7 +596,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       SnackBar(content: Text('Đã sao chép: $value')),
                     );
                   },
-                  child: const Icon(CupertinoIcons.doc_on_doc, size: 14, color: AppColors.bottomBarCyan),
+                  child: const Icon(CupertinoIcons.doc_on_doc, size: 14, color: AppColors.primaryText),
                 ),
               ],
             ],

@@ -172,7 +172,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
               ),
               child: const Icon(
                 CupertinoIcons.chevron_left,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -193,7 +193,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
                 Text(
                   'Quyết định 2345/QĐ-NHNN',
                   style: TextStyle(
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -211,7 +211,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreen, size: 14),
+                Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.successTextLight, size: 14),
                 SizedBox(width: 4),
                 Text('C06 BCA', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
               ],
@@ -250,7 +250,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
             ),
             child: const Icon(
               CupertinoIcons.shield_fill,
-              color: Colors.white,
+              color: AppColors.textPrimaryLight,
               size: 20,
             ),
           ),
@@ -364,7 +364,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
                         _state == NfcScanState.success
                             ? CupertinoIcons.checkmark_alt
                             : CupertinoIcons.radiowaves_right,
-                        color: Colors.white,
+                        color: AppColors.textPrimaryLight,
                         size: 38,
                       ),
                     ),
@@ -413,7 +413,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
             const SizedBox(height: 6),
             Text(
               '${(_scanProgress * 100).toInt()}%',
-              style: const TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 13),
+              style: const TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ],
         ],
@@ -431,12 +431,12 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
           children: [
             const Row(
               children: [
-                Icon(CupertinoIcons.list_bullet, color: AppColors.bottomBarCyan, size: 20),
+                Icon(CupertinoIcons.list_bullet, color: AppColors.primaryText, size: 20),
                 SizedBox(width: 10),
                 Text(
                   'Hướng dẫn quét thẻ chuẩn',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                   ),
@@ -487,7 +487,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
             child: Text(
               step,
               style: const TextStyle(
-                color: AppColors.bottomBarCyan,
+                color: AppColors.primaryText,
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
               ),
@@ -501,12 +501,12 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
             children: [
               Text(
                 title,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600, fontSize: 13),
               ),
               const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12, height: 1.3),
+                style: TextStyle(color: AppColors.textPrimaryLight.withValues(alpha: 0.6), fontSize: 12, height: 1.3),
               ),
             ],
           ),
@@ -526,12 +526,12 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.lightbulb_fill, color: AppColors.accentGold, size: 20),
+          Icon(CupertinoIcons.lightbulb_fill, color: AppColors.warningTextLight, size: 20),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Gợi ý: Hãy tháo ốp lưng dày hoặc ốp lưng có vòng kim loại (MagSafe) để sóng NFC bắt tín hiệu nhạy và ổn định nhất.',
-              style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12, height: 1.35),
             ),
           ),
         ],
@@ -552,11 +552,11 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
               children: [
                 const Row(
                   children: [
-                    Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen, size: 22),
+                    Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight, size: 22),
                     SizedBox(width: 8),
                     Text(
                       'Dữ liệu Chip Đã Xác Thực',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                   ],
                 ),
@@ -566,7 +566,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
                     color: AppColors.emeraldGreen.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('HỢP LỆ', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                  child: const Text('HỢP LỆ', style: TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -593,13 +593,13 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+          Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
+              style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600, fontSize: 12),
             ),
           ),
         ],
@@ -614,7 +614,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
         height: 52,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
+            backgroundColor: AppColors.primaryDark,
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -682,7 +682,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
           const SizedBox(height: 12),
           TextButton(
             onPressed: _resetReading,
-            child: const Text('Quét lại thẻ khác', style: TextStyle(color: AppColors.bottomBarCyan)),
+            child: const Text('Quét lại thẻ khác', style: TextStyle(color: AppColors.primaryText)),
           ),
         ],
       );

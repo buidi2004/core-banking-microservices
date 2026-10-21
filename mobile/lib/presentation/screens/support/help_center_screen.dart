@@ -236,7 +236,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    const Icon(CupertinoIcons.headphones, color: AppColors.bottomBarCyan, size: 38),
+                    const Icon(CupertinoIcons.headphones, color: AppColors.primaryText, size: 38),
                     const SizedBox(height: 10),
                     Text('Chăm Sóc Khách Hàng 24/7', style: AppTypography.titleLarge(color: AppColors.textPrimaryLight)),
                     const SizedBox(height: 4),
@@ -281,13 +281,13 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
             const SizedBox(height: 24),
 
             // Branch & ATM Network
-            Text('Mạng Lưới Chi Nhánh & ATM Sen Hồng', style: AppTypography.titleMedium(color: AppColors.primaryDark)),
+            Text('Mạng Lưới Chi Nhánh & ATM Sen Hồng', style: AppTypography.titleMedium(color: AppColors.primaryLight)),
             const SizedBox(height: 12),
             ..._branches.map((b) => _buildBranchCard(b)),
             const SizedBox(height: 24),
 
             // FAQ with Search
-            Text('Câu Hỏi Thường Gặp (FAQ)', style: AppTypography.titleMedium(color: AppColors.primaryDark)),
+            Text('Câu Hỏi Thường Gặp (FAQ)', style: AppTypography.titleMedium(color: AppColors.primaryLight)),
             const SizedBox(height: 10),
             TextField(
               controller: _faqSearchCtrl,
@@ -356,15 +356,15 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                   color: Colors.white24,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(CupertinoIcons.phone_fill, color: Colors.white, size: 18),
+                child: const Icon(CupertinoIcons.phone_fill, color: AppColors.textPrimaryLight, size: 18),
               ),
               const SizedBox(width: 10),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ĐƯỜNG DÂY NÓNG KHẨN CẤP 24/7', style: TextStyle(color: Colors.white70, fontSize: 10.5, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                    Text('Hotline: 1900 6688 (Miễn phí)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text('ĐƯỜNG DÂY NÓNG KHẨN CẤP 24/7', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 10.5, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                    Text('Hotline: 1900 6688 (Miễn phí)', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -373,7 +373,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
           const SizedBox(height: 10),
           const Text(
             'Khóa thẻ khẩn cấp / Khóa tài khoản tức thì khi mất thiết bị hoặc nghi ngờ bị lộ mã PIN, mật khẩu trong 30 giây.',
-            style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.3),
+            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11.5, height: 1.3),
           ),
           const SizedBox(height: 12),
           Row(
@@ -461,7 +461,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 color: AppColors.bottomBarCyan.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(CupertinoIcons.ticket, color: AppColors.bottomBarCyan, size: 22),
+              child: const Icon(CupertinoIcons.ticket, color: AppColors.primaryText, size: 22),
             ),
             const SizedBox(width: 14),
             const Expanded(
@@ -470,9 +470,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                 children: [
                   Row(
                     children: [
-                      Text('Ticket #TK2026-9921', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark)),
+                      Text('Ticket #TK2026-9921', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryText)),
                       SizedBox(width: 8),
-                      Text('ĐANG XỬ LÝ', style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text('ĐANG XỬ LÝ', style: TextStyle(color: AppColors.warningTextLight, fontSize: 10, fontWeight: FontWeight.bold)),
                     ],
                   ),
                   SizedBox(height: 2),
@@ -500,8 +500,8 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(b['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryDark)),
-                  const Icon(CupertinoIcons.location_fill, color: AppColors.bottomBarCyan, size: 16),
+                  Text(b['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryLight)),
+                  const Icon(CupertinoIcons.location_fill, color: AppColors.primaryLight, size: 16),
                 ],
               ),
               const SizedBox(height: 4),

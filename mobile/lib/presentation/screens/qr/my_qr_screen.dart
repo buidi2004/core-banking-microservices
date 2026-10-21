@@ -166,7 +166,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                     controller: amtCtrl,
                     keyboardType: TextInputType.number,
                     onChanged: (_) => setModalState(() {}),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryText),
                     decoration: InputDecoration(
                       suffixText: 'đ',
                       hintText: 'Ví dụ: 200000',
@@ -186,7 +186,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                       ),
                       child: Text(
                         'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(amtNum)} đồng',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryText),
                       ),
                     ),
                   ],
@@ -279,12 +279,12 @@ class _MyQRScreenState extends State<MyQRScreen> {
         actions: [
           IconButton(
             tooltip: 'Quét mã VietQR',
-            icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryLight),
             onPressed: () => context.push('/scan-qr'),
           ),
           IconButton(
             tooltip: 'Chuyển tiền',
-            icon: const Icon(CupertinoIcons.arrow_up_circle_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.arrow_up_circle_fill, color: AppColors.primaryLight),
             onPressed: () => context.push('/transfer'),
           ),
         ],
@@ -322,7 +322,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                               color: AppColors.primary,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text('VietQR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                            child: const Text('VietQR', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13)),
                           ),
                           const SizedBox(width: 8),
                           Container(
@@ -339,7 +339,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                       if (_isGeneratingQr)
                         const SizedBox(
                           height: 210,
-                          child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                          child: Center(child: CircularProgressIndicator(color: AppColors.primaryText)),
                         )
                       else
                         QrImageView(
@@ -357,7 +357,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                       const SizedBox(height: 2),
                       Text(
                         'STK: ${_userPhone.isNotEmpty ? _userPhone : _accounts[_selectedAccountIdx]['stk']} • Sen Hồng Bank',
-                        style: const TextStyle(color: AppColors.primaryDark, fontSize: 14, fontWeight: FontWeight.w700),
+                        style: const TextStyle(color: AppColors.primaryText, fontSize: 14, fontWeight: FontWeight.w700),
                       ),
                       if (_customAmount != null) ...[
                         const SizedBox(height: 8),
@@ -369,7 +369,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                           ),
                           child: Text(
                             'Số tiền yêu cầu: ${CurrencyFormatter.formatVND(_customAmount!)}',
-                            style: const TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                            style: const TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ),
                       ],
@@ -394,8 +394,8 @@ class _MyQRScreenState extends State<MyQRScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onPressed: _showSetAmountModal,
-                      icon: const Icon(CupertinoIcons.pencil, color: AppColors.primaryDark, size: 18),
-                      label: Text(_customAmount != null ? 'Sửa số tiền' : 'Nhập số tiền', style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+                      icon: const Icon(CupertinoIcons.pencil, color: AppColors.primaryLight, size: 18),
+                      label: Text(_customAmount != null ? 'Sửa số tiền' : 'Nhập số tiền', style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
                     ),
                   ),
                   if (_customAmount != null) ...[
@@ -477,12 +477,12 @@ class _MyQRScreenState extends State<MyQRScreen> {
                             },
                             leading: CircleAvatar(
                               backgroundColor: AppColors.primary.withOpacity(0.12),
-                              child: const Icon(CupertinoIcons.creditcard_fill, color: AppColors.primaryDark, size: 18),
+                              child: const Icon(CupertinoIcons.creditcard_fill, color: AppColors.primaryText, size: 18),
                             ),
                             title: Text(acc['name']!, style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
                             subtitle: Text('${acc['stk']} • ${acc['type']}', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
                             trailing: isSelected
-                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen)
+                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight)
                                 : const Icon(CupertinoIcons.circle, color: AppColors.textMutedLight),
                           ),
                         ),
@@ -533,7 +533,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreen, size: 28),
+                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.successTextLight, size: 28),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -541,12 +541,12 @@ class _MyQRScreenState extends State<MyQRScreen> {
                         children: [
                           Text(
                             'Tương thích hơn 45 ngân hàng & ví điện tử',
-                            style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                           SizedBox(height: 2),
                           Text(
                             'Người chuyển có thể quét mã từ Vietcombank, Techcombank, MB, BIDV, MoMo, ZaloPay... Tiền về ví ngay lập tức 24/7.',
-                            style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, height: 1.35),
+                            style: TextStyle(color: AppColors.successTextLight, fontSize: 11, height: 1.35),
                           ),
                         ],
                       ),
@@ -567,7 +567,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryLight),
                   ),
                 ),
               ] else if (_recentQrReceived.isEmpty) ...[
@@ -607,7 +607,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                                 color: AppColors.emeraldGreen.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(CupertinoIcons.arrow_down_left, color: AppColors.emeraldGreen, size: 20),
+                              child: const Icon(CupertinoIcons.arrow_down_left, color: AppColors.successTextLight, size: 20),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -622,7 +622,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
                             ),
                             Text(
                               '+${CurrencyFormatter.formatVND(((item['amount'] as num?)?.toDouble() ?? 0.0))}',
-                              style: const TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 14),
                             ),
                           ],
                         ),
@@ -694,7 +694,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(

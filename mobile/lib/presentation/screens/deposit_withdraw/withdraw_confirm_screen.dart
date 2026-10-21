@@ -160,7 +160,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                             Text(
                               CurrencyFormatter.formatVND(widget.amount),
                               style: const TextStyle(
-                                color: AppColors.primaryDark,
+                                color: AppColors.primaryLight,
                                 fontSize: 32,
                                 fontWeight: FontWeight.w900,
                               ),
@@ -196,12 +196,12 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(CupertinoIcons.chart_pie_fill, color: AppColors.bottomBarCyan, size: 18),
+                                    Icon(CupertinoIcons.chart_pie_fill, color: AppColors.primaryText, size: 18),
                                     SizedBox(width: 8),
                                     Text('Hạn mức rút tiền trong ngày', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
                                   ],
                                 ),
-                                Text('50.000.000 đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryDark)),
+                                Text('50.000.000 đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryText)),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -219,7 +219,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text('Giao dịch này: ${CurrencyFormatter.formatVND(widget.amount)}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
-                                const Text('Còn lại: 45.000.000 đ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.emeraldGreen)),
+                                const Text('Còn lại: 45.000.000 đ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.successTextLight)),
                               ],
                             ),
                           ],
@@ -240,7 +240,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(CupertinoIcons.lock_shield_fill, color: AppColors.emeraldGreen, size: 16),
+                              Icon(CupertinoIcons.lock_shield_fill, color: AppColors.successTextLight, size: 16),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -253,7 +253,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                           SizedBox(height: 6),
                           Row(
                             children: [
-                              Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 16),
+                              Icon(CupertinoIcons.info_circle_fill, color: AppColors.primaryText, size: 16),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -295,7 +295,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                         ElevatedButton.icon(
                           onPressed: _handleBiometric,
                           icon: const Icon(CupertinoIcons.viewfinder_circle_fill, color: Colors.white, size: 18),
-                          label: const Text('Sinh trắc học', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          label: const Text('Sinh trắc học', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 12)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.emeraldGreen,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -307,7 +307,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                           onPressed: () => context.push('/auth/forgot-pin'),
                           child: const Text(
                             'Quên mã PIN?',
-                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ),
                       ],
@@ -320,7 +320,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(color: AppColors.primary),
+                child: CircularProgressIndicator(color: AppColors.primaryLight),
               )
             else
               // Numpad Light Glass
@@ -350,7 +350,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                               border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.4), width: 1.2),
                             ),
                             child: const Center(
-                              child: Icon(CupertinoIcons.viewfinder_circle_fill, color: AppColors.emeraldGreen, size: 26),
+                              child: Icon(CupertinoIcons.viewfinder_circle_fill, color: AppColors.successTextLight, size: 26),
                             ),
                           ),
                         ),
@@ -359,7 +359,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                           width: 68,
                           height: 68,
                           child: IconButton(
-                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryDark, size: 26),
+                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryText, size: 26),
                             onPressed: _handleBackspace,
                           ),
                         ),
@@ -387,7 +387,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.titleMedium(
-              color: isHighlight ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+              color: isHighlight ? AppColors.successTextLight : AppColors.textPrimaryLight,
             ),
           ),
         ),

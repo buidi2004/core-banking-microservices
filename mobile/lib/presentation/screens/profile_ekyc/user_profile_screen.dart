@@ -155,7 +155,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           backgroundColor: AppColors.emeraldGreen,
           content: Row(
             children: [
-              Icon(CupertinoIcons.checkmark_circle_fill, color: Colors.white),
+              Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.textPrimaryLight),
               SizedBox(width: 8),
               Expanded(child: Text('Cập nhật ảnh đại diện thành công!')),
             ],
@@ -191,7 +191,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           backgroundColor: AppColors.emeraldGreen,
           content: Row(
             children: [
-              const Icon(CupertinoIcons.checkmark_circle_fill, color: Colors.white),
+              const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.textPrimaryLight),
               const SizedBox(width: 8),
               Expanded(child: Text('Đã đổi avatar sang "$title" thành công!')),
             ],
@@ -230,13 +230,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), shape: BoxShape.circle),
-                  child: const Icon(CupertinoIcons.doc_text_search, color: AppColors.primary, size: 22),
+                  child: const Icon(CupertinoIcons.doc_text_search, color: AppColors.primaryText, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Trích Xuất Dữ Liệu Cá Nhân',
-                    style: AppTypography.titleLarge(color: AppColors.primaryDark),
+                    style: AppTypography.titleLarge(color: AppColors.primaryText),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -266,7 +266,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         child: Text(
                           'Báo cáo chuẩn JSON / PDF có chữ ký số PKI',
                           textAlign: TextAlign.end,
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryText),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -282,7 +282,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         child: Text(
                           _emailCtrl.text.isEmpty ? 'Chưa cập nhật email' : _emailCtrl.text,
                           textAlign: TextAlign.end,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryText),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -338,7 +338,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 setState(() => _isEditing = true);
               }
             },
-            child: Text(_isEditing ? 'Lưu' : 'Chỉnh sửa', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+            child: Text(_isEditing ? 'Lưu' : 'Chỉnh sửa', style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -384,11 +384,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen, size: 16),
+                      Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight, size: 16),
                       SizedBox(width: 6),
-                      Text('Xem trạng thái eKYC', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('Xem trạng thái eKYC', style: TextStyle(color: AppColors.successTextLight, fontSize: 12, fontWeight: FontWeight.bold)),
                       SizedBox(width: 4),
-                      Icon(CupertinoIcons.chevron_forward, color: AppColors.emeraldGreen, size: 12),
+                      Icon(CupertinoIcons.chevron_forward, color: AppColors.successTextLight, size: 12),
                     ],
                   ),
                 ),
@@ -456,7 +456,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       type: MaterialType.transparency,
                       child: ListTile(
                         onTap: () => context.push('/profile/identity'),
-                        leading: const Icon(CupertinoIcons.doc_text_fill, color: AppColors.primary),
+                        leading: const Icon(CupertinoIcons.doc_text_fill, color: AppColors.primaryText),
                         title: Text('Thông tin giấy tờ CCCD', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                         subtitle: Text(_cid.isNotEmpty ? 'Mã định danh eKYC: $_cid' : 'Đã xác thực CCCD gắn chip', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                         trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
@@ -467,7 +467,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       type: MaterialType.transparency,
                       child: ListTile(
                         onTap: () => context.push('/profile/kyc-level'),
-                        leading: const Icon(CupertinoIcons.chart_bar_fill, color: AppColors.accentGold),
+                        leading: const Icon(CupertinoIcons.chart_bar_fill, color: AppColors.warningTextLight),
                         title: Text('Hạn mức giao dịch (Kyc Level)', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Hạn mức hiện tại: 100.000.000đ/ngày', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                         trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
@@ -478,7 +478,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       type: MaterialType.transparency,
                       child: ListTile(
                         onTap: () => context.push('/profile/ekyc'),
-                        leading: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primary),
+                        leading: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryText),
                         title: Text('Xác thực lại danh tính eKYC', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Cập nhật lại ảnh chụp CCCD & chân dung', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                         trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
@@ -489,7 +489,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       type: MaterialType.transparency,
                       child: ListTile(
                         onTap: () => context.push('/profile/digital-signature'),
-                        leading: const Icon(CupertinoIcons.shield_fill, color: AppColors.vividTeal),
+                        leading: const Icon(CupertinoIcons.shield_fill, color: AppColors.successTextLight),
                         title: Text('Chữ ký số & Smart OTP', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Chứng thư số cá nhân PKI', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                         trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
@@ -500,7 +500,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       type: MaterialType.transparency,
                       child: ListTile(
                         onTap: () => context.push('/profile/email-settings'),
-                        leading: const Icon(CupertinoIcons.chat_bubble_fill, color: AppColors.softPurple),
+                        leading: const Icon(CupertinoIcons.chat_bubble_fill, color: AppColors.softPurpleText),
                         title: Text('Cài đặt Email nhận hóa đơn VAT', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                         subtitle: Text('Nhận sao kê định kỳ & biên lai điện tử', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
                         trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
@@ -518,7 +518,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   type: MaterialType.transparency,
                   child: ListTile(
                     onTap: _exportPersonalData,
-                    leading: const Icon(CupertinoIcons.doc_text_search, color: AppColors.primary),
+                    leading: const Icon(CupertinoIcons.doc_text_search, color: AppColors.primaryText),
                     title: const Text('Quyền bảo vệ dữ liệu (Nghị định 13/2023)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
                     subtitle: const Text('Yêu cầu bản sao trích xuất dữ liệu cá nhân', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
                     trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
@@ -537,14 +537,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11.5)),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             value,
             textAlign: TextAlign.end,
             style: TextStyle(
-              color: isHighlight ? AppColors.emeraldGreen : Colors.white,
+              color: isHighlight ? AppColors.successTextLight : AppColors.textPrimaryLight,
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
@@ -568,7 +568,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           onTap: onTap,
           style: TextStyle(color: enabled ? AppColors.textPrimaryLight : AppColors.textSecondaryLight, fontWeight: FontWeight.w600),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: AppColors.primary, size: 20),
+            prefixIcon: Icon(icon, color: AppColors.primaryText, size: 20),
             filled: true,
             fillColor: AppColors.surfaceLight,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.borderLight)),

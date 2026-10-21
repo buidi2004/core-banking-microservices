@@ -36,9 +36,9 @@ class _EKycScreenState extends State<EKycScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(CupertinoIcons.radiowaves_right, color: AppColors.primary, size: 54),
+            const Icon(CupertinoIcons.radiowaves_right, color: AppColors.primaryText, size: 54),
             const SizedBox(height: 14),
-            Text('Đọc Chip CCCD Qua Sóng NFC', style: AppTypography.titleLarge(color: AppColors.primaryDark)),
+            Text('Đọc Chip CCCD Qua Sóng NFC', style: AppTypography.titleLarge(color: AppColors.primaryText)),
             const SizedBox(height: 8),
             const Text(
               'Áp mặt sau của thẻ CCCD gắn chip sát vào phần lưng phía trên của điện thoại để hệ thống đối chiếu chữ ký số ICAO Bộ Công An.',
@@ -76,9 +76,9 @@ class _EKycScreenState extends State<EKycScreen> {
           children: [
             Row(
               children: [
-                const Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 24),
+                const Icon(CupertinoIcons.info_circle_fill, color: AppColors.primaryText, size: 24),
                 const SizedBox(width: 10),
-                Text('Quy Chuẩn Chụp Ảnh eKYC', style: AppTypography.titleLarge(color: AppColors.primaryDark)),
+                Text('Quy Chuẩn Chụp Ảnh eKYC', style: AppTypography.titleLarge(color: AppColors.primaryText)),
               ],
             ),
             const SizedBox(height: 16),
@@ -124,12 +124,12 @@ class _EKycScreenState extends State<EKycScreen> {
         actions: [
           IconButton(
             tooltip: 'Đọc NFC',
-            icon: const Icon(CupertinoIcons.radiowaves_right, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.radiowaves_right, color: AppColors.primaryLight),
             onPressed: _readNfcChip,
           ),
           IconButton(
             tooltip: 'Hướng dẫn eKYC',
-            icon: const Icon(CupertinoIcons.question_circle_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.question_circle_fill, color: AppColors.primaryLight),
             onPressed: _showGuidanceModal,
           ),
         ],
@@ -178,8 +178,8 @@ class _EKycScreenState extends State<EKycScreen> {
                         ? AppColors.emeraldGreen
                         : (isCurrent ? AppColors.primary : AppColors.borderLight),
                     child: isDone
-                        ? const Icon(CupertinoIcons.checkmark, size: 14, color: Colors.white)
-                        : Text('$stepNum', style: TextStyle(fontSize: 12, color: isCurrent ? Colors.white : AppColors.textSecondaryLight, fontWeight: FontWeight.bold)),
+                        ? const Icon(CupertinoIcons.checkmark, size: 14, color: AppColors.textPrimaryLight)
+                        : Text('$stepNum', style: TextStyle(fontSize: 12, color: isCurrent ? AppColors.textPrimaryLight : AppColors.textSecondaryLight, fontWeight: FontWeight.bold)),
                   ),
                   if (idx < 2)
                     Container(
@@ -221,7 +221,7 @@ class _EKycScreenState extends State<EKycScreen> {
                         border: Border.all(color: AppColors.emeraldGreen, width: 2.5),
                       ),
                       child: const Center(
-                        child: Icon(CupertinoIcons.person_alt, size: 100, color: Colors.white24),
+                        child: Icon(CupertinoIcons.person_alt, size: 100, color: AppColors.textMutedLight),
                       ),
                     ),
                   if (_step != 3)
@@ -233,7 +233,7 @@ class _EKycScreenState extends State<EKycScreen> {
                         border: Border.all(color: AppColors.primary, width: 2),
                       ),
                       child: Center(
-                        child: Icon(stepIcon, size: 64, color: Colors.white24),
+                        child: Icon(stepIcon, size: 64, color: AppColors.textMutedLight),
                       ),
                     ),
 
@@ -247,7 +247,7 @@ class _EKycScreenState extends State<EKycScreen> {
                       ),
                       child: Text(
                         _step == 3 ? 'AI Face Liveness: 99.8%' : 'AI OCR: Tự động căn chỉnh',
-                        style: const TextStyle(color: AppColors.emeraldGreen, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: AppColors.emeraldGreenLight, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -264,7 +264,7 @@ class _EKycScreenState extends State<EKycScreen> {
             child: ElevatedButton.icon(
               onPressed: _isCapturing ? null : _nextStep,
               icon: _isCapturing
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: AppColors.textPrimaryLight, strokeWidth: 2))
                   : const Icon(CupertinoIcons.camera_fill, size: 20),
               label: Text(_isCapturing ? 'Đang xử lý hình ảnh...' : (_step == 3 ? 'Hoàn tất quét khuôn mặt' : 'Chụp ảnh & Tiếp tục')),
             ),
@@ -288,7 +288,7 @@ class _EKycScreenState extends State<EKycScreen> {
               color: AppColors.emeraldGreen.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen, size: 54),
+            child: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight, size: 54),
           ),
           const SizedBox(height: 20),
           Text('Xác Thực eKYC Thành Công!', style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
@@ -364,7 +364,7 @@ class _EKycScreenState extends State<EKycScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

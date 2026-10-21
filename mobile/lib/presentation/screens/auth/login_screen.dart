@@ -324,12 +324,12 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: [
           IconButton(
             tooltip: 'Đổi hình nền app',
-            icon: const Icon(CupertinoIcons.paintbrush_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.paintbrush_fill, color: AppColors.primaryLight),
             onPressed: _cycleWallpaper,
           ),
           IconButton(
             tooltip: 'Tổng đài hỗ trợ CSKH',
-            icon: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.primaryLight),
             onPressed: () => context.push('/support/help-center'),
           ),
         ],
@@ -365,7 +365,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 12),
               Center(
-                child: Text('SENBANK', style: AppTypography.displaySmall(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+                child: Text('SENBANK', style: AppTypography.displaySmall(color: AppColors.primaryText).copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
               ),
               Center(
                 child: Text('Ngân Hàng Số & Ví Điện Tử Tài Chính', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
@@ -463,7 +463,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       CircleAvatar(
                         radius: 20,
                         backgroundColor: AppColors.primary.withOpacity(0.12),
-                        child: const Icon(CupertinoIcons.person_fill, color: AppColors.primary, size: 20),
+                        child: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryText, size: 20),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -472,7 +472,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           children: [
                             Text(
                               'Xin chào, ${_accountName.isNotEmpty ? _accountName : 'Quý khách'}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppColors.primaryDark),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: AppColors.primaryText),
                             ),
                             const SizedBox(height: 2),
                             const Text(
@@ -484,7 +484,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       TextButton(
                         onPressed: _switchAccount,
-                        child: const Text('Đổi tài khoản', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        child: const Text('Đổi tài khoản', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
                       ),
                     ],
                   ),
@@ -510,7 +510,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.accentGold, size: 16),
+                    Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.warningTextLight, size: 16),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -532,7 +532,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: InputDecoration(
                     labelText: 'Số điện thoại',
                     labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                    prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primary),
+                    prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primaryLight),
                     filled: true,
                     fillColor: AppColors.surfaceLight,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -552,7 +552,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: 'Mật khẩu',
                   labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.lock_fill, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.lock_fill, color: AppColors.primaryLight),
                   suffixIcon: MorphEyeButton(
                     isHidden: _obscurePassword,
                     color: AppColors.textSecondaryLight,
@@ -599,7 +599,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Text('•', style: TextStyle(color: AppColors.textMutedLight)),
                       TextButton(
                         onPressed: () => context.push('/auth/forgot-password'),
-                        child: const Text('Quên mật khẩu?', style: TextStyle(color: AppColors.primaryDark, fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: const Text('Quên mật khẩu?', style: TextStyle(color: AppColors.primaryText, fontSize: 12, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -644,14 +644,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: const Icon(
                             CupertinoIcons.viewfinder,
-                            color: AppColors.primaryDark,
+                            color: AppColors.primaryText,
                             size: 28,
                           ),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _hasSavedBiometric ? 'Đăng nhập nhanh bằng FaceID' : 'Đăng nhập bằng FaceID / Vân tay',
-                          style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                          style: AppTypography.bodySmall(color: AppColors.primaryLight).copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -669,7 +669,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text('Chưa có tài khoản ví?', style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
                   TextButton(
                     onPressed: () => context.push('/auth/register'),
-                    child: const Text('Đăng ký ngay', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+                    child: const Text('Đăng ký ngay', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -724,7 +724,7 @@ class _LoginScreenState extends State<LoginScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

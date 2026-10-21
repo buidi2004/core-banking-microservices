@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sen_hong_bank/core/theme/app_colors.dart';
 
 /// Dữ liệu mẫu cho 4 banner quảng cáo tự động chạy từ phải sang trái
 class _PromoData {
@@ -318,7 +319,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                               Text(
                                 promo.badgeText,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.textPrimaryLight,
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: 0.5,
@@ -333,7 +334,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                         Text(
                           promo.title,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.textPrimaryLight,
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 0.8,
@@ -477,7 +478,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                           child: Icon(
                             promo.rightIcon,
                             size: 46,
-                            color: Colors.white,
+                            color: AppColors.textPrimaryLight,
                           ),
                         ),
                       ],
@@ -637,7 +638,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                           Text(
                             'ƯU ĐÃI ĐẶC QUYỀN',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textPrimaryLight,
                               fontSize: 9.5,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 0.5,
@@ -652,7 +653,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                     Text(
                       'GÓI TIẾT KIỆM',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimaryLight,
                         fontSize: 21,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 0.6,

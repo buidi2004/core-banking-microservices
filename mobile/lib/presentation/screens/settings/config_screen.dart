@@ -251,7 +251,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
               ),
               child: const Icon(
                 CupertinoIcons.chevron_left,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -272,7 +272,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 Text(
                   'Quản lý Gateway API, STOMP & SSL Pinning',
                   style: TextStyle(
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -341,7 +341,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(CupertinoIcons.waveform_path_ecg, color: AppColors.bottomBarCyan, size: 22),
+                  Icon(CupertinoIcons.waveform_path_ecg, color: AppColors.primaryLight, size: 22),
                   SizedBox(width: 10),
                   Text(
                     'Trạng Thái Đường Truyền Realtime',
@@ -365,10 +365,10 @@ class _ConfigScreenState extends State<ConfigScreen> {
                         const SizedBox(
                           width: 12,
                           height: 12,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bottomBarCyan),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryText),
                         )
                       else
-                        const Icon(CupertinoIcons.arrow_clockwise, color: AppColors.bottomBarCyan, size: 13),
+                        const Icon(CupertinoIcons.arrow_clockwise, color: AppColors.primaryText, size: 13),
                       const SizedBox(width: 5),
                       const Text('Đo lại Ping', style: TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 11)),
                     ],
@@ -410,7 +410,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
         const SizedBox(height: 3),
         Text(val, style: TextStyle(color: valColor, fontWeight: FontWeight.w900, fontSize: 18)),
       ],
@@ -423,7 +423,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
       child: Text(
         title,
         style: const TextStyle(
-          color: AppColors.bottomBarCyan,
+          color: AppColors.primaryText,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
           fontSize: 12,
@@ -456,7 +456,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
               children: [
                 Icon(
                   isSelected ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
-                  color: isSelected ? AppColors.bottomBarCyan : Colors.white38,
+                  color: isSelected ? AppColors.primaryLight : Colors.white38,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -487,7 +487,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   child: Text(
                     '${g['ping']} ms',
                     style: TextStyle(
-                      color: isSelected ? AppColors.emeraldGreen : Colors.white60,
+                      color: isSelected ? AppColors.emeraldGreenLight : Colors.white60,
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
                     ),
@@ -513,7 +513,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             const SizedBox(height: 6),
             TextField(
               controller: _apiUrlCtrl,
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
+              style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 13, fontFamily: 'monospace'),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
@@ -527,7 +527,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
             const SizedBox(height: 6),
             TextField(
               controller: _wsUrlCtrl,
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
+              style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 13, fontFamily: 'monospace'),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
@@ -586,7 +586,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     const Text(
                       'Thời gian chờ kết nối (Timeout)',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimaryLight,
                         fontWeight: FontWeight.w600,
                         fontSize: 13.5,
                       ),
@@ -595,7 +595,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     Text(
                       '${_timeoutSeconds.toInt()} giây (Mặc định chuẩn: 15s)',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: AppColors.textPrimaryLight.withValues(alpha: 0.55),
                         fontSize: 11.5,
                       ),
                     ),
@@ -633,15 +633,15 @@ class _ConfigScreenState extends State<ConfigScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
+              Text(title, style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600, fontSize: 13.5)),
               const SizedBox(height: 2),
-              Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11.5)),
+              Text(subtitle, style: TextStyle(color: AppColors.textPrimaryLight.withValues(alpha: 0.55), fontSize: 11.5)),
             ],
           ),
         ),
         CupertinoSwitch(
           value: val,
-          activeTrackColor: AppColors.bottomBarCyan,
+          activeTrackColor: AppColors.primaryText,
           onChanged: onChanged,
         ),
       ],
@@ -706,7 +706,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 Text(
                   p['duration'] as String,
                   style: TextStyle(
-                    color: isOk ? AppColors.emeraldGreen : Colors.redAccent,
+                    color: isOk ? AppColors.emeraldGreenLight : Colors.redAccent,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
@@ -726,7 +726,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
       height: 52,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDark,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),

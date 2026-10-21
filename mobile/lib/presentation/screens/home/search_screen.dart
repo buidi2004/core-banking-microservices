@@ -276,7 +276,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         Expanded(
                           child: Text(
                             _query.isEmpty ? 'Tất cả chức năng ngân hàng' : 'Kết quả tìm kiếm (${_results.length})',
-                            style: AppTypography.titleMedium(color: AppColors.primaryDark),
+                            style: AppTypography.titleMedium(color: AppColors.primaryLight),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -319,7 +319,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ChoiceChip(
-        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Colors.white : AppColors.textPrimaryLight)),
+        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? AppColors.textPrimaryLight : AppColors.textPrimaryLight)),
         selected: isSelected,
         selectedColor: AppColors.primary,
         backgroundColor: AppColors.dividerLight,
@@ -345,7 +345,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 HapticFeedback.mediumImpact();
                 setState(() => _recentSearches.clear());
               },
-              child: const Text('Xóa lịch sử', style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.w600)),
+              child: const Text('Xóa lịch sử', style: TextStyle(color: AppColors.primaryText, fontSize: 11, fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -386,7 +386,7 @@ class _SearchScreenState extends State<SearchScreen> {
       children: [
         const Row(
           children: [
-            Icon(CupertinoIcons.flame_fill, size: 16, color: AppColors.accentGold),
+            Icon(CupertinoIcons.flame_fill, size: 16, color: AppColors.warningTextLight),
             SizedBox(width: 6),
             Text('Xu hướng tìm kiếm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
           ],
@@ -397,7 +397,7 @@ class _SearchScreenState extends State<SearchScreen> {
           runSpacing: 8,
           children: _trendingKeywords.map((kw) {
             return ActionChip(
-              label: Text(kw, style: const TextStyle(fontSize: 12, color: AppColors.primaryDark, fontWeight: FontWeight.w500)),
+              label: Text(kw, style: const TextStyle(fontSize: 12, color: AppColors.primaryText, fontWeight: FontWeight.w500)),
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: const BorderSide(color: AppColors.borderSubtle)),
               onPressed: () => _applyKeyword(kw),
@@ -439,7 +439,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 color: AppColors.primary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(f['icon'] as IconData, color: AppColors.primary, size: 22),
+              child: Icon(f['icon'] as IconData, color: AppColors.primaryText, size: 22),
             ),
             title: Row(
               children: [

@@ -169,14 +169,14 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Thông Tin Định Danh Điện Tử', style: AppTypography.titleMedium(color: AppColors.primaryDark)),
+                          Text('Thông Tin Định Danh Điện Tử', style: AppTypography.titleMedium(color: AppColors.primaryLight)),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: AppColors.emeraldGreen.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Text(_kyc?['status'] as String? ?? 'Chưa xác định', style: const TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                            child: Text(_kyc?['status'] as String? ?? 'Chưa xác định', style: const TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -223,7 +223,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => context.push('/profile/kyc-level'),
-                icon: const Icon(CupertinoIcons.chart_bar_alt_fill, color: AppColors.primary),
+                icon: const Icon(CupertinoIcons.chart_bar_alt_fill, color: AppColors.primaryLight),
                 label: const Text('Xem phân hạng và hạn mức giao dịch'),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.borderLight),
@@ -254,7 +254,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               color: AppColors.emeraldGreen,
               shape: BoxShape.circle,
             ),
-            child: const Icon(CupertinoIcons.checkmark_alt, color: Colors.white, size: 20),
+            child: const Icon(CupertinoIcons.checkmark_alt, color: AppColors.textPrimaryLight, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -263,7 +263,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               children: [
                 const Text(
                   'ĐÃ ĐỐI SOÁT DỮ LIỆU DÂN CƯ C06',
-                  style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 13),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -307,7 +307,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
             child: Icon(
               CupertinoIcons.shield_fill,
               size: 110,
-              color: Colors.white.withOpacity(0.08),
+              color: AppColors.textPrimaryLight.withOpacity(0.08),
             ),
           ),
           Column(
@@ -319,16 +319,16 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                   children: [
                     Text(
                       'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM',
-                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                      style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                     ),
                     Text(
                       'Độc lập - Tự do - Hạnh phúc',
-                      style: TextStyle(color: Colors.white70, fontSize: 9.5),
+                      style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 9.5),
                     ),
                     SizedBox(height: 4),
                     Text(
                       'CĂN CƯỚC CÔNG DÂN / IDENTITY CARD',
-                      style: TextStyle(color: AppColors.accentGold, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                      style: TextStyle(color: AppColors.warningTextLight, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
                     ),
                   ],
                 ),
@@ -353,9 +353,9 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                           const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(CupertinoIcons.person_fill, size: 42, color: Colors.white70),
+                              Icon(CupertinoIcons.person_fill, size: 42, color: AppColors.textSecondaryLight),
                               SizedBox(height: 2),
-                              Text('BCA VERIFIED', style: TextStyle(fontSize: 7.5, color: Colors.white70, fontWeight: FontWeight.bold)),
+                              Text('BCA VERIFIED', style: TextStyle(fontSize: 7.5, color: AppColors.textSecondaryLight, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           Positioned(
@@ -367,7 +367,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                                 color: AppColors.emeraldGreen,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(CupertinoIcons.checkmark, size: 8, color: Colors.white),
+                              child: const Icon(CupertinoIcons.checkmark, size: 8, color: AppColors.textPrimaryLight),
                             ),
                           ),
                         ],
@@ -390,22 +390,22 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                                   color: AppColors.accentGold,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: const Icon(CupertinoIcons.radiowaves_right, size: 14, color: AppColors.primaryDark),
+                                child: const Icon(CupertinoIcons.radiowaves_right, size: 14, color: AppColors.primaryText),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(CupertinoIcons.wifi, color: Colors.white70, size: 16),
+                              const Icon(CupertinoIcons.wifi, color: AppColors.textSecondaryLight, size: 16),
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text('Số / No.: ${_idNumber.isNotEmpty ? _idNumber : "Chưa cập nhật"}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          Text('Số / No.: ${_idNumber.isNotEmpty ? _idNumber : "Chưa cập nhật"}', style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                           const SizedBox(height: 3),
-                          Text('Họ và tên: ${_fullName.isNotEmpty ? _fullName.toUpperCase() : "KHÁCH HÀNG SEN HỒNG"}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                          Text('Họ và tên: ${_fullName.isNotEmpty ? _fullName.toUpperCase() : "KHÁCH HÀNG SEN HỒNG"}', style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 11, fontWeight: FontWeight.w600)),
                           const SizedBox(height: 2),
-                          Text('Ngày sinh: $_dob  •  $_gender', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                          Text('Ngày sinh: $_dob  •  $_gender', style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 10)),
                           const SizedBox(height: 2),
-                          const Text('Quốc tịch: Việt Nam', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                          const Text('Quốc tịch: Việt Nam', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 10)),
                           const SizedBox(height: 2),
-                          const Text('Có giá trị đến: 15/08/2029', style: TextStyle(color: AppColors.accentGold, fontSize: 10, fontWeight: FontWeight.w600)),
+                          const Text('Có giá trị đến: 15/08/2029', style: TextStyle(color: AppColors.warningTextLight, fontSize: 10, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -445,21 +445,21 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Đặc điểm nhân dạng / Personal identification:', style: TextStyle(color: Colors.white70, fontSize: 9.5)),
+              const Text('Đặc điểm nhân dạng / Personal identification:', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 9.5)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.white12,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('ICAO 9303 CHIP', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                child: const Text('ICAO 9303 CHIP', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 8.5, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const SizedBox(height: 3),
-          const Text('Nốt ruồi cách 1cm dưới sau đuôi mắt phải', style: TextStyle(color: Colors.white, fontSize: 10.5)),
+          const Text('Nốt ruồi cách 1cm dưới sau đuôi mắt phải', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 10.5)),
           const SizedBox(height: 6),
-          const Text('Ngày cấp: 20/09/2021  •  CỤC TRƯỞNG C06 BỘ CÔNG AN', style: TextStyle(color: Colors.white70, fontSize: 9.5)),
+          const Text('Ngày cấp: 20/09/2021  •  CỤC TRƯỞNG C06 BỘ CÔNG AN', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 9.5)),
           const Spacer(),
           // MRZ Zone
           Container(
@@ -475,15 +475,15 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               children: [
                 Text(
                   _mrzId,
-                  style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
+                  style: const TextStyle(color: AppColors.textPrimaryLight, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
                 ),
                 Text(
                   _mrzDobCode,
-                  style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
+                  style: const TextStyle(color: AppColors.textPrimaryLight, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
                 ),
                 Text(
                   _mrzName,
-                  style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
+                  style: const TextStyle(color: AppColors.textPrimaryLight, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
                 ),
               ],
             ),
@@ -507,7 +507,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: isBold || isHighlight ? FontWeight.bold : FontWeight.w500,
-              color: isHighlight ? AppColors.bottomBarCyan : (isBold ? AppColors.primaryDark : AppColors.textPrimaryLight),
+              color: isHighlight ? AppColors.primaryText : (isBold ? AppColors.primaryDark : AppColors.textPrimaryLight),
             ),
           ),
         ),

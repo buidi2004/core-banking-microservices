@@ -80,6 +80,20 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   Future<void> _loadTransactions({bool refresh = false}) async {
+    // M-04: Filter Nạp/Rút (2) & Hóa đơn (3) chưa có backend (BE-REQ-06)
+    // Gate không gọi API để tránh trả về danh sách rỗng hiểu lầm
+    if (_selectedFilter == 2 || _selectedFilter == 3) {
+      if (mounted) {
+        setState(() {
+          _allTransactions = [];
+          _isLastPage = true;
+          _currentPage = 0;
+          _isLoading = false;
+        });
+      }
+      return;
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final token = await AuthLocalDataSourceImpl(prefs: prefs).getAccessToken();
     if (token == null || token.isEmpty) {
@@ -275,7 +289,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(color: AppColors.error.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(CupertinoIcons.doc_fill, color: AppColors.error, size: 22),
+                          child: const Icon(CupertinoIcons.doc_fill, color: AppColors.errorText, size: 22),
                         ),
                         title: const Text('Tải file PDF (Có mộc đỏ điện tử)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
                         subtitle: const Text('Phù hợp nộp chứng từ kế toán, xin visa', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
@@ -289,7 +303,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(color: AppColors.emeraldGreen.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(CupertinoIcons.table_fill, color: AppColors.emeraldGreen, size: 22),
+                          child: const Icon(CupertinoIcons.table_fill, color: AppColors.successTextLight, size: 22),
                         ),
                         title: const Text('Tải file Excel (.XLSX)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
                         subtitle: const Text('Dành cho phân tích thu chi cá nhân', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
@@ -303,7 +317,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                         leading: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(CupertinoIcons.doc_text_fill, color: AppColors.primary, size: 22),
+                          child: const Icon(CupertinoIcons.doc_text_fill, color: AppColors.primaryText, size: 22),
                         ),
                         title: const Text('Tải file CSV (.CSV)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
                         subtitle: const Text('Dành cho tích hợp phần mềm tài chính', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
@@ -317,7 +331,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                 ),
               );
             },
-            icon: const Icon(CupertinoIcons.arrow_down_doc_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.arrow_down_doc_fill, color: AppColors.primaryLight),
             tooltip: 'Xuất sao kê',
           ),
         ],
@@ -374,8 +388,56 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                 ),
                 child: KeyedSubtree(
                   key: ValueKey('filter_${_selectedFilter}_loading_$_isLoading'),
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                  child: (_selectedFilter == 2 || _selectedFilter == 3)
+                      ? RefreshIndicator(
+                          onRefresh: () => _loadTransactions(refresh: true),
+                          color: AppColors.primary,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                            children: [
+                              SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                              Center(
+                                child: GlassCard(
+                                  quality: GlassQuality.standard,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(16),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withOpacity(0.12),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            _selectedFilter == 2 ? CupertinoIcons.arrow_down_circle_fill : CupertinoIcons.doc_text_fill,
+                                            size: 40,
+                                            color: AppColors.primaryText,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Tính năng sắp ra mắt',
+                                          style: AppTypography.titleMedium(color: AppColors.textPrimaryLight),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Lịch sử ${_filters[_selectedFilter]} đang được phát triển cùng máy chủ (BE-REQ-06). Quý khách vui lòng đón chờ ở bản cập nhật tiếp theo!',
+                                          style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _isLoading
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.primaryLight))
                       : _allTransactions.isEmpty
                       ? RefreshIndicator(
                           onRefresh: () => _loadTransactions(refresh: true),
@@ -416,7 +478,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                       child: SizedBox(
                                         width: 24,
                                         height: 24,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryLight),
                                       ),
                                     ),
                                   );
@@ -512,7 +574,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                               Flexible(
                                                 child: Text(
                                                   'Số dư: ${CurrencyFormatter.formatVND(runningBalance)}',
-                                                  style: const TextStyle(fontSize: 11, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
+                                                  style: const TextStyle(fontSize: 11, color: AppColors.primaryLight, fontWeight: FontWeight.w600),
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                 ),
@@ -531,7 +593,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                           child: Text(
                                             '${isPositive ? '+' : (amount < 0 ? '-' : '')}${CurrencyFormatter.formatVND(amount.abs())}',
                                             style: AppTypography.titleMedium(
-                                              color: isPositive ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+                                              color: isPositive ? AppColors.emeraldGreenLight : AppColors.textPrimaryLight,
                                             ).copyWith(fontWeight: FontWeight.bold, fontSize: 13.5),
                                           ),
                                         ),
@@ -547,7 +609,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                             style: TextStyle(
                                               fontSize: 10,
                                               fontWeight: FontWeight.w600,
-                                              color: statusStr == 'SUCCESS' ? AppColors.emeraldGreen : AppColors.primary,
+                                              color: statusStr == 'SUCCESS' ? AppColors.emeraldGreenLight : AppColors.primaryLight,
                                             ),
                                           ),
                                         ),

@@ -211,7 +211,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                   enabled: !isSubmitting,
                   style: const TextStyle(color: AppColors.textPrimaryLight),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
+                    prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primaryText),
                     hintText: 'Nhập số tài khoản ngân hàng chính chủ',
                     hintStyle: const TextStyle(color: AppColors.textMutedLight),
                     filled: true,
@@ -235,7 +235,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                   enabled: !isSubmitting,
                   style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primary),
+                    prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryText),
                     hintText: 'HỌ VÀ TÊN (KHÔNG DẤU)',
                     hintStyle: const TextStyle(color: AppColors.textMutedLight),
                     filled: true,
@@ -316,7 +316,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textPrimaryLight),
                           )
                         : const Text('Xác nhận liên kết ngân hàng'),
                   ),
@@ -342,7 +342,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
             Material(
               type: MaterialType.transparency,
               child: ListTile(
-                leading: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen),
+                leading: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight),
                 title: const Text('Đặt làm tài khoản mặc định', style: TextStyle(color: AppColors.textPrimaryLight)),
                 onTap: () {
                   Navigator.pop(ctx);
@@ -357,8 +357,8 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
             Material(
               type: MaterialType.transparency,
               child: ListTile(
-                leading: const Icon(CupertinoIcons.trash_fill, color: AppColors.error),
-                title: const Text('Hủy liên kết tài khoản này', style: TextStyle(color: AppColors.error)),
+                leading: const Icon(CupertinoIcons.trash_fill, color: AppColors.errorText),
+                title: const Text('Hủy liên kết tài khoản này', style: TextStyle(color: AppColors.errorText)),
                 onTap: () async {
                   Navigator.pop(ctx);
                   // MOB-007: BE chưa có API bank-accounts (BE-REQ-06).
@@ -496,7 +496,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                                         backgroundColor: AppColors.primary.withOpacity(0.18),
                                         child: Text(
                                           b['shortName'] as String,
-                                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 11),
+                                          style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 11),
                                         ),
                                       ),
                                       const SizedBox(width: 12),
@@ -528,7 +528,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                                             color: AppColors.emeraldGreen.withOpacity(0.15),
                                             borderRadius: BorderRadius.circular(12),
                                           ),
-                                          child: const Text('Mặc định', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                                          child: const Text('Mặc định', style: TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
                                         )
                                       else
                                         IconButton(
@@ -547,7 +547,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                                             side: const BorderSide(color: AppColors.borderLight),
                                           ),
                                           onPressed: () => context.push('/deposit'),
-                                          icon: const Icon(CupertinoIcons.arrow_down_circle_fill, size: 16, color: AppColors.emeraldGreen),
+                                          icon: const Icon(CupertinoIcons.arrow_down_circle_fill, size: 16, color: AppColors.successTextLight),
                                           label: const Text('Nạp tiền', style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight)),
                                         ),
                                       ),
@@ -559,7 +559,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                                             side: const BorderSide(color: AppColors.borderLight),
                                           ),
                                           onPressed: () => context.push('/withdraw'),
-                                          icon: const Icon(CupertinoIcons.arrow_up_circle_fill, size: 16, color: AppColors.primary),
+                                          icon: const Icon(CupertinoIcons.arrow_up_circle_fill, size: 16, color: AppColors.primaryText),
                                           label: const Text('Rút tiền', style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight)),
                                         ),
                                       ),

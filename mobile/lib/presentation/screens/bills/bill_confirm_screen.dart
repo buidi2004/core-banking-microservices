@@ -162,7 +162,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Mã Giảm Giá / Voucher Sen Hồng', style: AppTypography.titleLarge(color: AppColors.primaryDark)),
+                Text('Mã Giảm Giá / Voucher Sen Hồng', style: AppTypography.titleLarge(color: AppColors.primaryText)),
                 IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textMutedLight)),
               ],
             ),
@@ -186,7 +186,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                   child: ListTile(
                     leading: CircleAvatar(
                       backgroundColor: AppColors.emeraldGreen.withOpacity(0.15),
-                      child: const Icon(CupertinoIcons.tickets_fill, color: AppColors.emeraldGreen, size: 20),
+                      child: const Icon(CupertinoIcons.tickets_fill, color: AppColors.successTextLight, size: 20),
                     ),
                     title: Text(v['code'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimaryLight)),
                     subtitle: Text(v['title'] as String, style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
@@ -310,14 +310,14 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                       const SizedBox(height: 6),
                       Text(
                         CurrencyFormatter.formatVND(_finalAmount),
-                        style: const TextStyle(color: AppColors.primaryDark, fontSize: 32, fontWeight: FontWeight.w900),
+                        style: const TextStyle(color: AppColors.primaryLight, fontSize: 32, fontWeight: FontWeight.w900),
                       ),
                       if (CurrencyFormatter.toVietnameseWords(_finalAmount).isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
                           'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(_finalAmount)} đồng',
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                          style: AppTypography.bodySmall(color: AppColors.primaryLight).copyWith(
                             fontStyle: FontStyle.italic,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
@@ -359,7 +359,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                 quality: GlassQuality.minimal,
                 child: ListTile(
                   onTap: _showVoucherPicker,
-                  leading: const Icon(CupertinoIcons.tickets_fill, color: AppColors.emeraldGreen, size: 24),
+                  leading: const Icon(CupertinoIcons.tickets_fill, color: AppColors.successTextLight, size: 24),
                   title: const Text('Mã giảm giá / Voucher', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
                   subtitle: Text(
                     _discountAmount > 0
@@ -367,16 +367,16 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                         : 'Chọn mã giảm giá để tiết kiệm thêm',
                     style: TextStyle(
                       fontSize: 11,
-                      color: _discountAmount > 0 ? AppColors.emeraldGreen : AppColors.textSecondaryLight,
+                      color: _discountAmount > 0 ? AppColors.successTextLight : AppColors.textSecondaryLight,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   trailing: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Chọn mã', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('Chọn mã', style: TextStyle(color: AppColors.primaryText, fontSize: 12, fontWeight: FontWeight.bold)),
                       SizedBox(width: 4),
-                      Icon(CupertinoIcons.chevron_forward, color: AppColors.primary, size: 14),
+                      Icon(CupertinoIcons.chevron_forward, color: AppColors.primaryText, size: 14),
                     ],
                   ),
                 ),
@@ -402,12 +402,12 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                             onTap: () => setState(() => _selectedSourceIdx = idx),
                             leading: CircleAvatar(
                               backgroundColor: AppColors.primary.withOpacity(0.12),
-                              child: Text(s['logo']!, style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 11)),
+                              child: Text(s['logo']!, style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 11)),
                             ),
                             title: Text(s['name']!, style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
                             subtitle: Text(s['type']!, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
                             trailing: isSelected
-                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen)
+                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight)
                                 : const Icon(CupertinoIcons.circle, color: AppColors.textMutedLight),
                           ),
                         ),
@@ -455,7 +455,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                               style: const TextStyle(fontSize: 13, color: AppColors.textPrimaryLight),
                               decoration: InputDecoration(
                                 labelText: 'Mã số thuế doanh nghiệp (MST)',
-                                prefixIcon: const Icon(CupertinoIcons.number, size: 16, color: AppColors.primary),
+                                prefixIcon: const Icon(CupertinoIcons.number, size: 16, color: AppColors.primaryLight),
                                 filled: true,
                                 fillColor: AppColors.surfaceLight,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -467,7 +467,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                               style: const TextStyle(fontSize: 13, color: AppColors.textPrimaryLight),
                               decoration: InputDecoration(
                                 labelText: 'Tên cơ quan / Doanh nghiệp',
-                                prefixIcon: const Icon(CupertinoIcons.building_2_fill, size: 16, color: AppColors.primary),
+                                prefixIcon: const Icon(CupertinoIcons.building_2_fill, size: 16, color: AppColors.primaryLight),
                                 filled: true,
                                 fillColor: AppColors.surfaceLight,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -479,7 +479,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                               style: const TextStyle(fontSize: 13, color: AppColors.textPrimaryLight),
                               decoration: InputDecoration(
                                 labelText: 'Email nhận hóa đơn điện tử',
-                                prefixIcon: const Icon(CupertinoIcons.mail_solid, size: 16, color: AppColors.primary),
+                                prefixIcon: const Icon(CupertinoIcons.mail_solid, size: 16, color: AppColors.primaryLight),
                                 filled: true,
                                 fillColor: AppColors.surfaceLight,
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.borderLight)),
@@ -514,7 +514,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(CupertinoIcons.lock_shield_fill, size: 14, color: AppColors.emeraldGreen),
+                    Icon(CupertinoIcons.lock_shield_fill, size: 14, color: AppColors.emeraldGreenLight),
                     SizedBox(width: 6),
                     Text('Giao dịch mã hóa chuẩn PCI-DSS & Smart OTP bảo mật', style: TextStyle(fontSize: 11, color: AppColors.textMutedLight)),
                   ],
@@ -539,7 +539,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
             value,
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.titleSmall(color: isHighlight ? AppColors.emeraldGreen : AppColors.textPrimaryLight).copyWith(
+            style: AppTypography.titleSmall(color: isHighlight ? AppColors.successTextLight : AppColors.textPrimaryLight).copyWith(
               fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
             ),
           ),

@@ -52,7 +52,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                     child: Text(
                       'Đổi Mật Khẩu Đăng Nhập',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.textPrimaryLight,
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                       ),
@@ -62,7 +62,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   IconButton(
                     onPressed: () => Navigator.pop(ctx),
                     icon: const Icon(CupertinoIcons.xmark_circle_fill,
-                        color: Colors.white38),
+                        color: AppColors.textMutedLight),
                   ),
                 ],
               ),
@@ -70,12 +70,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               TextField(
                 controller: oldPassCtrl,
                 obscureText: true,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textPrimaryLight),
                 decoration: InputDecoration(
                   labelText: 'Mật khẩu hiện tại',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
                   prefixIcon: const Icon(CupertinoIcons.lock_fill,
-                      color: AppColors.bottomBarCyan),
+                      color: AppColors.primaryText),
                   filled: true,
                   fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(
@@ -89,12 +89,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               TextField(
                 controller: newPassCtrl,
                 obscureText: true,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textPrimaryLight),
                 decoration: InputDecoration(
                   labelText: 'Mật khẩu mới (tối thiểu 6 ký tự)',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
                   prefixIcon: const Icon(CupertinoIcons.lock_fill,
-                      color: AppColors.bottomBarCyan),
+                      color: AppColors.primaryText),
                   filled: true,
                   fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(
@@ -108,12 +108,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               TextField(
                 controller: confirmPassCtrl,
                 obscureText: true,
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: AppColors.textPrimaryLight),
                 decoration: InputDecoration(
                   labelText: 'Xác nhận mật khẩu mới',
-                  labelStyle: const TextStyle(color: Colors.white70),
+                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
                   prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill,
-                      color: AppColors.bottomBarCyan),
+                      color: AppColors.primaryText),
                   filled: true,
                   fillColor: Colors.white.withValues(alpha: 0.05),
                   border: OutlineInputBorder(
@@ -129,7 +129,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: AppColors.primaryDark,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
@@ -172,12 +172,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         title: const Row(
           children: [
             Icon(CupertinoIcons.shield_slash_fill,
-                color: AppColors.error, size: 24),
+                color: AppColors.errorText, size: 24),
             SizedBox(width: 8),
             Expanded(
               child: Text('Khóa Khẩn Cấp Tài Khoản?',
                   style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textPrimaryLight,
                       fontSize: 16,
                       fontWeight: FontWeight.bold)),
             ),
@@ -185,13 +185,13 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         ),
         content: const Text(
           'Tất cả giao dịch trực tuyến, thẻ và phiên đăng nhập trên các thiết bị sẽ bị tạm khóa ngay lập tức trong 30 giây để bảo vệ số dư của bạn. Bạn sẽ cần xác thực Face Match eKYC hoặc ra quầy giao dịch để mở khóa lại.',
-          style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+          style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12, height: 1.4),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child:
-                const Text('Hủy bỏ', style: TextStyle(color: Colors.white54)),
+                const Text('Hủy bỏ', style: TextStyle(color: AppColors.textSecondaryLight)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -284,7 +284,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       child: Text(
         title,
         style: const TextStyle(
-          color: AppColors.bottomBarCyan,
+          color: AppColors.primaryText,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
           fontSize: 12,
@@ -326,7 +326,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               child: Text(
                 '95',
                 style: TextStyle(
-                  color: AppColors.emeraldGreen,
+                  color: AppColors.successTextLight,
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                 ),
@@ -343,7 +343,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                     Text(
                       'ĐIỂM AN TOÀN: XUẤT SẮC',
                       style: TextStyle(
-                        color: AppColors.emeraldGreen,
+                        color: AppColors.emeraldGreenLight,
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                         letterSpacing: 0.5,
@@ -351,7 +351,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                     ),
                     SizedBox(width: 6),
                     Icon(CupertinoIcons.checkmark_seal_fill,
-                        color: AppColors.emeraldGreen, size: 14),
+                        color: AppColors.emeraldGreenLight, size: 14),
                   ],
                 ),
                 SizedBox(height: 3),
@@ -401,7 +401,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(CupertinoIcons.device_phone_portrait,
-                        color: AppColors.bottomBarCyan, size: 20),
+                        color: AppColors.primaryText, size: 20),
                   ),
                   const SizedBox(width: 10),
                   const Column(
@@ -435,7 +435,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 child: const Text(
                   'ĐANG HOẠT ĐỘNG',
                   style: TextStyle(
-                    color: AppColors.emeraldGreen,
+                    color: AppColors.successTextLight,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -506,12 +506,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
               ),
             ),
             subtitle: const Text(
               'Bắt buộc theo QĐ 2345/QĐ-NHNN để đối soát khuôn mặt với chip CCCD',
-              style: TextStyle(fontSize: 11, color: Colors.white54),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
             ),
             onChanged: (v) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -531,12 +531,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
               ),
             ),
             subtitle: const Text(
               'Sử dụng cảm biến sinh trắc học tích hợp trên thiết bị',
-              style: TextStyle(fontSize: 11, color: Colors.white54),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
             ),
             onChanged: (v) {
               HapticFeedback.selectionClick();
@@ -549,21 +549,21 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             child: ListTile(
               onTap: () => context.push('/profile/ekyc'),
               leading: const Icon(CupertinoIcons.camera_viewfinder,
-                  color: AppColors.bottomBarCyan, size: 22),
+                  color: AppColors.primaryText, size: 22),
               title: const Text(
                 'Cập nhật lại khuôn mặt & chip CCCD (eKYC)',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: Colors.white,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Quét lại chip NFC khi vừa được cấp thẻ CCCD gắn chip mới',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textMutedLight, size: 16),
             ),
           ),
         ],
@@ -589,7 +589,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   title: Text(
                     _thresholdLabels[idx],
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
+                      color: isSelected ? AppColors.textPrimaryLight : AppColors.textSecondaryLight,
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,
                       fontSize: 12.5,
@@ -600,8 +600,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         ? CupertinoIcons.checkmark_circle_fill
                         : CupertinoIcons.circle,
                     color: isSelected
-                        ? AppColors.bottomBarCyan
-                        : Colors.white24,
+                        ? AppColors.primaryText
+                        : AppColors.textMutedLight,
                     size: 18,
                   ),
                 ),
@@ -630,7 +630,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       const Text(
                         'Vùng An Toàn Địa Lý (Geo-Fencing)',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimaryLight,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -641,14 +641,14 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                             ? 'Đang chặn các IP và giao dịch ngoài lãnh thổ Việt Nam'
                             : 'Đang cho phép giao dịch quốc tế toàn cầu',
                         style: const TextStyle(
-                            color: Colors.white54, fontSize: 11),
+                            color: AppColors.textSecondaryLight, fontSize: 11),
                       ),
                     ],
                   ),
                 ),
                 CupertinoSwitch(
                   value: _geoFencingProtection,
-                  activeTrackColor: AppColors.bottomBarCyan,
+                  activeTrackColor: AppColors.primaryText,
                   onChanged: (v) {
                     HapticFeedback.selectionClick();
                     setState(() => _geoFencingProtection = v);
@@ -666,12 +666,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               child: const Row(
                 children: [
                   Icon(CupertinoIcons.airplane,
-                      color: AppColors.accentGold, size: 16),
+                      color: AppColors.warningTextLight, size: 16),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Khi xuất cảnh ra nước ngoài, hãy tắt tính năng này để giao dịch bình thường.',
-                      style: TextStyle(color: Colors.white70, fontSize: 10.5),
+                      style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 10.5),
                     ),
                   ),
                 ],
@@ -696,12 +696,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
               ),
             ),
             subtitle: const Text(
               'Yêu cầu Smart OTP khi đăng nhập từ thiết bị lạ',
-              style: TextStyle(fontSize: 11, color: Colors.white54),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
             ),
             onChanged: (v) {
               HapticFeedback.selectionClick();
@@ -717,12 +717,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
               ),
             ),
             subtitle: const Text(
               'Yêu cầu FaceID hoặc PIN mỗi khi mở lại ứng dụng',
-              style: TextStyle(fontSize: 11, color: Colors.white54),
+              style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
             ),
             onChanged: (v) {
               HapticFeedback.selectionClick();
@@ -735,21 +735,21 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             child: ListTile(
               onTap: () => context.push('/settings/devices'),
               leading: const Icon(CupertinoIcons.device_phone_portrait,
-                  color: AppColors.bottomBarCyan, size: 22),
+                  color: AppColors.primaryText, size: 22),
               title: const Text(
                 'Quản lý thiết bị đăng nhập',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: Colors.white,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Quản lý phiên đăng nhập và thiết bị tin cậy',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textMutedLight, size: 16),
             ),
           ),
         ],
@@ -770,15 +770,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: Colors.white,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Nên đổi mật khẩu định kỳ 90 ngày để an toàn tài khoản',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textMutedLight, size: 16),
               onTap: _showChangePasswordModal,
             ),
           ),
@@ -791,15 +791,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: Colors.white,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Mã PIN bảo mật dùng để ký duyệt mọi lệnh chuyển và rút tiền',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textMutedLight, size: 16),
               onTap: () => context.push('/settings/change-pin'),
             ),
           ),
@@ -812,15 +812,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: AppColors.bottomBarCyan,
+                  color: AppColors.primaryText,
                 ),
               ),
               subtitle: const Text(
                 'Xác minh Face Match để cấp lại mã PIN trực tuyến tức thì',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textMutedLight, size: 16),
               onTap: () => context.push('/auth/forgot-pin'),
             ),
           ),
@@ -833,15 +833,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
-                  color: Colors.white,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Đọc chip bảo mật C06 BCA theo chuẩn Quyết định 2345',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textMutedLight, size: 16),
               onTap: () => context.push('/profile/nfc-reader'),
             ),
           ),
@@ -894,7 +894,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   child: Text(
                     log['status']!,
                     style: const TextStyle(
-                      color: AppColors.emeraldGreen,
+                      color: AppColors.successTextLight,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -923,22 +923,22 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             shape: BoxShape.circle,
           ),
           child: const Icon(CupertinoIcons.lock_shield_fill,
-              color: AppColors.error, size: 22),
+              color: AppColors.errorText, size: 22),
         ),
         title: const Text(
           'Khóa Khẩn Cấp Toàn Bộ Tài Khoản & Thẻ',
           style: TextStyle(
-            color: AppColors.error,
+            color: AppColors.errorText,
             fontWeight: FontWeight.bold,
             fontSize: 13.5,
           ),
         ),
         subtitle: const Text(
           'Kích hoạt trong 30 giây khi nghi ngờ bị lừa đảo hoặc thất lạc máy',
-          style: TextStyle(fontSize: 11, color: Colors.white54),
+          style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
         ),
         trailing: const Icon(CupertinoIcons.chevron_forward,
-            color: AppColors.error, size: 16),
+            color: AppColors.errorText, size: 16),
       ),
     );
   }

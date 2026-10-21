@@ -155,7 +155,7 @@ class _CardsScreenState extends State<CardsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(CupertinoIcons.location_fill, color: AppColors.primary, size: 20),
+                      Icon(CupertinoIcons.location_fill, color: AppColors.primaryText, size: 20),
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -168,7 +168,7 @@ class _CardsScreenState extends State<CardsScreen> {
                   SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(CupertinoIcons.clock_fill, color: AppColors.accentGold, size: 20),
+                      Icon(CupertinoIcons.clock_fill, color: AppColors.warningTextLight, size: 20),
                       SizedBox(width: 10),
                       Text('Thời gian giao dự kiến: 3 - 5 ngày làm việc', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
                     ],
@@ -176,9 +176,9 @@ class _CardsScreenState extends State<CardsScreen> {
                   SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(CupertinoIcons.gift_fill, color: AppColors.emeraldGreen, size: 20),
+                      Icon(CupertinoIcons.gift_fill, color: AppColors.successTextLight, size: 20),
                       SizedBox(width: 10),
-                      Text('Phí phát hành & Giao hàng: MIỄN PHÍ 100%', style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 13)),
+                      Text('Phí phát hành & Giao hàng: MIỄN PHÍ 100%', style: TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 13)),
                     ],
                   ),
                 ],
@@ -215,7 +215,7 @@ class _CardsScreenState extends State<CardsScreen> {
         actions: [
           IconButton(
             onPressed: () => context.push('/payment-methods'),
-            icon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.creditcard, color: AppColors.primaryLight),
             tooltip: 'Thêm phương thức thanh toán',
           ),
         ],
@@ -314,7 +314,7 @@ class _CardsScreenState extends State<CardsScreen> {
                                 alignment: Alignment.centerLeft,
                                 child: Text(
                                   CurrencyFormatter.formatVND(activeCard['available'] as double),
-                                  style: AppTypography.titleLarge(color: AppColors.emeraldGreen).copyWith(fontWeight: FontWeight.bold),
+                                  style: AppTypography.titleLarge(color: AppColors.emeraldGreenLight).copyWith(fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -331,7 +331,7 @@ class _CardsScreenState extends State<CardsScreen> {
                           child: Text(
                             'Tổng hạn mức:\n${CurrencyFormatter.formatVND(activeCard['limit'] as double)}',
                             textAlign: TextAlign.right,
-                            style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2),
+                            style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, height: 1.2),
                           ),
                         ),
                       ],
@@ -415,7 +415,7 @@ class _CardsScreenState extends State<CardsScreen> {
                           color: Colors.white.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(CupertinoIcons.sparkles, color: AppColors.accentGold, size: 24),
+                        child: const Icon(CupertinoIcons.sparkles, color: AppColors.warningTextLight, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -424,12 +424,12 @@ class _CardsScreenState extends State<CardsScreen> {
                           children: [
                             Text(
                               'ĐẶC QUYỀN THẺ SEN HỒNG',
-                              style: AppTypography.titleSmall(color: Colors.white).copyWith(fontWeight: FontWeight.bold),
+                              style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               'Hoàn 5% chi tiêu ăn uống & du lịch. Tặng bảo hiểm du lịch toàn cầu tới 10.5 tỷ đồng.',
-                              style: AppTypography.bodySmall(color: Colors.white70).copyWith(fontSize: 11),
+                              style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11),
                             ),
                           ],
                         ),
@@ -611,7 +611,7 @@ class _CardsScreenState extends State<CardsScreen> {
                                 child: Text(
                                   card['title'] as String,
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: AppColors.textPrimaryLight,
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.8,
@@ -633,7 +633,7 @@ class _CardsScreenState extends State<CardsScreen> {
                           child: Text(
                             isLocked ? 'ĐÃ KHÓA' : 'HOẠT ĐỘNG',
                             style: TextStyle(
-                              color: isLocked ? AppColors.error : AppColors.emeraldGreen,
+                              color: isLocked ? AppColors.errorText : AppColors.successTextLight,
                               fontWeight: FontWeight.bold,
                               fontSize: 10.5,
                             ),
@@ -659,11 +659,11 @@ class _CardsScreenState extends State<CardsScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Icon(CupertinoIcons.radiowaves_right, color: Colors.white70, size: 20),
+                        const Icon(CupertinoIcons.radiowaves_right, color: AppColors.textSecondaryLight, size: 20),
                         const Spacer(),
                         Text(
                           card['tier'] as String,
-                          style: const TextStyle(color: AppColors.accentGold, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: const TextStyle(color: AppColors.warningTextLight, fontSize: 11, fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -678,7 +678,7 @@ class _CardsScreenState extends State<CardsScreen> {
                           child: Text(
                             displayNum,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppColors.textPrimaryLight,
                               fontSize: 19,
                               letterSpacing: 2.2,
                               fontWeight: FontWeight.w700,
@@ -693,16 +693,16 @@ class _CardsScreenState extends State<CardsScreen> {
                             Expanded(
                               child: Text(
                                 card['holder'] as String,
-                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 8),
                             Row(
                               children: [
-                                Text('HSD: $displayExpiry', style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                                Text('HSD: $displayExpiry', style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
                                 const SizedBox(width: 10),
-                                Text('CVV: $displayCvv', style: const TextStyle(color: AppColors.accentGold, fontSize: 11, fontWeight: FontWeight.bold)),
+                                Text('CVV: $displayCvv', style: const TextStyle(color: AppColors.warningTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ],
@@ -742,12 +742,12 @@ class _CardsScreenState extends State<CardsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isActive ? AppColors.primary : AppColors.textMutedLight, size: 16),
+              Icon(icon, color: isActive ? AppColors.primaryText : AppColors.textMutedLight, size: 16),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
-                  color: isActive ? AppColors.primary : AppColors.textSecondaryLight,
+                  color: isActive ? AppColors.primaryText : AppColors.textSecondaryLight,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -782,7 +782,7 @@ class _CardsScreenState extends State<CardsScreen> {
                 color: AppColors.primary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.primary, size: 20),
+              child: Icon(icon, color: AppColors.primaryText, size: 20),
             ),
             title: Text(title, style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
             subtitle: Text(subtitle, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
@@ -804,7 +804,7 @@ class _CardsScreenState extends State<CardsScreen> {
           children: [
             Icon(
               willLock ? CupertinoIcons.lock_shield_fill : CupertinoIcons.lock_open_fill,
-              color: willLock ? AppColors.error : AppColors.primary,
+              color: willLock ? AppColors.errorText : AppColors.primaryText,
               size: 24,
             ),
             const SizedBox(width: 10),

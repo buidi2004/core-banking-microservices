@@ -95,7 +95,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.warningTextLight, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -125,7 +125,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                     color: AppColors.primary.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.primary, size: 30),
+                  child: const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.primaryText, size: 30),
                 ),
               ),
               const SizedBox(height: 14),
@@ -179,7 +179,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 18),
+                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.warningTextLight, size: 18),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -272,8 +272,8 @@ class _SetPinScreenState extends State<SetPinScreen> {
           radius: 11,
           backgroundColor: color,
           child: isDone
-              ? const Icon(CupertinoIcons.checkmark, size: 12, color: Colors.white)
-              : Text('$step', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+              ? const Icon(CupertinoIcons.checkmark, size: 12, color: AppColors.textPrimaryLight)
+              : Text('$step', style: const TextStyle(fontSize: 10, color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 4),
         Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: color)),
@@ -297,7 +297,7 @@ class _SetPinScreenState extends State<SetPinScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

@@ -126,7 +126,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     enabled: !isSubmitting,
                     style: const TextStyle(color: AppColors.textPrimaryLight),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
+                      prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primaryText),
                       hintText: '4xxx xxxx xxxx xxxx',
                       hintStyle: const TextStyle(color: AppColors.textMutedLight),
                       filled: true,
@@ -150,7 +150,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     enabled: !isSubmitting,
                     style: const TextStyle(color: AppColors.textPrimaryLight),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primary),
+                      prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryText),
                       hintText: 'HỌ VÀ TÊN (KHÔNG DẤU)',
                       hintStyle: const TextStyle(color: AppColors.textMutedLight),
                       filled: true,
@@ -311,7 +311,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textPrimaryLight),
                             )
                           : const Text('Lưu & Xác thực thẻ'),
                     ),
@@ -364,7 +364,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           color: AppColors.primary.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(m['icon'] as IconData, color: AppColors.primary),
+                        child: Icon(m['icon'] as IconData, color: AppColors.primaryText),
                       ),
                       title: Text(m['title'] as String, style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
                       subtitle: Text(m['subtitle'] as String, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
@@ -375,7 +375,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                 color: AppColors.emeraldGreen.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: const Text('Mặc định', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                              child: const Text('Mặc định', style: TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
                             )
                           : IconButton(
                               icon: const Icon(CupertinoIcons.ellipsis, color: AppColors.textMutedLight),
@@ -397,7 +397,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               const SizedBox(height: 14),
               OutlinedButton.icon(
                 onPressed: () => context.push('/bank-cards'),
-                icon: const Icon(CupertinoIcons.building_2_fill, color: AppColors.primary),
+                icon: const Icon(CupertinoIcons.building_2_fill, color: AppColors.primaryLight),
                 label: const Text('Quản lý tài khoản ngân hàng liên kết'),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.primary),
@@ -408,7 +408,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               const SizedBox(height: 12),
               OutlinedButton.icon(
                 onPressed: () => context.push('/cards'),
-                icon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
+                icon: const Icon(CupertinoIcons.creditcard, color: AppColors.primaryLight),
                 label: const Text('Xem danh sách thẻ ảo Sen Hồng'),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.borderLight),
@@ -434,7 +434,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Material(type: MaterialType.transparency, child: ListTile(
-              leading: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen),
+              leading: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight),
               title: const Text('Đặt làm phương thức mặc định', style: TextStyle(color: AppColors.textPrimaryLight)),
               onTap: () {
                 HapticFeedback.selectionClick();
@@ -447,8 +447,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
               },
             )),
             Material(type: MaterialType.transparency, child: ListTile(
-              leading: const Icon(CupertinoIcons.trash_fill, color: AppColors.error),
-              title: const Text('Hủy liên kết thẻ này', style: TextStyle(color: AppColors.error)),
+              leading: const Icon(CupertinoIcons.trash_fill, color: AppColors.errorText),
+              title: const Text('Hủy liên kết thẻ này', style: TextStyle(color: AppColors.errorText)),
               onTap: () async {
                 Navigator.pop(ctx);
                 // MOB-007: BE chưa có API funding-sources (BE-REQ-06).

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'user_avatar_widget.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
 import 'package:morphnext/morphnext.dart';
@@ -145,7 +146,7 @@ class VietnamHeroHeader extends StatelessWidget {
                                   },
                                   icon: const Icon(
                                     CupertinoIcons.bell_fill,
-                                    color: Colors.white,
+                                    color: AppColors.textPrimaryLight,
                                     size: 19,
                                   ),
                                 ),
@@ -184,7 +185,7 @@ class VietnamHeroHeader extends StatelessWidget {
                               },
                               icon: const Icon(
                                 CupertinoIcons.search,
-                                color: Colors.white,
+                                color: AppColors.textPrimaryLight,
                                 size: 19,
                               ),
                             ),
@@ -205,7 +206,7 @@ class VietnamHeroHeader extends StatelessWidget {
                                 Text(
                                   'Xin chào,',
                                   style: GoogleFonts.inter(
-                                    color: Colors.white70,
+                                    color: AppColors.textSecondaryLight,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -213,7 +214,7 @@ class VietnamHeroHeader extends StatelessWidget {
                                 Text(
                                   displayName.isEmpty ? 'Chưa có thông tin' : displayName,
                                   style: GoogleFonts.plusJakartaSans(
-                                    color: Colors.white,
+                                    color: AppColors.textPrimaryLight,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
                                     letterSpacing: 0.2,
@@ -275,13 +276,13 @@ class VietnamHeroHeader extends StatelessWidget {
                           const Icon(
                             CupertinoIcons.radiowaves_right,
                             size: 15,
-                            color: Colors.white70,
+                            color: AppColors.textSecondaryLight,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'TK THANH TOÁN',
                             style: GoogleFonts.inter(
-                              color: Colors.white70,
+                              color: AppColors.textSecondaryLight,
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.8,
@@ -333,7 +334,7 @@ class VietnamHeroHeader extends StatelessWidget {
                       Text(
                         'STK:',
                         style: GoogleFonts.inter(
-                          color: Colors.white70,
+                          color: AppColors.textSecondaryLight,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -352,7 +353,7 @@ class VietnamHeroHeader extends StatelessWidget {
                               Text(
                                 'Khả dụng',
                                 style: GoogleFonts.inter(
-                                  color: Colors.white70,
+                                  color: AppColors.textSecondaryLight,
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -383,7 +384,7 @@ class VietnamHeroHeader extends StatelessWidget {
                         style: GoogleFonts.plusJakartaSans(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white,
+                          color: AppColors.textPrimaryLight,
                           letterSpacing: 0.6,
                           shadows: const [
                             Shadow(
@@ -475,7 +476,7 @@ class _CopyStkChipState extends State<_CopyStkChip> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_rounded, color: Colors.white),
+            const Icon(Icons.check_circle_rounded, color: AppColors.textPrimaryLight),
             const SizedBox(width: 8),
             Text(
               'Đã sao chép STK: ${widget.accountNumber}',
@@ -516,7 +517,7 @@ class _CopyStkChipState extends State<_CopyStkChip> {
             Text(
               widget.accountNumber.isEmpty ? 'Chưa có số tài khoản' : widget.accountNumber,
               style: GoogleFonts.plusJakartaSans(
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 1.0,

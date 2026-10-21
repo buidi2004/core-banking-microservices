@@ -124,7 +124,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text('Hủy', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: const Text('Hủy', style: TextStyle(color: AppColors.errorText, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -155,7 +155,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                             const SizedBox(height: 6),
                             Text(
                               CurrencyFormatter.formatVND(widget.amount),
-                              style: AppTypography.displayMedium(color: AppColors.emeraldGreen),
+                              style: AppTypography.displayMedium(color: AppColors.emeraldGreenLight),
                             ),
                             if (CurrencyFormatter.toVietnameseWords(widget.amount).isNotEmpty) ...[
                               const SizedBox(height: 4),
@@ -197,12 +197,12 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    Icon(CupertinoIcons.arrow_down_circle_fill, color: AppColors.emeraldGreen, size: 18),
+                                    Icon(CupertinoIcons.arrow_down_circle_fill, color: AppColors.successTextLight, size: 18),
                                     SizedBox(width: 8),
                                     Text('Hạn mức nạp tiền trong ngày', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
                                   ],
                                 ),
-                                Text('50.000.000 đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryDark)),
+                                Text('50.000.000 đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryText)),
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -220,7 +220,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text('Nạp giao dịch này: ${CurrencyFormatter.formatVND(widget.amount)}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
-                                Text('Hạn mức còn lại: ${CurrencyFormatter.formatVND(50000000 - widget.amount)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.emeraldGreen)),
+                                Text('Hạn mức còn lại: ${CurrencyFormatter.formatVND(50000000 - widget.amount)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.successTextLight)),
                               ],
                             ),
                           ],
@@ -241,7 +241,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.emeraldGreen, size: 16),
+                              Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.successTextLight, size: 16),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -254,7 +254,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                           SizedBox(height: 6),
                           Row(
                             children: [
-                              Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.bottomBarCyan, size: 16),
+                              Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.primaryText, size: 16),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -297,7 +297,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                         ElevatedButton.icon(
                           onPressed: _handleBiometric,
                           icon: const Icon(CupertinoIcons.viewfinder_circle_fill, color: Colors.white, size: 18),
-                          label: const Text('Sinh trắc học', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          label: const Text('Sinh trắc học', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 12)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.emeraldGreen,
                             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -309,7 +309,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                           onPressed: () => context.push('/auth/forgot-pin'),
                           child: const Text(
                             'Quên mã PIN?',
-                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ),
                       ],
@@ -322,7 +322,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.all(32),
-                child: CircularProgressIndicator(color: AppColors.primary),
+                child: CircularProgressIndicator(color: AppColors.primaryLight),
               )
             else
               // Numpad Light Glass
@@ -352,7 +352,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                               border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.4), width: 1.2),
                             ),
                             child: const Center(
-                              child: Icon(CupertinoIcons.viewfinder_circle_fill, color: AppColors.emeraldGreen, size: 26),
+                              child: Icon(CupertinoIcons.viewfinder_circle_fill, color: AppColors.successTextLight, size: 26),
                             ),
                           ),
                         ),
@@ -361,7 +361,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                           width: 68,
                           height: 68,
                           child: IconButton(
-                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryDark, size: 26),
+                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryText, size: 26),
                             onPressed: _handleBackspace,
                           ),
                         ),
@@ -389,7 +389,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.titleMedium(
-              color: isHighlight ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+              color: isHighlight ? AppColors.successTextLight : AppColors.textPrimaryLight,
             ),
           ),
         ),
@@ -426,7 +426,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
         child: Center(
           child: Text(
             digit,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryText),
           ),
         ),
       ),

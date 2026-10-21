@@ -48,4 +48,7 @@ class BackendCapabilities {
   /// BE chưa cung money-request detail/cancel endpoints
   static const bool moneyRequestDetail = false;     // BE-REQ-06
   static const bool moneyRequestCancel = false;     // BE-REQ-06
+
+  /// BE chưa có producer tạo thông báo Khuyến mãi / Hệ thống (chỉ có BALANCE)
+  static const bool promoAndSystemNotifications = false; // BE-REQ-PROMO
 }

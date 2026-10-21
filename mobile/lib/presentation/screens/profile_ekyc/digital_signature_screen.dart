@@ -138,7 +138,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
               label: const Text('Xác thực khuôn mặt eKYC ngay'),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
-                backgroundColor: AppColors.primary,
+                backgroundColor: AppColors.primaryDark,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
@@ -250,10 +250,10 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.primaryDark,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Cập nhật mã PIN Smart OTP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text('Cập nhật mã PIN Smart OTP', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -293,7 +293,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                                 color: AppColors.primary.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primary, size: 20),
+                              child: const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primaryText, size: 20),
                             ),
                             const SizedBox(width: 10),
                             Text('SMART OTP SEN HỒNG', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
@@ -306,7 +306,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.3)),
                           ),
-                          child: const Text('HOẠT ĐỘNG', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                          child: const Text('HOẠT ĐỘNG', style: TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -316,7 +316,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                     Text(
                       _currentOtpCode,
                       style: const TextStyle(
-                        color: AppColors.primaryDark,
+                        color: AppColors.primaryText,
                         fontSize: 38,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 6,
@@ -326,9 +326,9 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(CupertinoIcons.stopwatch, color: AppColors.accentGold, size: 16),
+                        const Icon(CupertinoIcons.stopwatch, color: AppColors.warningTextLight, size: 16),
                         const SizedBox(width: 6),
-                        Text('Mã tự động đổi sau ${_secondsRemaining}s', style: const TextStyle(color: AppColors.warning, fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text('Mã tự động đổi sau ${_secondsRemaining}s', style: const TextStyle(color: AppColors.warningTextLight, fontSize: 13, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -343,8 +343,8 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: _syncOtp,
-                              icon: const Icon(CupertinoIcons.arrow_2_circlepath, size: 16, color: AppColors.primaryDark),
-                              label: const Text('Đồng bộ OTP', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w600, fontSize: 12)),
+                              icon: const Icon(CupertinoIcons.arrow_2_circlepath, size: 16, color: AppColors.primaryText),
+                              label: const Text('Đồng bộ OTP', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.w600, fontSize: 12)),
                             ),
                           ),
                         ),
@@ -354,11 +354,11 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                             height: 44,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primary,
+                                backgroundColor: AppColors.primaryDark,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: _showChangePinModal,
-                              icon: const Icon(CupertinoIcons.lock_rotation, size: 16, color: Colors.white),
+                              icon: const Icon(CupertinoIcons.lock_rotation, size: 16, color: AppColors.textPrimaryLight),
                               label: const Text('Đổi PIN OTP', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                             ),
                           ),
@@ -390,7 +390,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                             color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(CupertinoIcons.device_phone_portrait, color: AppColors.primary, size: 24),
+                          child: const Icon(CupertinoIcons.device_phone_portrait, color: AppColors.primaryText, size: 24),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -405,7 +405,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                         ),
                         TextButton(
                           onPressed: _handleChangeDevice,
-                          child: const Text('Đổi máy', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+                          child: const Text('Đổi máy', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -537,7 +537,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                                 color: AppColors.emeraldGreen.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Text('Đã ký số', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                              child: const Text('Đã ký số', style: TextStyle(color: AppColors.successTextLight, fontSize: 10, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -548,7 +548,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(log['time'] as String, style: const TextStyle(color: AppColors.textMutedLight, fontSize: 11)),
-                            Text(log['hash'] as String, style: const TextStyle(color: AppColors.primaryDark, fontSize: 11, fontFamily: 'monospace')),
+                            Text(log['hash'] as String, style: const TextStyle(color: AppColors.primaryLight, fontSize: 11, fontFamily: 'monospace')),
                           ],
                         ),
                       ],
@@ -615,7 +615,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 20),
+            Icon(icon, color: AppColors.primaryText, size: 20),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
@@ -634,7 +634,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: AppColors.primary, size: 22),
+        Icon(icon, color: AppColors.primaryText, size: 22),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -647,7 +647,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
           ),
         ),
         const SizedBox(width: 8),
-        const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 18),
+        const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight, size: 18),
       ],
     );
   }
@@ -664,7 +664,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
             value,
             textAlign: TextAlign.right,
             style: TextStyle(
-              color: isGreen ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+              color: isGreen ? AppColors.successTextLight : AppColors.textPrimaryLight,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),

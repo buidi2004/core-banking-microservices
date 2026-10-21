@@ -156,10 +156,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 controller: _otpController,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                style: const TextStyle(color: AppColors.primaryDark, fontSize: 20, letterSpacing: 8, fontWeight: FontWeight.bold),
+                style: const TextStyle(color: AppColors.primaryLight, fontSize: 20, letterSpacing: 8, fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
                   counterText: '',
-                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.primaryLight),
                   hintText: '• • • • • •',
                   hintStyle: const TextStyle(color: AppColors.textMutedLight, letterSpacing: 4),
                   filled: true,
@@ -187,19 +187,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       children: [
                         InkWell(
                           onTap: _resendOtp,
-                          child: const Text('Gửi lại SMS OTP', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text('Gửi lại SMS OTP', style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 12)),
                         ),
                         const SizedBox(width: 12),
                         InkWell(
                           onTap: _requestVoiceOtp,
-                          child: const Text('Nhận cuộc gọi Voice OTP', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text('Nhận cuộc gọi Voice OTP', style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 12)),
                         ),
                       ],
                     ),
                   if (_secondsLeft > 0)
                     InkWell(
                       onTap: _requestVoiceOtp,
-                      child: const Text('Gọi Voice OTP', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w600)),
+                      child: const Text('Gọi Voice OTP', style: TextStyle(color: AppColors.primaryText, fontSize: 11, fontWeight: FontWeight.w600)),
                     ),
                 ],
               ),
@@ -213,7 +213,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 obscureText: _obscurePass,
                 style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(CupertinoIcons.lock_fill, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.lock_fill, color: AppColors.primaryLight),
                   suffixIcon: MorphEyeButton(
                     isHidden: _obscurePass,
                     color: AppColors.textMutedLight,
@@ -275,7 +275,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 obscureText: _obscureConfirmPass,
                 style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.primaryLight),
                   suffixIcon: MorphEyeButton(
                     isHidden: _obscureConfirmPass,
                     color: AppColors.textMutedLight,
@@ -304,7 +304,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.emeraldGreen, size: 16),
+                        Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.successTextLight, size: 16),
                         SizedBox(width: 8),
                         Text('Độ dài tối thiểu 6 ký tự', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
                       ],
@@ -312,7 +312,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.emeraldGreen, size: 16),
+                        Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.successTextLight, size: 16),
                         SizedBox(width: 8),
                         Text('Nên bao gồm cả chữ và số để tăng độ an toàn', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
                       ],
@@ -401,7 +401,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),

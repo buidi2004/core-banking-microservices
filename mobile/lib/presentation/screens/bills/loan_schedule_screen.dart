@@ -103,11 +103,11 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: Row(
           children: [
-            const Icon(CupertinoIcons.creditcard_fill, color: AppColors.bottomBarCyan, size: 24),
+            const Icon(CupertinoIcons.creditcard_fill, color: AppColors.primaryText, size: 24),
             const SizedBox(width: 10),
             Text(
               'Thanh toán Kỳ ${dueTerm['term']}',
-              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -117,7 +117,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
           children: [
             Text(
               'Xác nhận trích tiền từ Ví SenBank để thanh toán kỳ hạn ngày ${dueTerm['dueDate']}.',
-              style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.3),
+              style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 13, height: 1.3),
             ),
             const SizedBox(height: 14),
             Container(
@@ -132,26 +132,26 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Gốc kỳ này:', style: TextStyle(color: Colors.white60, fontSize: 13)),
-                      Text(CurrencyFormatter.formatVND(dueTerm['principal'] as double), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      const Text('Gốc kỳ này:', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
+                      Text(CurrencyFormatter.formatVND(dueTerm['principal'] as double), style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600)),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Lãi kỳ này:', style: TextStyle(color: Colors.white60, fontSize: 13)),
-                      Text(CurrencyFormatter.formatVND(dueTerm['interest'] as double), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      const Text('Lãi kỳ này:', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
+                      Text(CurrencyFormatter.formatVND(dueTerm['interest'] as double), style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600)),
                     ],
                   ),
                   const Divider(color: Colors.white12, height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tổng thanh toán:', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text('Tổng thanh toán:', style: TextStyle(color: AppColors.textSecondaryLight, fontWeight: FontWeight.bold, fontSize: 14)),
                       Text(
                         CurrencyFormatter.formatVND(dueTerm['total'] as double),
-                        style: const TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.w800, fontSize: 16),
+                        style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.w800, fontSize: 16),
                       ),
                     ],
                   ),
@@ -163,7 +163,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Để sau', style: TextStyle(color: Colors.white54)),
+            child: const Text('Để sau', style: TextStyle(color: AppColors.textSecondaryLight)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -188,12 +188,12 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                   SnackBar(
                     content: Row(
                       children: [
-                        const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.emeraldGreen, size: 22),
+                        const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight, size: 22),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             'Thanh toán Kỳ ${dueTerm['term']} thành công! Điểm tín dụng SenBank của bạn đã tăng.',
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: AppColors.textPrimaryLight),
                           ),
                         ),
                       ],
@@ -217,11 +217,11 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(CupertinoIcons.arrow_down_doc_fill, color: AppColors.bottomBarCyan, size: 20),
+            const Icon(CupertinoIcons.arrow_down_doc_fill, color: AppColors.primaryText, size: 20),
             const SizedBox(width: 10),
             Text(
               'Đang tải file Lịch trả nợ & Bảng khấu hao $_contractNumber (PDF)...',
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: AppColors.textPrimaryLight),
             ),
           ],
         ),
@@ -334,7 +334,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
               ),
               child: const Icon(
                 CupertinoIcons.chevron_left,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -355,7 +355,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 Text(
                   _contractNumber,
                   style: const TextStyle(
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -374,7 +374,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
               ),
               child: const Icon(
                 CupertinoIcons.arrow_down_doc,
-                color: Colors.white,
+                color: AppColors.textPrimaryLight,
                 size: 20,
               ),
             ),
@@ -425,7 +425,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                     ),
                     child: const Icon(
                       CupertinoIcons.shield_lefthalf_fill,
-                      color: AppColors.accentGold,
+                      color: AppColors.warningTextLight,
                       size: 20,
                     ),
                   ),
@@ -444,7 +444,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                       const Text(
                         'Điểm CIC: 720 (Hạng 1 Chuẩn Tốt)',
                         style: TextStyle(
-                          color: AppColors.emeraldGreen,
+                          color: AppColors.emeraldGreenLight,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -462,7 +462,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 ),
                 child: const Text(
                   'ĐANG VAY',
-                  style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -486,7 +486,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
               SizedBox(width: 6),
               Text(
                 'VND',
-                style: TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.w700, fontSize: 16),
+                style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.w700, fontSize: 16),
               ),
             ],
           ),
@@ -517,9 +517,9 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        Text(label, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
         const SizedBox(height: 2),
-        Text(val, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+        Text(val, style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13)),
       ],
     );
   }
@@ -537,11 +537,11 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
               children: [
                 const Text(
                   'Cơ cấu khoản vay toàn kỳ',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+                  style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w700, fontSize: 14),
                 ),
                 Text(
                   'Đã trả: 2 / $_totalTerms kỳ (33.3%)',
-                  style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: AppColors.primaryText, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -600,7 +600,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
       child: Text(
         title,
         style: const TextStyle(
-          color: AppColors.bottomBarCyan,
+          color: AppColors.primaryText,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
           fontSize: 12,
@@ -682,7 +682,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                       child: Text(
                         '$term',
                         style: TextStyle(
-                          color: isDue ? AppColors.primaryDark : Colors.white,
+                          color: isDue ? AppColors.primaryLight : Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
@@ -737,15 +737,15 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
               children: [
                 Text(
                   'Gốc: ${CurrencyFormatter.formatVND(principal)}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
                 ),
                 Text(
                   '+ Lãi: ${CurrencyFormatter.formatVND(interest)}',
-                  style: const TextStyle(color: AppColors.accentGold, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: AppColors.warningTextLight, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   '= ${CurrencyFormatter.formatVND(total)}',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ],
             ),
@@ -763,7 +763,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 ),
                 onPressed: _isPaying ? null : _payCurrentTerm,
                 child: _isPaying
-                    ? const CupertinoActivityIndicator(color: AppColors.primaryDark)
+                    ? const CupertinoActivityIndicator(color: AppColors.primaryLight)
                     : const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -793,7 +793,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(CupertinoIcons.arrow_2_squarepath, color: AppColors.bottomBarCyan, size: 20),
+              child: const Icon(CupertinoIcons.arrow_2_squarepath, color: AppColors.primaryText, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -802,19 +802,19 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 children: [
                   const Text(
                     'Trích nợ tự động (Auto-Debit)',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                    style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     'Tự động trừ ví vào ngày đến hạn để duy trì điểm CIC tốt',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12),
+                    style: TextStyle(color: AppColors.textPrimaryLight.withValues(alpha: 0.6), fontSize: 12),
                   ),
                 ],
               ),
             ),
             CupertinoSwitch(
               value: _autoDebit,
-              activeTrackColor: AppColors.bottomBarCyan,
+              activeTrackColor: AppColors.primaryText,
               onChanged: (val) {
                 setState(() => _autoDebit = val);
               },
@@ -836,12 +836,12 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.info_circle_fill, color: AppColors.accentGold, size: 20),
+          Icon(CupertinoIcons.info_circle_fill, color: AppColors.warningTextLight, size: 20),
           SizedBox(width: 10),
           Expanded(
             child: Text(
               'Chính sách trả nợ trước hạn: Phí phạt 0% từ kỳ thứ 3 trở đi. Tiền lãi chỉ tính trên số ngày thực tế sử dụng vốn đến thời điểm tất toán.',
-              style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
+              style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12, height: 1.35),
             ),
           ),
         ],
@@ -855,7 +855,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
       height: 52,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDark,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),

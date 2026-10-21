@@ -234,7 +234,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(CupertinoIcons.lock_fill, color: AppColors.error, size: 28),
+            Icon(CupertinoIcons.lock_fill, color: AppColors.errorText, size: 28),
             SizedBox(width: 10),
             Expanded(child: Text('Tài Khoản Tạm Khóa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
           ],
@@ -256,7 +256,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
               Navigator.pop(ctx);
               context.push('/auth/forgot-pin');
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryDark),
             child: const Text('Cấp lại mã PIN'),
           ),
         ],
@@ -302,7 +302,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                     const SizedBox(height: 6),
                     Text(
                       CurrencyFormatter.formatVND(widget.amount),
-                      style: AppTypography.displayLarge(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.bold),
+                      style: AppTypography.displayLarge(color: AppColors.primaryText).copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -333,7 +333,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                       const Divider(height: 20, color: AppColors.cardBorderLight),
                       _buildInfoRow('Phương thức', 'Ví Sen Hồng (Nội bộ 24/7)'),
                       const Divider(height: 20, color: AppColors.cardBorderLight),
-                      _buildInfoRow('Phí giao dịch', CurrencyFormatter.formatVND(_fee), valueColor: AppColors.emeraldGreen),
+                      _buildInfoRow('Phí giao dịch', CurrencyFormatter.formatVND(_fee), valueColor: AppColors.successText),
                       const Divider(height: 20, color: AppColors.cardBorderLight),
                       _buildInfoRow('Nội dung', widget.note.isEmpty ? 'Chuyen tien' : widget.note),
                       const Divider(height: 20, color: AppColors.cardBorderLight),
@@ -354,7 +354,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                 children: [
                   Checkbox(
                     value: _saveBeneficiary,
-                    activeColor: AppColors.primary,
+                    activeColor: AppColors.primaryDark,
                     onChanged: (v) => setState(() => _saveBeneficiary = v ?? true),
                   ),
                   Expanded(
@@ -379,6 +379,12 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                     onPressed: _isSubmitting ? null : () => setState(() => _showPinModal = true),
                     icon: const Icon(CupertinoIcons.lock_shield_fill, size: 18),
                     label: const Text('Xác nhận & Ký mã PIN'),
+                    style: ElevatedButton.styleFrom(
+                      // primaryDark (#0077B6) để chữ trắng đạt 4.87:1
+                      // (primary #00B4D8 chỉ đạt 2.46:1).
+                      backgroundColor: AppColors.primaryDark,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -393,7 +399,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                           child: Text('Sửa số tiền'),
                         ),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primaryDark,
+                          foregroundColor: AppColors.primaryText,
                           side: const BorderSide(color: AppColors.borderSubtle),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
@@ -452,7 +458,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                         Text(
                           'Đang kết nối hệ thống & ký số giao dịch...',
                           textAlign: TextAlign.center,
-                          style: AppTypography.titleSmall(color: AppColors.primaryDark),
+                          style: AppTypography.titleSmall(color: AppColors.primaryText),
                         ),
                         const SizedBox(height: 6),
                         Text(
@@ -478,15 +484,15 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
                         _showPinModal = false;
                         _pin = '';
                       }),
-                      icon: const Icon(CupertinoIcons.doc_text_fill, size: 16, color: AppColors.primary),
-                      label: const Text('Quay lại xem chi tiết giao dịch', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
+                      icon: const Icon(CupertinoIcons.doc_text_fill, size: 16, color: AppColors.primaryText),
+                      label: const Text('Quay lại xem chi tiết giao dịch', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.w600, fontSize: 13)),
                     ),
                   ),
                   Center(
                     child: TextButton.icon(
                       onPressed: () => context.push('/auth/forgot-pin'),
-                      icon: const Icon(CupertinoIcons.lock_fill, size: 16, color: AppColors.primaryDark),
-                      label: const Text('Quên mã PIN giao dịch? Cấp lại mã PIN', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 13)),
+                      icon: const Icon(CupertinoIcons.lock_fill, size: 16, color: AppColors.primaryText),
+                      label: const Text('Quên mã PIN giao dịch? Cấp lại mã PIN', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ),
                 ],
@@ -557,7 +563,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Icon(icon, color: AppColors.primary, size: 18),
+            Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
