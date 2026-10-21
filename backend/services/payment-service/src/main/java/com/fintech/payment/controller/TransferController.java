@@ -31,9 +31,25 @@ public class TransferController {
             @RequestHeader(value = "X-Pin-Token", required = false) String headerPinToken,
             @Valid @RequestBody TransferRequest request) {
 
-        String sourceUserId = (headerUserId != null && !headerUserId.isBlank())
-                ? headerUserId
-                : request.getSourceUserId();
+        String sourceUserId = (request.getSourceUserId() != null && !request.getSourceUserId().isBlank())
+                ? request.getSourceUserId().trim()
+                : (headerUserId != null && !headerUserId.isBlank() ? headerUserId.trim() : null);
+
+        if (sourceUserId == null || sourceUserId.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("MISSING_SOURCE_USER", "sourceUserId hoặc header X-User-Id là bắt buộc"));
+        }
+
+        String targetUserId = (request.getTargetUserId() != null && !request.getTargetUserId().isBlank())
+                ? request.getTargetUserId().trim()
+                : null;
+
+        if (targetUserId == null || targetUserId.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("MISSING_TARGET_USER", "targetUserId là bắt buộc. Hãy tra cứu qua GET /api/v1/wallets/recipient-info?phoneNumber={sdt}"));
+        }
+
+        String idempotencyKey = (request.getIdempotencyKey() != null && !request.getIdempotencyKey().isBlank())
+                ? request.getIdempotencyKey().trim()
+                : java.util.UUID.randomUUID().toString();
 
         String pinToken = (request.getPinToken() != null && !request.getPinToken().isBlank())
                 ? request.getPinToken()
@@ -50,11 +66,11 @@ public class TransferController {
 
         SagaContext ctx = sagaOrchestrator.transferP2p(
                 sourceUserId,
-                request.getTargetUserId(),
+                targetUserId,
                 request.getAmount(),
-                request.getCurrency(),
+                request.getCurrency() != null ? request.getCurrency() : "VND",
                 request.getNote(),
-                request.getIdempotencyKey()
+                idempotencyKey
         );
         return ResponseEntity.ok(ApiResponse.success("P2P transfer processed", TransferResponse.from(ctx)));
     }
