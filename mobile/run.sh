@@ -92,6 +92,55 @@ cmd_run_chrome() {
     cmd_run -d chrome
 }
 
+# 3b. Khởi chạy hoặc đóng gói APK kết nối tới GitHub Codespaces / Cloud URL
+normalize_cloud_urls() {
+    local raw_url="$1"
+    if [ -z "$raw_url" ]; then
+        read -rp "👉 Nhập link cổng 8080 của Codespaces (VD: https://xxx-8080.app.github.dev): " raw_url
+    fi
+    # Cắt dấu / ở cuối hoặc /api/v1 nếu người dùng lỡ dán thừa
+    raw_url="${raw_url%/}"
+    raw_url="${raw_url%/api/v1}"
+    CLOUD_API_URL="${raw_url}/api/v1"
+    if [[ "$raw_url" == https://* ]]; then
+        CLOUD_WS_URL="wss://${raw_url#https://}/ws-native"
+    else
+        CLOUD_WS_URL="ws://${raw_url#http://}/ws-native"
+    fi
+}
+
+cmd_run_cloud() {
+    print_banner
+    normalize_cloud_urls "$1"
+    shift 2>/dev/null || true
+    if check_flutter; then
+        echo -e "${GREEN}☁️  Đang kết nối Mobile tới GitHub Codespaces Cloud:${NC}"
+        echo -e "   • REST API : ${BOLD}${CYAN}$CLOUD_API_URL${NC}"
+        echo -e "   • WebSocket: ${BOLD}${CYAN}$CLOUD_WS_URL${NC}\n"
+        cd "$MOBILE_DIR"
+        flutter run \
+            --dart-define=API_BASE_URL="$CLOUD_API_URL" \
+            --dart-define=API_WS_URL="$CLOUD_WS_URL" \
+            "$@"
+    fi
+}
+
+cmd_apk_cloud() {
+    print_banner
+    normalize_cloud_urls "$1"
+    if check_flutter; then
+        echo -e "${GREEN}📦 Đang đóng gói APK kết nối sẵn tới GitHub Codespaces:${NC}"
+        echo -e "   • REST API : ${BOLD}${CYAN}$CLOUD_API_URL${NC}"
+        echo -e "   • WebSocket: ${BOLD}${CYAN}$CLOUD_WS_URL${NC}\n"
+        cd "$MOBILE_DIR"
+        flutter build apk --release \
+            --dart-define=API_BASE_URL="$CLOUD_API_URL" \
+            --dart-define=API_WS_URL="$CLOUD_WS_URL"
+        echo -e "\n${GREEN}✓ Đóng gói Cloud APK thành công!${NC}"
+        echo -e "👉 File APK: ${BOLD}${CYAN}mobile/build/app/outputs/flutter-apk/app-release.apk${NC}"
+    fi
+}
+
 # 4. Liệt kê thiết bị & emulators sẵn sàng
 cmd_devices() {
     print_banner
@@ -244,9 +293,11 @@ interactive_menu() {
         echo -e "  ${GREEN}8.${NC} 📦 ${BOLD}Đóng Gói Android Release APK${NC} (flutter build apk)"
         echo -e "  ${GREEN}9.${NC} 🩺 ${BOLD}Chạy Chẩn Đoán Hệ Thống${NC} (flutter doctor)"
         echo -e "  ${YELLOW}10.${NC} 🧹 ${BOLD}Dọn Dẹp Build Cache${NC} (flutter clean)"
+        echo -e "  ${CYAN}11.${NC} ☁️  ${BOLD}Chạy App Kết Nối GitHub Codespaces${NC} (Cloud URL)"
+        echo -e "  ${CYAN}12.${NC} 📦 ${BOLD}Xuất File APK Kết Nối GitHub Codespaces${NC} (Cloud APK)"
         echo -e "  ${YELLOW}0.${NC} 🚪 ${BOLD}Thoát Menu${NC}"
         echo -e " ----------------------------------------------------------------------------------------"
-        read -rp "👉 Nhập lựa chọn của bạn [0-10]: " choice
+        read -rp "👉 Nhập lựa chọn của bạn [0-12]: " choice
 
         case "$choice" in
             1) cmd_run; read -rp "Ấn Enter để tiếp tục..." ;;
@@ -259,6 +310,8 @@ interactive_menu() {
             8) cmd_build_apk; read -rp "Ấn Enter để tiếp tục..." ;;
             9) cmd_doctor; read -rp "Ấn Enter để tiếp tục..." ;;
             10) cmd_clean; read -rp "Ấn Enter để tiếp tục..." ;;
+            11) cmd_run_cloud ""; read -rp "Ấn Enter để tiếp tục..." ;;
+            12) cmd_apk_cloud ""; read -rp "Ấn Enter để tiếp tục..." ;;
             0) echo -e "\n${GREEN}Tạm biệt!${NC}"; exit 0 ;;
             *) echo -e "${RED}Lựa chọn không hợp lệ!${NC}"; sleep 1 ;;
         esac
@@ -272,6 +325,14 @@ case "$COMMAND" in
     run|dev)
         shift 2>/dev/null || true
         cmd_run "$@"
+        ;;
+    cloud)
+        shift 2>/dev/null || true
+        cmd_run_cloud "$@"
+        ;;
+    apk:cloud)
+        shift 2>/dev/null || true
+        cmd_apk_cloud "$@"
         ;;
     chrome|web)
         cmd_run_chrome

@@ -99,7 +99,9 @@ final GoRouter appRouter = GoRouter(
 
     // 2. Danh sách các tuyến đường công khai (không yêu cầu đăng nhập)
     final isAuthRoute = path.startsWith('/auth');
-    final isPublicSupport = path == '/support/help-center' || path == '/help-center';
+    final isPublicSupport = path == '/support/help-center' ||
+        path == '/help-center' ||
+        path == '/settings/config';
     final isPublicRoute = isAuthRoute || isPublicSupport;
 
     // 3. Kiểm tra Access Token trong SecureStorage an toàn

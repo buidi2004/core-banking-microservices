@@ -70,12 +70,16 @@ start_infra() {
 start_be() {
     start_infra
     echo -e "\n${BLUE}⚙️ [2/4] KHỞI ĐỘNG CỤM BACKEND MICROSERVICES...${NC}"
+    if ! ls "$ROOT_DIR"/backend/services/api-gateway/target/*.jar >/dev/null 2>&1; then
+        echo -e "  ${YELLOW}⚠️ Chưa tìm thấy file .jar đã đóng gói. Đang tự động build Maven (common-library + 6 services)...${NC}"
+        mvn -f "$ROOT_DIR/backend/pom.xml" clean package -DskipTests
+    fi
     echo -e "  • Khởi chạy các container Microservices:"
-    docker compose up -d api-gateway identity-service wallet-service payment-service ledger-service notification-service
+    docker compose up -d --build api-gateway identity-service wallet-service payment-service ledger-service notification-service
     echo -e "  ${GREEN}✓ Toàn bộ Backend Microservices đã được kích hoạt!${NC}"
     echo -e "    - API Gateway:    ${CYAN}http://localhost:8080${NC}"
-    echo -e "    - Kafka UI:       ${CYAN}http://localhost:8089${NC}"
-    echo -e "    - RabbitMQ UI:    ${CYAN}http://localhost:15672${NC} (guest / guest)"
+    echo -e "    - Kafka UI:       ${CYAN}http://localhost:8090${NC}"
+    echo -e "    - RabbitMQ UI:    ${CYAN}http://localhost:15672${NC} (wallet / wallet123)"
 }
 
 # 3. Khởi động Frontend React Portal
@@ -94,6 +98,10 @@ start_fe() {
     fi
 
     cd "$FE_DIR"
+    if [ ! -d "node_modules" ]; then
+        echo -e "  • Đang cài đặt dependencies cho Frontend (npm install)..."
+        npm install
+    fi
     echo -e "  • Đang khởi động Vite Dev Server..."
     nohup npm run dev -- --host 0.0.0.0 --port 5173 > "$FE_LOG_FILE" 2>&1 &
     local fe_pid=$!

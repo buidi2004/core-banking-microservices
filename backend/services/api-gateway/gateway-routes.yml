@@ -28,6 +28,8 @@ spring:
             allowedOriginPatterns:
               - "http://localhost:[*]"
               - "http://127.0.0.1:[*]"
+              - "https://*.app.github.dev"
+              - "https://*.github.dev"
             allowedMethods:
               - GET
               - POST

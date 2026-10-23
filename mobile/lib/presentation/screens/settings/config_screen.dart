@@ -1,8 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/network/dio_client.dart';
+import 'package:sen_hong_bank/core/network/realtime_notification_service.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 
 class ConfigScreen extends StatefulWidget {
@@ -14,9 +17,9 @@ class ConfigScreen extends StatefulWidget {
 
 class _ConfigScreenState extends State<ConfigScreen> {
   final TextEditingController _apiUrlCtrl =
-      TextEditingController(text: 'http://localhost:8080/api/v1');
+      TextEditingController(text: DioClient.sharedDio.options.baseUrl);
   final TextEditingController _wsUrlCtrl =
-      TextEditingController(text: 'ws://localhost:8080/ws-native');
+      TextEditingController(text: DioClient.activeWsUrl);
 
   int _selectedGatewayIdx = 0;
   bool _isTesting = false;
@@ -29,27 +32,27 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
   final List<Map<String, dynamic>> _gateways = [
     {
-      'name': 'Hà Nội Primary Gateway (DC-01)',
+      'name': 'Localhost / ADB Reverse (Cổng 8080)',
       'url': 'http://localhost:8080/api/v1',
       'ws': 'ws://localhost:8080/ws-native',
-      'ping': 24,
-      'status': 'ĐANG HOẠT ĐỘNG (ACTIVE)',
+      'ping': 12,
+      'status': 'MẶC ĐỊNH LOCAL',
       'isPrimary': true,
     },
     {
-      'name': 'TP. Hồ Chí Minh Secondary Gateway (DC-02)',
+      'name': 'Android Emulator Bridge (10.0.2.2)',
       'url': 'http://10.0.2.2:8080/api/v1',
       'ws': 'ws://10.0.2.2:8080/ws-native',
-      'ping': 32,
-      'status': 'HOT STANDBY',
+      'ping': 18,
+      'status': 'MÁY ẢO ANDROID',
       'isPrimary': false,
     },
     {
-      'name': 'Cloudflare Edge CDN (Global Cache)',
-      'url': 'https://api.senhongbank.vn/api/v1',
-      'ws': 'wss://api.senhongbank.vn/ws-native',
-      'ping': 18,
-      'status': 'DỰ PHÒNG QUỐC TẾ',
+      'name': 'GitHub Codespaces Cloud (Public 8080)',
+      'url': 'https://xxx-8080.app.github.dev/api/v1',
+      'ws': 'wss://xxx-8080.app.github.dev/ws-native',
+      'ping': 45,
+      'status': 'CLOUD DEMO (DÁN LINK BÊN DƯỚI)',
       'isPrimary': false,
     },
   ];
@@ -92,26 +95,80 @@ class _ConfigScreenState extends State<ConfigScreen> {
     super.dispose();
   }
 
-  void _testConnection() {
+  Future<void> _testConnection() async {
     HapticFeedback.mediumImpact();
-    setState(() => _isTesting = true);
-    Future.delayed(const Duration(milliseconds: 650), () {
-      if (!mounted) return;
-      HapticFeedback.lightImpact();
-      setState(() {
-        _isTesting = false;
-        _pingMs = 20 + (DateTime.now().millisecond % 12);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.emeraldGreen,
-          content: Text(
-            'Kết nối máy chủ Gateway thành công! Độ trễ: $_pingMs ms • HTTP/2 OK',
-          ),
-          behavior: SnackBarBehavior.floating,
+    final normApi = DioClient.normalizeApiUrl(_apiUrlCtrl.text);
+    final normWs = DioClient.deriveWsUrl(normApi, customWsUrl: _wsUrlCtrl.text);
+    setState(() {
+      _isTesting = true;
+      _apiUrlCtrl.text = normApi;
+      _wsUrlCtrl.text = normWs;
+    });
+    await DioClient.updateBaseUrl(normApi, newWsUrl: normWs);
+
+    final sw = Stopwatch()..start();
+    bool reachable = false;
+    try {
+      final probeDio = Dio(
+        BaseOptions(
+          baseUrl: normApi,
+          connectTimeout: const Duration(seconds: 6),
+          receiveTimeout: const Duration(seconds: 6),
+          validateStatus: (status) => status != null && status < 500,
+          headers: const {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
         ),
       );
+      await probeDio.post('/auth/login', data: const {});
+      reachable = true;
+    } catch (_) {
+      reachable = false;
+    }
+    sw.stop();
+
+    if (!mounted) return;
+    HapticFeedback.lightImpact();
+    setState(() {
+      _isTesting = false;
+      _pingMs = sw.elapsedMilliseconds.clamp(5, 9999);
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: reachable ? AppColors.emeraldGreen : Colors.orange.shade800,
+        content: Text(
+          reachable
+              ? 'Kết nối Gateway thành công! Độ trễ thực tế: $_pingMs ms'
+              : 'Đã lưu URL ($normApi) nhưng máy chủ chưa phản hồi ($_pingMs ms)',
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _pasteCodespacesUrl() async {
+    HapticFeedback.selectionClick();
+    final data = await Clipboard.getData('text/plain');
+    final pasted = data?.text?.trim() ?? '';
+    if (pasted.isEmpty) return;
+    final normApi = DioClient.normalizeApiUrl(pasted);
+    final normWs = DioClient.deriveWsUrl(normApi);
+    setState(() {
+      _apiUrlCtrl.text = normApi;
+      _wsUrlCtrl.text = normWs;
+      _selectedGatewayIdx = 2;
+    });
+    await DioClient.updateBaseUrl(normApi, newWsUrl: normWs);
+    RealtimeNotificationService().disconnect();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.emeraldGreen,
+        content: Text('Đã dán & tự động cấu hình: $normApi'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _selectGateway(int idx) {
@@ -122,6 +179,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
       _wsUrlCtrl.text = _gateways[idx]['ws'] as String;
       _pingMs = _gateways[idx]['ping'] as int;
     });
+    DioClient.updateBaseUrl(_apiUrlCtrl.text, newWsUrl: _wsUrlCtrl.text);
+    RealtimeNotificationService().disconnect();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.primaryDark,
@@ -131,12 +190,21 @@ class _ConfigScreenState extends State<ConfigScreen> {
     );
   }
 
-  void _saveConfig() {
+  Future<void> _saveConfig() async {
     HapticFeedback.mediumImpact();
+    final normApi = DioClient.normalizeApiUrl(_apiUrlCtrl.text);
+    final normWs = DioClient.deriveWsUrl(normApi);
+    setState(() {
+      _apiUrlCtrl.text = normApi;
+      _wsUrlCtrl.text = normWs;
+    });
+    await DioClient.updateBaseUrl(normApi, newWsUrl: normWs);
+    RealtimeNotificationService().disconnect();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         backgroundColor: AppColors.emeraldGreen,
-        content: Text('Đã lưu cấu hình Gateway & thiết lập bảo mật mạng thành công!'),
+        content: Text('Đã lưu & áp dụng Gateway: ${DioClient.sharedDio.options.baseUrl}'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -509,12 +577,44 @@ class _ConfigScreenState extends State<ConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('REST API Base URL', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('REST API Base URL (Chỉ cần dán link cổng 8080)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                GestureDetector(
+                  onTap: _pasteCodespacesUrl,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.bottomBarCyan.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.45)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(CupertinoIcons.doc_on_clipboard_fill, color: AppColors.bottomBarCyan, size: 12),
+                        SizedBox(width: 4),
+                        Text(
+                          'Dán nhanh',
+                          style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 6),
             TextField(
               controller: _apiUrlCtrl,
+              onChanged: (val) {
+                _wsUrlCtrl.text = DioClient.deriveWsUrl(val);
+              },
               style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
               decoration: InputDecoration(
+                hintText: 'https://xxx-8080.app.github.dev/api/v1',
+                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
@@ -523,7 +623,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
               ),
             ),
             const SizedBox(height: 14),
-            const Text('WebSocket STOMP URL', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const Text('WebSocket STOMP URL (Tự động đồng bộ từ REST URL)', style: TextStyle(color: Colors.white70, fontSize: 12)),
             const SizedBox(height: 6),
             TextField(
               controller: _wsUrlCtrl,

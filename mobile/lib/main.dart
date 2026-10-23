@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'core/network/dio_client.dart';
 import 'core/network/push_notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/routes/app_router.dart';
@@ -8,6 +9,9 @@ import 'presentation/widgets/user_avatar_widget.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Khôi phục địa chỉ Gateway (Local / GitHub Codespaces) đã lưu nếu có
+  await DioClient.initSavedGateway();
 
   // Nạp avatar đã lưu trong bộ nhớ an toàn
   await UserAvatarNotifier.init();

@@ -97,9 +97,9 @@ class RealtimeNotificationService {
 
     _stompClient = StompClient(
       config: StompConfig(
-        url: ApiConstants.wsUrl,
+        url: DioClient.activeWsUrl,
         onConnect: (StompFrame frame) {
-          debugPrint('[WebSocket STOMP] Đã kết nối thành công tới máy chủ VPS');
+          debugPrint('[WebSocket STOMP] Đã kết nối thành công tới: ${DioClient.activeWsUrl}');
           _activeSubscribedTopics.clear();
           _subscribeAllActiveTopics();
         },
@@ -118,6 +118,7 @@ class RealtimeNotificationService {
         },
         webSocketConnectHeaders: {
           'Authorization': 'Bearer $accessToken',
+          'X-Requested-With': 'XMLHttpRequest',
         },
         reconnectDelay: const Duration(seconds: 5),
         heartbeatIncoming: const Duration(seconds: 10),

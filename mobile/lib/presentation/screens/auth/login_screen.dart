@@ -323,6 +323,11 @@ class _LoginScreenState extends State<LoginScreen> {
             : null,
         actions: [
           IconButton(
+            tooltip: 'Cấu hình máy chủ Gateway (Local / GitHub Codespaces)',
+            icon: const Icon(CupertinoIcons.cloud_upload_fill, color: AppColors.primary),
+            onPressed: () => context.push('/settings/config'),
+          ),
+          IconButton(
             tooltip: 'Đổi hình nền app',
             icon: const Icon(CupertinoIcons.paintbrush_fill, color: AppColors.primary),
             onPressed: _cycleWallpaper,
