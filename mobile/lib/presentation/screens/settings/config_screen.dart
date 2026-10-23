@@ -49,11 +49,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
     },
     {
       'name': 'GitHub Codespaces Cloud (Public 8080)',
-      'url': 'https://xxx-8080.app.github.dev/api/v1',
-      'ws': 'wss://xxx-8080.app.github.dev/ws-native',
+      'url': 'https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/api/v1',
+      'ws': 'wss://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/ws-native',
       'ping': 45,
-      'status': 'CLOUD DEMO (DÁN LINK BÊN DƯỚI)',
-      'isPrimary': false,
+      'status': 'MẶC ĐỊNH CLOUD DEMO',
+      'isPrimary': true,
     },
   ];
 
