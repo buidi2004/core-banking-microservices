@@ -250,11 +250,11 @@ services:
     build: ./backend/services/api-gateway
     container_name: ewallet-api-gateway
     restart: unless-stopped
-    mem_limit: 300m
+    mem_limit: 512m
     ports:
       - "8080:8080"
     environment:
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=96m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms128m -Xmx256m -XX:MaxMetaspaceSize=192m -XX:MaxDirectMemorySize=128m -Xss256k"
       SPRING_PROFILES_ACTIVE: docker
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -275,11 +275,11 @@ services:
     build: ./backend/services/identity-service
     container_name: ewallet-identity-service
     restart: unless-stopped
-    mem_limit: 380m
+    mem_limit: 512m
     ports:
       - "8081:8081"
     environment:
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=160m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms128m -Xmx256m -XX:MaxMetaspaceSize=192m -Xss256k"
       DB_HOST: postgres-identity
       DB_PORT: 5432
       REDIS_HOST: redis
@@ -297,12 +297,12 @@ services:
     build: ./backend/services/wallet-service
     container_name: ewallet-wallet-service
     restart: unless-stopped
-    mem_limit: 380m
+    mem_limit: 512m
     ports:
       - "8082:8082"
       - "9090:9090"
     environment:
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=160m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms128m -Xmx256m -XX:MaxMetaspaceSize=192m -Xss256k"
       DB_HOST: postgres-wallet
       DB_PORT: 5432
       REDIS_HOST: redis
@@ -323,11 +323,11 @@ services:
     build: ./backend/services/payment-service
     container_name: ewallet-payment-service
     restart: unless-stopped
-    mem_limit: 380m
+    mem_limit: 512m
     ports:
       - "8083:8083"
     environment:
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=160m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms128m -Xmx256m -XX:MaxMetaspaceSize=192m -Xss256k"
       DB_HOST: postgres-payment
       DB_PORT: 5432
       REDIS_HOST: redis
@@ -348,11 +348,11 @@ services:
     build: ./backend/services/ledger-service
     container_name: ewallet-ledger-service
     restart: unless-stopped
-    mem_limit: 380m
+    mem_limit: 512m
     ports:
       - "8084:8084"
     environment:
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=160m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms128m -Xmx256m -XX:MaxMetaspaceSize=192m -Xss256k"
       DB_HOST: postgres-ledger
       DB_PORT: 5432
       RABBITMQ_HOST: rabbitmq
@@ -367,11 +367,11 @@ services:
     build: ./backend/services/notification-service
     container_name: ewallet-notification-service
     restart: unless-stopped
-    mem_limit: 380m
+    mem_limit: 512m
     ports:
       - "8085:8085"
     environment:
-      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms96m -Xmx192m -XX:MaxMetaspaceSize=160m -Xss256k"
+      JAVA_TOOL_OPTIONS: "-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xms128m -Xmx256m -XX:MaxMetaspaceSize=192m -Xss256k"
       DB_HOST: postgres-notification
       DB_PORT: 5432
       RABBITMQ_HOST: rabbitmq

@@ -98,7 +98,7 @@ start_fe() {
     fi
 
     cd "$FE_DIR"
-    if [ ! -d "node_modules" ]; then
+    if [ ! -x "node_modules/.bin/vite" ]; then
         echo -e "  • Đang cài đặt dependencies cho Frontend (npm install)..."
         npm install
     fi
