@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -112,8 +111,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
   Future<void> _testConnection() async {
     HapticFeedback.mediumImpact();
-    final normApi = DioClient.normalizeApiUrl(_apiUrlCtrl.text);
-    final normWs = DioClient.deriveWsUrl(normApi, customWsUrl: _wsUrlCtrl.text);
+    var normApi = DioClient.normalizeApiUrl(_apiUrlCtrl.text);
+    var normWs = DioClient.deriveWsUrl(normApi, customWsUrl: _wsUrlCtrl.text);
     setState(() {
       _isTesting = true;
       _apiUrlCtrl.text = normApi;
@@ -122,24 +121,15 @@ class _ConfigScreenState extends State<ConfigScreen> {
     await DioClient.updateBaseUrl(normApi, newWsUrl: normWs);
 
     final sw = Stopwatch()..start();
-    bool reachable = false;
-    try {
-      final probeDio = Dio(
-        BaseOptions(
-          baseUrl: normApi,
-          connectTimeout: const Duration(seconds: 6),
-          receiveTimeout: const Duration(seconds: 6),
-          validateStatus: (status) => status != null && status < 500,
-          headers: const {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-        ),
-      );
-      await probeDio.post('/auth/login', data: const {});
-      reachable = true;
-    } catch (_) {
-      reachable = false;
+    bool reachable = await DioClient.probeGatewayReachable(normApi);
+    if (!reachable && normApi.contains('.app.github.dev')) {
+      final siblingApi = DioClient.siblingCodespaceApiUrl(normApi);
+      if (siblingApi != null && await DioClient.probeGatewayReachable(siblingApi)) {
+        normApi = siblingApi;
+        normWs = DioClient.deriveWsUrl(normApi);
+        await DioClient.updateBaseUrl(normApi, newWsUrl: normWs);
+        reachable = true;
+      }
     }
     sw.stop();
 
@@ -147,6 +137,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
     HapticFeedback.lightImpact();
     setState(() {
       _isTesting = false;
+      _apiUrlCtrl.text = normApi;
+      _wsUrlCtrl.text = normWs;
       _pingMs = sw.elapsedMilliseconds.clamp(5, 9999);
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -154,8 +146,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
         backgroundColor: reachable ? AppColors.emeraldGreen : Colors.orange.shade800,
         content: Text(
           reachable
-              ? 'Kết nối Gateway thành công! Độ trễ thực tế: $_pingMs ms'
-              : 'Đã lưu URL ($normApi) nhưng máy chủ chưa phản hồi ($_pingMs ms)',
+              ? 'Kết nối Gateway thành công ($normApi)! Độ trễ: $_pingMs ms'
+              : 'Đã lưu URL ($normApi) nhưng cổng chưa phản hồi JSON ($_pingMs ms)',
         ),
         behavior: SnackBarBehavior.floating,
       ),

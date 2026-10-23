@@ -192,13 +192,13 @@ services:
     image: confluentinc/cp-kafka:7.6.0
     container_name: ewallet-kafka
     restart: unless-stopped
-    mem_limit: 380m
+    mem_limit: 640m
     ports:
       - "9092:9092"
       - "29092:29092"
     environment:
       KAFKA_NODE_ID: 1
-      KAFKA_JVM_PERFORMANCE_OPTS: "-Xms128m -Xmx192m -XX:+UseSerialGC -XX:MaxMetaspaceSize=96m"
+      KAFKA_JVM_PERFORMANCE_OPTS: "-Xms192m -Xmx320m -XX:+UseSerialGC -XX:MaxMetaspaceSize=192m"
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092'
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1

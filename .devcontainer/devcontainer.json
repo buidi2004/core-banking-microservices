@@ -45,7 +45,7 @@
       "onAutoForward": "silent"
     }
   },
-  "postCreateCommand": "mvn -f backend/pom.xml clean package -DskipTests && cd frontend/cash-deposit-portal && npm install",
+  "postCreateCommand": "mvn -f backend/pom.xml clean install -DskipTests && cd frontend/cash-deposit-portal && npm install",
   "customizations": {
     "vscode": {
       "extensions": [

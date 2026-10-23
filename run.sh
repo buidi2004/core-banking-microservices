@@ -72,10 +72,11 @@ start_be() {
     echo -e "\n${BLUE}⚙️ [2/4] KHỞI ĐỘNG CỤM BACKEND MICROSERVICES...${NC}"
     if ! ls "$ROOT_DIR"/backend/services/api-gateway/target/*.jar >/dev/null 2>&1; then
         echo -e "  ${YELLOW}⚠️ Chưa tìm thấy file .jar đã đóng gói. Đang tự động build Maven (common-library + 6 services)...${NC}"
-        mvn -f "$ROOT_DIR/backend/pom.xml" clean package -DskipTests
-    elif [ "$ROOT_DIR/backend/services/identity-service/src/main/java/com/fintech/identity/service/OtpService.java" -nt "$ROOT_DIR/backend/services/identity-service/target/identity-service-1.0.0-SNAPSHOT.jar" ]; then
-        echo -e "  ${YELLOW}🔄 Phát hiện cập nhật mới ở api-gateway / identity-service. Đang đóng gói nhanh...${NC}"
-        mvn -f "$ROOT_DIR/backend/pom.xml" package -DskipTests -pl services/api-gateway,services/identity-service
+        mvn -f "$ROOT_DIR/backend/pom.xml" clean install -DskipTests
+    elif [ "$ROOT_DIR/backend/services/identity-service/src/main/java/com/fintech/identity/service/OtpService.java" -nt "$ROOT_DIR/backend/services/identity-service/target/identity-service-1.0.0-SNAPSHOT.jar" ] || \
+         [ "$ROOT_DIR/backend/services/api-gateway/src/main/java/com/fintech/gateway/JwtAuthenticationFilter.java" -nt "$ROOT_DIR/backend/services/api-gateway/target/api-gateway-1.0.0-SNAPSHOT.jar" ]; then
+        echo -e "  ${YELLOW}🔄 Phát hiện cập nhật mới ở api-gateway / identity-service. Đang đóng gói nhanh (kèm common-library)...${NC}"
+        mvn -f "$ROOT_DIR/backend/pom.xml" install -DskipTests -pl common-library,services/api-gateway,services/identity-service
         docker compose up -d --build api-gateway identity-service
     fi
     echo -e "  • Khởi chạy các container Microservices:"
@@ -83,6 +84,9 @@ start_be() {
         docker compose up -d --build api-gateway identity-service wallet-service payment-service ledger-service notification-service
     else
         docker compose up -d api-gateway identity-service wallet-service payment-service ledger-service notification-service
+    fi
+    if [ -n "${CODESPACE_NAME:-}" ] && command -v gh &>/dev/null; then
+        gh codespace ports visibility 8080:public 5173:public -c "$CODESPACE_NAME" 2>/dev/null || true
     fi
     echo -e "  ${GREEN}✓ Toàn bộ Backend Microservices đã được kích hoạt!${NC}"
     echo -e "    - API Gateway:    ${CYAN}http://localhost:8080${NC}"

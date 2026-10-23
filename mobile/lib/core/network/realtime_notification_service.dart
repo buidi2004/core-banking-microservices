@@ -119,6 +119,7 @@ class RealtimeNotificationService {
         webSocketConnectHeaders: {
           'Authorization': 'Bearer $accessToken',
           'X-Requested-With': 'XMLHttpRequest',
+          'X-Tunnel-Skip-AntiPhishing-Page': 'true',
         },
         reconnectDelay: const Duration(seconds: 5),
         heartbeatIncoming: const Duration(seconds: 10),

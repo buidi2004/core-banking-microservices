@@ -94,6 +94,71 @@ class DioClient {
     return ApiConstants.wsUrl;
   }
 
+  /// Hoán đổi tự động giữa cổng trực tiếp Gateway (-8080) và cổng Proxy Vite (-5173) trên GitHub Codespaces.
+  static String? siblingCodespaceApiUrl(String apiUrl) {
+    final normalized = normalizeApiUrl(apiUrl);
+    if (normalized.contains('-8080.app.github.dev')) {
+      return normalized.replaceAll('-8080.app.github.dev', '-5173.app.github.dev');
+    }
+    if (normalized.contains('-5173.app.github.dev')) {
+      return normalized.replaceAll('-5173.app.github.dev', '-8080.app.github.dev');
+    }
+    return null;
+  }
+
+  /// Kiểm tra xem phản hồi có bị GitHub Codespaces chặn (chuyển hướng sang trang HTML pf-signin do cổng Private) hay không.
+  static bool isHtmlOrTunnelRedirect(Response<dynamic>? response) {
+    if (response == null) return false;
+    final realHost = response.realUri.host.toLowerCase();
+    final realPath = response.realUri.path.toLowerCase();
+    if (realHost.contains('github.com') ||
+        realPath.contains('pf-signin') ||
+        realPath.contains('/login/oauth')) {
+      return true;
+    }
+    final contentType = (response.headers.value('content-type') ?? '').toLowerCase();
+    if (contentType.contains('text/html')) {
+      return true;
+    }
+    if (response.data is String) {
+      final body = (response.data as String).trimLeft();
+      if (body.startsWith('<!DOCTYPE') ||
+          body.startsWith('<!doctype') ||
+          body.startsWith('<html') ||
+          body.startsWith('<head') ||
+          body.contains('pf-signin')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Kiểm tra nhanh 1 địa chỉ API Gateway xem có phản hồi JSON thực từ Backend hay không.
+  static Future<bool> probeGatewayReachable(String candidateApiUrl) async {
+    try {
+      final norm = normalizeApiUrl(candidateApiUrl);
+      final probe = Dio(
+        BaseOptions(
+          baseUrl: norm,
+          connectTimeout: const Duration(milliseconds: 3500),
+          receiveTimeout: const Duration(milliseconds: 3500),
+          validateStatus: (status) => status != null && status < 500,
+          headers: const {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Tunnel-Skip-AntiPhishing-Page': 'true',
+          },
+        ),
+      );
+      final res = await probe.post('/auth/login', data: const {});
+      if (isHtmlOrTunnelRedirect(res)) return false;
+      return res.statusCode != null && res.statusCode! < 500;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Nạp cấu hình Gateway đã lưu trong SharedPreferences (nếu có) và tự động đồng bộ từ GitHub Cloud Registry.
   static Future<void> initSavedGateway() async {
     try {
@@ -118,13 +183,14 @@ class DioClient {
     } catch (_) {}
   }
 
-  /// Tự động đọc file `cloud-endpoint.json` trên GitHub để cập nhật URL Codespace đang bật.
+  /// Tự động đọc file `cloud-endpoint.json` trên GitHub để cập nhật URL Codespace đang bật
+  /// và tự động chọn cổng tốt nhất (-8080 trực tiếp hoặc -5173 qua Vite Proxy).
   static Future<String?> syncFromCloudRegistry() async {
     try {
       final probe = Dio(
         BaseOptions(
-          connectTimeout: const Duration(milliseconds: 2500),
-          receiveTimeout: const Duration(milliseconds: 2500),
+          connectTimeout: const Duration(milliseconds: 3000),
+          receiveTimeout: const Duration(milliseconds: 3000),
           responseType: ResponseType.plain,
         ),
       );
@@ -137,10 +203,31 @@ class DioClient {
           final remoteApi = (decoded['apiUrl'] ?? decoded['gatewayUrl'] ?? '')
               .toString()
               .trim();
+          final remotePortal = (decoded['portalUrl'] ?? '').toString().trim();
           final remoteWs = (decoded['wsUrl'] ?? '').toString().trim();
+
           if (remoteApi.isNotEmpty && remoteApi.startsWith('https://')) {
+            final primaryApi = normalizeApiUrl(remoteApi);
+            if (await probeGatewayReachable(primaryApi)) {
+              await updateBaseUrl(
+                primaryApi,
+                newWsUrl: remoteWs.isNotEmpty ? remoteWs : null,
+              );
+              return sharedDio.options.baseUrl;
+            }
+
+            // Tự động failover sang cổng 5173 (Vite Proxy) nếu cổng 8080 đang Private hoặc đang restart
+            final fallbackApi = remotePortal.isNotEmpty
+                ? normalizeApiUrl(remotePortal)
+                : siblingCodespaceApiUrl(primaryApi);
+            if (fallbackApi != null && await probeGatewayReachable(fallbackApi)) {
+              await updateBaseUrl(fallbackApi);
+              return sharedDio.options.baseUrl;
+            }
+
+            // Nếu đang ngoại tuyến hoặc cả 2 chưa phản hồi, vẫn lưu primaryApi mới nhất từ GitHub
             await updateBaseUrl(
-              remoteApi,
+              primaryApi,
               newWsUrl: remoteWs.isNotEmpty ? remoteWs : null,
             );
             return sharedDio.options.baseUrl;
@@ -148,6 +235,18 @@ class DioClient {
         }
       }
     } catch (_) {}
+
+    // Ngay cả khi không tải được cloud-endpoint.json, kiểm tra cổng hiện tại và failover sang cổng anh em nếu cần
+    final current = sharedDio.options.baseUrl;
+    if (current.contains('.app.github.dev')) {
+      if (!await probeGatewayReachable(current)) {
+        final sibling = siblingCodespaceApiUrl(current);
+        if (sibling != null && await probeGatewayReachable(sibling)) {
+          await updateBaseUrl(sibling);
+          return sharedDio.options.baseUrl;
+        }
+      }
+    }
     return null;
   }
 
@@ -177,11 +276,13 @@ class DioClient {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
+          'X-Tunnel-Skip-AntiPhishing-Page': 'true',
         },
       ),
     );
 
     dio.interceptors.addAll([
+      _CodespacesFailoverInterceptor(),
       AuthInterceptor(),
       IdempotencyInterceptor(),
       // MOB-011: chỉ log ở debug/profile; không log header/body ở bất kỳ chế độ nào.
@@ -197,5 +298,138 @@ class DioClient {
     ]);
 
     return dio;
+  }
+}
+
+/// Interceptor bảo vệ kết nối GitHub Codespaces:
+/// 1. Tự động giải mã JSON nếu proxy trả về String JSON.
+/// 2. Phát hiện khi cổng Codespaces bị chuyển về Private (redirect sang trang HTML pf-signin)
+///    hoặc lỗi 502/503/504 và tự động failover tức thì giữa cổng -8080 và -5173 (Vite Proxy).
+class _CodespacesFailoverInterceptor extends Interceptor {
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) async {
+    if (response.data is String) {
+      final raw = (response.data as String).trim();
+      if (raw.startsWith('{') || raw.startsWith('[')) {
+        try {
+          response.data = jsonDecode(raw);
+          return handler.next(response);
+        } catch (_) {}
+      }
+    }
+
+    if (DioClient.isHtmlOrTunnelRedirect(response)) {
+      final req = response.requestOptions;
+      if (req.extra['codespace_failover_retried'] != true) {
+        final siblingBase = DioClient.siblingCodespaceApiUrl(req.baseUrl);
+        if (siblingBase != null) {
+          final fallbackRes = await _trySiblingRequest(req, siblingBase);
+          if (fallbackRes != null && !DioClient.isHtmlOrTunnelRedirect(fallbackRes)) {
+            await DioClient.updateBaseUrl(siblingBase);
+            return handler.resolve(fallbackRes);
+          }
+        }
+      }
+      const msg =
+          'Cổng GitHub Codespaces đang ở chế độ Private hoặc đang khởi động lại. Vui lòng mở tab Cổng (Ports) trên Codespaces và đặt cổng 8080 / 5173 thành Public.';
+      return handler.reject(
+        DioException(
+          requestOptions: req,
+          response: Response(
+            requestOptions: req,
+            statusCode: 503,
+            data: {'success': false, 'message': msg, 'errorCode': 'CODESPACE_PORT_PRIVATE'},
+          ),
+          type: DioExceptionType.badResponse,
+          error: Exception(msg),
+          message: msg,
+        ),
+      );
+    }
+
+    handler.next(response);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    final req = err.requestOptions;
+    final status = err.response?.statusCode;
+    final isTunnelOrGatewayFailure = err.response == null ||
+        (status != null && status >= 500) ||
+        DioClient.isHtmlOrTunnelRedirect(err.response);
+
+    if (isTunnelOrGatewayFailure &&
+        req.extra['codespace_failover_retried'] != true &&
+        req.baseUrl.contains('.app.github.dev')) {
+      final siblingBase = DioClient.siblingCodespaceApiUrl(req.baseUrl);
+      if (siblingBase != null) {
+        final fallbackRes = await _trySiblingRequest(req, siblingBase);
+        if (fallbackRes != null && !DioClient.isHtmlOrTunnelRedirect(fallbackRes)) {
+          await DioClient.updateBaseUrl(siblingBase);
+          if (fallbackRes.statusCode != null &&
+              fallbackRes.statusCode! >= 200 &&
+              fallbackRes.statusCode! < 300) {
+            return handler.resolve(fallbackRes);
+          } else {
+            return handler.next(
+              DioException(
+                requestOptions: req..baseUrl = siblingBase,
+                response: fallbackRes,
+                type: DioExceptionType.badResponse,
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    handler.next(err);
+  }
+
+  Future<Response<dynamic>?> _trySiblingRequest(
+    RequestOptions original,
+    String siblingBaseUrl,
+  ) async {
+    try {
+      final dio = Dio(
+        BaseOptions(
+          baseUrl: siblingBaseUrl,
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+      final headers = Map<String, dynamic>.from(original.headers);
+      headers['X-Requested-With'] = 'XMLHttpRequest';
+      headers['X-Tunnel-Skip-AntiPhishing-Page'] = 'true';
+
+      final res = await dio.request<dynamic>(
+        original.path,
+        data: original.data,
+        queryParameters: original.queryParameters,
+        options: Options(
+          method: original.method,
+          headers: headers,
+          contentType: original.contentType,
+          responseType: original.responseType,
+          extra: {
+            ...original.extra,
+            'codespace_failover_retried': true,
+          },
+        ),
+      );
+      if (res.data is String) {
+        final raw = (res.data as String).trim();
+        if (raw.startsWith('{') || raw.startsWith('[')) {
+          try {
+            res.data = jsonDecode(raw);
+          } catch (_) {}
+        }
+      }
+      return res;
+    } catch (_) {
+      return null;
+    }
   }
 }
