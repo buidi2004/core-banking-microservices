@@ -75,7 +75,11 @@ start_be() {
         mvn -f "$ROOT_DIR/backend/pom.xml" clean package -DskipTests
     fi
     echo -e "  • Khởi chạy các container Microservices:"
-    docker compose up -d --build api-gateway identity-service wallet-service payment-service ledger-service notification-service
+    if ! docker image inspect core-banking-microservices-api-gateway:latest >/dev/null 2>&1; then
+        docker compose up -d --build api-gateway identity-service wallet-service payment-service ledger-service notification-service
+    else
+        docker compose up -d api-gateway identity-service wallet-service payment-service ledger-service notification-service
+    fi
     echo -e "  ${GREEN}✓ Toàn bộ Backend Microservices đã được kích hoạt!${NC}"
     echo -e "    - API Gateway:    ${CYAN}http://localhost:8080${NC}"
     echo -e "    - Kafka UI:       ${CYAN}http://localhost:8090${NC}"
