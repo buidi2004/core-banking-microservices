@@ -1,0 +1,21 @@
+{
+  "java.jdt.ls.lombokSupport.enabled": true,
+  "java.import.maven.enabled": true,
+  "java.import.gradle.enabled": false,
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "disabled",
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.git/**",
+    "**/mobile/**",
+    "**/frontend/**",
+    "**/releases/**"
+  ],
+  "files.watcherExclude": {
+    "**/.git/objects/**": true,
+    "**/node_modules/**": true,
+    "**/mobile/build/**": true,
+    "**/backend/**/target/**": true
+  }
+}
+

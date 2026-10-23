@@ -1,6 +1,7 @@
-package com.fintech.payment.outbox;
+package com.fintech.payment.kafka;
 
 import com.fintech.payment.domain.entity.OutboxEvent;
+import com.fintech.payment.outbox.OutboxRelay;
 import com.fintech.payment.repository.OutboxEventRepository;
 import com.fintech.payment.kafka.PaymentKafkaProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;

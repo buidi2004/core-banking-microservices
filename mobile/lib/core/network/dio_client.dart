@@ -133,6 +133,20 @@ class DioClient {
     return false;
   }
 
+  /// Kiểm tra xem phản hồi có phải do cổng Codespaces đang ngủ (404 rỗng từ DevTunnels) hay không.
+  static bool isEmptyTunnel404(Response<dynamic>? response) {
+    if (response == null) return false;
+    if (response.statusCode != 404) return false;
+    final host = response.requestOptions.uri.host.toLowerCase();
+    if (!host.contains('.app.github.dev') && !host.contains('.github.dev')) {
+      return false;
+    }
+    final data = response.data;
+    if (data == null) return true;
+    if (data is String && data.trim().isEmpty) return true;
+    return false;
+  }
+
   /// Kiểm tra nhanh 1 địa chỉ API Gateway xem có phản hồi JSON thực từ Backend hay không.
   static Future<bool> probeGatewayReachable(String candidateApiUrl) async {
     try {
@@ -152,8 +166,19 @@ class DioClient {
         ),
       );
       final res = await probe.post('/auth/login', data: const {});
-      if (isHtmlOrTunnelRedirect(res)) return false;
-      return res.statusCode != null && res.statusCode! < 500;
+      if (isHtmlOrTunnelRedirect(res) || isEmptyTunnel404(res)) return false;
+      if (res.statusCode == 404) return false;
+      if (res.data is Map) {
+        final map = res.data as Map;
+        return map.containsKey('success') ||
+            map.containsKey('message') ||
+            map.containsKey('error');
+      }
+      if (res.data is String) {
+        final raw = (res.data as String).trim();
+        return raw.startsWith('{') && raw.contains('message');
+      }
+      return false;
     } catch (_) {
       return false;
     }
@@ -356,7 +381,8 @@ class _CodespacesFailoverInterceptor extends Interceptor {
     final status = err.response?.statusCode;
     final isTunnelOrGatewayFailure = err.response == null ||
         (status != null && status >= 500) ||
-        DioClient.isHtmlOrTunnelRedirect(err.response);
+        DioClient.isHtmlOrTunnelRedirect(err.response) ||
+        DioClient.isEmptyTunnel404(err.response);
 
     if (isTunnelOrGatewayFailure &&
         req.extra['codespace_failover_retried'] != true &&
@@ -364,7 +390,9 @@ class _CodespacesFailoverInterceptor extends Interceptor {
       final siblingBase = DioClient.siblingCodespaceApiUrl(req.baseUrl);
       if (siblingBase != null) {
         final fallbackRes = await _trySiblingRequest(req, siblingBase);
-        if (fallbackRes != null && !DioClient.isHtmlOrTunnelRedirect(fallbackRes)) {
+        if (fallbackRes != null &&
+            !DioClient.isHtmlOrTunnelRedirect(fallbackRes) &&
+            !DioClient.isEmptyTunnel404(fallbackRes)) {
           await DioClient.updateBaseUrl(siblingBase);
           if (fallbackRes.statusCode != null &&
               fallbackRes.statusCode! >= 200 &&
@@ -380,6 +408,24 @@ class _CodespacesFailoverInterceptor extends Interceptor {
             );
           }
         }
+      }
+
+      if (DioClient.isEmptyTunnel404(err.response)) {
+        const sleepMsg =
+            'Máy chủ GitHub Codespaces hiện đang tạm nghỉ (Sleep) hoặc cổng chưa mở. Vui lòng mở lại tab Codespaces và chạy ./run.sh all.';
+        return handler.reject(
+          DioException(
+            requestOptions: req,
+            response: Response(
+              requestOptions: req,
+              statusCode: 503,
+              data: {'success': false, 'message': sleepMsg, 'errorCode': 'CODESPACE_SLEEPING'},
+            ),
+            type: DioExceptionType.badResponse,
+            error: Exception(sleepMsg),
+            message: sleepMsg,
+          ),
+        );
       }
     }
 

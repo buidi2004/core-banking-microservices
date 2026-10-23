@@ -326,9 +326,14 @@ echo ""
 echo -e "${BLUE}▶ [KB-07] BẢO VỆ VÍ BỊ KHÓA HOẶC KHÔNG TỒN TẠI (ROLLBACK GUARD)${NC}"
 echo "  • Nạp tiền vào tài khoản rác: 0999999999 (Chưa đăng ký ví)"
 
-WALLET_EXISTS=$(docker exec -i ewallet-postgres-wallet psql -U wallet_db_user -d ewallet_wallet_db -t -c \
-  "SELECT COUNT(*) FROM wallets w JOIN users u ON w.user_id = u.id WHERE u.phone_number = '0999999999';" 2>/dev/null || echo "0")
-WALLET_EXISTS=$(echo $WALLET_EXISTS | xargs)
+USER_ID_999=$(docker exec -i ewallet-postgres-identity psql -U identity_db_user -d ewallet_identity_db -t -c \
+  "SELECT id FROM users WHERE phone_number = '0999999999';" 2>/dev/null | xargs || echo "")
+if [ -n "$USER_ID_999" ]; then
+    WALLET_EXISTS=$(docker exec -i ewallet-postgres-wallet psql -U wallet_db_user -d ewallet_wallet_db -t -c \
+      "SELECT COUNT(*) FROM wallets WHERE user_id = '$USER_ID_999';" 2>/dev/null | xargs || echo "0")
+else
+    WALLET_EXISTS="0"
+fi
 
 if [ "$WALLET_EXISTS" == "0" ] || [ -z "$WALLET_EXISTS" ]; then
     echo -e "  ${GREEN}✓ [PASSED] Wallet Service phát hiện WALLET_NOT_FOUND, tự động hủy bỏ giao dịch nạp tiền.${NC}"

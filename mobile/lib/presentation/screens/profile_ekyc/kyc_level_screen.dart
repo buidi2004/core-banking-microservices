@@ -59,7 +59,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
     final usagePercent = _customDailyLimit > 0
         ? (_usedToday / _customDailyLimit).clamp(0.0, 1.0)
         : 0.0;
-    final isTier2 = _kycStatus == 'APPROVED';
+    final isTier2 = _kycStatus == 'APPROVED' || _kycStatus == 'VERIFIED';
 
     return Scaffold(
       backgroundColor: Colors.transparent,

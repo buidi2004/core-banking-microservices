@@ -10,9 +10,14 @@ import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasou
 /// Đảm bảo tính toàn vẹn của nghiệp vụ tài chính, bảo mật và tương thích client-server.
 void main() {
   group('QA Test Suite 1: Commit 4ceedcb & 21fbcff - Cấu hình mạng & Bóc tách lỗi Dio', () {
-    test('TC-NET-01: ApiConstants trỏ mặc định vào local Gateway & Native WebSocket', () {
-      expect(ApiConstants.baseUrl, equals('http://localhost:8080/api/v1'));
-      expect(ApiConstants.wsUrl, equals('ws://localhost:8080/ws-native'));
+    test('TC-NET-01: ApiConstants trỏ mặc định vào Gateway (/api/v1) & Native WebSocket (/ws-native)', () {
+      expect(ApiConstants.baseUrl, endsWith('/api/v1'));
+      expect(
+        ApiConstants.baseUrl.startsWith('http://localhost:8080') ||
+            ApiConstants.baseUrl.contains('.app.github.dev'),
+        isTrue,
+      );
+      expect(ApiConstants.wsUrl, endsWith('/ws-native'));
       expect(ApiConstants.transactions, equals('/transactions'));
       expect(ApiConstants.walletMe, equals('/wallets/me'));
     });

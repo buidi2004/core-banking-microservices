@@ -80,8 +80,77 @@ void main() {
       'POST /promotions/redeem': 'PromotionRemoteDataSource.redeem',
       'POST /promotions/apply': 'PromotionRemoteDataSource.apply',
 
-      // Banks - REAL endpoint (path differs: /payments/banks not /banks)
-      'GET /payments/banks': 'BankRemoteDataSource.getBanks (mobile uses /banks - WRONG)',
+      // Banks - REAL endpoint
+      'GET /payments/banks': 'BankRemoteDataSource.getBanks',
+
+      // Auth OTP & Password Recovery - REAL endpoints
+      'POST /auth/otp/send': 'AuthRemoteDataSource.sendOtp',
+      'POST /auth/otp/verify': 'AuthRemoteDataSource.verifyOtp',
+      'POST /auth/forgot-password': 'AuthRemoteDataSource.forgotPassword',
+      'POST /auth/reset-password': 'AuthRemoteDataSource.resetPassword',
+      'POST /auth/change-password/otp': 'AuthRemoteDataSource.requestChangePasswordOtp',
+      'POST /auth/change-password': 'AuthRemoteDataSource.changePassword',
+
+      // Transaction PIN & Biometric - REAL endpoints
+      'POST /users/pin/set': 'AuthRemoteDataSource.setPin',
+      'POST /users/pin/verify': 'WalletTransactionRemoteDataSource.verifyPin',
+      'POST /security/biometric/verify': 'BiometricRemoteDataSource.verify',
+
+      // Deposit & Withdraw - REAL endpoints
+      'POST /wallets/deposit': 'WalletTransactionRemoteDataSource.deposit',
+      'POST /wallets/withdraw': 'WalletTransactionRemoteDataSource.withdraw',
+
+      // Bills & Utilities - REAL endpoints
+      'GET /bills/lookup': 'BillRemoteDataSource.lookupBill',
+      'POST /bills/pay': 'BillRemoteDataSource.payBill',
+      'POST /bills/topup': 'BillRemoteDataSource.topupPhone',
+
+      // VietQR & Personal QR - REAL endpoints
+      'POST /payments/vietqr/decode': 'VietQrRemoteDataSource.decode',
+      'POST /payments/vietqr/generate': 'VietQrRemoteDataSource.generate',
+      'GET /users/me/qrcode': 'ProfileRemoteDataSource.getMyQrCode',
+
+      // Bank Accounts, Beneficiaries & Funding Sources - REAL endpoints
+      'POST /bank-accounts/link': 'BankAccountRemoteDataSource.linkAccount',
+      'GET /bank-accounts': 'BankAccountRemoteDataSource.getAccounts',
+      'DELETE /bank-accounts/{id}': 'BankAccountRemoteDataSource.unlinkAccount',
+      'POST /beneficiaries': 'BeneficiaryRemoteDataSource.create',
+      'GET /beneficiaries': 'BeneficiaryRemoteDataSource.getAll',
+      'GET /funding-sources': 'FundingSourceRemoteDataSource.getAll',
+
+      // Config Limits, Avatar, Receipt PDF, Money Requests, Referrals, Legal, Feedback, FCM - REAL endpoints
+      'POST /users/me/avatar': 'ProfileRemoteDataSource.updateAvatar',
+      'GET /config/limits': 'ConfigRemoteDataSource.getLimits',
+      'GET /config/limits/status': 'ConfigRemoteDataSource.getLimitsStatus',
+      'GET /transactions/{id}/receipt.pdf': 'TransactionRemoteDataSource.getReceiptPdf',
+      'GET /payments/money-requests/received': 'MoneyRequestRemoteDataSource.getReceived',
+      'GET /payments/money-requests/sent': 'MoneyRequestRemoteDataSource.getSent',
+      'GET /payments/money-requests/{id}': 'MoneyRequestRemoteDataSource.getDetail',
+      'POST /payments/money-requests/{id}/cancel': 'MoneyRequestRemoteDataSource.cancel',
+      'GET /referrals/code': 'ReferralRemoteDataSource.getCode',
+      'GET /referrals/history': 'ReferralRemoteDataSource.getHistory',
+      'POST /referrals/apply': 'ReferralRemoteDataSource.apply',
+      'GET /legal/terms': 'LegalRemoteDataSource.getTerms',
+      'POST /legal/consent': 'LegalRemoteDataSource.submitConsent',
+      'POST /feedback': 'FeedbackRemoteDataSource.submit',
+      'POST /sessions/{deviceId}/fcm': 'SessionRemoteDataSource.registerFcm',
+
+      // Savings, Loans, Cards & Lottery - REAL In-House Core Banking endpoints
+      'GET /savings/products': 'SavingsRemoteDataSource.getProducts',
+      'POST /savings/accounts': 'SavingsRemoteDataSource.openSavings',
+      'GET /savings/accounts': 'SavingsRemoteDataSource.getAccounts',
+      'GET /savings/accounts/{id}': 'SavingsRemoteDataSource.getDetail',
+      'POST /savings/accounts/{id}/settle': 'SavingsRemoteDataSource.settle',
+      'GET /loans/products': 'LoanRemoteDataSource.getProducts',
+      'POST /loans/apply': 'LoanRemoteDataSource.applyLoan',
+      'GET /loans': 'LoanRemoteDataSource.getLoans',
+      'GET /loans/{id}': 'LoanRemoteDataSource.getDetail',
+      'GET /loans/{id}/schedule': 'LoanRemoteDataSource.getSchedule',
+      'POST /loans/{id}/repay': 'LoanRemoteDataSource.repay',
+      'GET /cards': 'CardRemoteDataSource.getCards',
+      'POST /cards/issue': 'CardRemoteDataSource.issueCard',
+      'PATCH /cards/{id}/status': 'CardRemoteDataSource.updateStatus',
+      'PUT /cards/{id}/settings': 'CardRemoteDataSource.updateSettings',
     };
 
     test('All mobile MUST-EXIST endpoints are present in backend', () {
@@ -98,81 +167,10 @@ void main() {
     });
 
     /// === KNOWN BACKEND GAPS (BE-REQ) ===
-    /// These endpoints mobile code CALLS or HAS CONSTANTS FOR but DO NOT EXIST in backend.
-    /// They are documented in 01_ISSUES_AND_TASKS.md as BE-REQ items.
-    /// Mobile code should GATE these behind BackendCapabilities flags.
-
+    /// Legacy two-step transfer endpoints replaced by single-step /payments/transfer.
     final Map<String, String> knownBackendGaps = {
-      // BE-REQ-04: OTP/Forgot password
-      'POST /auth/otp/send': 'BE-REQ-04: OTP not implemented',
-      'POST /auth/otp/verify': 'BE-REQ-04: OTP not implemented',
-      'POST /auth/forgot-password': 'BE-REQ-04: Forgot password not implemented',
-      'POST /auth/reset-password': 'BE-REQ-04: Reset password not implemented',
-
-      // BE-REQ-03: PIN/OTP for transactions
-      'POST /users/pin/set': 'BE-REQ-03: Transaction PIN not implemented',
-      'POST /users/pin/verify': 'BE-REQ-03: Transaction PIN verify not implemented',
-      'POST /security/biometric/verify': 'BE-REQ-03: Biometric verify not implemented',
-
-      // BE-REQ-06: Deposit/Withdraw
-      'POST /wallets/deposit': 'BE-REQ-06: Deposit not implemented',
-      'POST /wallets/withdraw': 'BE-REQ-06: Withdraw not implemented',
-
-      // BE-REQ-06: Old transfer flow (init/confirm) - replaced by single-step /payments/transfer
       'POST /wallets/transfer/init': 'BE-GAP: Old init/confirm flow removed, use /payments/transfer',
       'POST /wallets/transfer/{id}/confirm': 'BE-GAP: Old init/confirm flow removed, use /payments/transfer',
-
-      // BE-REQ-06: Bills/Utilities
-      'GET /bills/lookup': 'BE-REQ-06: Bills not implemented',
-      'POST /bills/pay': 'BE-REQ-06: Bills not implemented',
-      'POST /bills/topup': 'BE-REQ-06: Phone topup not implemented',
-
-      // BE-REQ-06: VietQR
-      'POST /payments/vietqr/decode': 'BE-REQ-06: VietQR decode not implemented',
-      'POST /payments/vietqr/generate': 'BE-REQ-06: VietQR generate not implemented',
-
-      // BE-REQ-06: Bank accounts
-      'POST /bank-accounts/link': 'BE-REQ-06: Bank accounts not implemented',
-      'GET /bank-accounts': 'BE-REQ-06: Bank accounts not implemented',
-      'DELETE /bank-accounts/{id}': 'BE-REQ-06: Bank accounts not implemented',
-
-      // BE-REQ-06: Beneficiaries
-      'POST /beneficiaries': 'BE-REQ-06: Beneficiaries not implemented',
-      'GET /beneficiaries': 'BE-REQ-06: Beneficiaries not implemented',
-
-      // BE-REQ-06: Funding sources
-      'GET /funding-sources': 'BE-REQ-06: Funding sources not implemented',
-
-      // BE-REQ-06: User profile extras
-      'POST /users/me/avatar': 'BE-GAP: Avatar upload not implemented',
-      'GET /users/me/qrcode': 'BE-GAP: Personal QR not implemented',
-      'GET /config/limits': 'BE-REQ-06: Config limits not implemented',
-      'GET /config/limits/status': 'BE-REQ-06: Config limits status not implemented',
-
-      // BE-REQ-06: Receipt/Export
-      'GET /transactions/{id}/receipt.pdf': 'BE-REQ-06: Receipt PDF not implemented',
-      'GET /transactions/export/csv': 'BE-REQ-06: Export CSV not implemented',
-      'GET /transactions/export/pdf': 'BE-REQ-06: Export PDF not implemented',
-      'GET /transactions/export/excel': 'BE-REQ-06: Export Excel not implemented',
-
-      // BE-REQ-06: Money requests (some endpoints differ)
-      'GET /payments/money-requests/received': 'BE-REQ-06: Money request received not implemented',
-      'GET /payments/money-requests/sent': 'BE-REQ-06: Money request sent not implemented',
-      'GET /payments/money-requests/{id}': 'BE-REQ-06: Money request detail not implemented',
-      'POST /payments/money-requests/{id}/cancel': 'BE-REQ-06: Money request cancel not implemented',
-
-      // BE-REQ-06: Referrals
-      'GET /referrals/code': 'BE-REQ-06: Referrals not implemented',
-      'GET /referrals/history': 'BE-REQ-06: Referrals not implemented',
-      'POST /referrals/apply': 'BE-REQ-06: Referrals not implemented',
-
-      // BE-REQ-06: Legal/Feedback
-      'GET /legal/terms': 'BE-GAP: Legal terms may exist but unverified',
-      'POST /legal/consent': 'BE-REQ-06: Legal consent not implemented',
-      'POST /feedback': 'BE-REQ-06: Feedback not implemented',
-
-      // BE-REQ-06: Sessions FCM (partial)
-      'POST /sessions/{deviceId}/fcm': 'BE-GAP: Session FCM registration not implemented',
     };
 
     test('Known backend gaps are documented and match BE-REQ', () {

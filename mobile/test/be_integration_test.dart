@@ -5,6 +5,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sen_hong_bank/core/constants/api_constants.dart';
+import 'package:sen_hong_bank/core/network/dio_client.dart';
 import 'package:stomp_dart_client/stomp_dart_client.dart';
 
 class _RealHttpOverrides extends HttpOverrides {
@@ -31,12 +33,28 @@ void main() {
     return;
   }
 
-  setUpAll(() {
-    HttpOverrides.global = _RealHttpOverrides();
-  });
+  late String baseUrl;
+  late String wsUrl;
 
-  const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080/api/v1');
-  const String wsUrl = String.fromEnvironment('API_WS_URL', defaultValue: 'ws://localhost:8080/ws-native');
+  setUpAll(() async {
+    HttpOverrides.global = _RealHttpOverrides();
+    if (await DioClient.probeGatewayReachable('http://localhost:8080/api/v1')) {
+      baseUrl = 'http://localhost:8080/api/v1';
+      wsUrl = 'ws://localhost:8080/ws-native';
+    } else if (await DioClient.probeGatewayReachable(ApiConstants.baseUrl)) {
+      baseUrl = ApiConstants.baseUrl;
+      wsUrl = DioClient.deriveWsUrl(baseUrl);
+    } else {
+      final sibling = DioClient.siblingCodespaceApiUrl(ApiConstants.baseUrl);
+      if (sibling != null && await DioClient.probeGatewayReachable(sibling)) {
+        baseUrl = sibling;
+        wsUrl = DioClient.deriveWsUrl(baseUrl);
+      } else {
+        baseUrl = ApiConstants.baseUrl;
+        wsUrl = ApiConstants.wsUrl;
+      }
+    }
+  });
 
   final client = HttpClient();
   tearDownAll(() => client.close());

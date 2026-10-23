@@ -79,7 +79,7 @@ public class SagaP2pE2eTest {
     @Autowired private TransactionRepository transactionRepository;
     @Autowired private OutboxEventRepository outboxEventRepository;
     @Autowired private JdbcTemplate jdbcTemplate;
-    @Autowired(required = false) private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
+    @MockBean private org.springframework.data.redis.core.StringRedisTemplate redisTemplate;
 
     private static final String SENDER_USER = "e2e-user-sender";
     private static final String RECEIVER_USER = "e2e-user-receiver";
@@ -87,11 +87,14 @@ public class SagaP2pE2eTest {
     @MockBean private WalletGrpcClient walletGrpcClient;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUpGrpc() {
-        if (redisTemplate != null) {
-            redisTemplate.delete("saga:p2p:idempotency:idem-e2e-completed-001");
-            redisTemplate.delete("saga:p2p:idempotency:idem-e2e-reversed-001");
-        }
+        org.springframework.data.redis.core.ValueOperations<String, String> valueOps =
+                org.mockito.Mockito.mock(org.springframework.data.redis.core.ValueOperations.class);
+        org.mockito.Mockito.lenient().when(redisTemplate.opsForValue()).thenReturn(valueOps);
+        org.mockito.Mockito.lenient()
+                .when(valueOps.setIfAbsent(anyString(), anyString(), org.mockito.ArgumentMatchers.any(java.time.Duration.class)))
+                .thenReturn(true);
         when(walletGrpcClient.getWalletByUserId(SENDER_USER)).thenReturn(
                 WalletInfoResult.builder().found(true).walletId("wallet-sender").userId(SENDER_USER).balance(10_000_000L).status("ACTIVE").build());
         when(walletGrpcClient.getWalletByUserId(RECEIVER_USER)).thenReturn(

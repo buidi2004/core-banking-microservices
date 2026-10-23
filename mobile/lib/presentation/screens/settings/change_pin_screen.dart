@@ -6,6 +6,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
@@ -162,7 +163,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       if (!mounted) return;
       HapticFeedback.vibrate();
       setState(() {
-        _errorMessage = 'Không thể đổi mã PIN: $e';
+        _errorMessage = 'Không thể đổi mã PIN: ${extractErrorMessage(e)}';
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);
