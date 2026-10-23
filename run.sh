@@ -85,34 +85,39 @@ start_be() {
 # 3. Khởi động Frontend React Portal
 start_fe() {
     echo -e "\n${BLUE}🌐 [3/4] KHỞI ĐỘNG FRONTEND REACT TELLER PORTAL...${NC}"
-    if [ -f "$FE_PID_FILE" ] && kill -0 "$(cat "$FE_PID_FILE")" 2>/dev/null; then
+    if [ -f "$FE_PID_FILE" ] && kill -0 "$(cat "$FE_PID_FILE")" 2>/dev/null && curl -s http://localhost:5173 >/dev/null 2>&1; then
         echo -e "  ${YELLOW}⚠️ Frontend đang chạy tại PID: $(cat "$FE_PID_FILE") (${CYAN}http://localhost:5173${NC})${NC}"
         return 0
     fi
 
-    # Kiểm tra cổng 5173
-    if ss -tulpn 2>/dev/null | grep -q ":5173"; then
-        echo -e "  ${YELLOW}⚠️ Cổng 5173 đang có tiến trình chiếm dụng. Đang giải phóng...${NC}"
-        fuser -k 5173/tcp 2>/dev/null || true
-        sleep 1
+    # Dọn tiến trình cũ bị treo (SIGTTIN) hoặc chiếm cổng 5173
+    if [ -f "$FE_PID_FILE" ]; then
+        kill -9 "$(cat "$FE_PID_FILE")" 2>/dev/null || true
+        rm -f "$FE_PID_FILE"
     fi
+    pkill -9 -f "vite.*5173" 2>/dev/null || true
+    fuser -k 5173/tcp 2>/dev/null || true
 
     cd "$FE_DIR"
     if [ ! -x "node_modules/.bin/vite" ]; then
         echo -e "  • Đang cài đặt dependencies cho Frontend (npm install)..."
-        npm install
+        npm install < /dev/null
     fi
     echo -e "  • Đang khởi động Vite Dev Server..."
-    nohup npm run dev -- --host 0.0.0.0 --port 5173 > "$FE_LOG_FILE" 2>&1 &
+    setsid ./node_modules/.bin/vite --host 0.0.0.0 --port 5173 < /dev/null > "$FE_LOG_FILE" 2>&1 &
     local fe_pid=$!
     echo "$fe_pid" > "$FE_PID_FILE"
     cd "$ROOT_DIR"
 
-    sleep 2
-    if kill -0 "$fe_pid" 2>/dev/null; then
+    local wait_fe=0
+    until curl -s http://localhost:5173 >/dev/null 2>&1 || [ $wait_fe -ge 10 ]; do
+        sleep 1
+        wait_fe=$((wait_fe + 1))
+    done
+
+    if curl -s http://localhost:5173 >/dev/null 2>&1; then
         echo -e "  ${GREEN}✓ Cổng Quản lý Nạp tiền Quầy (React) đã chạy thành công!${NC}"
         echo -e "  👉 TRUY CẬP NGAY: ${BOLD}${CYAN}http://localhost:5173${NC}"
-        echo -e "  👉 TRANG DEMO GỐC: ${CYAN}http://127.0.0.1:5500/frontend/cash-deposit-portal/index.html${NC}"
     else
         echo -e "  ${RED}❌ Khởi động Frontend thất bại. Vui lòng kiểm tra log: $FE_LOG_FILE${NC}"
         cat "$FE_LOG_FILE" | tail -n 15
