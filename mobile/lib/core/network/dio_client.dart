@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
@@ -28,6 +29,10 @@ class DioClient {
 
   static const String _prefKeyApiUrl = 'custom_gateway_api_url';
   static const String _prefKeyWsUrl = 'custom_gateway_ws_url';
+
+  /// Địa chỉ file cấu hình Cloud Endpoint tự động đồng bộ từ GitHub Codespaces (Phương án 2).
+  static const String cloudEndpointRegistryUrl =
+      'https://raw.githubusercontent.com/buidi2004/core-banking-microservices/main/cloud-endpoint.json';
 
   /// `Dio` dùng chung — mọi datasource phải dùng getter này.
   Dio get dio => sharedDio;
@@ -89,7 +94,7 @@ class DioClient {
     return ApiConstants.wsUrl;
   }
 
-  /// Nạp cấu hình Gateway đã lưu trong SharedPreferences (nếu có) khi mở ứng dụng.
+  /// Nạp cấu hình Gateway đã lưu trong SharedPreferences (nếu có) và tự động đồng bộ từ GitHub Cloud Registry.
   static Future<void> initSavedGateway() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -102,7 +107,48 @@ class DioClient {
       } else {
         _activeWsUrl = deriveWsUrl(sharedDio.options.baseUrl);
       }
+
+      // Phương án 2: Tự động kéo link Codespace mới nhất từ GitHub Repo (không cần copy-paste khi cài APK)
+      final currentBase = sharedDio.options.baseUrl;
+      if (currentBase.contains('localhost') ||
+          currentBase.contains('10.0.2.2') ||
+          currentBase.contains('.app.github.dev')) {
+        await syncFromCloudRegistry();
+      }
     } catch (_) {}
+  }
+
+  /// Tự động đọc file `cloud-endpoint.json` trên GitHub để cập nhật URL Codespace đang bật.
+  static Future<String?> syncFromCloudRegistry() async {
+    try {
+      final probe = Dio(
+        BaseOptions(
+          connectTimeout: const Duration(milliseconds: 2500),
+          receiveTimeout: const Duration(milliseconds: 2500),
+          responseType: ResponseType.plain,
+        ),
+      );
+      final res = await probe.get(
+        '$cloudEndpointRegistryUrl?t=${DateTime.now().millisecondsSinceEpoch}',
+      );
+      if (res.statusCode == 200 && res.data != null) {
+        final decoded = jsonDecode(res.data.toString());
+        if (decoded is Map<String, dynamic>) {
+          final remoteApi = (decoded['apiUrl'] ?? decoded['gatewayUrl'] ?? '')
+              .toString()
+              .trim();
+          final remoteWs = (decoded['wsUrl'] ?? '').toString().trim();
+          if (remoteApi.isNotEmpty && remoteApi.startsWith('https://')) {
+            await updateBaseUrl(
+              remoteApi,
+              newWsUrl: remoteWs.isNotEmpty ? remoteWs : null,
+            );
+            return sharedDio.options.baseUrl;
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   /// Cho phép đổi động địa chỉ Gateway (VD: chuyển sang link GitHub Codespaces lúc runtime) và lưu bền vững.

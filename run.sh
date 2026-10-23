@@ -141,6 +141,62 @@ run_mobile() {
     cd "$ROOT_DIR"
 }
 
+# 3c. Tự động đồng bộ Endpoint của GitHub Codespaces lên Repo (Phương án 1 + 2 cho Mobile APK)
+sync_codespace_endpoint() {
+    if [ -z "${CODESPACE_NAME:-}" ]; then
+        return 0
+    fi
+
+    local domain="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
+    local gateway_url="https://${CODESPACE_NAME}-8080.${domain}"
+    local api_url="${gateway_url}/api/v1"
+    local ws_url="wss://${CODESPACE_NAME}-8080.${domain}/ws-native"
+    local portal_url="https://${CODESPACE_NAME}-5173.${domain}"
+    local now_utc
+    now_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+    echo -e "\n${PURPLE}${BOLD}☁️  [4/4] ĐỒNG BỘ TỰ ĐỘNG LINK CODESPACES CHO MOBILE APK (PHƯƠNG ÁN 1 & 2)...${NC}"
+
+    # Tự động mở Public cho cổng 8080 và 5173 nếu có GitHub CLI
+    if command -v gh &>/dev/null; then
+        gh codespace ports visibility 8080:public 5173:public -c "$CODESPACE_NAME" 2>/dev/null || true
+    fi
+
+    # 1. Ghi file cloud-endpoint.json (Phương án 2 - Auto Discovery)
+    cat > "$ROOT_DIR/cloud-endpoint.json" <<EOF
+{
+  "codespaceName": "${CODESPACE_NAME}",
+  "gatewayUrl": "${gateway_url}",
+  "apiUrl": "${api_url}",
+  "wsUrl": "${ws_url}",
+  "portalUrl": "${portal_url}",
+  "updatedAt": "${now_utc}"
+}
+EOF
+
+    # 2. Gán cứng luôn vào ApiConstants.dart (Phương án 1 - Hardcoded Default cho APK)
+    local api_const_file="$ROOT_DIR/mobile/lib/core/constants/api_constants.dart"
+    if [ -f "$api_const_file" ]; then
+        sed -i -E "s|defaultValue: 'https?://[^']*'|defaultValue: '${api_url}'|g" "$api_const_file"
+        sed -i -E "s|defaultValue: 'wss?://[^']*'|defaultValue: '${ws_url}'|g" "$api_const_file"
+    fi
+
+    # 3. Tự động commit & push lên GitHub để máy Local và các file APK tự nhận diện
+    if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        git add "$ROOT_DIR/cloud-endpoint.json" "$api_const_file" 2>/dev/null || true
+        if ! git diff --cached --quiet 2>/dev/null; then
+            git commit -m "chore: auto-sync active Codespace endpoint (${CODESPACE_NAME}) [skip ci]" >/dev/null 2>&1 || true
+            git push origin HEAD:main >/dev/null 2>&1 || true
+            echo -e "  ${GREEN}✓ Đã tự động đẩy cấu hình Cloud Endpoint lên GitHub!${NC}"
+        else
+            echo -e "  ${GREEN}✓ Cấu hình Cloud Endpoint trên GitHub đã là bản mới nhất!${NC}"
+        fi
+    fi
+
+    echo -e "  • Link Web Quầy Giao Dịch (5173): ${BOLD}${CYAN}${portal_url}${NC}"
+    echo -e "  • Link API Gateway Mobile (8080): ${BOLD}${CYAN}${gateway_url}${NC}"
+}
+
 # 4. Khởi động Tất cả (All-in-one)
 start_all() {
     print_banner
@@ -148,12 +204,19 @@ start_all() {
     start_infra
     start_be
     start_fe
+    sync_codespace_endpoint
     echo -e "\n${GREEN}${BOLD}================================================================================${NC}"
     echo -e "${GREEN}${BOLD}🎉 TOÀN BỘ HỆ THỐNG ĐÃ HOẠT ĐỘNG HOÀN TOÀN!${NC}"
-    echo -e "   • Frontend React Portal:  ${BOLD}${CYAN}http://localhost:5173${NC}"
-    echo -e "   • API Gateway Routing:    ${BOLD}${CYAN}http://localhost:8080${NC}"
-    echo -e "   • Kafka Management UI:    ${BOLD}${CYAN}http://localhost:8089${NC}"
-    echo -e "   • RabbitMQ Admin UI:      ${BOLD}${CYAN}http://localhost:15672${NC}"
+    if [ -n "${CODESPACE_NAME:-}" ]; then
+        local domain="${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-app.github.dev}"
+        echo -e "   • Web Teller Portal (Public): ${BOLD}${CYAN}https://${CODESPACE_NAME}-5173.${domain}${NC}"
+        echo -e "   • Mobile Cloud Gateway:       ${BOLD}${CYAN}https://${CODESPACE_NAME}-8080.${domain}${NC}"
+    else
+        echo -e "   • Frontend React Portal:  ${BOLD}${CYAN}http://localhost:5173${NC}"
+        echo -e "   • API Gateway Routing:    ${BOLD}${CYAN}http://localhost:8080${NC}"
+        echo -e "   • Kafka Management UI:    ${BOLD}${CYAN}http://localhost:8089${NC}"
+        echo -e "   • RabbitMQ Admin UI:      ${BOLD}${CYAN}http://localhost:15672${NC}"
+    fi
     echo -e "${GREEN}${BOLD}================================================================================${NC}"
 }
 
@@ -320,6 +383,9 @@ COMMAND="${1:-menu}"
 case "$COMMAND" in
     start|all)
         start_all
+        ;;
+    sync-cloud|cloud)
+        sync_codespace_endpoint
         ;;
     fe|frontend)
         start_fe

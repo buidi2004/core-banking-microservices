@@ -89,6 +89,21 @@ class _ConfigScreenState extends State<ConfigScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final activeApi = DioClient.sharedDio.options.baseUrl;
+    final activeWs = DioClient.activeWsUrl;
+    if (activeApi.contains('.app.github.dev')) {
+      _selectedGatewayIdx = 2;
+      _gateways[2]['url'] = activeApi;
+      _gateways[2]['ws'] = activeWs;
+      _gateways[2]['status'] = 'ĐANG KẾT NỐI CLOUD';
+    } else if (activeApi.contains('10.0.2.2')) {
+      _selectedGatewayIdx = 1;
+    }
+  }
+
+  @override
   void dispose() {
     _apiUrlCtrl.dispose();
     _wsUrlCtrl.dispose();
@@ -151,12 +166,23 @@ class _ConfigScreenState extends State<ConfigScreen> {
     HapticFeedback.selectionClick();
     final data = await Clipboard.getData('text/plain');
     final pasted = data?.text?.trim() ?? '';
-    if (pasted.isEmpty) return;
-    final normApi = DioClient.normalizeApiUrl(pasted);
+    String? targetApi;
+    if (pasted.isNotEmpty &&
+        (pasted.contains('.app.github.dev') ||
+            pasted.startsWith('http://') ||
+            pasted.startsWith('https://'))) {
+      targetApi = DioClient.normalizeApiUrl(pasted);
+    } else {
+      targetApi = await DioClient.syncFromCloudRegistry();
+    }
+    if (targetApi == null || targetApi.isEmpty) return;
+    final normApi = DioClient.normalizeApiUrl(targetApi);
     final normWs = DioClient.deriveWsUrl(normApi);
     setState(() {
       _apiUrlCtrl.text = normApi;
       _wsUrlCtrl.text = normWs;
+      _gateways[2]['url'] = normApi;
+      _gateways[2]['ws'] = normWs;
       _selectedGatewayIdx = 2;
     });
     await DioClient.updateBaseUrl(normApi, newWsUrl: normWs);
@@ -165,22 +191,32 @@ class _ConfigScreenState extends State<ConfigScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.emeraldGreen,
-        content: Text('Đã dán & tự động cấu hình: $normApi'),
+        content: Text('Đã đồng bộ & cấu hình Cloud: $normApi'),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
-  void _selectGateway(int idx) {
+  Future<void> _selectGateway(int idx) async {
     HapticFeedback.selectionClick();
+    if (idx == 2 && (_gateways[2]['url'] as String).contains('xxx-8080')) {
+      final synced = await DioClient.syncFromCloudRegistry();
+      if (synced != null && synced.isNotEmpty) {
+        _gateways[2]['url'] = synced;
+        _gateways[2]['ws'] = DioClient.activeWsUrl;
+        _gateways[2]['status'] = 'ĐÃ ĐỒNG BỘ TỪ GITHUB';
+      }
+    }
+    if (!mounted) return;
     setState(() {
       _selectedGatewayIdx = idx;
       _apiUrlCtrl.text = _gateways[idx]['url'] as String;
       _wsUrlCtrl.text = _gateways[idx]['ws'] as String;
       _pingMs = _gateways[idx]['ping'] as int;
     });
-    DioClient.updateBaseUrl(_apiUrlCtrl.text, newWsUrl: _wsUrlCtrl.text);
+    await DioClient.updateBaseUrl(_apiUrlCtrl.text, newWsUrl: _wsUrlCtrl.text);
     RealtimeNotificationService().disconnect();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.primaryDark,

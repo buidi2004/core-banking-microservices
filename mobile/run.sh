@@ -93,10 +93,30 @@ cmd_run_chrome() {
 }
 
 # 3b. Khởi chạy hoặc đóng gói APK kết nối tới GitHub Codespaces / Cloud URL
+auto_detect_cloud_url() {
+    local detected=""
+    # 1. Thử lấy từ GitHub Raw (cloud-endpoint.json mới nhất do Codespaces tự push)
+    local raw_json
+    raw_json=$(curl -fsSL -m 3 "https://raw.githubusercontent.com/buidi2004/core-banking-microservices/main/cloud-endpoint.json?t=$(date +%s)" 2>/dev/null || true)
+    if [ -n "$raw_json" ]; then
+        detected=$(echo "$raw_json" | grep -oE '"gatewayUrl"[[:space:]]*:[[:space:]]*"[^"]*"' | sed -E 's/.*"([^"]*)"/\1/' || true)
+    fi
+    # 2. Fallback sang file cloud-endpoint.json ở thư mục gốc nếu có
+    if [ -z "$detected" ] && [ -f "$ROOT_DIR/cloud-endpoint.json" ]; then
+        detected=$(grep -oE '"gatewayUrl"[[:space:]]*:[[:space:]]*"[^"]*"' "$ROOT_DIR/cloud-endpoint.json" | sed -E 's/.*"([^"]*)"/\1/' || true)
+    fi
+    echo "$detected"
+}
+
 normalize_cloud_urls() {
     local raw_url="$1"
     if [ -z "$raw_url" ]; then
-        read -rp "👉 Nhập link cổng 8080 của Codespaces (VD: https://xxx-8080.app.github.dev): " raw_url
+        raw_url=$(auto_detect_cloud_url)
+        if [ -n "$raw_url" ]; then
+            echo -e "${GREEN}✓ Đã tự động nhận diện Link Codespaces từ GitHub: ${BOLD}${CYAN}$raw_url${NC}"
+        else
+            read -rp "👉 Nhập link cổng 8080 của Codespaces (VD: https://xxx-8080.app.github.dev): " raw_url
+        fi
     fi
     # Cắt dấu / ở cuối hoặc /api/v1 nếu người dùng lỡ dán thừa
     raw_url="${raw_url%/}"
@@ -177,9 +197,21 @@ cmd_test() {
 cmd_build_apk() {
     print_banner
     if check_flutter; then
-        echo -e "${BLUE}📦 Đang đóng gói Android Release APK (flutter build apk --release)...${NC}\n"
+        local detected_cloud
+        detected_cloud=$(auto_detect_cloud_url)
         cd "$MOBILE_DIR"
-        flutter build apk --release
+        if [ -n "$detected_cloud" ]; then
+            normalize_cloud_urls "$detected_cloud"
+            echo -e "${BLUE}📦 Đang đóng gói Android Release APK (Tự động gắn sẵn Cloud Codespaces)...${NC}"
+            echo -e "   • REST API : ${BOLD}${CYAN}$CLOUD_API_URL${NC}"
+            echo -e "   • WebSocket: ${BOLD}${CYAN}$CLOUD_WS_URL${NC}\n"
+            flutter build apk --release \
+                --dart-define=API_BASE_URL="$CLOUD_API_URL" \
+                --dart-define=API_WS_URL="$CLOUD_WS_URL"
+        else
+            echo -e "${BLUE}📦 Đang đóng gói Android Release APK (Tự động đồng bộ Cloud khi mở App)...${NC}\n"
+            flutter build apk --release
+        fi
         echo -e "\n${GREEN}✓ Đóng gói APK thành công!${NC}"
         echo -e "👉 File APK: ${BOLD}${CYAN}mobile/build/app/outputs/flutter-apk/app-release.apk${NC}"
     fi
