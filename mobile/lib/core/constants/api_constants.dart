@@ -2,8 +2,8 @@ class ApiConstants {
   ApiConstants._();
 
   // Base URLs - Mặc định kết nối trực tiếp API Gateway Local (:8080), có thể override qua --dart-define
-  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8080/api/v1');
-  static const String wsUrl = String.fromEnvironment('API_WS_URL', defaultValue: 'ws://localhost:8080/ws-native');
+  static const String baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/api/v1');
+  static const String wsUrl = String.fromEnvironment('API_WS_URL', defaultValue: 'wss://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/ws-native');
   static const String wsTopicPrefix = '/topic/wallets';
   static String walletNotificationTopic(String walletId) => '/topic/wallets/$walletId/notifications';
   static String userNotificationTopic(String userId) => '/topic/users/$userId/notifications';

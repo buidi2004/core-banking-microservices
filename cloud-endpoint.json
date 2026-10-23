@@ -1,8 +1,8 @@
 {
-  "codespaceName": "",
-  "gatewayUrl": "",
-  "apiUrl": "",
-  "wsUrl": "",
-  "portalUrl": "",
-  "updatedAt": ""
+  "codespaceName": "solid-eureka-695rvv97vwjjh5wjq",
+  "gatewayUrl": "https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev",
+  "apiUrl": "https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/api/v1",
+  "wsUrl": "wss://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/ws-native",
+  "portalUrl": "https://solid-eureka-695rvv97vwjjh5wjq-5173.app.github.dev",
+  "updatedAt": "2026-10-23T03:17:49Z"
 }
