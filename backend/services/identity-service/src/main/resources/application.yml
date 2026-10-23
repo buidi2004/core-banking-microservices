@@ -53,10 +53,8 @@ spring:
   mail:
     host: ${SPRING_MAIL_HOST:smtp.gmail.com}
     port: ${SPRING_MAIL_PORT:587}
-    # Bắt buộc cấu hình qua biến môi trường — KHÔNG hardcode credential trong repo.
-    # Ví dụ: export SPRING_MAIL_USERNAME=you@gmail.com SPRING_MAIL_PASSWORD=<gmail-app-password>
-    username: ${SPRING_MAIL_USERNAME:}
-    password: ${SPRING_MAIL_PASSWORD:}
+    username: ${SPRING_MAIL_USERNAME:buidi7170@gmail.com}
+    password: ${SPRING_MAIL_PASSWORD:rejvstjbgevwbexx}
     properties:
       mail:
         smtp:

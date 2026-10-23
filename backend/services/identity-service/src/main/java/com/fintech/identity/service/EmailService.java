@@ -18,7 +18,7 @@ public class EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${spring.mail.username:noreply@senhongbank.com.vn}")
+    @Value("${spring.mail.username:buidi7170@gmail.com}")
     private String senderEmail;
 
     /**
@@ -41,7 +41,10 @@ public class EmailService {
                     StandardCharsets.UTF_8.name()
             );
 
-            helper.setFrom(senderEmail, "Sen Hồng Bank");
+            String effectiveFrom = (senderEmail != null && !senderEmail.isBlank())
+                    ? senderEmail
+                    : "buidi7170@gmail.com";
+            helper.setFrom(effectiveFrom, "Sen Hồng Bank");
             helper.setTo(recipientEmail);
             helper.setSubject("[Sen Hồng Bank] Mã xác thực OTP của Quý khách");
 

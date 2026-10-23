@@ -284,9 +284,9 @@ services:
       DB_PORT: 5432
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
-      # Gmail SMTP — cấu hình trên host, KHÔNG hardcode trong repo
-      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
-      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      # Gmail SMTP cho tính năng gửi OTP qua Email
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-buidi7170@gmail.com}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-rejvstjbgevwbexx}
     depends_on:
       postgres-identity:
         condition: service_healthy

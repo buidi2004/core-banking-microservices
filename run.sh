@@ -73,6 +73,10 @@ start_be() {
     if ! ls "$ROOT_DIR"/backend/services/api-gateway/target/*.jar >/dev/null 2>&1; then
         echo -e "  ${YELLOW}⚠️ Chưa tìm thấy file .jar đã đóng gói. Đang tự động build Maven (common-library + 6 services)...${NC}"
         mvn -f "$ROOT_DIR/backend/pom.xml" clean package -DskipTests
+    elif [ "$ROOT_DIR/backend/services/identity-service/src/main/java/com/fintech/identity/service/OtpService.java" -nt "$ROOT_DIR/backend/services/identity-service/target/identity-service-1.0.0-SNAPSHOT.jar" ]; then
+        echo -e "  ${YELLOW}🔄 Phát hiện cập nhật mới ở api-gateway / identity-service. Đang đóng gói nhanh...${NC}"
+        mvn -f "$ROOT_DIR/backend/pom.xml" package -DskipTests -pl services/api-gateway,services/identity-service
+        docker compose up -d --build api-gateway identity-service
     fi
     echo -e "  • Khởi chạy các container Microservices:"
     if ! docker image inspect core-banking-microservices-api-gateway:latest >/dev/null 2>&1; then

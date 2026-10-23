@@ -55,9 +55,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String DEFAULT_KYC_TIER = "VERIFIED";
     private static final String DEFAULT_ROLE = "ROLE_USER";
 
-    /** Các route được phép truy cập không cần JWT (health, auth login/register...). */
+    /** Các route được phép truy cập không cần JWT (health, auth login/register/otp/forgot-password...). */
     private static final List<String> PUBLIC_PATH_PREFIXES = List.of(
-            "/api/v1/auth/",
+            "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/refresh",
+            "/api/v1/auth/logout",
+            "/api/v1/auth/otp/",
+            "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password",
             "/actuator/health",
             "/fallback/",
             "/ws",
