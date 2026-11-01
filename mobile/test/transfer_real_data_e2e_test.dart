@@ -194,6 +194,7 @@ void main() {
       // 1. Đăng ký người gửi
       final regSender = await dio.post('/auth/register', data: {
         'phoneNumber': phoneSender,
+        'email': 'sender_$timestamp@banking.com',
         'fullName': 'Nguyen Van A E2E Real',
         'password': 'Password123!',
         'deviceId': 'device-e2e-real',
@@ -216,6 +217,7 @@ void main() {
       // 3. Đăng ký người nhận
       final regReceiver = await dio.post('/auth/register', data: {
         'phoneNumber': phoneReceiver,
+        'email': 'receiver_$timestamp@banking.com',
         'fullName': 'Tran Thi B E2E Real',
         'password': 'Password123!',
         'deviceId': 'device-e2e-real-receiver',
