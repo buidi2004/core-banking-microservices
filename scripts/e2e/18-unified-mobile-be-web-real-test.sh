@@ -169,9 +169,7 @@ step "3" "TẦNG WEB QUẢN TRỊ: Giao dịch viên Nạp tiền Quầy vào V�
 # ==============================================================================
 
 # Đăng nhập Cán bộ Giao dịch viên (Teller) trên Web Portal
-if [ ! -f "scripts/e2e/.staff_tokens.env" ]; then
-  bash scripts/e2e/generate-staff-tokens.sh >/dev/null 2>&1
-fi
+bash scripts/e2e/generate-staff-tokens.sh >/dev/null 2>&1
 source scripts/e2e/.staff_tokens.env
 TELLER_TOKEN="$TELLER1_TOKEN"
 

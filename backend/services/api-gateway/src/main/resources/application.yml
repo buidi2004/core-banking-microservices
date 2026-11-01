@@ -130,17 +130,6 @@ spring:
                 name: notificationServiceCb
                 fallbackUri: forward:/fallback/notification
 
-        - id: notification-service-referrals
-          uri: http://notification-service:8085
-          predicates:
-            - Path=/api/v1/referrals/**
-          filters:
-            - name: JwtAuthenticationFilter
-            - name: CircuitBreaker
-              args:
-                name: notificationServiceCb
-                fallbackUri: forward:/fallback/notification
-
         - id: notification-service-websocket
           uri: ${NOTIFICATION_SERVICE_WS_URI:ws://notification-service:8085}
           predicates:
@@ -268,12 +257,12 @@ spring:
                 fallbackUri: forward:/fallback/identity
 
         # ----------------------------------------------------------------------------
-        # WALLET MUTATIONS (Deposit & Withdraw) -> payment-service:8083 (SAGA)
+        # WALLET MUTATIONS (Deposit, Withdraw & Transfer) -> payment-service:8083 (SAGA)
         # ----------------------------------------------------------------------------
         - id: payment-service-wallet-mutations
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/wallets/deposit, /api/v1/wallets/withdraw
+            - Path=/api/v1/wallets/deposit, /api/v1/wallets/withdraw, /api/v1/wallets/transfer/**
           filters:
             - name: JwtAuthenticationFilter
 
@@ -344,6 +333,16 @@ spring:
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
             - Path=/api/v1/cards/**
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # BANKS: DANH SÁCH NGÂN HÀNG ĐỐI TÁC -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-banks
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/banks/**, /api/v1/banks
           filters:
             - name: JwtAuthenticationFilter
 

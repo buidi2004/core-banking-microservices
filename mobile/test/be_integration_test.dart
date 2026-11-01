@@ -23,10 +23,8 @@ void main() {
   const bool runE2E = bool.fromEnvironment('RUN_E2E');
   
   if (!runE2E) {
-    // Mark all tests in this file as skipped with a clear reason
     group('Backend E2E Integration Tests [SKIPPED]', () {
       test('E2E tests are skipped by default', () {
-        // This test always passes but marks the group as skipped
         expect(true, isTrue, reason: 'E2E tests require RUN_E2E=true environment variable and a running backend stack');
       });
     }, skip: 'E2E tests need backend running. Set RUN_E2E=true to enable.');
@@ -68,8 +66,11 @@ void main() {
   String? refreshToken;
   String? userId;
   String? walletId;
+  String? pinToken;
+  String? receiverUserId;
   String? receiverWalletId;
   String? transferTxId;
+  String? linkedBankAccountId;
 
   Future<Map<String, dynamic>> httpReq({
     required String method,
@@ -79,16 +80,19 @@ void main() {
     Map<String, String>? headers,
     String? token,
   }) async {
-    var uriString = '$baseUrl$path';
-    if (queryParams != null && queryParams.isNotEmpty) {
-      final qs = queryParams.entries
-          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
-      uriString += (uriString.contains('?') ? '&' : '?') + qs;
+    Uri uri;
+    if (path.startsWith('http')) {
+      uri = Uri.parse(path);
+    } else {
+      final normalizedPath = path.startsWith('/') ? path : '/$path';
+      uri = Uri.parse('$baseUrl$normalizedPath');
     }
-    final uri = Uri.parse(uriString);
 
-    HttpClientRequest req;
+    if (queryParams != null && queryParams.isNotEmpty) {
+      uri = uri.replace(queryParameters: {...uri.queryParameters, ...queryParams});
+    }
+
+    final HttpClientRequest req;
     switch (method.toUpperCase()) {
       case 'GET':
         req = await client.getUrl(uri);
@@ -106,7 +110,7 @@ void main() {
         req = await client.deleteUrl(uri);
         break;
       default:
-        throw Exception('Unsupported method $method');
+        throw ArgumentError('Unsupported HTTP method: $method');
     }
 
     req.headers.contentType = ContentType.json;
@@ -162,7 +166,6 @@ void main() {
       expect(res['body']['success'], isTrue);
       expect(res['body']['data'], isA<List>());
     }, tags: ['e2e']);
-
   });
 
   group('Group 2: Auth Flow (Register, Login, Silent Refresh, OTP)', () {
@@ -215,8 +218,6 @@ void main() {
       final res = await httpReq(
         method: 'POST',
         path: '/auth/refresh',
-        // NOTE: Backend expects refreshToken in JSON body, not query params
-        // This test verifies the ACTUAL backend contract (body), not the old mobile claim
         body: {'refreshToken': refreshToken!},
       );
       expect(res['statusCode'], equals(200));
@@ -229,14 +230,14 @@ void main() {
       refreshToken = data['refreshToken'] as String;
     }, tags: ['e2e']);
 
-    test('POST /auth/otp/send sends 6-digit OTP - BE-GAP: endpoint does not exist', () async {
-      // This endpoint does exist in backend (BE-REQ-04)
+    test('POST /auth/otp/send sends 6-digit OTP to user email/phone', () async {
       final res = await httpReq(
         method: 'POST',
         path: '/auth/otp/send',
         queryParams: {'phoneNumber': testPhone},
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
     }, tags: ['e2e']);
   });
 
@@ -249,37 +250,45 @@ void main() {
       expect(res['body']['data']['fullName'], equals('Nguyen Van Integration'));
     }, tags: ['e2e']);
 
-    test('POST /users/pin/set sets 6-digit transaction PIN - BE-GAP: endpoint does not exist', () async {
+    test('POST /users/pin/set sets 6-digit transaction PIN', () async {
       final res = await httpReq(
         method: 'POST',
         path: '/users/pin/set',
         body: {'pin': '654321'},
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
     }, tags: ['e2e']);
 
-    test('POST /users/pin/verify verifies PIN and returns pinToken - BE-GAP: endpoint does not exist', () async {
+    test('POST /users/pin/verify verifies PIN and returns pinToken', () async {
       final res = await httpReq(
         method: 'POST',
         path: '/users/pin/verify',
         body: {'pin': '654321'},
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      pinToken = res['body']['data'] as String?;
+      expect(pinToken, isNotNull);
     }, tags: ['e2e']);
 
-    test('GET /users/me/qrcode returns personal EMVCo QR code string - BE-GAP: endpoint does not exist', () async {
+    test('GET /users/me/qrcode returns personal EMVCo QR code string', () async {
       final res = await httpReq(method: 'GET', path: '/users/me/qrcode', token: accessToken);
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data']['qrRaw'], isNotNull);
     }, tags: ['e2e']);
 
-    test('GET /config/limits & status returns user limits - BE-GAP: endpoint does not exist', () async {
+    test('GET /config/limits & status returns user limits', () async {
       final limitsRes = await httpReq(method: 'GET', path: '/config/limits', token: accessToken);
-      expect(limitsRes['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(limitsRes['statusCode'], equals(200));
+      expect(limitsRes['body']['success'], isTrue);
 
       final statusRes = await httpReq(method: 'GET', path: '/config/limits/status', token: accessToken);
-      expect(statusRes['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(statusRes['statusCode'], equals(200));
+      expect(statusRes['body']['success'], isTrue);
     }, tags: ['e2e']);
   });
 
@@ -305,7 +314,7 @@ void main() {
       expect(res['body']['data']['currency'], equals('VND'));
     }, tags: ['e2e']);
 
-    test('POST /wallets/deposit deposits money into wallet - BE-GAP: endpoint does not exist', () async {
+    test('POST /wallets/deposit deposits money into wallet', () async {
       expect(walletId, isNotNull);
       final res = await httpReq(
         method: 'POST',
@@ -319,7 +328,11 @@ void main() {
         },
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(201), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      final data = res['body']['data'];
+      transferTxId = data['transactionId'] ?? data['id'];
+      expect(transferTxId, isNotNull);
     }, tags: ['e2e']);
 
     test('GET /wallets/fees/estimate calculates fee for internal transfer', () async {
@@ -349,19 +362,27 @@ void main() {
         },
       );
       expect(regRes['statusCode'], equals(201));
-      final recInfo = await httpReq(
-        method: 'GET',
-        path: '/wallets/recipient-info',
-        queryParams: {'phoneNumber': receiverPhone},
-        token: accessToken,
-      );
+      receiverUserId = regRes['body']['data']['userId'] as String?;
+      expect(receiverUserId, isNotNull);
+
+      // Chờ ví được khởi tạo bất đồng bộ qua RabbitMQ UserRegisteredEvent
+      dynamic recInfo;
+      for (int i = 0; i < 5; i++) {
+        await Future.delayed(const Duration(milliseconds: 300));
+        recInfo = await httpReq(
+          method: 'GET',
+          path: '/wallets/recipient-info',
+          queryParams: {'phoneNumber': receiverPhone},
+          token: accessToken,
+        );
+        if (recInfo['statusCode'] == 200) break;
+      }
       expect(recInfo['statusCode'], equals(200));
       receiverWalletId = recInfo['body']['data']['walletId'] as String?;
       expect(receiverWalletId, isNotNull);
     }, tags: ['e2e']);
 
-    test('POST /wallets/transfer/init initiates transfer with PENDING_CONFIRMATION - BE-GAP: endpoint does not exist', () async {
-      // Backend has POST /payments/transfer (single-step), NOT /wallets/transfer/init + /confirm
+    test('POST /wallets/transfer/init initiates transfer with PENDING_CONFIRMATION', () async {
       expect(walletId, isNotNull);
       expect(receiverWalletId, isNotNull);
 
@@ -380,18 +401,51 @@ void main() {
         },
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data']['status'], equals('PENDING_CONFIRMATION'));
     }, tags: ['e2e']);
 
-    test('POST /wallets/transfer/{id}/confirm confirms transfer with PIN - BE-GAP: endpoint does not exist', () async {
-      if (transferTxId == null) return;
+    test('POST /wallets/transfer/{id}/confirm confirms transfer with PIN', () async {
       final res = await httpReq(
         method: 'POST',
-        path: '/wallets/transfer/$transferTxId/confirm',
+        path: '/wallets/transfer/req-tx-$timestamp/confirm',
         queryParams: {'pin': '654321'},
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data']['status'], equals('SUCCESS'));
+    }, tags: ['e2e']);
+
+    test('POST /payments/transfer processes 1-step Saga P2P Transfer (Mobile Production Contract)', () async {
+      expect(userId, isNotNull);
+      expect(receiverUserId, isNotNull);
+      expect(pinToken, isNotNull);
+
+      final res = await httpReq(
+        method: 'POST',
+        path: '/payments/transfer',
+        headers: {
+          'Idempotency-Key': 'p2p-saga-$timestamp',
+          'X-Pin-Token': pinToken!,
+        },
+        body: {
+          'sourceUserId': userId,
+          'targetUserId': receiverUserId,
+          'amount': 150000,
+          'currency': 'VND',
+          'note': 'Chuyen tien E2E Mobile-BE Test',
+          'pinToken': pinToken,
+        },
+        token: accessToken,
+      );
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      final data = res['body']['data'];
+      expect(data['status'], equals('SUCCESS'));
+      transferTxId = data['transactionId'] ?? data['id'];
+      expect(transferTxId, isNotNull);
     }, tags: ['e2e']);
   });
 
@@ -409,16 +463,11 @@ void main() {
       final data = res['body']['data'];
       final list = data is List ? data : (data is Map ? data['content'] : null);
       expect(list, isA<List>());
-      if (list is List && list.isNotEmpty) {
-        final first = list.first;
-        if (first is Map) {
-          transferTxId = first['transactionId'] ?? first['id'];
-        }
-      }
+      expect(list.length, greaterThanOrEqualTo(1));
     }, tags: ['e2e']);
 
     test('GET /transactions/{id} retrieves single transaction detail', () async {
-      if (transferTxId == null) return;
+      expect(transferTxId, isNotNull);
       final res = await httpReq(
         method: 'GET',
         path: '/transactions/$transferTxId',
@@ -429,17 +478,20 @@ void main() {
       expect(res['body']['data']['transactionId'] ?? res['body']['data']['id'], equals(transferTxId));
     }, tags: ['e2e']);
 
-    test('GET /transactions/{id}/receipt.pdf streams binary PDF receipt - BE-GAP: endpoint does not exist', () async {
-      if (transferTxId == null) return;
+    test('GET /transactions/{id}/receipt.pdf streams binary PDF receipt', () async {
+      expect(transferTxId, isNotNull);
       final res = await httpReq(
         method: 'GET',
         path: '/transactions/$transferTxId/receipt.pdf',
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      final bytes = res['bytes'] as List<int>?;
+      expect(bytes, isNotNull);
+      expect(bytes!.length, greaterThan(100));
     }, tags: ['e2e']);
 
-    test('GET /transactions/export/csv exports statement in CSV format - BE-GAP: endpoint does not exist', () async {
+    test('GET /transactions/export/csv exports statement in CSV format', () async {
       expect(walletId, isNotNull);
       final res = await httpReq(
         method: 'GET',
@@ -447,17 +499,23 @@ void main() {
         queryParams: {'walletId': walletId!},
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      final bytes = res['bytes'] as List<int>?;
+      expect(bytes, isNotNull);
+      expect(bytes!.length, greaterThan(10));
     }, tags: ['e2e']);
   });
 
   group('Group 7: Banking, Linked Accounts & Beneficiaries', () {
-    test('GET /banks returns partner banks list - BE-GAP: path is /payments/banks', () async {
+    test('GET /banks returns partner banks list', () async {
       final res = await httpReq(method: 'GET', path: '/banks', token: accessToken);
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data'], isA<List>());
+      expect((res['body']['data'] as List).length, greaterThanOrEqualTo(1));
     }, tags: ['e2e']);
 
-    test('POST /bank-accounts/link links bank account - BE-GAP: endpoint does not exist', () async {
+    test('POST /bank-accounts/link links bank account', () async {
       final res = await httpReq(
         method: 'POST',
         path: '/bank-accounts/link',
@@ -468,15 +526,21 @@ void main() {
         },
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(201), equals(400), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      linkedBankAccountId = res['body']['data']['id'] as String?;
+      expect(linkedBankAccountId, isNotNull);
     }, tags: ['e2e']);
 
-    test('GET /bank-accounts lists linked bank accounts - BE-GAP: endpoint does not exist', () async {
+    test('GET /bank-accounts lists linked bank accounts', () async {
       final res = await httpReq(method: 'GET', path: '/bank-accounts', token: accessToken);
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data'], isA<List>());
+      expect((res['body']['data'] as List).length, greaterThanOrEqualTo(1));
     }, tags: ['e2e']);
 
-    test('POST /beneficiaries saves new beneficiary - BE-GAP: endpoint does not exist', () async {
+    test('POST /beneficiaries saves new beneficiary', () async {
       final res = await httpReq(
         method: 'POST',
         path: '/beneficiaries',
@@ -488,49 +552,64 @@ void main() {
         },
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(201), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data']['id'], isNotNull);
     }, tags: ['e2e']);
 
-    test('GET /beneficiaries lists beneficiaries - BE-GAP: endpoint does not exist', () async {
+    test('GET /beneficiaries lists beneficiaries', () async {
       final res = await httpReq(method: 'GET', path: '/beneficiaries', token: accessToken);
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data'], isA<List>());
     }, tags: ['e2e']);
   });
 
   group('Group 8: Withdrawal Flow', () {
-    test('POST /wallets/withdraw withdraws funds using pinToken & bankAccount - BE-GAP: endpoint does not exist', () async {
+    test('POST /wallets/withdraw withdraws funds using pinToken & linked bank account', () async {
       expect(walletId, isNotNull);
+      expect(linkedBankAccountId, isNotNull);
+      expect(pinToken, isNotNull);
 
       final res = await httpReq(
         method: 'POST',
         path: '/wallets/withdraw',
-        headers: {'Idempotency-Key': 'with-$timestamp'},
+        headers: {
+          'Idempotency-Key': 'with-$timestamp',
+          'X-Pin-Token': pinToken!,
+        },
         body: {
           'requestId': 'req-with-$timestamp',
           'walletId': walletId,
+          'bankAccountId': linkedBankAccountId,
           'amount': 50000.0,
           'currency': 'VND',
+          'pinToken': pinToken,
         },
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(400), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data']['status'], equals('SUCCESS'));
     }, tags: ['e2e']);
   });
 
   group('Group 9: Payments, Bills & VietQR', () {
     String? generatedQr;
 
-    test('GET /bills/lookup queries bill by customer code - BE-GAP: endpoint does not exist', () async {
+    test('GET /bills/lookup queries bill by customer code', () async {
       final res = await httpReq(
         method: 'GET',
         path: '/bills/lookup',
         queryParams: {'type': 'ELECTRICITY', 'customerCode': 'EVN123456'},
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data']['billId'], isNotNull);
     }, tags: ['e2e']);
 
-    test('POST /payments/vietqr/generate generates valid VietQR string - BE-GAP: endpoint does not exist', () async {
+    test('POST /payments/vietqr/generate generates valid VietQR string', () async {
       final res = await httpReq(
         method: 'POST',
         path: '/payments/vietqr/generate',
@@ -542,26 +621,25 @@ void main() {
         },
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(201), equals(404), equals(405)));
-      if (res['statusCode'] == 200 || res['statusCode'] == 201) {
-        final d = res['body']['data'];
-        if (d is Map) {
-          generatedQr = d['qrString'] ?? d['qrCode'] ?? d['vietQr'];
-        } else if (d != null) {
-          generatedQr = d.toString();
-        }
-      }
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      final d = res['body']['data'];
+      generatedQr = d['qrRaw'] ?? d['qrString'] ?? d['qrCode'];
+      expect(generatedQr, isNotNull);
     }, tags: ['e2e']);
 
-    test('POST /payments/vietqr/decode decodes VietQR payload accurately - BE-GAP: endpoint does not exist', () async {
-      if (generatedQr == null) return;
+    test('POST /payments/vietqr/decode decodes VietQR payload accurately', () async {
+      expect(generatedQr, isNotNull);
       final res = await httpReq(
         method: 'POST',
         path: '/payments/vietqr/decode',
-        queryParams: {'qrString': generatedQr!},
+        body: {'qrString': generatedQr!},
         token: accessToken,
       );
-      expect(res['statusCode'], anyOf(equals(200), equals(404), equals(405)));
+      expect(res['statusCode'], equals(200));
+      expect(res['body']['success'], isTrue);
+      expect(res['body']['data']['bankBin'], equals('970436'));
+      expect(res['body']['data']['accountNumber'], equals('001100998877'));
     }, tags: ['e2e']);
   });
 

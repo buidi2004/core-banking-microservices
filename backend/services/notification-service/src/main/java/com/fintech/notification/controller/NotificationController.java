@@ -65,10 +65,34 @@ public class NotificationController {
     @PutMapping("/settings")
     public ResponseEntity<ApiResponse<Void>> updateSettings(
             @RequestHeader(name = "X-User-Id", required = false) String userId,
-            @RequestParam boolean transactionEnabled,
-            @RequestParam boolean promoEnabled) {
+            @RequestParam(required = false) Boolean transactionEnabled,
+            @RequestParam(required = false) Boolean promoEnabled,
+            @org.springframework.web.bind.annotation.RequestBody(required = false) Map<String, Object> body) {
         String uid = requireUser(userId);
-        notificationService.updateSettings(uid, transactionEnabled, promoEnabled);
+        boolean tx = true;
+        boolean promo = true;
+
+        if (transactionEnabled != null) {
+            tx = transactionEnabled;
+        } else if (body != null) {
+            if (body.containsKey("transactionEnabled")) {
+                tx = Boolean.parseBoolean(String.valueOf(body.get("transactionEnabled")));
+            } else if (body.containsKey("transactionAlerts")) {
+                tx = Boolean.parseBoolean(String.valueOf(body.get("transactionAlerts")));
+            }
+        }
+
+        if (promoEnabled != null) {
+            promo = promoEnabled;
+        } else if (body != null) {
+            if (body.containsKey("promoEnabled")) {
+                promo = Boolean.parseBoolean(String.valueOf(body.get("promoEnabled")));
+            } else if (body.containsKey("promotions")) {
+                promo = Boolean.parseBoolean(String.valueOf(body.get("promotions")));
+            }
+        }
+
+        notificationService.updateSettings(uid, tx, promo);
         return ResponseEntity.ok(ApiResponse.success("Notification settings updated", null));
     }
 

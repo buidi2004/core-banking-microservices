@@ -44,6 +44,8 @@ void main() {
       'GET /wallets/recipient-info': 'TransferRemoteDataSource.getRecipient',
       'GET /wallets/fees/estimate': 'TransferRemoteDataSource.estimateFee',
       'POST /payments/transfer': 'TransferRemoteDataSource.initTransfer (REAL single-step)',
+      'POST /wallets/transfer/init': 'TransferRemoteDataSource.initTransfer (2-step flow)',
+      'POST /wallets/transfer/{id}/confirm': 'TransferRemoteDataSource.confirmTransfer (2-step flow)',
 
       // Profile - REAL endpoints
       'GET /users/me': 'ProfileRemoteDataSource.getMe',
@@ -167,11 +169,8 @@ void main() {
     });
 
     /// === KNOWN BACKEND GAPS (BE-REQ) ===
-    /// Legacy two-step transfer endpoints replaced by single-step /payments/transfer.
-    final Map<String, String> knownBackendGaps = {
-      'POST /wallets/transfer/init': 'BE-GAP: Old init/confirm flow removed, use /payments/transfer',
-      'POST /wallets/transfer/{id}/confirm': 'BE-GAP: Old init/confirm flow removed, use /payments/transfer',
-    };
+    /// All previously identified backend gaps have been resolved (100% matched).
+    final Map<String, String> knownBackendGaps = {};
 
     test('Known backend gaps are documented and match BE-REQ', () {
       // This test verifies that our known gaps list is accurate
@@ -249,12 +248,15 @@ List<BackendEndpoint> _extractBackendEndpoints() {
     final controllerName = file.path.split('/').last.replaceAll('.java', '');
 
     // Extract base @RequestMapping from class
-    String basePath = '';
-    final classMappingMatch = RegExp(r'''@RequestMapping\s*\(\s*(?:value\s*=\s*)?["']([^"']+)["']''').firstMatch(content);
+    List<String> basePaths = [''];
+    final classMappingMatch = RegExp(r'''@RequestMapping\s*\(\s*(?:(?:value|path)\s*=\s*)?([^\)]+)\)''').firstMatch(content);
     int classBodyStart = 0;
     if (classMappingMatch != null) {
-      basePath = classMappingMatch.group(1)!;
-      if (!basePath.startsWith('/')) basePath = '/$basePath';
+      final rawPaths = classMappingMatch.group(1)!;
+      final pathStrings = RegExp(r'''["']([^"']+)["']''').allMatches(rawPaths).map((m) => m.group(1)!).toList();
+      if (pathStrings.isNotEmpty) {
+        basePaths = pathStrings.map((p) => p.startsWith('/') ? p : '/$p').toList();
+      }
       classBodyStart = classMappingMatch.end;
     }
 
@@ -262,66 +264,72 @@ List<BackendEndpoint> _extractBackendEndpoints() {
 
     // Extract method-level mappings
     final methodMatches = RegExp(
-      r'''@(GetMapping|PostMapping|PutMapping|PatchMapping|DeleteMapping|RequestMapping)(?:\s*\(\s*(?:value\s*=\s*|path\s*=\s*)?["']([^"']*)["'][^)]*\))?''',
+      r'''@(GetMapping|PostMapping|PutMapping|PatchMapping|DeleteMapping|RequestMapping)\s*(?:\(([^\)]*)\))?''',
     ).allMatches(classContent);
 
     for (final match in methodMatches) {
       final methodAnnotation = match.group(1)!;
-      final methodPath = match.group(2) ?? '';
+      final annotationArgs = match.group(2) ?? '';
 
-      String httpMethod;
+      // Extract paths from annotation args
+      final pathMatches = RegExp(r'''["']([^"']*)["']''').allMatches(annotationArgs).map((m) => m.group(1)!).toList();
+      final methodPaths = pathMatches.isEmpty ? [''] : pathMatches;
+
+      List<String> httpMethods = [];
       switch (methodAnnotation) {
         case 'GetMapping':
-          httpMethod = 'GET';
+          httpMethods.add('GET');
           break;
         case 'PostMapping':
-          httpMethod = 'POST';
+          httpMethods.add('POST');
           break;
         case 'PutMapping':
-          httpMethod = 'PUT';
+          httpMethods.add('PUT');
           break;
         case 'PatchMapping':
-          httpMethod = 'PATCH';
+          httpMethods.add('PATCH');
           break;
         case 'DeleteMapping':
-          httpMethod = 'DELETE';
+          httpMethods.add('DELETE');
           break;
         case 'RequestMapping':
-          httpMethod = 'GET';
+          final methodAttrMatches = RegExp(r'RequestMethod\.(\w+)').allMatches(annotationArgs);
+          if (methodAttrMatches.isNotEmpty) {
+            httpMethods.addAll(methodAttrMatches.map((m) => m.group(1)!));
+          } else {
+            httpMethods.add('GET');
+          }
           break;
         default:
-          httpMethod = 'GET';
+          httpMethods.add('GET');
       }
 
-      // For RequestMapping, try to get method from method attribute
-      if (methodAnnotation == 'RequestMapping') {
-        final contextSnippet = classContent.substring(match.start, (match.end + 200).clamp(0, classContent.length));
-        final methodAttrMatch = RegExp(r'method\s*=\s*RequestMethod\.(\w+)').firstMatch(contextSnippet);
-        if (methodAttrMatch != null) {
-          httpMethod = methodAttrMatch.group(1)!;
+      for (final basePath in basePaths) {
+        for (final methodPath in methodPaths) {
+          for (final httpMethod in httpMethods) {
+            // Normalize path
+            String fullPath = '$basePath$methodPath';
+            fullPath = fullPath.replaceAll(RegExp(r'/+'), '/');
+            if (fullPath.endsWith('/') && fullPath.length > 1) {
+              fullPath = fullPath.substring(0, fullPath.length - 1);
+            }
+            if (!fullPath.startsWith('/')) fullPath = '/$fullPath';
+
+            // Normalize by stripping /api/v1 so it matches mobile endpoints list
+            String normalizedPath = fullPath;
+            if (normalizedPath.startsWith('/api/v1')) {
+              normalizedPath = normalizedPath.substring(7);
+            }
+            if (!normalizedPath.startsWith('/')) normalizedPath = '/$normalizedPath';
+
+            endpoints.add(BackendEndpoint(
+              method: httpMethod,
+              path: normalizedPath,
+              controller: controllerName,
+            ));
+          }
         }
       }
-
-      // Normalize path
-      String fullPath = '$basePath$methodPath';
-      fullPath = fullPath.replaceAll(RegExp(r'/+'), '/');
-      if (fullPath.endsWith('/') && fullPath.length > 1) {
-        fullPath = fullPath.substring(0, fullPath.length - 1);
-      }
-      if (!fullPath.startsWith('/')) fullPath = '/$fullPath';
-
-      // Normalize by stripping /api/v1 so it matches mobile endpoints list
-      String normalizedPath = fullPath;
-      if (normalizedPath.startsWith('/api/v1')) {
-        normalizedPath = normalizedPath.substring(7);
-      }
-      if (!normalizedPath.startsWith('/')) normalizedPath = '/$normalizedPath';
-
-      endpoints.add(BackendEndpoint(
-        method: httpMethod,
-        path: normalizedPath,
-        controller: controllerName,
-      ));
     }
   }
 

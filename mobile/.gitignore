@@ -16,6 +16,8 @@ build/
 android/**/gradle-wrapper.jar
 android/.gradle
 **/.gradle/
+android/.kotlin/
+**/.kotlin/
 android/captures/
 android/gradlew
 android/gradlew.bat

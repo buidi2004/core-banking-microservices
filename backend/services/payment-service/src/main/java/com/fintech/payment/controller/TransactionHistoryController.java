@@ -66,7 +66,7 @@ public class TransactionHistoryController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> list(
-            @RequestParam String walletId,
+            @RequestParam(required = false) String walletId,
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
@@ -75,11 +75,16 @@ public class TransactionHistoryController {
         int safeSize = Math.min(Math.max(size, 1), 100);
         String normalizedType = type != null ? type.trim().toUpperCase() : "";
 
-        Page<Transaction> result = transactionRepository.findWalletHistory(
-                walletId, normalizedType, PageRequest.of(safePage, safeSize));
+        Page<Transaction> result;
+        if (walletId != null && !walletId.isBlank()) {
+            result = transactionRepository.findWalletHistory(
+                    walletId, normalizedType, PageRequest.of(safePage, safeSize));
+        } else {
+            result = transactionRepository.findAll(PageRequest.of(safePage, safeSize));
+        }
 
         List<Map<String, Object>> content = result.getContent().stream()
-                .map(tx -> toView(tx, walletId))
+                .map(tx -> toView(tx, walletId != null && !walletId.isBlank() ? walletId : tx.getSourceWalletId()))
                 .toList();
 
         Map<String, Object> data = new LinkedHashMap<>();

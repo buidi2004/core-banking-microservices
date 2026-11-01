@@ -72,15 +72,17 @@ public class WalletRestController {
     @GetMapping("/recipient-info")
     public ResponseEntity<Map<String, Object>> recipientInfo(
             @RequestParam(required = false) String walletId,
-            @RequestParam(required = false) String phoneNumber) {
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String phone) {
 
+        String effectivePhone = (phoneNumber != null && !phoneNumber.isBlank()) ? phoneNumber : phone;
         Optional<Wallet> wallet = Optional.empty();
         Map<String, Object> identity = null;
 
         if (walletId != null && !walletId.isBlank()) {
             wallet = walletPersistencePort.findWalletById(walletId);
-        } else if (phoneNumber != null && !phoneNumber.isBlank()) {
-            identity = lookupIdentity("phone", phoneNumber);
+        } else if (effectivePhone != null && !effectivePhone.isBlank()) {
+            identity = lookupIdentity("phone", effectivePhone);
             String ownerId = identity != null ? asString(identity.get("id")) : null;
             if (ownerId != null) {
                 wallet = walletPersistencePort.findWalletByOwnerId(ownerId);

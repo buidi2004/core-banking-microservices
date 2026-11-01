@@ -20,9 +20,14 @@ public class BillController {
 
     @GetMapping("/lookup")
     public ResponseEntity<ApiResponse<BillLookupResponse>> lookup(
-            @RequestParam("type") String type,
-            @RequestParam("customerCode") String customerCode) {
-        BillLookupResponse res = billService.lookupBill(type, customerCode);
+            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "provider", required = false) String provider,
+            @RequestParam(value = "customerCode", required = false) String customerCode) {
+        String effectiveType = (type != null && !type.isBlank()) ? type : (provider != null && !provider.isBlank() ? provider : "ELECTRICITY");
+        if (customerCode == null || customerCode.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Thiếu mã khách hàng (customerCode)"));
+        }
+        BillLookupResponse res = billService.lookupBill(effectiveType, customerCode);
         return ResponseEntity.ok(ApiResponse.success("Thông tin hóa đơn cần thanh toán", res));
     }
 
