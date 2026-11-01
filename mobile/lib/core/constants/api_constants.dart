@@ -1,14 +1,14 @@
 class ApiConstants {
   ApiConstants._();
 
-  // Base URLs - Mặc định kết nối ngrok public tunnel (:8080), có thể override qua --dart-define hoặc ConfigScreen
+  // Base URLs - Mặc định kết nối trực tiếp API Gateway Local (:8080), có thể override qua --dart-define hoặc ConfigScreen
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://mutation-tubby-overstock.ngrok-free.dev/api/v1',
+    defaultValue: 'http://localhost:8080/api/v1',
   );
   static const String wsUrl = String.fromEnvironment(
     'API_WS_URL',
-    defaultValue: 'wss://mutation-tubby-overstock.ngrok-free.dev/ws-native',
+    defaultValue: 'ws://localhost:8080/ws-native',
   );
   static const String wsTopicPrefix = '/topic/wallets';
   static String walletNotificationTopic(String walletId) => '/topic/wallets/$walletId/notifications';
