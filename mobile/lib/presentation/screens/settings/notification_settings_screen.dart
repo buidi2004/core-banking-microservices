@@ -189,7 +189,7 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF030B17),
+      backgroundColor: AppColors.inkNavy,
       body: Stack(
         children: [
           // Background ambient gradient
@@ -248,23 +248,28 @@ class _NotificationSettingsScreenState
                           children: [
                             _buildInfoBanner(),
                             const SizedBox(height: 20),
-                            _buildSectionHeader('KÊNH NHẬN THÔNG BÁO (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
+                            _buildSectionHeader(
+                                'KÊNH NHẬN THÔNG BÁO (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
                             const SizedBox(height: 10),
                             _buildChannelsCard(),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('ÂM THANH & RUNG HIỆU ỨNG (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
+                            _buildSectionHeader(
+                                'ÂM THANH & RUNG HIỆU ỨNG (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
                             const SizedBox(height: 10),
                             _buildSoundCard(),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('LOẠI NỘI DUNG NHẬN TIN (ĐỒNG BỘ MÁY CHỦ)'),
+                            _buildSectionHeader(
+                                'LOẠI NỘI DUNG NHẬN TIN (ĐỒNG BỘ MÁY CHỦ)'),
                             const SizedBox(height: 10),
                             _buildTypesCard(),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('NGƯỠNG GIAO DỊCH THÔNG BÁO (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
+                            _buildSectionHeader(
+                                'NGƯỠNG GIAO DỊCH THÔNG BÁO (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
                             const SizedBox(height: 10),
                             _buildThresholdCard(),
                             const SizedBox(height: 24),
-                            _buildSectionHeader('CHẾ ĐỘ YÊN LẶNG BAN ĐÊM (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
+                            _buildSectionHeader(
+                                'CHẾ ĐỘ YÊN LẶNG BAN ĐÊM (ÁP DỤNG TRÊN THIẾT BỊ NÀY)'),
                             const SizedBox(height: 10),
                             _buildDndCard(),
                             const SizedBox(height: 36),
@@ -285,7 +290,7 @@ class _NotificationSettingsScreenState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF030B17).withValues(alpha: 0.7),
+        color: AppColors.inkNavy.withValues(alpha: 0.7),
         border: Border(
           bottom: BorderSide(
             color: Colors.white.withValues(alpha: 0.08),
@@ -481,7 +486,8 @@ class _NotificationSettingsScreenState
               icon: CupertinoIcons.mail_solid,
               iconColor: AppColors.bottomBarCyan,
               title: 'Báo cáo sao kê qua Email',
-              subtitle: 'Gửi sao kê điện tử có chữ ký số vào ngày 01 hàng tháng',
+              subtitle:
+                  'Gửi sao kê điện tử có chữ ký số vào ngày 01 hàng tháng',
               value: _emailEnabled,
               onChanged: (val) {
                 setState(() => _emailEnabled = val);
@@ -623,7 +629,8 @@ class _NotificationSettingsScreenState
               icon: CupertinoIcons.doc_text_fill,
               iconColor: AppColors.bottomBarCyan,
               title: 'Nhắc hẹn hóa đơn điện & nước',
-              subtitle: 'Thông báo trước 3 ngày khi có hóa đơn mới (Chỉ áp dụng trên thiết bị này)',
+              subtitle:
+                  'Thông báo trước 3 ngày khi có hóa đơn mới (Chỉ áp dụng trên thiết bị này)',
               value: _billReminderNotif,
               onChanged: (val) {
                 setState(() => _billReminderNotif = val);
@@ -643,7 +650,8 @@ class _NotificationSettingsScreenState
               icon: CupertinoIcons.tag_fill,
               iconColor: AppColors.bottomBarCyan,
               title: 'Ưu đãi & Điểm thưởng SenClub',
-              subtitle: 'Voucher hoàn tiền, ưu đãi thành viên (Đồng bộ máy chủ)',
+              subtitle:
+                  'Voucher hoàn tiền, ưu đãi thành viên (Đồng bộ máy chủ)',
               value: _promoRewardNotif,
               onChanged: (val) {
                 setState(() => _promoRewardNotif = val);
@@ -654,7 +662,8 @@ class _NotificationSettingsScreenState
               icon: CupertinoIcons.archivebox_fill,
               iconColor: AppColors.bottomBarCyan,
               title: 'Đáo hạn sổ tiết kiệm & Khoản vay',
-              subtitle: 'Nhắc tái tục hoặc thanh toán kỳ hạn (Chỉ áp dụng trên thiết bị này)',
+              subtitle:
+                  'Nhắc tái tục hoặc thanh toán kỳ hạn (Chỉ áp dụng trên thiết bị này)',
               value: _savingsMaturityNotif,
               onChanged: (val) {
                 setState(() => _savingsMaturityNotif = val);

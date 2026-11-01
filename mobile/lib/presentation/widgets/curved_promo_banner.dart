@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/theme/app_colors.dart';
 
 /// Dữ liệu mẫu cho 4 banner quảng cáo tự động chạy từ phải sang trái
 class _PromoData {
@@ -54,6 +55,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
   // ValueNotifier để chỉ rebuild dots indicator, không rebuild toàn banner
   final ValueNotifier<int> _currentPageNotifier = ValueNotifier<int>(0);
   static const int _virtualInitialPage = 4000;
+  bool _autoScrollEnabled = true;
 
   static const List<_PromoData> _promos = [
     // Quảng cáo 1: Gói Tiết Kiệm (Banner gốc chuẩn mẫu)
@@ -64,15 +66,15 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
       highlightValue: '100K',
       highlightText: 'ƯU ĐÃI',
       buttonText: 'ĐĂNG KÝ NGAY',
-      buttonTextColor: Color(0xFF0077B6),
+      buttonTextColor: AppColors.brandBlue,
       rightIcon: CupertinoIcons.money_dollar_circle_fill,
       gradientColors: [
-        Color(0xFF005C8A),
-        Color(0xFF0083B0),
-        Color(0xFF00B4DB),
-        Color(0xFF48CAE4),
+        Color(0xFF003859),
+        Color(0xFF004D7A),
+        Color(0xFF005F94),
+        Color(0xFF006FA8),
       ],
-      shadowColor: Color(0xFF0083B0),
+      shadowColor: Color(0xFF004D7A),
       route: '/bills/savings',
     ),
 
@@ -84,15 +86,15 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
       highlightValue: '50%',
       highlightText: 'HOÀN TIỀN',
       buttonText: 'MỞ THẺ NGAY',
-      buttonTextColor: Color(0xFF0077B6),
+      buttonTextColor: AppColors.brandBlue,
       rightIcon: CupertinoIcons.creditcard_fill,
       gradientColors: [
         Color(0xFF03045E),
-        Color(0xFF023E8A),
-        Color(0xFF0077B6),
-        Color(0xFF00B4D8),
+        AppColors.royalBlue,
+        AppColors.brandBlue,
+        AppColors.bottomBarOcean,
       ],
-      shadowColor: Color(0xFF023E8A),
+      shadowColor: AppColors.royalBlue,
       route: '/cards',
     ),
 
@@ -104,15 +106,15 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
       highlightValue: '0%',
       highlightText: 'LÃI THÁNG ĐẦU',
       buttonText: 'NHẬN TIỀN NGAY',
-      buttonTextColor: Color(0xFF0077B6),
+      buttonTextColor: AppColors.brandBlue,
       rightIcon: CupertinoIcons.money_dollar_circle_fill,
       gradientColors: [
-        Color(0xFF0F3E6D),
-        Color(0xFF056676),
-        Color(0xFF0077B6),
-        Color(0xFF26E5DC),
+        AppColors.brandNavy,
+        AppColors.tealNavy,
+        AppColors.brandBlue,
+        AppColors.bottomBarCyan,
       ],
-      shadowColor: Color(0xFF0F3E6D),
+      shadowColor: AppColors.brandNavy,
       route: '/bills/quick-loan',
     ),
 
@@ -124,7 +126,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
       highlightValue: '1 TỶ',
       highlightText: 'BẢO VỆ GIA ĐÌNH',
       buttonText: 'KHÁM PHÁ NGAY',
-      buttonTextColor: Color(0xFF0077B6),
+      buttonTextColor: AppColors.brandBlue,
       rightIcon: CupertinoIcons.shield_lefthalf_fill,
       gradientColors: [
         Color(0xFF0B192C),
@@ -148,13 +150,30 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 3, milliseconds: 500), (timer) {
+    _autoScrollTimer =
+        Timer.periodic(const Duration(seconds: 3, milliseconds: 500), (timer) {
       if (!mounted || !_pageController.hasClients) return;
       _pageController.nextPage(
         duration: const Duration(milliseconds: 700),
         curve: Curves.easeInOutCubic,
       );
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.isDiagonalSlanted) return;
+
+    final enabled = TickerMode.of(context);
+    if (enabled == _autoScrollEnabled) return;
+    _autoScrollEnabled = enabled;
+    if (enabled) {
+      _startAutoScroll();
+    } else {
+      _autoScrollTimer?.cancel();
+      _autoScrollTimer = null;
+    }
   }
 
   @override
@@ -177,7 +196,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
 
   Widget _buildAutoRunningBanner(BuildContext context) {
     return SizedBox(
-      height: 170,
+      height: 186,
       child: Stack(
         children: [
           NotificationListener<ScrollNotification>(
@@ -219,7 +238,9 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                       width: isSelected ? 16 : 5,
                       height: 5,
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.white : Colors.white.withOpacity(0.38),
+                        color: isSelected
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.38),
                         borderRadius: BorderRadius.circular(3),
                       ),
                     );
@@ -237,7 +258,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(28),
       child: Container(
-        height: 170,
+        height: 182,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
           gradient: LinearGradient(
@@ -294,14 +315,15 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
               child: Row(
                 children: [
                   Expanded(
-                    flex: 6,
+                    flex: 7,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Tag huy hiệu
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.25),
                             borderRadius: BorderRadius.circular(12),
@@ -313,7 +335,8 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(promo.badgeIcon, color: const Color(0xFF26E5DC), size: 14),
+                              Icon(promo.badgeIcon,
+                                  color: AppColors.bottomBarCyan, size: 14),
                               const SizedBox(width: 4),
                               Text(
                                 promo.badgeText,
@@ -351,9 +374,10 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF26E5DC),
+                                color: AppColors.bottomBarCyan,
                                 borderRadius: BorderRadius.circular(8),
                                 boxShadow: [
                                   BoxShadow(
@@ -373,19 +397,23 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              promo.highlightText,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black45,
-                                    blurRadius: 3,
-                                    offset: Offset(0, 1),
-                                  ),
-                                ],
+                            Flexible(
+                              child: Text(
+                                promo.highlightText,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black45,
+                                      blurRadius: 3,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -404,7 +432,8 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                           },
                           borderRadius: BorderRadius.circular(20),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
@@ -444,7 +473,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
 
                   // Đồ họa icon 3D bên phải với vầng hào quang
                   Expanded(
-                    flex: 4,
+                    flex: 3,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
@@ -503,10 +532,10 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
           borderRadius: BorderRadius.circular(30),
           gradient: const LinearGradient(
             colors: [
-              Color(0xFF005F73),
-              Color(0xFF0A9396),
-              Color(0xFF0096C7),
-              Color(0xFF48CAE4),
+              Color(0xFF003847),
+              Color(0xFF004F60),
+              Color(0xFF00667C),
+              Color(0xFF007A94),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -535,7 +564,8 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
               top: -10,
               bottom: -15,
               child: Transform.rotate(
-                angle: -0.20, // Nghiêng chéo ~11.5 độ (tăng thêm 1 xíu từ -0.16)
+                angle:
+                    -0.20, // Nghiêng chéo ~11.5 độ (tăng thêm 1 xíu từ -0.16)
                 child: Container(
                   width: 155,
                   decoration: BoxDecoration(
@@ -548,7 +578,8 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                     ),
-                    borderRadius: BorderRadius.circular(28), // Bo cong viền ảnh từ 24px lên 28px
+                    borderRadius: BorderRadius.circular(
+                        28), // Bo cong viền ảnh từ 24px lên 28px
                     border: Border.all(
                       color: Colors.white,
                       width: 2.5,
@@ -580,14 +611,15 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
+                          const Icon(
                             CupertinoIcons.compass_fill,
                             size: 44,
-                            color: const Color(0xFF0077B6).withOpacity(0.90),
+                            color: AppColors.primaryDark,
                           ),
                           const SizedBox(height: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 3),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.85),
                               borderRadius: BorderRadius.circular(10),
@@ -597,7 +629,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                               style: TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF0077B6),
+                                color: AppColors.brandBlue,
                               ),
                             ),
                           ),
@@ -611,7 +643,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
 
             // 3. NỘI DUNG CHÉO BÊN TRÁI (Slanted Typography & Yellow 100K Badge)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 140, 16),
+              padding: const EdgeInsets.fromLTRB(20, 16, 105, 16),
               child: Transform.rotate(
                 angle: -0.06, // Nghiêng nhẹ đồng điệu theo ảnh mẫu
                 child: Column(
@@ -620,7 +652,8 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                   children: [
                     // Badge nhỏ trên đỉnh
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 9, vertical: 3.5),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.30),
                         borderRadius: BorderRadius.circular(10),
@@ -632,7 +665,8 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(CupertinoIcons.gift_fill, color: Color(0xFF26E5DC), size: 14),
+                          Icon(CupertinoIcons.gift_fill,
+                              color: AppColors.bottomBarCyan, size: 14),
                           SizedBox(width: 4),
                           Text(
                             'ƯU ĐÃI ĐẶC QUYỀN',
@@ -671,17 +705,22 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 3),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF26E5DC), Color(0xFF00B4D8)],
+                              colors: [
+                                AppColors.primary,
+                                AppColors.primaryDark
+                              ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF00B4D8).withOpacity(0.35),
+                                color:
+                                    AppColors.bottomBarOcean.withOpacity(0.35),
                                 blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
@@ -697,19 +736,27 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
-                          'ƯU ĐÃI',
-                          style: TextStyle(
-                            color: Color(0xFFFFEB3B),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black45,
-                                blurRadius: 4,
-                                offset: Offset(0, 1.5),
-                              ),
-                            ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.35),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'ƯU ĐÃI',
+                            style: TextStyle(
+                              color: Color(0xFFFFEB3B),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black45,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1.5),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -722,7 +769,8 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                       onTap: widget.onRegisterTap,
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5.5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 5.5),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
@@ -740,7 +788,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                             Text(
                               'ĐĂNG KÝ NGAY',
                               style: TextStyle(
-                                color: Color(0xFF0077B6),
+                                color: AppColors.brandBlue,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w800,
                                 letterSpacing: 0.3,
@@ -750,7 +798,7 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
                             Icon(
                               CupertinoIcons.arrow_right,
                               size: 12,
-                              color: Color(0xFF0077B6),
+                              color: AppColors.brandBlue,
                             ),
                           ],
                         ),
@@ -766,7 +814,6 @@ class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
     );
   }
 }
-
 
 /// CustomPainter vẽ đường cong sóng biển uốn lượn ở góc dưới của banner ("bẻ cong ảnh dưới")
 class _CurvedWaveBackgroundPainter extends CustomPainter {
@@ -856,10 +903,10 @@ class _DiagonalWaveBackgroundPainter extends CustomPainter {
     final circlePaint = Paint()
       ..color = const Color(0xFFFFD54F).withOpacity(0.12)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(size.width * 0.15, size.height * 0.85), 55, circlePaint);
+    canvas.drawCircle(
+        Offset(size.width * 0.15, size.height * 0.85), 55, circlePaint);
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-

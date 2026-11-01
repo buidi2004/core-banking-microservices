@@ -36,6 +36,9 @@ class TransferControllerPinTest {
     @MockBean
     private PinTokenValidator pinTokenValidator;
 
+    @MockBean
+    private com.fintech.payment.repository.TransactionRepository transactionRepository;
+
     @Test
     @DisplayName("P2P Transfer: Khi truyền pinToken sai -> từ chối với INVALID_PIN_TOKEN và không chạy saga")
     void p2pTransfer_InvalidPinToken_ShouldReject() throws Exception {

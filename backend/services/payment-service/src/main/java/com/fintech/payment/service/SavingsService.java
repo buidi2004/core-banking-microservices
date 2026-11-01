@@ -95,11 +95,13 @@ public class SavingsService {
                 .divide(BigDecimal.valueOf(12), 0, RoundingMode.HALF_UP);
 
         // Debit user wallet via gRPC
+        String debitTxId = "SAV_OPN_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+        String debitIdemKey = "idem:sav:open:" + UUID.randomUUID();
         var debitRes = walletGrpcClient.debit(
                 request.getWalletId(),
                 request.getDepositAmount().longValue(),
-                "SAVINGS_OPEN",
-                "Mở sổ tiết kiệm " + request.getProductType()
+                debitTxId,
+                debitIdemKey
         );
         if (debitRes != null && !debitRes.isSuccess()) {
             throw new IllegalStateException("Trừ tiền ví thất bại: " + debitRes.getErrorMessage());
@@ -139,6 +141,12 @@ public class SavingsService {
 
     public List<SavingsAccountResponse> getUserSavings(String userId) {
         return savingsRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<SavingsAccountResponse> getAllSavingsAccounts() {
+        return savingsRepository.findAll().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -184,11 +192,13 @@ public class SavingsService {
         BigDecimal totalPayout = entity.getPrincipal().add(interestEarned);
 
         // Credit principal and earned interest back to user wallet
+        String settleTxId = "SAV_SET_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+        String settleIdemKey = "idem:sav:settle:" + entity.getAccountNumber();
         var creditRes = walletGrpcClient.credit(
                 entity.getWalletId(),
                 totalPayout.longValue(),
-                "SAVINGS_SETTLEMENT",
-                "Tất toán sổ tiết kiệm " + entity.getAccountNumber()
+                settleTxId,
+                settleIdemKey
         );
         if (creditRes != null && !creditRes.isSuccess()) {
             throw new IllegalStateException("Cộng tiền ví thất bại: " + creditRes.getErrorMessage());

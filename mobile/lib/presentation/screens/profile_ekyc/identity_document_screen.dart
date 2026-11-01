@@ -32,7 +32,8 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
   String get _mrzName {
     if (_fullName.isEmpty) return 'VIETNAM<<CITIZEN<<<<<<<<<<<<<<';
     final nonDiacritics = _removeDiacritics(_fullName.toUpperCase());
-    final parts = nonDiacritics.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    final parts =
+        nonDiacritics.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
     final mrzStr = parts.join('<');
     return (mrzStr.padRight(30, '<')).substring(0, 30);
   }
@@ -48,8 +49,10 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
   }
 
   String _removeDiacritics(String str) {
-    const withDia = 'ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠạẢảẤấẦầẨẩẪẫẬậẮắẰằẲẳẴẵẶặẸẹẺẻẼẽẾếỀềỂểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ';
-    const withoutDia = 'AAAAEEEIIOOOOUUYaaaaeeeiioooouuyAaDdIiUuOoUuAaAaAaAaAaAaAaAaAaAaAaAaEeEeEeEeEeEeEeEeIiIiOoOoOoOoOoOoOoOoOoOoOoOoUuUuUuUuUuUuUuYyYyYyYy';
+    const withDia =
+        'ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠạẢảẤấẦầẨẩẪẫẬậẮắẰằẲẳẴẵẶặẸẹẺẻẼẽẾếỀềỂểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ';
+    const withoutDia =
+        'AAAAEEEIIOOOOUUYaaaaeeeiioooouuyAaDdIiUuOoUuAaAaAaAaAaAaAaAaAaAaAaAaEeEeEeEeEeEeEeEeIiIiOoOoOoOoOoOoOoOoOoOoOoOoUuUuUuUuUuUuUuYyYyYyYy';
     var result = str;
     for (int i = 0; i < withDia.length; i++) {
       result = result.replaceAll(withDia[i], withoutDia[i]);
@@ -77,32 +80,51 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
         profileDs.getMe().catchError((_) => <String, dynamic>{}),
       ]);
 
-      final kycData = (results[0] is Map) ? Map<String, dynamic>.from(results[0] as Map) : null;
-      final meData = (results[1] is Map) ? Map<String, dynamic>.from(results[1] as Map) : null;
+      final kycData = (results[0] is Map)
+          ? Map<String, dynamic>.from(results[0] as Map)
+          : null;
+      final meData = (results[1] is Map)
+          ? Map<String, dynamic>.from(results[1] as Map)
+          : null;
 
       if (mounted) {
         setState(() {
           _kyc = (kycData != null && kycData.isNotEmpty) ? kycData : null;
-          final name = meData?['fullName'] as String? ?? meData?['name'] as String? ?? (kycData?['fullName'] as String? ?? '');
+          final name = meData?['fullName'] as String? ??
+              meData?['name'] as String? ??
+              (kycData?['fullName'] as String? ?? '');
           if (name.isNotEmpty) _fullName = name;
 
-          final cccd = meData?['idNumber'] as String? ?? meData?['citizenId'] as String? ?? (kycData?['idNumber'] as String? ?? kycData?['citizenId'] as String? ?? '');
+          final cccd = meData?['idNumber'] as String? ??
+              meData?['citizenId'] as String? ??
+              (kycData?['idNumber'] as String? ??
+                  kycData?['citizenId'] as String? ??
+                  '');
           if (cccd.isNotEmpty) _idNumber = cccd;
 
-          final dobStr = meData?['dateOfBirth'] as String? ?? meData?['dob'] as String? ?? (kycData?['dateOfBirth'] as String? ?? '');
+          final dobStr = meData?['dateOfBirth'] as String? ??
+              meData?['dob'] as String? ??
+              (kycData?['dateOfBirth'] as String? ?? '');
           if (dobStr.isNotEmpty) _dob = dobStr;
 
-          final g = meData?['gender'] as String? ?? (kycData?['gender'] as String? ?? '');
+          final g = meData?['gender'] as String? ??
+              (kycData?['gender'] as String? ?? '');
           if (g.isNotEmpty) _gender = g;
 
-          final addr = meData?['address'] as String? ?? (kycData?['address'] as String? ?? '');
+          final addr = meData?['address'] as String? ??
+              (kycData?['address'] as String? ?? '');
           if (addr.isNotEmpty) _address = addr;
 
           _loading = false;
         });
       }
     } catch (error) {
-      if (mounted) setState(() { _error = extractErrorMessage(error); _loading = false; });
+      if (mounted) {
+        setState(() {
+          _error = extractErrorMessage(error);
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -119,7 +141,9 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
             icon: const Icon(CupertinoIcons.clock_fill),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Lần đối soát C06 gần nhất: 15/01/2026 09:42 (Khớp 100%)')),
+                const SnackBar(
+                    content: Text(
+                        'Lần đối soát C06 gần nhất: 15/01/2026 09:42 (Khớp 100%)')),
               );
             },
           ),
@@ -129,111 +153,159 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? Center(child: Text(_error!, style: const TextStyle(color: AppColors.error)))
-                :
-        SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Real-time verification badge box
-              _buildVerificationBanner(),
-              const SizedBox(height: 20),
+                ? Center(
+                    child: Text(_error!,
+                        style: const TextStyle(color: AppColors.error)))
+                : SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 32),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Real-time verification badge box
+                        _buildVerificationBanner(),
+                        const SizedBox(height: 20),
 
-              // Interactive CCCD Card View (Front / Back toggle)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Bản mô phỏng CCCD gắn chip', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
-                  TextButton.icon(
-                    onPressed: () => setState(() => _showBackSide = !_showBackSide),
-                    icon: const Icon(CupertinoIcons.arrow_2_squarepath, size: 16),
-                    label: Text(_showBackSide ? 'Xem mặt trước' : 'Xem mặt sau'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              _showBackSide ? _buildCccdBackCard() : _buildCccdFrontCard(),
-              const SizedBox(height: 24),
-
-              // Detailed Document Fields Card
-              GlassCard(
-                quality: GlassQuality.minimal,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Thông Tin Định Danh Điện Tử', style: AppTypography.titleMedium(color: AppColors.primaryDark)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.emeraldGreen.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(12),
+                        // Interactive CCCD Card View (Front / Back toggle)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Bản mô phỏng CCCD gắn chip',
+                                style: AppTypography.titleMedium(
+                                    color: AppColors.textPrimaryLight)),
+                            TextButton.icon(
+                              onPressed: () => setState(
+                                  () => _showBackSide = !_showBackSide),
+                              icon: const Icon(
+                                  CupertinoIcons.arrow_2_squarepath,
+                                  size: 16),
+                              label: Text(_showBackSide
+                                  ? 'Xem mặt trước'
+                                  : 'Xem mặt sau'),
                             ),
-                            child: Text(_kyc?['status'] as String? ?? 'Chưa xác định', style: const TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        _showBackSide
+                            ? _buildCccdBackCard()
+                            : _buildCccdFrontCard(),
+                        const SizedBox(height: 24),
+
+                        // Detailed Document Fields Card
+                        GlassCard(
+                          quality: GlassQuality.minimal,
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Thông Tin Định Danh Điện Tử',
+                                        style: AppTypography.titleMedium(
+                                            color: AppColors.primaryDark)),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.emeraldGreen
+                                            .withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                          _kyc?['status'] as String? ??
+                                              'Chưa xác định',
+                                          style: const TextStyle(
+                                              color: AppColors.emeraldGreen,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                                const Divider(
+                                    height: 24,
+                                    color: AppColors.cardBorderLight),
+                                _buildDetailRow(
+                                    'Số Căn cước công dân',
+                                    _idNumber.isNotEmpty
+                                        ? _idNumber
+                                        : 'Chưa cập nhật',
+                                    isHighlight: true),
+                                const SizedBox(height: 10),
+                                _buildDetailRow(
+                                    'Họ và tên khai sinh',
+                                    _fullName.isNotEmpty
+                                        ? _fullName.toUpperCase()
+                                        : 'Chưa cập nhật',
+                                    isBold: true),
+                                const SizedBox(height: 10),
+                                _buildDetailRow('Ngày, tháng, năm sinh', _dob),
+                                const SizedBox(height: 10),
+                                _buildDetailRow('Giới tính', _gender),
+                                const SizedBox(height: 10),
+                                _buildDetailRow('Quốc tịch', 'Việt Nam'),
+                                const SizedBox(height: 10),
+                                _buildDetailRow(
+                                    'Quê quán',
+                                    _address.isNotEmpty
+                                        ? _address
+                                        : 'Việt Nam'),
+                                const SizedBox(height: 10),
+                                _buildDetailRow(
+                                    'Nơi thường trú',
+                                    _address.isNotEmpty
+                                        ? _address
+                                        : 'Việt Nam'),
+                                const SizedBox(height: 10),
+                                _buildDetailRow('Ngày cấp', '20/09/2021'),
+                                const SizedBox(height: 10),
+                                _buildDetailRow(
+                                    'Có giá trị đến', '15/08/2029 (Hợp lệ)'),
+                                const SizedBox(height: 10),
+                                _buildDetailRow('Nơi cấp',
+                                    'Cục Cảnh sát QLHC về TTXH (C06 - BCA)'),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                      const Divider(height: 24, color: AppColors.cardBorderLight),
-                      _buildDetailRow('Số Căn cước công dân', _idNumber.isNotEmpty ? _idNumber : 'Chưa cập nhật', isHighlight: true),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Họ và tên khai sinh', _fullName.isNotEmpty ? _fullName.toUpperCase() : 'Chưa cập nhật', isBold: true),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Ngày, tháng, năm sinh', _dob),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Giới tính', _gender),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Quốc tịch', 'Việt Nam'),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Quê quán', _address.isNotEmpty ? _address : 'Việt Nam'),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Nơi thường trú', _address.isNotEmpty ? _address : 'Việt Nam'),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Ngày cấp', '20/09/2021'),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Có giá trị đến', '15/08/2029 (Hợp lệ)'),
-                      const SizedBox(height: 10),
-                      _buildDetailRow('Nơi cấp', 'Cục Cảnh sát QLHC về TTXH (C06 - BCA)'),
-                    ],
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Quyết định 2345/QĐ-NHNN Compliance Notice
+                        _buildQd2345Banner(),
+                        const SizedBox(height: 16),
+
+                        // Nghị định 13/2023/NĐ-CP Privacy Box
+                        _buildPrivacyAdvisory(),
+                        const SizedBox(height: 24),
+
+                        // Action Buttons
+                        ElevatedButton.icon(
+                          onPressed: () => context.push('/profile/ekyc'),
+                          icon: const Icon(CupertinoIcons.arrow_2_circlepath),
+                          label: const Text('Quét lại chip NFC & Khuôn mặt'),
+                        ),
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed: () => context.push('/profile/kyc-level'),
+                          icon: const Icon(CupertinoIcons.chart_bar_alt_fill,
+                              color: AppColors.primary),
+                          label:
+                              const Text('Xem phân hạng và hạn mức giao dịch'),
+                          style: OutlinedButton.styleFrom(
+                            side:
+                                const BorderSide(color: AppColors.borderLight),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Quyết định 2345/QĐ-NHNN Compliance Notice
-              _buildQd2345Banner(),
-              const SizedBox(height: 16),
-
-              // Nghị định 13/2023/NĐ-CP Privacy Box
-              _buildPrivacyAdvisory(),
-              const SizedBox(height: 24),
-
-              // Action Buttons
-              ElevatedButton.icon(
-                onPressed: () => context.push('/profile/ekyc'),
-                icon: const Icon(CupertinoIcons.arrow_2_circlepath),
-                label: const Text('Quét lại chip NFC & Khuôn mặt'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () => context.push('/profile/kyc-level'),
-                icon: const Icon(CupertinoIcons.chart_bar_alt_fill, color: AppColors.primary),
-                label: const Text('Xem phân hạng và hạn mức giao dịch'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.borderLight),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -254,7 +326,8 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               color: AppColors.emeraldGreen,
               shape: BoxShape.circle,
             ),
-            child: const Icon(CupertinoIcons.checkmark_alt, color: Colors.white, size: 20),
+            child: const Icon(CupertinoIcons.checkmark_alt,
+                color: Colors.white, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -263,12 +336,16 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               children: [
                 const Text(
                   'ĐÃ ĐỐI SOÁT DỮ LIỆU DÂN CƯ C06',
-                  style: TextStyle(color: AppColors.emeraldGreen, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(
+                      color: AppColors.emeraldGreen,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   'Giấy tờ CCCD gắn chip của bạn đã được đối soát 100% qua Cổng Dịch vụ công Quốc gia & cơ sở dữ liệu Bộ Công An.',
-                  style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                  style: AppTypography.bodySmall(
+                      color: AppColors.textSecondaryLight),
                 ),
               ],
             ),
@@ -319,7 +396,11 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                   children: [
                     Text(
                       'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM',
-                      style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5),
                     ),
                     Text(
                       'Độc lập - Tự do - Hạnh phúc',
@@ -328,7 +409,11 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                     SizedBox(height: 4),
                     Text(
                       'CĂN CƯỚC CÔNG DÂN / IDENTITY CARD',
-                      style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
+                      style: TextStyle(
+                          color: AppColors.bottomBarCyan,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.8),
                     ),
                   ],
                 ),
@@ -353,9 +438,14 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                           const Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(CupertinoIcons.person_fill, size: 42, color: Colors.white70),
+                              Icon(CupertinoIcons.person_fill,
+                                  size: 42, color: Colors.white70),
                               SizedBox(height: 2),
-                              Text('BCA VERIFIED', style: TextStyle(fontSize: 7.5, color: Colors.white70, fontWeight: FontWeight.bold)),
+                              Text('BCA VERIFIED',
+                                  style: TextStyle(
+                                      fontSize: 7.5,
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.bold)),
                             ],
                           ),
                           Positioned(
@@ -367,7 +457,8 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                                 color: AppColors.emeraldGreen,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(CupertinoIcons.checkmark, size: 8, color: Colors.white),
+                              child: const Icon(CupertinoIcons.checkmark,
+                                  size: 8, color: Colors.white),
                             ),
                           ),
                         ],
@@ -390,22 +481,45 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                                   color: AppColors.bottomBarCyan,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: const Icon(CupertinoIcons.radiowaves_right, size: 14, color: AppColors.primaryDark),
+                                child: const Icon(
+                                    CupertinoIcons.radiowaves_right,
+                                    size: 14,
+                                    color: AppColors.primaryDark),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(CupertinoIcons.wifi, color: Colors.white70, size: 16),
+                              const Icon(CupertinoIcons.wifi,
+                                  color: Colors.white70, size: 16),
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Text('Số / No.: ${_idNumber.isNotEmpty ? _idNumber : "Chưa cập nhật"}', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                          Text(
+                              'Số / No.: ${_idNumber.isNotEmpty ? _idNumber : "Chưa cập nhật"}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5)),
                           const SizedBox(height: 3),
-                          Text('Họ và tên: ${_fullName.isNotEmpty ? _fullName.toUpperCase() : "KHÁCH HÀNG SEN HỒNG"}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                          Text(
+                              'Họ và tên: ${_fullName.isNotEmpty ? _fullName.toUpperCase() : "KHÁCH HÀNG SEN HỒNG"}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600)),
                           const SizedBox(height: 2),
-                          Text('Ngày sinh: $_dob  •  $_gender', style: const TextStyle(color: Colors.white70, fontSize: 10)),
+                          Text('Ngày sinh: $_dob  •  $_gender',
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 10)),
                           const SizedBox(height: 2),
-                          const Text('Quốc tịch: Việt Nam', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                          const Text('Quốc tịch: Việt Nam',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 10)),
                           const SizedBox(height: 2),
-                          const Text('Có giá trị đến: 15/08/2029', style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.w600)),
+                          const Text('Có giá trị đến: 15/08/2029',
+                              style: TextStyle(
+                                  color: AppColors.bottomBarCyan,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -445,21 +559,28 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Đặc điểm nhân dạng / Personal identification:', style: TextStyle(color: Colors.white70, fontSize: 9.5)),
+              const Text('Đặc điểm nhân dạng / Personal identification:',
+                  style: TextStyle(color: Colors.white70, fontSize: 9.5)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.white12,
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: const Text('ICAO 9303 CHIP', style: TextStyle(color: Colors.white, fontSize: 8.5, fontWeight: FontWeight.bold)),
+                child: const Text('ICAO 9303 CHIP',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const SizedBox(height: 3),
-          const Text('Nốt ruồi cách 1cm dưới sau đuôi mắt phải', style: TextStyle(color: Colors.white, fontSize: 10.5)),
+          const Text('Nốt ruồi cách 1cm dưới sau đuôi mắt phải',
+              style: TextStyle(color: Colors.white, fontSize: 10.5)),
           const SizedBox(height: 6),
-          const Text('Ngày cấp: 20/09/2021  •  CỤC TRƯỞNG C06 BỘ CÔNG AN', style: TextStyle(color: Colors.white70, fontSize: 9.5)),
+          const Text('Ngày cấp: 20/09/2021  •  CỤC TRƯỞNG C06 BỘ CÔNG AN',
+              style: TextStyle(color: Colors.white70, fontSize: 9.5)),
           const Spacer(),
           // MRZ Zone
           Container(
@@ -475,15 +596,27 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               children: [
                 Text(
                   _mrzId,
-                  style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'monospace',
+                      fontSize: 10,
+                      letterSpacing: 1.2),
                 ),
                 Text(
                   _mrzDobCode,
-                  style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'monospace',
+                      fontSize: 10,
+                      letterSpacing: 1.2),
                 ),
                 Text(
                   _mrzName,
-                  style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 10, letterSpacing: 1.2),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'monospace',
+                      fontSize: 10,
+                      letterSpacing: 1.2),
                 ),
               ],
             ),
@@ -493,21 +626,35 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {bool isHighlight = false, bool isBold = false}) {
+  Widget _buildDetailRow(String label, String value,
+      {bool isHighlight = false, bool isBold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight)),
-        const SizedBox(width: 16),
-        Flexible(
+        Expanded(
+          flex: 5,
+          child: Text(label,
+              style: const TextStyle(
+                  fontSize: 13, color: AppColors.textSecondaryLight)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 6,
           child: Text(
             value,
             textAlign: TextAlign.right,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: isBold || isHighlight ? FontWeight.bold : FontWeight.w500,
-              color: isHighlight ? AppColors.bottomBarCyan : (isBold ? AppColors.primaryDark : AppColors.textPrimaryLight),
+              fontWeight:
+                  isBold || isHighlight ? FontWeight.bold : FontWeight.w500,
+              color: isHighlight
+                  ? AppColors.bottomBarCyan
+                  : (isBold
+                      ? AppColors.primaryDark
+                      : AppColors.textPrimaryLight),
             ),
           ),
         ),
@@ -526,7 +673,8 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.infoText, size: 22),
+          Icon(CupertinoIcons.shield_lefthalf_fill,
+              color: AppColors.infoText, size: 22),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -534,12 +682,16 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               children: [
                 Text(
                   'Tuân Thủ Quyết Định 2345/QĐ-NHNN',
-                  style: TextStyle(color: AppColors.infoText, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: TextStyle(
+                      color: AppColors.infoText,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13),
                 ),
                 SizedBox(height: 4),
                 Text(
                   'Dữ liệu khuôn mặt và chip CCCD đã được khớp sinh trắc học thành công. Bạn đủ điều kiện thực hiện chuyển khoản trên 10 triệu đồng/giao dịch hoặc tổng trên 20 triệu đồng/ngày.',
-                  style: TextStyle(fontSize: 11.5, color: AppColors.infoText, height: 1.35),
+                  style: TextStyle(
+                      fontSize: 11.5, color: AppColors.infoText, height: 1.35),
                 ),
               ],
             ),
@@ -560,7 +712,8 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.lock_shield_fill, color: AppColors.textSecondaryLight, size: 20),
+          Icon(CupertinoIcons.lock_shield_fill,
+              color: AppColors.textSecondaryLight, size: 20),
           SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -568,12 +721,18 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               children: [
                 Text(
                   'Bảo Mật Dữ Liệu Theo Nghị Định 13/2023/NĐ-CP',
-                  style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 12.5),
+                  style: TextStyle(
+                      color: AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.5),
                 ),
                 SizedBox(height: 3),
                 Text(
                   'Mọi thông tin danh tính được mã hóa chuẩn phần cứng AES-256 theo quy chuẩn an toàn ngân hàng số và chỉ dùng cho mục đích định danh tài khoản.',
-                  style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight, height: 1.3),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondaryLight,
+                      height: 1.3),
                 ),
               ],
             ),
@@ -583,4 +742,3 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
     );
   }
 }
-

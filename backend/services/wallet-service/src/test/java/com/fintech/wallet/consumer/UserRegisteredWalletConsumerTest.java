@@ -4,7 +4,6 @@ import com.fintech.wallet.domain.event.UserRegisteredEvent;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
 import com.fintech.wallet.infrastructure.amqp.consumer.UserRegisteredWalletConsumer;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

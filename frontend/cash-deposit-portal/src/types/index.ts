@@ -93,3 +93,67 @@ export interface TransferResponse {
   newSenderBalance: number;
   newReceiverBalance: number;
 }
+
+// --- Loan Application Types ---
+export interface LoanApplication {
+  id: string;
+  userId: string;
+  productCode?: string;
+  productName?: string;
+  amount: number;
+  termMonths: number;
+  interestRateYear?: number;
+  purpose?: string;
+  status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'ACTIVE' | 'PAID';
+  monthlyEstimate?: number;
+  createdAt?: string;
+  approvedBy?: string;
+  rejectionReason?: string;
+}
+
+// --- Admin Director & Ledger Types ---
+export interface AdminAccount {
+  id: string;
+  walletId: string;
+  accountNumber: string;
+  userId: string;
+  customerName: string;
+  phoneNumber: string;
+  balance: number;
+  currency: string;
+  status: 'ACTIVE' | 'BLOCKED';
+  kycTier: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LedgerReconciliation {
+  totalDebit: number;
+  totalCredit: number;
+  delta: number;
+  balanced: boolean;
+  generatedAt?: string;
+}
+
+export interface LedgerPostingItem {
+  id: string;
+  accountId: string;
+  accountNumber?: string;
+  accountName?: string;
+  type: 'DEBIT' | 'CREDIT';
+  amount: number;
+  currency: string;
+}
+
+export interface LedgerJournalEntry {
+  id: string;
+  transactionId: string;
+  transactionType: string;
+  description: string;
+  status: string;
+  totalDebit?: number;
+  totalCredit?: number;
+  postings?: LedgerPostingItem[];
+  createdAt: string;
+}
+

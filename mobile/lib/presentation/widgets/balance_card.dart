@@ -38,7 +38,8 @@ class BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayAmount = isHidden ? '••••••••' : _currencyFormatter.format(balance);
+    final displayAmount =
+        isHidden ? '••••••••' : _currencyFormatter.format(balance);
 
     return Container(
       decoration: BoxDecoration(
@@ -46,9 +47,9 @@ class BalanceCard extends StatelessWidget {
         gradient: const LinearGradient(
           colors: [
             Color(0xFF071E3D), // Midnight Navy
-            Color(0xFF0F3E6D), // Royal Sapphire
-            Color(0xFF056676), // Deep Oceanic Cyan
-            Color(0xFF0096C7), // SenBank Vivid Teal
+            AppColors.brandNavy, // Royal Sapphire
+            AppColors.tealNavy, // Deep Oceanic Cyan
+            AppColors.oceanCyan, // SenBank Vivid Teal
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -60,7 +61,7 @@ class BalanceCard extends StatelessWidget {
             offset: const Offset(0, 10),
           ),
           BoxShadow(
-            color: const Color(0xFF0096C7).withOpacity(0.18),
+            color: AppColors.oceanCyan.withOpacity(0.18),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -74,8 +75,6 @@ class BalanceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
-
-
             // 2. VỆT SÁNG NGHỆ THUẬT GÓC TRÊN TRÁI
             Positioned(
               left: -40,
@@ -134,7 +133,8 @@ class BalanceCard extends StatelessWidget {
 
                       // Huy hiệu SenBank Premier
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.black.withOpacity(0.25),
                           borderRadius: BorderRadius.circular(20),
@@ -183,31 +183,39 @@ class BalanceCard extends StatelessWidget {
                       const SizedBox(width: 6),
                       InkWell(
                         onTap: () {
-                          final numToCopy = (accountNumber != null && accountNumber!.isNotEmpty) ? accountNumber! : '';
+                          final numToCopy = (accountNumber != null &&
+                                  accountNumber!.isNotEmpty)
+                              ? accountNumber!
+                              : '';
                           if (numToCopy.isEmpty) return;
                           Clipboard.setData(ClipboardData(text: numToCopy));
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Row(
                                 children: [
-                                  const Icon(CupertinoIcons.checkmark_alt_circle_fill, color: Colors.white),
+                                  const Icon(
+                                      CupertinoIcons.checkmark_alt_circle_fill,
+                                      color: Colors.white),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Đã sao chép số tài khoản: $numToCopy',
-                                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.inter(
+                                        fontWeight: FontWeight.w600),
                                   ),
                                 ],
                               ),
-                              backgroundColor: const Color(0xFF0F3E6D),
+                              backgroundColor: AppColors.brandNavy,
                               duration: const Duration(seconds: 2),
                               behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
                           );
                         },
                         borderRadius: BorderRadius.circular(6),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(6),
@@ -216,7 +224,10 @@ class BalanceCard extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                (accountNumber != null && accountNumber!.isNotEmpty) ? accountNumber! : 'Ví Sen Hồng',
+                                (accountNumber != null &&
+                                        accountNumber!.isNotEmpty)
+                                    ? accountNumber!
+                                    : 'Ví Sen Hồng',
                                 style: GoogleFonts.outfit(
                                   color: Colors.white,
                                   fontSize: 13,
@@ -253,7 +264,9 @@ class BalanceCard extends StatelessWidget {
                               onToggleVisibility();
                             },
                             child: AppMorphIcon(
-                              icon: isHidden ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
+                              icon: isHidden
+                                  ? CupertinoIcons.eye_slash_fill
+                                  : CupertinoIcons.eye_fill,
                               size: 16,
                               color: Colors.white70,
                               spring: MorphSprings.snappy,
@@ -286,7 +299,7 @@ class BalanceCard extends StatelessWidget {
                         style: GoogleFonts.outfit(
                           fontSize: 13.5,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF26E5DC), // Cyan highlight
+                          color: AppColors.bottomBarCyan, // Cyan highlight
                           letterSpacing: 0.8,
                         ),
                       ),

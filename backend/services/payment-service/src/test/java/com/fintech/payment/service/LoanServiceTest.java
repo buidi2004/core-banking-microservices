@@ -70,8 +70,8 @@ class LoanServiceTest {
     }
 
     @Test
-    @DisplayName("applyLoan: Nộp hồ sơ và giải ngân tự động vào ví Sen Hồng thành công")
-    void applyLoan_Success_AutoDisbursed() {
+    @DisplayName("applyLoan: Nộp hồ sơ vay thành công, trạng thái PENDING_APPROVAL chờ cán bộ duyệt")
+    void applyLoan_Success_PendingApproval() {
         String userId = "user-123";
         LoanApplicationRequest request = LoanApplicationRequest.builder()
                 .walletId("wallet-123")
@@ -83,8 +83,6 @@ class LoanServiceTest {
                 .build();
 
         doNothing().when(pinTokenValidator).validate(eq(userId), eq("valid-pin-token"));
-        when(walletGrpcClient.credit(eq("wallet-123"), eq(15_000_000L), anyString(), anyString()))
-                .thenReturn(com.fintech.payment.grpc.dto.WalletBalanceResult.builder().success(true).balanceAfter(25_000_000L).build());
 
         when(loanContractRepository.save(any(LoanContract.class))).thenAnswer(invocation -> {
             LoanContract lc = invocation.getArgument(0);
@@ -98,15 +96,111 @@ class LoanServiceTest {
         assertThat(response.getUserId()).isEqualTo(userId);
         assertThat(response.getPrincipalAmount()).isEqualByComparingTo("15000000");
         assertThat(response.getTermMonths()).isEqualTo(6);
-        assertThat(response.getStatus()).isEqualTo("DISBURSED");
+        assertThat(response.getStatus()).isEqualTo("PENDING_APPROVAL");
         assertThat(response.getContractNumber()).startsWith("LN-");
-        assertThat(response.getFirstDueDate()).isNotNull();
 
         verify(pinTokenValidator).validate(userId, "valid-pin-token");
-        // Verify auto-disbursement to user wallet
-        verify(walletGrpcClient).credit(eq("wallet-123"), eq(15_000_000L), anyString(), anyString());
         verify(loanContractRepository).save(any(LoanContract.class));
-        verify(loanScheduleItemRepository, atLeastOnce()).saveAll(anyList());
+        // Tiền chưa được giải ngân khi chỉ mới nộp đơn
+        verifyNoInteractions(walletGrpcClient);
+    }
+
+    @Test
+    @DisplayName("applyLoan: Nộp hồ sơ vay bằng OTP token thành công")
+    void applyLoan_Success_WithOtpToken() {
+        String userId = "user-123";
+        LoanApplicationRequest request = LoanApplicationRequest.builder()
+                .walletId("wallet-123")
+                .productType("VAY_TIEU_DUNG_NHANH")
+                .amount(new BigDecimal("10000000"))
+                .termMonths(6)
+                .purpose("Tieu dung ca nhan")
+                .otpToken("valid-otp-token")
+                .build();
+
+        doNothing().when(pinTokenValidator).validateOtp(eq("valid-otp-token"), eq("LOAN_APPLY"));
+
+        when(loanContractRepository.save(any(LoanContract.class))).thenAnswer(invocation -> {
+            LoanContract lc = invocation.getArgument(0);
+            lc.setId(UUID.randomUUID());
+            return lc;
+        });
+
+        LoanApplicationResponse response = loanService.applyLoan(userId, request);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo("PENDING_APPROVAL");
+        verify(pinTokenValidator).validateOtp("valid-otp-token", "LOAN_APPLY");
+    }
+
+    @Test
+    @DisplayName("applyLoan: Thất bại khi không cung cấp cả OTP lẫn PIN token")
+    void applyLoan_FailsWhenNoTokenProvided() {
+        String userId = "user-123";
+        LoanApplicationRequest request = LoanApplicationRequest.builder()
+                .walletId("wallet-123")
+                .productType("VAY_TIEU_DUNG_NHANH")
+                .amount(new BigDecimal("10000000"))
+                .termMonths(6)
+                .build();
+
+        assertThatThrownBy(() -> loanService.applyLoan(userId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Vui lòng nhập và xác thực mã OTP");
+    }
+
+    @Test
+    @DisplayName("approveLoan: Cán bộ quầy duyệt thành công -> Giải ngân vào ví và sinh lịch trả nợ")
+    void approveLoan_Success() {
+        UUID loanId = UUID.randomUUID();
+        LoanContract contract = LoanContract.builder()
+                .id(loanId)
+                .userId("user-123")
+                .walletId("wallet-123")
+                .contractNumber("LN-123456")
+                .productType("VAY_TIEU_DUNG_NHANH")
+                .productName("Vay Tiêu Dùng Sen Hồng")
+                .principalAmount(new BigDecimal("15000000"))
+                .annualInterestRate(new BigDecimal("14.4"))
+                .termMonths(6)
+                .status("PENDING_APPROVAL")
+                .build();
+
+        when(loanContractRepository.findById(loanId)).thenReturn(Optional.of(contract));
+        when(walletGrpcClient.credit(eq("wallet-123"), eq(15_000_000L), anyString(), anyString()))
+                .thenReturn(com.fintech.payment.grpc.dto.WalletBalanceResult.builder().success(true).balanceAfter(25_000_000L).build());
+        when(loanContractRepository.save(any(LoanContract.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        LoanApplicationResponse res = loanService.approveLoan(loanId.toString(), "teller1", "ROLE_TELLER");
+
+        assertThat(res.getStatus()).isEqualTo("DISBURSED");
+        assertThat(res.getApprovedBy()).isEqualTo("teller1");
+        verify(walletGrpcClient).credit(eq("wallet-123"), eq(15_000_000L), anyString(), anyString());
+        verify(loanScheduleItemRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("rejectLoan: Cán bộ quầy từ chối hồ sơ vay -> Chuyển trạng thái REJECTED")
+    void rejectLoan_Success() {
+        UUID loanId = UUID.randomUUID();
+        LoanContract contract = LoanContract.builder()
+                .id(loanId)
+                .userId("user-123")
+                .walletId("wallet-123")
+                .contractNumber("LN-123456")
+                .termMonths(6)
+                .status("PENDING_APPROVAL")
+                .build();
+
+        when(loanContractRepository.findById(loanId)).thenReturn(Optional.of(contract));
+        when(loanContractRepository.save(any(LoanContract.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        LoanApplicationResponse res = loanService.rejectLoan(loanId.toString(), "manager1", "ROLE_MANAGER", "Điểm tín dụng không đạt");
+
+        assertThat(res.getStatus()).isEqualTo("REJECTED");
+        assertThat(res.getApprovedBy()).isEqualTo("manager1");
+        assertThat(res.getRejectReason()).isEqualTo("Điểm tín dụng không đạt");
+        verifyNoInteractions(walletGrpcClient);
     }
 
     @Test

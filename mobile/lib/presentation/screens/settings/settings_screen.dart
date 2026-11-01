@@ -14,7 +14,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isDarkMode = true;
   int _selectedWallpaperIdx = 0;
   String _selectedLanguage = 'Tiếng Việt';
   bool _notificationSound = true;
@@ -153,7 +152,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 8),
             const Text(
               'Đặt biệt danh ngắn gọn thay thế số tài khoản ngân hàng để người khác chuyển tiền cho bạn nhanh chóng và phong cách hơn.',
-              style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
+              style:
+                  TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -192,8 +192,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       backgroundColor: AppColors.emeraldGreen,
-                      content: Text(
-                          'Đăng ký Alias "${aliasCtrl.text}" thành công!'),
+                      content:
+                          Text('Đăng ký Alias "${aliasCtrl.text}" thành công!'),
                     ),
                   );
                 },
@@ -278,7 +278,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Text(
         title,
         style: const TextStyle(
-          color: AppColors.bottomBarCyan,
+          color: AppColors.primary,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
           fontSize: 12,
@@ -293,11 +293,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(18),
         gradient: const LinearGradient(
-          colors: [Color(0xFF132A48), Color(0xFF0C1929)],
+          colors: [AppColors.cardNavy, AppColors.deepNavy],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.3)),
+        border:
+            Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.3)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -360,7 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: const Text(
                   'STABLE',
                   style: TextStyle(
-                    color: AppColors.emeraldGreen,
+                    color: AppColors.emeraldGreenLight,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -393,7 +394,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildDivider(),
             _buildLimitRow(
               title: 'Hạn mức thanh toán thẻ trực tuyến',
-              sub: 'Giao dịch thương mại điện tử e-Commerce (Shopee, Grab, Booking...)',
+              sub:
+                  'Giao dịch thương mại điện tử e-Commerce (Shopee, Grab, Booking...)',
               val: _ecomLimitPerDay,
               onTapEdit: () => _showLimitDialog(
                 'Hạn Mức Thanh Toán Trực Tuyến',
@@ -433,7 +435,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimaryLight,
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -441,7 +443,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 2),
               Text(
                 sub,
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                style: const TextStyle(
+                    color: AppColors.textSecondaryLight, fontSize: 12),
               ),
             ],
           ),
@@ -453,10 +456,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                  color: AppColors.bottomBarCyan.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -464,14 +467,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   CurrencyFormatter.formatVND(val),
                   style: const TextStyle(
-                    color: AppColors.bottomBarCyan,
+                    color: AppColors.primary,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
                 ),
                 const SizedBox(width: 4),
                 const Icon(CupertinoIcons.pencil,
-                    color: AppColors.bottomBarCyan, size: 12),
+                    color: AppColors.primary, size: 12),
               ],
             ),
           ),
@@ -523,11 +526,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child:
-                  const Text('Hủy', style: TextStyle(color: Colors.white54)),
+              child: const Text('Hủy', style: TextStyle(color: Colors.white54)),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              style:
+                  ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
               onPressed: () {
                 onSaved(tempVal);
                 Navigator.pop(ctx);
@@ -553,21 +556,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           _buildSwitchRow(
             title: 'Tự động ẩn số dư trên Trang chủ',
-            subtitle: 'Bảo vệ số dư khỏi ánh nhìn của người xung quanh ở nơi công cộng',
+            subtitle:
+                'Bảo vệ số dư khỏi ánh nhìn của người xung quanh ở nơi công cộng',
             val: _hideBalanceOnHome,
             onChanged: (v) => setState(() => _hideBalanceOnHome = v),
           ),
           _buildDivider(),
           _buildSwitchRow(
             title: 'Che bớt số tài khoản khi chia sẻ',
-            subtitle: 'Tự động ẩn 4 số giữa của STK khi xuất ảnh biên lai chuyển tiền',
+            subtitle:
+                'Tự động ẩn 4 số giữa của STK khi xuất ảnh biên lai chuyển tiền',
             val: _maskSensitiveDataOnShare,
             onChanged: (v) => setState(() => _maskSensitiveDataOnShare = v),
           ),
           _buildDivider(),
           _buildSwitchRow(
             title: 'Chống chụp màn hình & quay lén',
-            subtitle: 'Ngăn chặn ứng dụng độc hại chụp trộm màn hình nhập mã PIN',
+            subtitle:
+                'Ngăn chặn ứng dụng độc hại chụp trộm màn hình nhập mã PIN',
             val: _blockScreenCapture,
             onChanged: (v) => setState(() => _blockScreenCapture = v),
           ),
@@ -577,20 +583,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListTile(
               onTap: _showAliasModal,
               leading: const Icon(CupertinoIcons.at,
-                  color: AppColors.bottomBarCyan, size: 22),
+                  color: AppColors.primary, size: 22),
               title: const Text(
                 'Tài khoản Biệt danh (Alias / Nickname)',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 13),
               ),
               subtitle: const Text(
                 'Đang dùng: SEN.NGUYENVANA • Đổi biệt danh',
-                style: TextStyle(color: Colors.white54, fontSize: 11),
+                style: TextStyle(
+                    color: AppColors.textSecondaryLight, fontSize: 12),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textSecondaryLight, size: 16),
             ),
           ),
         ],
@@ -604,13 +611,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Column(
         children: [
           _buildSwitchRow(
-            title: 'Chế độ Tối (Dark Liquid Theme)',
-            subtitle: 'Tối ưu hóa hiển thị thẻ kính mờ trên nền đêm huyền bí',
-            val: _isDarkMode,
-            onChanged: (v) => setState(() => _isDarkMode = v),
-          ),
-          _buildDivider(),
-          _buildSwitchRow(
             title: 'Âm thanh biến động số dư (Ting Ting)',
             subtitle: 'Phát âm thanh chuông ngân chuẩn ngân hàng khi nhận tiền',
             val: _notificationSound,
@@ -619,7 +619,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildSwitchRow(
             title: 'Rung phản hồi xúc giác (Haptic Touch)',
-            subtitle: 'Rung nhẹ tinh tế khi bấm bàn phím số PIN và quét vân tay',
+            subtitle:
+                'Rung nhẹ tinh tế khi bấm bàn phím số PIN và quét vân tay',
             val: _hapticFeedback,
             onChanged: (v) => setState(() => _hapticFeedback = v),
           ),
@@ -628,21 +629,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             type: MaterialType.transparency,
             child: ListTile(
               leading: const Icon(CupertinoIcons.globe,
-                  color: AppColors.bottomBarCyan, size: 22),
+                  color: AppColors.primary, size: 22),
               title: const Text(
                 'Ngôn ngữ ứng dụng (Language)',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13),
+                    fontSize: 16),
               ),
               trailing: DropdownButton<String>(
                 value: _selectedLanguage,
-                dropdownColor: const Color(0xFF0D1B2A),
+                dropdownColor: AppColors.surfaceLight,
                 underline: const SizedBox(),
                 style: const TextStyle(
-                    color: AppColors.bottomBarCyan,
-                    fontWeight: FontWeight.bold),
+                    color: AppColors.primary, fontWeight: FontWeight.bold),
                 items: ['Tiếng Việt', 'English', '日本語']
                     .map((l) => DropdownMenuItem(value: l, child: Text(l)))
                     .toList(),
@@ -674,12 +674,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.bottomBarCyan.withValues(alpha: 0.15)
-                      : const Color(0xFF0C1929).withValues(alpha: 0.8),
+                      ? AppColors.infoBg
+                      : AppColors.deepNavy.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.bottomBarCyan
+                        ? AppColors.primary
                         : Colors.white.withValues(alpha: 0.1),
                     width: isSelected ? 2 : 1,
                   ),
@@ -695,7 +695,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           colors: idx == 0
                               ? [AppColors.primaryDark, AppColors.bottomBarCyan]
                               : (idx == 1
-                                  ? [AppColors.primaryDark, const Color(0xFF132A48)]
+                                  ? [AppColors.primaryDark, AppColors.cardNavy]
                                   : [
                                       AppColors.emeraldGreen,
                                       AppColors.primaryDark
@@ -706,9 +706,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       child: Center(
                         child: isSelected
-                          ? const Icon(CupertinoIcons.checkmark_circle_fill,
-                              color: Colors.white, size: 26)
-                          : null,
+                            ? const Icon(CupertinoIcons.checkmark_circle_fill,
+                                color: Colors.white, size: 26)
+                            : null,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -717,9 +717,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isSelected
-                            ? AppColors.bottomBarCyan
-                            : Colors.white,
+                        color: isSelected ? AppColors.primary : Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 11.5,
                       ),
@@ -749,7 +747,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNavTile(
             icon: CupertinoIcons.device_phone_portrait,
-            iconColor: AppColors.bottomBarCyan,
+            iconColor: AppColors.primary,
             title: 'Quản lý thiết bị & Phiên đăng nhập',
             subtitle: 'Kiểm soát các máy đang truy cập, khóa từ xa',
             onTap: () => context.push('/settings/devices'),
@@ -757,7 +755,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNavTile(
             icon: CupertinoIcons.bell_fill,
-            iconColor: AppColors.bottomBarCyan,
+            iconColor: AppColors.primary,
             title: 'Cài đặt thông báo biến động số dư',
             subtitle: 'Tùy chỉnh thông báo OTT, biến động nạp rút',
             onTap: () => context.push('/notifications/settings'),
@@ -765,7 +763,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNavTile(
             icon: CupertinoIcons.doc_plaintext,
-            iconColor: AppColors.bottomBarCyan,
+            iconColor: AppColors.primary,
             title: 'Điều khoản dịch vụ & Bảo vệ dữ liệu',
             subtitle: 'Chính sách bảo mật theo Nghị định 13/2023/NĐ-CP',
             onTap: () => context.push('/auth/terms'),
@@ -784,17 +782,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             type: MaterialType.transparency,
             child: ListTile(
               leading: const Icon(CupertinoIcons.trash_circle_fill,
-                  color: AppColors.bottomBarCyan, size: 24),
+                  color: AppColors.primary, size: 24),
               title: const Text(
                 'Dọn dẹp bộ nhớ đệm (Cache)',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 13),
               ),
               subtitle: Text(
                 'Dung lượng tạm thời: ${_cacheSizeMb.toStringAsFixed(1)} MB',
-                style: const TextStyle(color: Colors.white54, fontSize: 11),
+                style: const TextStyle(
+                    color: AppColors.textSecondaryLight, fontSize: 12),
               ),
               trailing: _isClearingCache
                   ? const SizedBox(
@@ -803,16 +802,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2))
                   : OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.bottomBarCyan,
+                        foregroundColor: AppColors.primary,
                         side: BorderSide(
-                            color:
-                                AppColors.bottomBarCyan.withValues(alpha: 0.4)),
+                            color: AppColors.primary.withValues(alpha: 0.4)),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                       ),
                       onPressed: _cacheSizeMb > 0 ? _clearCache : null,
-                      child: Text(
-                          _cacheSizeMb > 0 ? 'Xóa cache' : 'Đã sạch',
+                      child: Text(_cacheSizeMb > 0 ? 'Xóa cache' : 'Đã sạch',
                           style: const TextStyle(fontSize: 11)),
                     ),
             ),
@@ -820,15 +817,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildDivider(),
           _buildNavTile(
             icon: CupertinoIcons.star_fill,
-            iconColor: AppColors.bottomBarCyan,
+            iconColor: AppColors.primary,
             title: 'Đánh giá ứng dụng SenBank',
-            subtitle: 'Gửi nhận xét trải nghiệm trên chợ ứng dụng App Store / Google Play',
+            subtitle:
+                'Gửi nhận xét trải nghiệm trên chợ ứng dụng App Store / Google Play',
             onTap: _showRatingModal,
           ),
           _buildDivider(),
           _buildSwitchRow(
             title: 'Nhận bản tin ưu đãi & hoàn tiền',
-            subtitle: 'Nhận thông báo mã giảm giá tiền điện nước và lãi suất tiết kiệm',
+            subtitle:
+                'Nhận thông báo mã giảm giá tiền điện nước và lãi suất tiết kiệm',
             val: _receivePromoMessages,
             onChanged: (v) => setState(() => _receivePromoMessages = v),
           ),
@@ -847,20 +846,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListTile(
               onTap: () => context.push('/settings/config'),
               leading: const Icon(CupertinoIcons.gear_alt_fill,
-                  color: AppColors.bottomBarCyan, size: 22),
+                  color: AppColors.primary, size: 22),
               title: const Text(
                 'Cấu hình Mạng & API Core Banking',
                 style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13),
+                    fontSize: 16),
               ),
               subtitle: const Text(
                 'Đổi Gateway, kiểm tra Ping RTT, nhật ký gói tin Live',
-                style: TextStyle(color: Colors.white54, fontSize: 11),
+                style: TextStyle(
+                    color: AppColors.textSecondaryLight, fontSize: 13),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textSecondaryLight, size: 18),
             ),
           ),
         ),
@@ -868,9 +868,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.04),
+            color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.07)),
+            border: Border.all(color: AppColors.borderLight),
           ),
           child: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -878,15 +878,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Row(
                 children: [
                   Icon(CupertinoIcons.building_2_fill,
-                      color: AppColors.bottomBarCyan, size: 16),
+                      color: AppColors.primary, size: 18),
                   SizedBox(width: 8),
-                  Text(
-                    'NGÂN HÀNG SỐ SEN HỒNG (SENBANK VIỆT NAM)',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11.5,
-                      letterSpacing: 0.5,
+                  Expanded(
+                    child: Text(
+                      'NGÂN HÀNG SỐ SEN HỒNG (SENBANK VIỆT NAM)',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: AppColors.textPrimaryLight,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ],
@@ -895,8 +898,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Text(
                 '• Giấy phép thành lập và hoạt động số: 128/GP-NHNN do Thống đốc Ngân hàng Nhà nước cấp.\n• Hội sở chính: Tòa nhà Sen Hồng Tower, 54 Liễu Giai, P. Cống Vị, Q. Ba Đình, Hà Nội.\n• Tổng đài chăm sóc khách hàng VIP 24/7: 1900 6688\n• Email hỗ trợ kỹ thuật: support@senbank.vn',
                 style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 10.5,
+                  color: AppColors.textSecondaryLight,
+                  fontSize: 13,
                   height: 1.45,
                 ),
               ),
@@ -924,7 +927,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.textPrimaryLight,
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
@@ -932,7 +935,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  style: const TextStyle(
+                      color: AppColors.textSecondaryLight, fontSize: 12),
                 ),
               ],
             ),
@@ -965,27 +969,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(
           title,
           style: const TextStyle(
-            color: Colors.white,
+            color: AppColors.textPrimaryLight,
             fontWeight: FontWeight.w600,
-            fontSize: 13,
+            fontSize: 16,
           ),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(color: Colors.white54, fontSize: 11),
+          style: const TextStyle(
+              color: AppColors.textSecondaryLight, fontSize: 13),
         ),
         trailing: const Icon(CupertinoIcons.chevron_forward,
-            color: Colors.white38, size: 16),
+            color: AppColors.textSecondaryLight, size: 18),
       ),
     );
   }
 
   Widget _buildDivider() {
-    return Divider(
+    return const Divider(
       height: 1,
       indent: 16,
       endIndent: 16,
-      color: Colors.white.withValues(alpha: 0.08),
+      color: AppColors.borderLight,
     );
   }
 }

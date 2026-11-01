@@ -93,6 +93,20 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(org.springframework.web.HttpRequestMethodNotSupportedException e) {
+        log.warn("Phương thức HTTP không được hỗ trợ: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.error("METHOD_NOT_ALLOWED", "Phương thức " + e.getMethod() + " không được hỗ trợ cho đường dẫn này"));
+    }
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotFound(org.springframework.web.servlet.resource.NoResourceFoundException e) {
+        log.warn("Tài nguyên không tìm thấy: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("NOT_FOUND", "Không tìm thấy tài nguyên yêu cầu: " + e.getResourcePath()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception e) {
         log.error("Lỗi hệ thống ngoài dự kiến: {}", e.getMessage(), e);

@@ -1,0 +1,240 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Ledger Service — 4 tầng (Double-Entry · Kafka/Rabbit Consumer)",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 6,
+    "cellW": 222,
+    "cellH": 100,
+    "gapX": 176,
+    "gapY": 96
+  },
+  "components": [
+    {
+      "id": "entry",
+      "type": "external",
+      "label": "API Gateway + Event Bus",
+      "sublabel": "REST :8084 · Kafka/Rabbit",
+      "tag": "HTTP + AMQP",
+      "row": 1,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "presentation",
+      "type": "backend",
+      "label": "Presentation",
+      "sublabel": "6 class · 9 endpoint",
+      "tag": "Controller · DTO · Exception",
+      "row": 1,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "application",
+      "type": "backend",
+      "label": "Application",
+      "sublabel": "4 class · 8 method",
+      "tag": "Use case · Saga · Outbox",
+      "row": 1,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "Domain",
+      "sublabel": "11 class · 11 method",
+      "tag": "Entity · Port · Rule",
+      "row": 1,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "type": "backend",
+      "label": "Infrastructure",
+      "sublabel": "10 class · 36 method",
+      "tag": "Adapter · Repository · Consumer",
+      "row": 1,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL :5436",
+      "sublabel": "ewallet_ledger_db · journal/postings",
+      "tag": "JPA",
+      "row": 0,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "mq",
+      "type": "messagebus",
+      "label": "RabbitMQ :5672",
+      "sublabel": "ledger.transaction.events",
+      "tag": "consumer",
+      "row": 2,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka :9092",
+      "sublabel": "balance-changed + lifecycle",
+      "tag": "consumer",
+      "row": 3,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "entry-presentation",
+      "from": "entry",
+      "to": "presentation",
+      "variant": "default",
+      "label": "REST query"
+    },
+    {
+      "id": "presentation-application",
+      "from": "presentation",
+      "to": "application",
+      "variant": "emphasis",
+      "label": "LedgerService"
+    },
+    {
+      "id": "application-domain",
+      "from": "application",
+      "to": "domain",
+      "variant": "default",
+      "label": "JournalEntry · Posting"
+    },
+    {
+      "id": "infra-domain",
+      "from": "infrastructure",
+      "to": "domain",
+      "variant": "default",
+      "label": "ledger port"
+    },
+    {
+      "id": "infra-db",
+      "from": "infrastructure",
+      "to": "db",
+      "variant": "default"
+    },
+    {
+      "id": "mq-infra",
+      "from": "mq",
+      "to": "infrastructure",
+      "variant": "dashed"
+    },
+    {
+      "id": "kafka-infra",
+      "from": "kafka",
+      "to": "infrastructure",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Tầng 1 · Presentation (6 class)",
+      "items": [
+        "DTO (3): TransactionEventMessage, ApiErrorResponse, ApiResponse",
+        "TransactionEventMessage",
+        "LedgerApiExceptionHandler: handleUnbalanced(LedgerUnbalancedException e), handleNotFound(NoSuchElementException e), handleBadRequest(IllegalArgumentException e), handleGeneric(Exception e)",
+        "LedgerController: GET /api/v1/ledger/summary · GET /api/v1/ledger/accounts · GET /api/v1/ledger/accounts/balance-check · GET /api/v1/ledger/statement/{walletId} · GET /api/v1/ledger/statement/{walletId}/account · GET /api/v1/ledger/entri…",
+        "LedgerQueryController: GET /api/v1/ledger/cash-summary",
+        "ApiErrorResponse"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Tầng 2 · Application (4 class)",
+      "items": [
+        "KafkaEventEnvelope: timestampInstant()",
+        "KafkaLedgerEventTranslator: fromWalletBalanceChanged(KafkaEventEnvelope envelope), fromPaymentLifecycle(KafkaEventEnvelope envelope), fromPaymentLifecycle(KafkaEventEnvelope envelope, String messageKey)",
+        "KafkaTopicConstants",
+        "LedgerService: recordTransactionPosting(TransactionEventMessage event), verifyLedgerBalance(), LedgerReconciliationResult(BigDecimal totalDebit, BigDecimal totalCredit, boolean balanced), LedgerTurnoverSummary(BigDecimal totalDebit, B…"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Tầng 3 · Domain (11 class)",
+      "items": [
+        "LedgerPersistencePort (interface): interface",
+        "LedgerUnbalancedException",
+        "AccountType",
+        "JournalEntry: createOriginal(String transactionId, String description, String referenceNumber, List<LedgerPosting> postings), createReversal(String transactionId, String description, String referenceNumber, String reversalOf, List<Le…",
+        "JournalEntryStatus",
+        "LedgerAccount: of(String id, String code, String name, AccountType type, BigDecimal balance, String currency), create(String code, String name, AccountType type, String currency), bankSettlement(String currency), cashOnHand(String cur…",
+        "LedgerPosting: invert()",
+        "PostingSide",
+        "JournalEntryJpaEntity: id: UUID, transactionId: String, entryNumber: Long, entryDate: LocalDate, description: String, referenceNumber: String, status: String, reversalOf: UUID, postedAt: LocalDateTime, createdAt: LocalDateTime",
+        "LedgerAccountJpaEntity: id: UUID, code: String, name: String, type: String, balance: BigDecimal, currency: String, active: boolean, description: String, createdAt: LocalDateTime, updatedAt: LocalDateTime",
+        "LedgerPostingJpaEntity: id: UUID, journalEntryId: UUID, accountId: UUID, side: String, amount: BigDecimal, currency: String, description: String, createdAt: LocalDateTime"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Tầng 4 · Infrastructure (10 class)",
+      "items": [
+        "LedgerApplication",
+        "AmqpConfig: transactionExchange(), deadLetterExchange(), ledgerQueue(), ledgerDlq(), ledgerBinding(Queue ledgerQueue, TopicExchange transactionExchange), ledgerDlqBinding(Queue ledgerDlq, DirectExchange deadLetterExchange), ledgerM…",
+        "LedgerEventConsumer: onTransactionEvent(TransactionEventMessage event)",
+        "KafkaTopicConfig: ledgerKafkaListenerContainerFactory(ConsumerFactory consumerFactory, KafkaOperations deadLetterKafkaTemplate)",
+        "LedgerKafkaConsumer: onWalletBalanceChanged(KafkaEventEnvelope envelope, String messageKey, Acknowledgment acknowledgment), onPaymentLifecycle(KafkaEventEnvelope envelope, String messageKey, Acknowledgment acknowledgment)",
+        "LedgerPersistenceAdapter: saveAccount(LedgerAccount account), findAccountByCode(String code), findAccountByName(String name), findAllAccounts(), findAccountById(String accountId), saveJournalEntry(JournalEntry entry), findJournalEntryById(String…",
+        "LedgerDomainMapper: toJpa(LedgerAccount account), toDomain(LedgerAccountJpaEntity entity), toJpa(JournalEntry entry), toJpa(String journalEntryId, LedgerPosting posting), toDomainWithoutEntry(LedgerPostingJpaEntity entity), toDomain(Journa…",
+        "SpringJournalEntryRepository (interface): interface",
+        "SpringLedgerAccountRepository (interface): interface",
+        "SpringLedgerPostingRepository (interface): interface"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Phụ thuộc & luồng nghiệp vụ",
+      "items": [
+        "Bất biến: Σ DEBIT = Σ CREDIT; lệch → LedgerUnbalancedException, chặn toàn bộ transaction",
+        "KafkaLedgerEventTranslator: wallet balance-changed + payment lifecycle → JournalEntry + 2 posting",
+        "Idempotency: chống duplicate posting giữa RabbitMQ và Kafka (EventIdempotency / unique key)",
+        "LedgerController: summary, accounts, balance-check, statement/{walletId}, entries"
+      ]
+    }
+  ]
+}

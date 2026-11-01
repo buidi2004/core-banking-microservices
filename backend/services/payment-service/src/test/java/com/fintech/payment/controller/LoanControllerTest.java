@@ -96,6 +96,47 @@ class LoanControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/v1/loans/pending: Lấy danh sách hồ sơ vay chờ duyệt")
+    void getPendingLoans_Success() throws Exception {
+        LoanApplicationResponse resp = LoanApplicationResponse.builder()
+                .id(UUID.randomUUID().toString())
+                .contractNumber("LN-PENDING-001")
+                .userId("user-123")
+                .principalAmount(new BigDecimal("15000000"))
+                .status("PENDING_APPROVAL")
+                .build();
+
+        when(loanService.getPendingLoans()).thenReturn(List.of(resp));
+
+        mockMvc.perform(get("/api/v1/loans/pending"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[0].status").value("PENDING_APPROVAL"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/loans/{id}/approve: Cán bộ quầy duyệt khoản vay")
+    void approveLoan_Success() throws Exception {
+        String loanId = UUID.randomUUID().toString();
+        LoanApplicationResponse resp = LoanApplicationResponse.builder()
+                .id(loanId)
+                .contractNumber("LN-APP-001")
+                .status("DISBURSED")
+                .approvedBy("teller1")
+                .build();
+
+        when(loanService.approveLoan(eq(loanId), eq("teller1"), eq("ROLE_TELLER"))).thenReturn(resp);
+
+        mockMvc.perform(post("/api/v1/loans/" + loanId + "/approve")
+                        .header("X-User-Id", "teller1")
+                        .header("X-User-Roles", "ROLE_TELLER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("DISBURSED"))
+                .andExpect(jsonPath("$.data.approvedBy").value("teller1"));
+    }
+
+    @Test
     @DisplayName("GET /api/v1/loans/{id}/schedule: Lấy lịch trả nợ của khoản vay")
     void getLoanSchedule_Success() throws Exception {
         LoanScheduleResponse resp = LoanScheduleResponse.builder()

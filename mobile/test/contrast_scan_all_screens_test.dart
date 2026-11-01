@@ -50,6 +50,12 @@ import 'package:sen_hong_bank/presentation/screens/settings/security_settings_sc
 import 'package:sen_hong_bank/presentation/screens/settings/settings_screen.dart';
 import 'package:sen_hong_bank/presentation/screens/support/help_center_screen.dart';
 import 'package:sen_hong_bank/presentation/screens/support/live_chat_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/transfer/beneficiaries_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/transfer/choose_recipient_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/transfer/confirm_transfer_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/transfer/enter_amount_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/transfer/request_transfer_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/transfer/transfer_result_screen.dart';
 
 import 'support/contrast_audit.dart';
 
@@ -87,6 +93,28 @@ void main() {
       note: 'Chuyen tien',
       recipient: 'NGUYEN VAN A',
     ),
+    'TransferRecipient': const ChooseRecipientScreen(),
+    'TransferAmount': const EnterAmountScreen(
+      recipient: 'Nguyễn Văn A',
+      phoneNumber: '0901234567',
+      initialAmount: 500000,
+      initialNote: 'Chuyen tien',
+    ),
+    'TransferConfirm': const ConfirmTransferScreen(
+      recipient: 'Nguyễn Văn A',
+      phoneNumber: '0901234567',
+      amount: 500000,
+      note: 'Chuyen tien',
+    ),
+    'TransferResult': const TransferResultScreen(
+      recipient: 'Nguyễn Văn A',
+      phoneNumber: '0901234567',
+      amount: 500000,
+      note: 'Chuyen tien',
+      transactionId: 'TX-1',
+    ),
+    'TransferRequest': const RequestTransferScreen(),
+    'Beneficiaries': const BeneficiariesScreen(),
     'Promotions': const PromotionsScreen(),
     'More': const MoreScreen(),
     'Referral': const ReferralScreen(),
@@ -134,26 +162,69 @@ void main() {
   };
 
   testWidgets('Quét tương phản toàn bộ màn hình (chẩn đoán)', (tester) async {
+    // Mô phỏng chiều rộng iPhone phổ biến để bắt lỗi bố cục tràn trên mobile.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     var totalText = 0;
     var totalTextIssues = 0;
     var totalIcon = 0;
     var totalIconIssues = 0;
     final summary = <String>[];
 
-    // Một số màn hình (ngoài phạm vi chuyển tiền nội bộ) có lỗi render sẵn có
-    // (overflow) khi chạy trong môi trường test với kích thước mặc định.
-    // Đây là công cụ CHẨN ĐOÁN nên chỉ ghi nhận, không làm fail test.
+    // Ghi nhận lỗi render trong lúc cuộn để audit không âm thầm bỏ qua
+    // RenderFlex overflow và exception phát sinh dưới nếp gấp.
     final originalOnError = FlutterError.onError;
-    FlutterError.onError = (FlutterErrorDetails details) {};
+    final renderErrors = <String>[];
+    FlutterError.onError = (FlutterErrorDetails details) {
+      if (renderErrors.length >= 5) return;
+      final flexContext = details.informationCollector
+              ?.call()
+              .map((node) => node.toString())
+              .join(' ') ??
+          '';
+      renderErrors.add(
+        '${details.exceptionAsString().split('\n').first} '
+        '${details.context?.toString() ?? ''} $flexContext',
+      );
+    };
 
     for (final entry in screens.entries) {
       try {
+        renderErrors.clear();
         await tester.pumpWidget(auditHarness(entry.value));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 400));
-        final textFindings = collectTextFindings(tester);
-        final iconFindings = collectIconFindings(tester);
-        await tester.pump(const Duration(seconds: 1));
+        final textFindingMap = <String, TextContrastFinding>{};
+        final iconFindingMap = <String, IconContrastFinding>{};
+        // Quét nhiều viewport để thấy nội dung ở dưới nếp gấp, không chỉ phần
+        // đầu màn hình. Khóa theo nội dung/màu/nền để tránh đếm lặp khi cuộn.
+        for (var viewport = 0; viewport < 8; viewport++) {
+          for (final finding in collectTextFindings(tester)) {
+            final key =
+                '${finding.text}|${finding.color}|${finding.background}';
+            textFindingMap[key] = finding;
+          }
+          for (final finding in collectIconFindings(tester)) {
+            final key =
+                '${finding.icon}|${finding.color}|${finding.background}';
+            iconFindingMap[key] = finding;
+          }
+          final scrollables = find.byType(Scrollable);
+          if (scrollables.evaluate().isEmpty) break;
+          final scrollable = scrollables.first;
+          final state = tester.state<ScrollableState>(scrollable);
+          if (state.position.extentAfter <= 1) break;
+          await tester.drag(
+            scrollable,
+            Offset(0, -state.position.viewportDimension * 0.75),
+          );
+          await tester.pump(const Duration(milliseconds: 250));
+        }
+        final textFindings = textFindingMap.values.toList();
+        final iconFindings = iconFindingMap.values.toList();
 
         final textIssues = textFindings.where((f) => !f.passesAa).length;
         final iconIssues = iconFindings.where((f) => !f.passes).length;
@@ -163,10 +234,15 @@ void main() {
         totalIconIssues += iconIssues;
         summary.add('${entry.key}: chữ ${textFindings.length}/lỗi $textIssues'
             ' · icon ${iconFindings.length}/lỗi $iconIssues');
+        if (renderErrors.isNotEmpty) {
+          summary.add('  ${entry.key}: LỖI BỐ CỤC — '
+              '${renderErrors.toSet().join(' | ')}');
+        }
         printContrastReport(entry.key, textFindings);
         printIconReport(entry.key, iconFindings);
       } catch (e) {
-        summary.add('${entry.key}: LỖI RENDER — ${e.toString().split('\n').first}');
+        summary.add(
+            '${entry.key}: LỖI RENDER — ${e.toString().split('\n').first}');
       }
     }
 

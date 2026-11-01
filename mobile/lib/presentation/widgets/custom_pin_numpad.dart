@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/core/theme/apple_hig_tokens.dart';
 
 class CustomPinNumpad extends StatelessWidget {
   final String pin;
@@ -22,14 +22,14 @@ class CustomPinNumpad extends StatelessWidget {
 
   void _onKeyPress(String val) {
     if (pin.length < maxDigits) {
-      HapticFeedback.selectionClick();
+      AppHaptics.light();
       onPinChanged(pin + val);
     }
   }
 
   void _onBackspace() {
     if (pin.isNotEmpty) {
-      HapticFeedback.selectionClick();
+      AppHaptics.selection();
       onPinChanged(pin.substring(0, pin.length - 1));
     }
   }

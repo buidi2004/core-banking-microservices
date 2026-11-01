@@ -321,3 +321,36 @@ bash scratch/test_e2e_baseline.sh
 - Dự án được phát triển nhằm phục vụ mục đích nghiên cứu, học thuật và trình diễn kiến trúc công nghệ tài chính lõi ngân hàng số đạt chuẩn quốc tế.
 - **Giấy phép:** [MIT License](LICENSE). Mọi hành vi sao chép phục vụ thương mại cần tuân thủ quy định cấp phép của tác giả.
 
+
+---
+
+## 🕸️ 11. Graphify & AI Onboarding — mọi agent đọc được
+
+Repo được tích hợp **Graphify** (knowledge graph cục bộ, tree-sitter AST, offline, 0 token) và có
+**một điểm vào chung cho mọi AI agent**: [`AGENTS.md`](AGENTS.md).
+
+| AI / IDE | File tự động đọc |
+| :--- | :--- |
+| OpenCode | `AGENTS.md` + `.opencode/skills/graphify/` + plugin |
+| Claude Code | `CLAUDE.md` (+ hook `.claude/settings.json`) |
+| Cursor | `AGENTS.md` + `.cursor/rules/00-read-first.mdc` |
+| Gemini CLI | `GEMINI.md` (+ hook `.gemini/settings.json`) |
+| GitHub Copilot Chat | `.github/copilot-instructions.md` |
+| Codex / Aider / Zed / Amp | `AGENTS.md` |
+| Windsurf / Cline / Roo Code | `.windsurfrules` / `.clinerules` / `.roo/rules/` |
+
+Máy mới chỉ cần một lệnh (tự cài CLI + build graph + xuất `graph.html`):
+
+```bash
+bash scripts/graphify-bootstrap.sh
+```
+
+Sau đó agent sẽ ưu tiên truy vấn đồ thị thay vì grep:
+
+```bash
+graphify query "luồng chuyển tiền P2P đi qua saga và ledger"
+graphify explain "PaymentSagaOrchestrator"
+graphify update .        # cập nhật sau khi sửa code
+```
+
+Chi tiết: **[docs/GRAPHIFY.md](docs/GRAPHIFY.md)**.

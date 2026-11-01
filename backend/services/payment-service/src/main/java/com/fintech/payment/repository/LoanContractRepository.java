@@ -11,6 +11,7 @@ import java.util.UUID;
 @Repository
 public interface LoanContractRepository extends JpaRepository<LoanContract, UUID> {
     List<LoanContract> findByUserIdOrderByCreatedAtDesc(String userId);
+    List<LoanContract> findByStatusOrderByCreatedAtDesc(String status);
     Optional<LoanContract> findByIdAndUserId(UUID id, String userId);
     Optional<LoanContract> findByContractNumber(String contractNumber);
 }

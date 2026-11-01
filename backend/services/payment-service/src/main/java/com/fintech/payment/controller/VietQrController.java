@@ -27,8 +27,11 @@ public class VietQrController {
     @PostMapping("/decode")
     public ResponseEntity<ApiResponse<VietQrDecodeResponse>> decodeVietQr(
             @RequestBody(required = false) VietQrDecodeRequest request,
-            @RequestParam(required = false) String qrString) {
-        String raw = (request != null && request.getQrString() != null) ? request.getQrString() : qrString;
+            @RequestParam(required = false) String qrString,
+            @RequestParam(required = false) String qrText) {
+        String raw = (request != null && request.getQrString() != null)
+                ? request.getQrString()
+                : (qrString != null && !qrString.isBlank() ? qrString : qrText);
         if (raw == null || raw.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.<VietQrDecodeResponse>builder()
                     .success(false)

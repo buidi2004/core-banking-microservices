@@ -43,7 +43,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (pass.length >= 6) score++;
     if (pass.contains(RegExp(r'[0-9]'))) score++;
     if (pass.contains(RegExp(r'[a-zA-Z]'))) score++;
-    if (pass.length >= 8 && pass.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) score++;
+    if (pass.length >= 8 && pass.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+      score++;
+    }
     return score;
   }
 
@@ -79,36 +81,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Registration Steps Tracker (3 Steps: 1 Thông tin -> 2 OTP Gmail -> 3 Tạo mã PIN)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildStepIndicator(1, 'Thông tin', isActive: true, isDone: false),
-                  _buildStepConnector(isDone: false),
-                  _buildStepIndicator(2, 'OTP Gmail', isActive: false, isDone: false),
-                  _buildStepConnector(isDone: false),
-                  _buildStepIndicator(3, 'Tạo mã PIN', isActive: false, isDone: false),
-                ],
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildStepIndicator(1, 'Thông tin',
+                        isActive: true, isDone: false),
+                    _buildStepConnector(isDone: false),
+                    _buildStepIndicator(2, 'OTP Gmail',
+                        isActive: false, isDone: false),
+                    _buildStepConnector(isDone: false),
+                    _buildStepIndicator(3, 'Tạo mã PIN',
+                        isActive: false, isDone: false),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
 
-              Text('Mở ví Sen Hồng', style: AppTypography.displayMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w800)),
+              Text('Mở ví Sen Hồng',
+                  style: AppTypography.displayMedium(
+                          color: AppColors.textPrimaryLight)
+                      .copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
-              Text('Đăng ký tài khoản tài chính số miễn phí chỉ trong 2 phút', style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
+              Text('Đăng ký tài khoản tài chính số miễn phí chỉ trong 2 phút',
+                  style: AppTypography.bodyMedium(
+                      color: AppColors.textSecondaryLight)),
               const SizedBox(height: 20),
 
               // Phone Number Field
               TextField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
                   labelText: 'Số điện thoại đăng ký (Chính chủ)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primaryLight),
+                  labelStyle:
+                      const TextStyle(color: AppColors.textSecondaryLight),
+                  prefixIcon: const Icon(CupertinoIcons.phone_fill,
+                      color: AppColors.primaryLight),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
                 ),
               ),
               const SizedBox(height: 14),
@@ -117,15 +140,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.characters,
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
                   labelText: 'Họ và tên (như trên CCCD)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryLight),
+                  labelStyle:
+                      const TextStyle(color: AppColors.textSecondaryLight),
+                  prefixIcon: const Icon(CupertinoIcons.person_fill,
+                      color: AppColors.primaryLight),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
                 ),
               ),
               const SizedBox(height: 14),
@@ -134,16 +167,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
                   labelText: 'Địa chỉ Gmail (nhận mã OTP & bảo mật)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
+                  labelStyle:
+                      const TextStyle(color: AppColors.textSecondaryLight),
                   hintText: 'vidu@gmail.com',
-                  prefixIcon: const Icon(CupertinoIcons.mail_solid, color: AppColors.primary),
+                  prefixIcon: const Icon(CupertinoIcons.mail_solid,
+                      color: AppColors.primary),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
                 ),
               ),
               const SizedBox(height: 14),
@@ -153,11 +196,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: _passController,
                 obscureText: _obscurePass,
                 onChanged: (_) => setState(() {}),
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
                   labelText: 'Mật khẩu (tối thiểu 6 ký tự)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.lock_fill, color: AppColors.primaryLight),
+                  labelStyle:
+                      const TextStyle(color: AppColors.textSecondaryLight),
+                  prefixIcon: const Icon(CupertinoIcons.lock_fill,
+                      color: AppColors.primaryLight),
                   suffixIcon: MorphEyeButton(
                     isHidden: _obscurePass,
                     color: AppColors.textSecondaryLight,
@@ -166,8 +213,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -183,7 +236,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         child: LinearProgressIndicator(
                           value: strength / 4,
                           backgroundColor: AppColors.borderLight,
-                          valueColor: AlwaysStoppedAnimation<Color>(strengthColor),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(strengthColor),
                           minHeight: 5,
                         ),
                       ),
@@ -191,7 +245,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(width: 12),
                     Text(
                       'Độ bảo mật: $strengthLabel',
-                      style: TextStyle(color: strengthColor, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: strengthColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -202,15 +259,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
               TextField(
                 controller: _referralController,
                 textCapitalization: TextCapitalization.characters,
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
                   labelText: 'Mã người giới thiệu (Tùy chọn nhận 50.000đ)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
-                  prefixIcon: const Icon(CupertinoIcons.gift_fill, color: AppColors.primary),
+                  labelStyle:
+                      const TextStyle(color: AppColors.textSecondaryLight),
+                  prefixIcon: const Icon(CupertinoIcons.gift_fill,
+                      color: AppColors.primary),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
                 ),
               ),
               const SizedBox(height: 14),
@@ -225,12 +292,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.successTextLight, size: 18),
+                    Icon(CupertinoIcons.shield_lefthalf_fill,
+                        color: AppColors.successTextLight, size: 18),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Quy định NHNN: Mỗi cá nhân chỉ được mở 01 ví chính chủ liên kết với đúng số CCCD gắn chip.',
-                        style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight, height: 1.35),
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondaryLight,
+                            height: 1.35),
                       ),
                     ),
                   ],
@@ -251,11 +322,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Text.rich(
                         TextSpan(
                           text: 'Tôi đồng ý với ',
-                          style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                          style: AppTypography.bodySmall(
+                              color: AppColors.textSecondaryLight),
                           children: const [
                             TextSpan(
                               text: 'Điều khoản dịch vụ & Chính sách bảo mật',
-                              style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                              style: TextStyle(
+                                  color: AppColors.primaryLight,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline),
                             ),
                           ],
                         ),
@@ -286,7 +361,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             );
                             return;
                           }
-                          final phoneRegex = RegExp(r'^(0|\+84)[35789][0-9]{8}$');
+                          final phoneRegex =
+                              RegExp(r'^(0|\+84)[35789][0-9]{8}$');
                           if (!phoneRegex.hasMatch(phone)) {
                             HapticFeedback.vibrate();
                             AppAlerts.showWarning(
@@ -316,7 +392,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             );
                             return;
                           }
-                          final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                          final emailRegex =
+                              RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
                           if (!emailRegex.hasMatch(email)) {
                             HapticFeedback.vibrate();
                             AppAlerts.showWarning(
@@ -341,12 +418,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           try {
                             // Bước 1 -> 2: Gửi OTP xác thực Gmail TRƯỚC khi tạo tài khoản.
                             // Tài khoản chỉ được tạo ở màn hình OTP sau khi xác thực thành công.
-                            await AuthRemoteDataSource().sendOtp(phone, purpose: 'REGISTER', email: email);
+                            await AuthRemoteDataSource().sendOtp(phone,
+                                purpose: 'REGISTER', email: email);
                             if (!mounted) return;
 
                             messenger.showSnackBar(
                               SnackBar(
-                                content: Text('Mã OTP đã gửi tới Gmail $email. Vui lòng nhập OTP để hoàn tất đăng ký và tạo mã PIN 6 số.'),
+                                content: Text(
+                                    'Mã OTP đã gửi tới Gmail $email. Vui lòng nhập OTP để hoàn tất đăng ký và tạo mã PIN 6 số.'),
                                 backgroundColor: AppColors.success,
                               ),
                             );
@@ -355,7 +434,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               extra: {
                                 'fullName': name,
                                 'password': pass,
-                                'deviceId': 'flutter-${DateTime.now().millisecondsSinceEpoch}',
+                                'deviceId':
+                                    'flutter-${DateTime.now().millisecondsSinceEpoch}',
                               },
                             );
                           } catch (error) {
@@ -378,13 +458,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 16),
 
               // Login Router Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text('Đã có tài khoản ví?', style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
+                  Text('Đã có tài khoản ví?',
+                      style: AppTypography.bodyMedium(
+                          color: AppColors.textSecondaryLight)),
                   TextButton(
                     onPressed: () => context.push('/auth/login'),
-                    child: const Text('Đăng nhập ngay', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
+                    child: const Text('Đăng nhập ngay',
+                        style: TextStyle(
+                            color: AppColors.primaryText,
+                            fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -394,33 +480,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Column(
                     children: [
                       _buildRouterTile(
                         icon: CupertinoIcons.lock_shield_fill,
-                        label: 'Đã có tài khoản nhưng chưa tạo PIN? Thiết lập PIN',
+                        label:
+                            'Đã có tài khoản nhưng chưa tạo PIN? Thiết lập PIN',
                         onTap: () => context.push('/auth/set-pin'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.arrow_counterclockwise_circle_fill,
                         label: 'Quên mật khẩu đăng nhập? Khôi phục mật khẩu',
                         onTap: () => context.push('/auth/forgot-password'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.question_circle_fill,
                         label: 'Quên mã PIN thanh toán? Cấp lại mã PIN',
                         onTap: () => context.push('/auth/forgot-pin'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.doc_text_fill,
-                        label: 'Xem Điều khoản dịch vụ & Chính sách quyền riêng tư',
+                        label:
+                            'Xem Điều khoản dịch vụ & Chính sách quyền riêng tư',
                         onTap: () => context.push('/auth/terms'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.phone_circle_fill,
                         label: 'Cần hỗ trợ đăng ký? Hotline CSKH 1900 6868',
@@ -438,31 +539,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildStepIndicator(int step, String label, {required bool isActive, required bool isDone}) {
-    final color = isDone ? AppColors.emeraldGreen : (isActive ? AppColors.primary : AppColors.textMutedLight);
+  Widget _buildStepIndicator(int step, String label,
+      {required bool isActive, required bool isDone}) {
+    final color = isDone
+        ? AppColors.successTextLight
+        : (isActive ? AppColors.primary : AppColors.textMutedLight);
     return Row(
       children: [
         CircleAvatar(
-          radius: 11,
+          radius: 10,
           backgroundColor: color,
-          child: Text('$step', style: const TextStyle(fontSize: 10, color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
+          child: Text('$step',
+              style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: color)),
+        Text(label,
+            style: TextStyle(
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                color: color)),
       ],
     );
   }
 
   Widget _buildStepConnector({required bool isDone}) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      width: 36,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
+      width: 18,
       height: 2,
       color: isDone ? AppColors.emeraldGreen : AppColors.borderSubtle,
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -472,9 +587,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
+              child: Text(label,
+                  style:
+                      AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),

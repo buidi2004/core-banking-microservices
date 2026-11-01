@@ -91,12 +91,16 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
 
     if (_targetWalletId.isEmpty) {
       try {
-        final query = _recipientPhone.isNotEmpty ? _recipientPhone : widget.recipient;
+        final query =
+            _recipientPhone.isNotEmpty ? _recipientPhone : widget.recipient;
         final info = await TransferRemoteDataSource().getRecipient(query);
         if (mounted) {
           setState(() {
-            _recipientName = (info['fullName'] ?? info['maskedName'] ?? widget.recipient).toString();
-            _recipientPhone = (info['phoneNumber'] ?? _recipientPhone).toString();
+            _recipientName =
+                (info['fullName'] ?? info['maskedName'] ?? widget.recipient)
+                    .toString();
+            _recipientPhone =
+                (info['phoneNumber'] ?? _recipientPhone).toString();
             _targetWalletId = (info['walletId'] ?? '').toString();
             // recipient-info trả ownerId => không cần GET /wallets/{id} nữa.
             _targetUserId = (info['ownerId'] ?? '').toString();
@@ -164,7 +168,8 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
       }
       String targetUserId = _targetUserId;
       if (targetUserId.isEmpty) {
-        final query = _recipientPhone.isNotEmpty ? _recipientPhone : widget.recipient;
+        final query =
+            _recipientPhone.isNotEmpty ? _recipientPhone : widget.recipient;
         final recipient = await transferApi.getRecipient(query);
         targetUserId = (recipient['ownerId'] ?? '').toString();
       }
@@ -179,7 +184,8 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
         targetWalletId: _targetWalletId,
         pinToken: pinToken,
       );
-      final transactionId = (initialized['transactionId'] ?? initialized['id'] ?? '').toString();
+      final transactionId =
+          (initialized['transactionId'] ?? initialized['id'] ?? '').toString();
       final result = await transferApi.confirmTransfer(
         transactionId: transactionId,
         pin: pin,
@@ -188,13 +194,18 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
 
       final status = (result['status'] ?? '').toString().toUpperCase();
       if (status == 'FAILED') {
-        final reason = (result['failureReason'] ?? result['message'] ?? 'Số dư khả dụng không đủ').toString();
+        final reason = (result['failureReason'] ??
+                result['message'] ??
+                'Số dư khả dụng không đủ')
+            .toString();
         throw Exception(reason.contains('INSUFFICIENT') || reason.contains('<')
             ? 'Số dư khả dụng trong ví không đủ để thực hiện giao dịch này.'
             : reason);
       }
 
-      if (_saveBeneficiary && _recipientPhone.isNotEmpty && BackendCapabilities.beneficiaries) {
+      if (_saveBeneficiary &&
+          _recipientPhone.isNotEmpty &&
+          BackendCapabilities.beneficiaries) {
         try {
           await BeneficiaryRemoteDataSource().add({
             'beneficiaryWalletId': _targetWalletId,
@@ -224,7 +235,8 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
         setState(() => _pin = '');
         final msg = extractErrorMessage(error);
         final isPinNotSet = msg.contains('chưa thiết lập mã PIN');
-        final isLocked = msg.contains('khóa 15 phút') || msg.contains('temporarily locked');
+        final isLocked =
+            msg.contains('khóa 15 phút') || msg.contains('temporarily locked');
 
         if (isLocked) {
           setState(() => _showPinModal = false);
@@ -235,7 +247,8 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
             msg,
             title: 'Chuyển tiền thất bại',
             actionLabel: isPinNotSet ? 'Cài mã PIN' : null,
-            onAction: isPinNotSet ? () => context.push('/auth/forgot-pin') : null,
+            onAction:
+                isPinNotSet ? () => context.push('/auth/forgot-pin') : null,
           );
         }
       }
@@ -254,7 +267,10 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
           children: [
             Icon(CupertinoIcons.lock_fill, color: AppColors.error, size: 28),
             SizedBox(width: 10),
-            Expanded(child: Text('Tài Khoản Tạm Khóa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
+            Expanded(
+                child: Text('Tài Khoản Tạm Khóa',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 18))),
           ],
         ),
         content: const Text(
@@ -285,7 +301,8 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
   @override
   Widget build(BuildContext context) {
     final totalRequired = widget.amount + _fee;
-    final isInsufficientBalance = !_isLoadingWallet && _walletBalance < totalRequired;
+    final isInsufficientBalance =
+        !_isLoadingWallet && _walletBalance < totalRequired;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -308,286 +325,342 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
       body: PopScope(
         canPop: !_isSubmitting,
         child: SafeArea(
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Amount Summary
-              Center(
-                child: Column(
-                  children: [
-                    Text('Tổng tiền thanh toán', style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
-                    const SizedBox(height: 6),
-                    Text(
-                      CurrencyFormatter.formatVND(widget.amount),
-                      style: AppTypography.displayLarge(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              if (isInsufficientBalance) ...[
-                InlineWarningBanner(
-                  title: 'Số dư khả dụng không đủ',
-                  message: 'Tổng số tiền cần thanh toán (${CurrencyFormatter.formatVND(totalRequired)}) vượt quá số dư ví hiện có (${CurrencyFormatter.formatVND(_walletBalance)}). Vui lòng nạp thêm tiền để tiếp tục.',
-                  type: AlertType.error,
-                  actionLabel: 'Nạp tiền ngay',
-                  onAction: () => context.push('/deposit'),
-                ),
-                const SizedBox(height: 16),
-              ] else ...[
-                const InlineWarningBanner(
-                  title: 'Cảnh báo an toàn chuyển tiền',
-                  message: 'Quý khách vui lòng kiểm tra kỹ số tài khoản và họ tên người nhận. Tuyệt đối không chia sẻ mã PIN hay OTP cho bất kỳ ai (kể cả nhân viên SenBank).',
-                  type: AlertType.warning,
-                ),
-                const SizedBox(height: 16),
-              ],
-
-              // Details Card (GlassCard)
-              GlassCard(
-                quality: GlassQuality.minimal,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Amount Summary
+                Center(
                   child: Column(
                     children: [
-                      _buildInfoRow('Người nhận', _recipientName.toUpperCase()),
-                      if (_recipientPhone.isNotEmpty) ...[
-                        const Divider(height: 20, color: AppColors.cardBorderLight),
-                        _buildInfoRow('Số tài khoản / SĐT', _recipientPhone),
-                      ],
-                      const Divider(height: 20, color: AppColors.cardBorderLight),
-                      _buildInfoRow('Phương thức', 'Ví Sen Hồng (Nội bộ 24/7)'),
-                      const Divider(height: 20, color: AppColors.cardBorderLight),
-                      _buildInfoRow('Phí giao dịch', CurrencyFormatter.formatVND(_fee), valueColor: AppColors.emeraldGreen),
-                      const Divider(height: 20, color: AppColors.cardBorderLight),
-                      _buildInfoRow('Nội dung', widget.note.isEmpty ? 'Chuyen tien' : widget.note),
-                      const Divider(height: 20, color: AppColors.cardBorderLight),
-                      _buildInfoRow(
-                        'Nguồn tiền',
-                        _isLoadingWallet
-                            ? 'Ví chính (Đang tải...)'
-                            : 'Ví chính (Khả dụng: ${CurrencyFormatter.formatVND(_walletBalance)})',
-                        valueColor: isInsufficientBalance ? AppColors.error : null,
+                      Text('Tổng tiền thanh toán',
+                          style: AppTypography.bodyMedium(
+                              color: AppColors.textSecondaryLight)),
+                      const SizedBox(height: 6),
+                      Text(
+                        CurrencyFormatter.formatVND(widget.amount),
+                        style: AppTypography.displayLarge(
+                                color: AppColors.primaryDark)
+                            .copyWith(fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 14),
+                const SizedBox(height: 18),
 
-              Row(
-                children: [
-                  Checkbox(
-                    value: _saveBeneficiary,
-                    activeColor: AppColors.primary,
-                    onChanged: (v) => setState(() => _saveBeneficiary = v ?? true),
+                if (isInsufficientBalance) ...[
+                  InlineWarningBanner(
+                    title: 'Số dư khả dụng không đủ',
+                    message:
+                        'Tổng số tiền cần thanh toán (${CurrencyFormatter.formatVND(totalRequired)}) vượt quá số dư ví hiện có (${CurrencyFormatter.formatVND(_walletBalance)}). Vui lòng nạp thêm tiền để tiếp tục.',
+                    type: AlertType.error,
+                    actionLabel: 'Nạp tiền ngay',
+                    onAction: () => context.push('/deposit'),
                   ),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _saveBeneficiary = !_saveBeneficiary),
-                      child: Text(
-                        'Lưu vào danh bạ người thụ hưởng',
-                        style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
-                      ),
-                    ),
+                  const SizedBox(height: 16),
+                ] else ...[
+                  const InlineWarningBanner(
+                    title: 'Cảnh báo an toàn chuyển tiền',
+                    message:
+                        'Quý khách vui lòng kiểm tra kỹ số tài khoản và họ tên người nhận. Tuyệt đối không chia sẻ mã PIN hay OTP cho bất kỳ ai (kể cả nhân viên SenBank).',
+                    type: AlertType.warning,
                   ),
+                  const SizedBox(height: 16),
                 ],
-              ),
 
-              const SizedBox(height: 20),
-
-              if (!_showPinModal) ...[
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton.icon(
-                    onPressed: isInsufficientBalance
-                        ? () {
-                            HapticFeedback.vibrate();
-                            AppAlerts.showError(
-                              context,
-                              'Số dư ví không đủ để thực hiện giao dịch (${CurrencyFormatter.formatVND(_walletBalance)} < ${CurrencyFormatter.formatVND(totalRequired)}). Vui lòng nạp thêm tiền.',
-                              title: 'Số dư không đủ',
-                              actionLabel: 'Nạp tiền',
-                              onAction: () => context.push('/deposit'),
-                            );
-                          }
-                        : (_isSubmitting ? null : () => setState(() => _showPinModal = true)),
-                    icon: Icon(
-                      isInsufficientBalance
-                          ? CupertinoIcons.exclamationmark_triangle_fill
-                          : CupertinoIcons.lock_shield_fill,
-                      size: 18,
-                    ),
-                    label: Text(
-                      isInsufficientBalance
-                          ? 'Số dư không đủ để chuyển tiền'
-                          : 'Xác nhận & Ký mã PIN',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isInsufficientBalance
-                          ? AppColors.cardBorderLight
-                          : AppColors.primary,
-                      foregroundColor: isInsufficientBalance
-                          ? Colors.white38
-                          : Colors.white,
+                // Details Card (GlassCard)
+                GlassCard(
+                  quality: GlassQuality.minimal,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        _buildInfoRow(
+                            'Người nhận', _recipientName.toUpperCase()),
+                        if (_recipientPhone.isNotEmpty) ...[
+                          const Divider(
+                              height: 20, color: AppColors.cardBorderLight),
+                          _buildInfoRow('Số tài khoản / SĐT', _recipientPhone),
+                        ],
+                        const Divider(
+                            height: 20, color: AppColors.cardBorderLight),
+                        _buildInfoRow(
+                            'Phương thức', 'Ví Sen Hồng (Nội bộ 24/7)'),
+                        const Divider(
+                            height: 20, color: AppColors.cardBorderLight),
+                        _buildInfoRow(
+                            'Phí giao dịch', CurrencyFormatter.formatVND(_fee),
+                            valueColor: AppColors.successTextLight),
+                        const Divider(
+                            height: 20, color: AppColors.cardBorderLight),
+                        _buildInfoRow('Nội dung',
+                            widget.note.isEmpty ? 'Chuyen tien' : widget.note),
+                        const Divider(
+                            height: 20, color: AppColors.cardBorderLight),
+                        _buildInfoRow(
+                          'Nguồn tiền',
+                          _isLoadingWallet
+                              ? 'Ví chính (Đang tải...)'
+                              : 'Ví chính (Khả dụng: ${CurrencyFormatter.formatVND(_walletBalance)})',
+                          valueColor:
+                              isInsufficientBalance ? AppColors.error : null,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 10),
+
+                const SizedBox(height: 14),
+
                 Row(
                   children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _isSubmitting ? null : () => context.pop(),
-                        icon: const Icon(CupertinoIcons.pencil, size: 16),
-                        label: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text('Sửa số tiền'),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primaryDark,
-                          side: const BorderSide(color: AppColors.borderSubtle),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                        ),
-                      ),
+                    Checkbox(
+                      value: _saveBeneficiary,
+                      activeColor: AppColors.primary,
+                      onChanged: (v) =>
+                          setState(() => _saveBeneficiary = v ?? true),
                     ),
-                    const SizedBox(width: 10),
                     Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _isSubmitting ? null : () => context.go('/transfer'),
-                        icon: const Icon(CupertinoIcons.xmark_circle_fill, size: 16),
-                        label: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text('Hủy giao dịch'),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textSecondaryLight,
-                          side: const BorderSide(color: AppColors.borderSubtle),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                      child: GestureDetector(
+                        onTap: () => setState(
+                            () => _saveBeneficiary = !_saveBeneficiary),
+                        child: Text(
+                          'Lưu vào danh bạ người thụ hưởng',
+                          style: AppTypography.bodySmall(
+                              color: AppColors.textSecondaryLight),
                         ),
                       ),
                     ),
                   ],
                 ),
-              ] else ...[
-                Center(
-                  child: Text(
-                    _isSubmitting ? 'Đang xử lý giao dịch an toàn...' : 'Nhập mã PIN 6 số để duyệt chuyển tiền',
-                    textAlign: TextAlign.center,
-                    style: AppTypography.titleMedium(color: AppColors.textPrimaryLight),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                if (_isSubmitting) ...[
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-                    padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.borderLight),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.08),
-                          blurRadius: 16,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CupertinoActivityIndicator(radius: 14),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Đang kết nối hệ thống & ký số giao dịch...',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.titleSmall(color: AppColors.primaryDark),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Vui lòng không tắt ứng dụng trong lúc xử lý',
-                          textAlign: TextAlign.center,
-                          style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
-                        ),
-                      ],
-                    ),
-                  ),
-                ] else ...[
-                  CustomPinNumpad(
-                    pin: _pin,
-                    maxDigits: 6,
-                    showBiometric: true,
-                    onPinChanged: _onPinEntered,
-                    onBiometricPressed: () => _submitTransfer(_pin),
-                  ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () => setState(() {
-                        _showPinModal = false;
-                        _pin = '';
-                      }),
-                      icon: const Icon(CupertinoIcons.doc_text_fill, size: 16, color: AppColors.primary),
-                      label: const Text('Quay lại xem chi tiết giao dịch', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
-                    ),
-                  ),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () => context.push('/auth/forgot-pin'),
-                      icon: const Icon(CupertinoIcons.lock_fill, size: 16, color: AppColors.primaryDark),
-                      label: const Text('Quên mã PIN giao dịch? Cấp lại mã PIN', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 13)),
-                    ),
-                  ),
-                ],
-              ],
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Router Hub Card
-              GlassCard(
-                quality: GlassQuality.minimal,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(
+                if (!_showPinModal) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: isInsufficientBalance
+                          ? () {
+                              HapticFeedback.vibrate();
+                              AppAlerts.showError(
+                                context,
+                                'Số dư ví không đủ để thực hiện giao dịch (${CurrencyFormatter.formatVND(_walletBalance)} < ${CurrencyFormatter.formatVND(totalRequired)}). Vui lòng nạp thêm tiền.',
+                                title: 'Số dư không đủ',
+                                actionLabel: 'Nạp tiền',
+                                onAction: () => context.push('/deposit'),
+                              );
+                            }
+                          : (_isSubmitting
+                              ? null
+                              : () => setState(() => _showPinModal = true)),
+                      icon: Icon(
+                        isInsufficientBalance
+                            ? CupertinoIcons.exclamationmark_triangle_fill
+                            : CupertinoIcons.lock_shield_fill,
+                        size: 18,
+                      ),
+                      label: Text(
+                        isInsufficientBalance
+                            ? 'Số dư không đủ để chuyển tiền'
+                            : 'Xác nhận & Ký mã PIN',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isInsufficientBalance
+                            ? AppColors.cardBorderLight
+                            : AppColors.primary,
+                        foregroundColor: isInsufficientBalance
+                            ? Colors.white38
+                            : Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
                     children: [
-                      _buildRouterTile(
-                        icon: CupertinoIcons.lock_fill,
-                        label: 'Quên hoặc muốn đổi mã PIN thanh toán',
-                        onTap: () => context.push('/auth/forgot-pin'),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isSubmitting ? null : () => context.pop(),
+                          icon: const Icon(CupertinoIcons.pencil, size: 16),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Sửa số tiền'),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primaryDark,
+                            side:
+                                const BorderSide(color: AppColors.borderSubtle),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 8),
+                          ),
+                        ),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
-                      _buildRouterTile(
-                        icon: CupertinoIcons.lock_shield_fill,
-                        label: 'Cài đặt an toàn bảo mật & Smart OTP',
-                        onTap: () => context.push('/settings/security'),
-                      ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
-                      _buildRouterTile(
-                        icon: CupertinoIcons.phone_fill,
-                        label: 'Trung tâm trợ giúp khẩn cấp CSKH 24/7',
-                        onTap: () => context.push('/support/help-center'),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isSubmitting
+                              ? null
+                              : () => context.go('/transfer'),
+                          icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                              size: 16),
+                          label: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text('Hủy giao dịch'),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textSecondaryLight,
+                            side:
+                                const BorderSide(color: AppColors.borderSubtle),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12, horizontal: 8),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
+                ] else ...[
+                  Center(
+                    child: Text(
+                      _isSubmitting
+                          ? 'Đang xử lý giao dịch an toàn...'
+                          : 'Nhập mã PIN 6 số để duyệt chuyển tiền',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.titleMedium(
+                          color: AppColors.textPrimaryLight),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  if (_isSubmitting) ...[
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 20, horizontal: 10),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 28, horizontal: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: AppColors.borderLight),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CupertinoActivityIndicator(radius: 14),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Đang kết nối hệ thống & ký số giao dịch...',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.titleSmall(
+                                color: AppColors.primaryDark),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Vui lòng không tắt ứng dụng trong lúc xử lý',
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    CustomPinNumpad(
+                      pin: _pin,
+                      maxDigits: 6,
+                      showBiometric: true,
+                      onPinChanged: _onPinEntered,
+                      onBiometricPressed: () => _submitTransfer(_pin),
+                    ),
+                    const SizedBox(height: 12),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () => setState(() {
+                          _showPinModal = false;
+                          _pin = '';
+                        }),
+                        icon: const Icon(CupertinoIcons.doc_text_fill,
+                            size: 16, color: AppColors.primary),
+                        label: const Text('Quay lại xem chi tiết giao dịch',
+                            style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13)),
+                      ),
+                    ),
+                    Center(
+                      child: TextButton.icon(
+                        onPressed: () => context.push('/auth/forgot-pin'),
+                        icon: const Icon(CupertinoIcons.lock_fill,
+                            size: 16, color: AppColors.primaryDark),
+                        label: const Text(
+                            'Quên mã PIN giao dịch? Cấp lại mã PIN',
+                            style: TextStyle(
+                                color: AppColors.primaryDark,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13)),
+                      ),
+                    ),
+                  ],
+                ],
 
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 20),
+
+                // Router Hub Card
+                GlassCard(
+                  quality: GlassQuality.minimal,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildRouterTile(
+                          icon: CupertinoIcons.lock_fill,
+                          label: 'Quên hoặc muốn đổi mã PIN thanh toán',
+                          onTap: () => context.push('/auth/forgot-pin'),
+                        ),
+                        const Divider(
+                            height: 1,
+                            indent: 40,
+                            color: AppColors.cardBorderLight),
+                        _buildRouterTile(
+                          icon: CupertinoIcons.lock_shield_fill,
+                          label: 'Cài đặt an toàn bảo mật & Smart OTP',
+                          onTap: () => context.push('/settings/security'),
+                        ),
+                        const Divider(
+                            height: 1,
+                            indent: 40,
+                            color: AppColors.cardBorderLight),
+                        _buildRouterTile(
+                          icon: CupertinoIcons.phone_fill,
+                          label: 'Trung tâm trợ giúp khẩn cấp CSKH 24/7',
+                          onTap: () => context.push('/support/help-center'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -597,20 +670,31 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
-        const SizedBox(width: 16),
         Expanded(
+          flex: 5,
+          child: Text(label,
+              style: AppTypography.bodyMedium(
+                  color: AppColors.textSecondaryLight)),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 6,
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: AppTypography.titleMedium(color: valueColor ?? AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+            style: AppTypography.titleMedium(
+                    color: valueColor ?? AppColors.textPrimaryLight)
+                .copyWith(fontWeight: FontWeight.bold),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -622,10 +706,13 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
             Expanded(
               child: Text(
                 label,
-                style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+                style:
+                    AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                        .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),

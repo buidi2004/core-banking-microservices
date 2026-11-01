@@ -1,0 +1,14 @@
+---
+description: Đọc AGENTS.md và dùng knowledge graph trước khi grep/đọc source
+alwaysApply: true
+---
+
+# Đọc trước — Sen Hồng Core Banking
+
+1. Đọc **`AGENTS.md`** (điểm vào chung: bản đồ repo, luồng nghiệp vụ, cổng dịch vụ, quy ước code).
+2. Nếu có `graphify-out/graph.json`: chạy `graphify query "<câu hỏi>"` trước lần grep/read source đầu tiên.
+   Dùng `graphify path` / `graphify explain` / `graphify affected` khi cần quan hệ giữa các thành phần.
+3. Nếu chưa có graph: chạy `bash scripts/graphify-bootstrap.sh` (offline, ~2 phút, 0 token).
+4. Sau khi sửa code: `graphify update .`.
+
+Tài liệu chi tiết: `docs/GRAPHIFY.md`.

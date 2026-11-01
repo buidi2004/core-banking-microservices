@@ -215,11 +215,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(height: 8),
 
               // OTP Countdown & Resend Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 8,
+                runSpacing: 6,
                 children: [
                   if (_secondsLeft > 0)
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(CupertinoIcons.stopwatch, size: 14, color: AppColors.textSecondaryLight),
                         const SizedBox(width: 4),
@@ -227,16 +230,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ],
                     )
                   else
-                    Row(
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
                       children: [
                         InkWell(
                           onTap: _resendOtp,
-                          child: const Text('Gửi lại SMS OTP', style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text('Gửi lại SMS OTP', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 12)),
                         ),
-                        const SizedBox(width: 12),
                         InkWell(
                           onTap: _requestVoiceOtp,
-                          child: const Text('Nhận cuộc gọi Voice OTP', style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text('Nhận cuộc gọi Voice OTP', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 12)),
                         ),
                       ],
                     ),
@@ -350,7 +354,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       children: [
                         Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.successTextLight, size: 16),
                         SizedBox(width: 8),
-                        Text('Độ dài tối thiểu 6 ký tự', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+                        Expanded(
+                          child: Text('Độ dài tối thiểu 6 ký tự', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+                        ),
                       ],
                     ),
                     SizedBox(height: 4),
@@ -358,7 +364,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       children: [
                         Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.successTextLight, size: 16),
                         SizedBox(width: 8),
-                        Text('Nên bao gồm cả chữ và số để tăng độ an toàn', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+                        Expanded(
+                          child: Text('Nên bao gồm cả chữ và số để tăng độ an toàn', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+                        ),
                       ],
                     ),
                   ],

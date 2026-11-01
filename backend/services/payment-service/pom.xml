@@ -27,6 +27,10 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <dependency>
@@ -97,7 +101,7 @@
             <artifactId>protobuf-java</artifactId>
             <version>3.25.3</version>
         </dependency>
-        <!-- Required for gRPC generated code (@javax.annotation.Generated) on JDK 17 -->
+        <!-- Required for gRPC generated code (@javax.annotation.Generated) on JDK 25 -->
         <dependency>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>

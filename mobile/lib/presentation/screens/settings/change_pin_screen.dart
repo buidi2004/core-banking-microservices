@@ -73,7 +73,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       await showFeatureUnavailable(
         context,
         feature: 'Đổi mã PIN giao dịch',
-        reason: 'Backend chưa hỗ trợ API xác thực mã PIN giao dịch (BE-REQ-03). '
+        reason:
+            'Backend chưa hỗ trợ API xác thực mã PIN giao dịch (BE-REQ-03). '
             'Tính năng quản lý mã PIN máy chủ đang được nâng cấp.',
       );
       if (!mounted) return;
@@ -100,7 +101,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       setState(() {
         _isLoading = false;
         _oldPin = '';
-        _errorMessage = e.message ?? 'Tính năng chưa sẵn sàng. Vui lòng quay lại sau.';
+        _errorMessage =
+            e.message ?? 'Tính năng chưa sẵn sàng. Vui lòng quay lại sau.';
       });
     } catch (e) {
       if (!mounted) return;
@@ -108,7 +110,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       setState(() {
         _isLoading = false;
         _oldPin = '';
-        _errorMessage = 'Mã PIN hiện tại chưa chính xác. Quý khách vui lòng thử lại.';
+        _errorMessage =
+            'Mã PIN hiện tại chưa chính xác. Quý khách vui lòng thử lại.';
       });
     }
   }
@@ -127,7 +130,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       HapticFeedback.vibrate();
       setState(() {
         _newPin = '';
-        _errorMessage = 'Mã PIN quá đơn giản. Quý khách vui lòng chọn mã khác để bảo vệ tài khoản.';
+        _errorMessage =
+            'Mã PIN quá đơn giản. Quý khách vui lòng chọn mã khác để bảo vệ tài khoản.';
       });
       return;
     }
@@ -142,7 +146,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       HapticFeedback.vibrate();
       setState(() {
         _confirmPin = '';
-        _errorMessage = 'Mã PIN xác nhận không khớp với mã PIN mới. Vui lòng nhập lại.';
+        _errorMessage =
+            'Mã PIN xác nhận không khớp với mã PIN mới. Vui lòng nhập lại.';
       });
       return;
     }
@@ -206,44 +211,58 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                        border: Border.all(
+                            color: AppColors.primary.withOpacity(0.2)),
                       ),
                       child: const Row(
                         children: [
-                          Icon(CupertinoIcons.shield_fill, color: AppColors.primary, size: 20),
+                          Icon(CupertinoIcons.shield_fill,
+                              color: AppColors.primary, size: 20),
                           SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               'Để đảm bảo an toàn tài chính, không chia sẻ mã PIN cho bất kỳ ai.',
-                              style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, height: 1.3),
+                              style: TextStyle(
+                                  color: AppColors.textPrimaryLight,
+                                  fontSize: 12,
+                                  height: 1.3),
                             ),
                           ),
                         ],
                       ),
                     ),
                     // Step Progress Indicator
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildStepNode(1, 'PIN cũ', isActive: _currentStep >= 1),
-                        _buildStepLine(isDone: _currentStep >= 2),
-                        _buildStepNode(2, 'PIN mới', isActive: _currentStep >= 2),
-                        _buildStepLine(isDone: _currentStep >= 3),
-                        _buildStepNode(3, 'Xác nhận', isActive: _currentStep >= 3),
-                      ],
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildStepNode(1, 'PIN cũ',
+                              isActive: _currentStep >= 1),
+                          _buildStepLine(isDone: _currentStep >= 2),
+                          _buildStepNode(2, 'PIN mới',
+                              isActive: _currentStep >= 2),
+                          _buildStepLine(isDone: _currentStep >= 3),
+                          _buildStepNode(3, 'Xác nhận',
+                              isActive: _currentStep >= 3),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 24),
 
                     // Title & Description
                     Text(
                       stepTitle,
-                      style: AppTypography.titleLarge(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.bold),
+                      style:
+                          AppTypography.titleLarge(color: AppColors.primaryDark)
+                              .copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       stepDesc,
                       textAlign: TextAlign.center,
-                      style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight),
                     ),
                     const SizedBox(height: 24),
 
@@ -258,19 +277,23 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                           height: 18,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: isFilled ? AppColors.primaryGradient : null,
+                            gradient:
+                                isFilled ? AppColors.primaryGradient : null,
                             color: isFilled ? null : Colors.transparent,
                             boxShadow: isFilled
                                 ? [
                                     BoxShadow(
-                                      color: AppColors.bottomBarGlow.withOpacity(0.35),
+                                      color: AppColors.bottomBarGlow
+                                          .withOpacity(0.35),
                                       blurRadius: 8,
                                       offset: const Offset(0, 2),
                                     ),
                                   ]
                                 : null,
                             border: Border.all(
-                              color: isFilled ? AppColors.bottomBarCyan : AppColors.borderLight,
+                              color: isFilled
+                                  ? AppColors.bottomBarCyan
+                                  : AppColors.borderLight,
                               width: 2,
                             ),
                           ),
@@ -281,20 +304,28 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
 
                     if (_errorMessage != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           color: AppColors.error.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                          border: Border.all(
+                              color: AppColors.error.withOpacity(0.3)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(CupertinoIcons.exclamationmark_circle_fill, color: AppColors.error, size: 16),
+                            const Icon(
+                                CupertinoIcons.exclamationmark_circle_fill,
+                                color: AppColors.error,
+                                size: 16),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(color: AppColors.error, fontSize: 11.5, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                    color: AppColors.error,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600),
                               ),
                             ),
                           ],
@@ -312,18 +343,26 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                           children: [
                             Row(
                               children: [
-                                const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primary, size: 18),
+                                const Icon(CupertinoIcons.shield_lefthalf_fill,
+                                    color: AppColors.primary, size: 18),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'Quy tắc bảo mật mã PIN',
-                                  style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                                Expanded(
+                                  child: Text(
+                                    'Quy tắc bảo mật mã PIN',
+                                    style: AppTypography.titleSmall(
+                                            color: AppColors.textPrimaryLight)
+                                        .copyWith(fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 8),
-                            _buildRuleItem('Không đặt mã PIN trùng ngày sinh hoặc số điện thoại'),
-                            _buildRuleItem('Không dùng chuỗi số tăng dần hoặc giảm dần (123456, 654321)'),
-                            _buildRuleItem('Không chia sẻ mã PIN cho bất kỳ ai, kể cả nhân viên ngân hàng'),
+                            _buildRuleItem(
+                                'Không đặt mã PIN trùng ngày sinh hoặc số điện thoại'),
+                            _buildRuleItem(
+                                'Không dùng chuỗi số tăng dần hoặc giảm dần (123456, 654321)'),
+                            _buildRuleItem(
+                                'Không chia sẻ mã PIN cho bất kỳ ai, kể cả nhân viên ngân hàng'),
                           ],
                         ),
                       ),
@@ -333,17 +372,18 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                     TextButton.icon(
                       onPressed: () => context.push('/auth/forgot-pin'),
                       icon: const Icon(CupertinoIcons.mail_solid, size: 16),
-                      label: const Text('Quên mã PIN hiện tại? Nhận OTP qua Gmail để cấp lại mã PIN'),
+                      label: const Text(
+                          'Quên mã PIN hiện tại? Nhận OTP qua Gmail để cấp lại mã PIN'),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.primary,
-                        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                        textStyle: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 12.5),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.all(32),
@@ -370,7 +410,8 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                           width: 68,
                           height: 68,
                           child: IconButton(
-                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryDark, size: 26),
+                            icon: const Icon(CupertinoIcons.delete_left_fill,
+                                color: AppColors.primaryDark, size: 26),
                             onPressed: _onBackspace,
                           ),
                         ),
@@ -395,7 +436,9 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
             shape: BoxShape.circle,
             gradient: isActive ? AppColors.primaryGradient : null,
             color: isActive ? null : AppColors.surfaceLight,
-            border: Border.all(color: isActive ? AppColors.bottomBarCyan : AppColors.borderLight),
+            border: Border.all(
+                color:
+                    isActive ? AppColors.bottomBarCyan : AppColors.borderLight),
           ),
           child: Center(
             child: Text(
@@ -436,12 +479,16 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(CupertinoIcons.check_mark, size: 14, color: AppColors.emeraldGreen),
+          const Icon(CupertinoIcons.check_mark,
+              size: 14, color: AppColors.successTextLight),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight, height: 1.3),
+              style: const TextStyle(
+                  fontSize: 11.5,
+                  color: AppColors.textSecondaryLight,
+                  height: 1.3),
             ),
           ),
         ],

@@ -11,7 +11,6 @@ import com.fintech.payment.grpc.dto.WalletBalanceResult;
 import com.fintech.payment.grpc.dto.WalletInfoResult;
 import com.fintech.payment.repository.LotteryDrawRepository;
 import com.fintech.payment.repository.LotteryTicketRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

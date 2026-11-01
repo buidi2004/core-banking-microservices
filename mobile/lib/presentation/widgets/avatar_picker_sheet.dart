@@ -37,49 +37,57 @@ class AvatarPickerSheet extends StatefulWidget {
       id: 'vip_1',
       title: 'Doanh Nhân VIP',
       badge: 'DIAMOND',
-      url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&fit=crop&q=80',
+      url:
+          'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&fit=crop&q=80',
     ),
     SenBankPresetAvatar(
       id: 'vip_2',
       title: 'Chuyên Gia Tài Chính',
       badge: 'PLATINUM',
-      url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop&q=80',
+      url:
+          'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop&q=80',
     ),
     SenBankPresetAvatar(
       id: 'vip_3',
       title: 'Sen Vàng Tinh Hoa',
       badge: 'PREMIER',
-      url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&fit=crop&q=80',
+      url:
+          'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&fit=crop&q=80',
     ),
     SenBankPresetAvatar(
       id: 'vip_4',
       title: 'Lãnh Đạo Cấp Cao',
       badge: 'EXECUTIVE',
-      url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&fit=crop&q=80',
+      url:
+          'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&fit=crop&q=80',
     ),
     SenBankPresetAvatar(
       id: 'vip_5',
       title: 'Khởi Nghiệp Đổi Mới',
       badge: 'INNOVATOR',
-      url: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&fit=crop&q=80',
+      url:
+          'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&fit=crop&q=80',
     ),
     SenBankPresetAvatar(
       id: 'vip_6',
       title: 'Kỹ Sư Công Nghệ',
       badge: 'TECH ELITE',
-      url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&fit=crop&q=80',
+      url:
+          'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&fit=crop&q=80',
     ),
     SenBankPresetAvatar(
       id: 'vip_7',
       title: 'Đại Sứ Thương Hiệu',
       badge: 'AMBASSADOR',
-      url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&fit=crop&q=80',
+      url:
+          'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&fit=crop&q=80',
     ),
     SenBankPresetAvatar(
       id: 'vip_8',
       title: 'Cố Vấn Đầu Tư',
       badge: 'WEALTH',
-      url: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&fit=crop&q=80',
+      url:
+          'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&fit=crop&q=80',
     ),
   ];
 
@@ -139,7 +147,8 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.primaryDark,
-          content: Text('Vui lòng khởi động lại ứng dụng nếu nạp plugin camera mới: ${e.message}'),
+          content: Text(
+              'Vui lòng khởi động lại ứng dụng nếu nạp plugin camera mới: ${e.message}'),
         ),
       );
     } catch (e) {
@@ -157,7 +166,8 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
 
   void _submitCustomUrl() {
     final url = _urlCtrl.text.trim();
-    if (url.isEmpty || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    if (url.isEmpty ||
+        (!url.startsWith('http://') && !url.startsWith('https://'))) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: AppColors.error,
@@ -209,7 +219,9 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                 children: [
                   Text(
                     'Thay Đổi Ảnh Đại Diện',
-                    style: AppTypography.titleMedium(color: AppColors.primaryText).copyWith(
+                    style:
+                        AppTypography.titleMedium(color: AppColors.primaryText)
+                            .copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
@@ -217,13 +229,15 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                   const SizedBox(height: 2),
                   const Text(
                     'Chọn ảnh từ máy hoặc bộ sưu tập SenBank VIP',
-                    style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.textSecondaryLight),
                   ),
                 ],
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textSecondaryLight),
+                icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                    color: AppColors.textSecondaryLight),
               ),
             ],
           ),
@@ -242,7 +256,9 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  onTap: _isProcessing ? null : () => _pickImage(ImageSource.camera),
+                  onTap: _isProcessing
+                      ? null
+                      : () => _pickImage(ImageSource.camera),
                 ),
               ),
               const SizedBox(width: 12),
@@ -256,7 +272,9 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  onTap: _isProcessing ? null : () => _pickImage(ImageSource.gallery),
+                  onTap: _isProcessing
+                      ? null
+                      : () => _pickImage(ImageSource.gallery),
                 ),
               ),
             ],
@@ -311,7 +329,9 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? AppColors.emeraldGreen : AppColors.primaryLight,
+                                color: isSelected
+                                    ? AppColors.emeraldGreen
+                                    : AppColors.primaryLight,
                                 width: isSelected ? 2.5 : 1.5,
                               ),
                               boxShadow: [
@@ -330,7 +350,9 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                                   if (progress == null) return child;
                                   return Container(
                                     color: AppColors.dividerLight,
-                                    child: const Center(child: CupertinoActivityIndicator(radius: 8)),
+                                    child: const Center(
+                                        child: CupertinoActivityIndicator(
+                                            radius: 8)),
                                   );
                                 },
                                 errorBuilder: (_, __, ___) => const Icon(
@@ -350,7 +372,9 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                                   color: AppColors.emeraldGreen,
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(CupertinoIcons.checkmark, size: 10, color: AppColors.textPrimaryLight),
+                                child: const Icon(CupertinoIcons.checkmark,
+                                    size: 10,
+                                    color: AppColors.textPrimaryLight),
                               ),
                             ),
                         ],
@@ -360,8 +384,11 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                         item.title,
                         style: TextStyle(
                           fontSize: 10,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected ? AppColors.successTextLight : AppColors.primaryText,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected
+                              ? AppColors.successTextLight
+                              : AppColors.primaryText,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -384,13 +411,17 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
               child: Row(
                 children: [
                   Icon(
-                    _showUrlInput ? CupertinoIcons.arrow_up : CupertinoIcons.link,
+                    _showUrlInput
+                        ? CupertinoIcons.arrow_up
+                        : CupertinoIcons.link,
                     size: 16,
                     color: AppColors.primaryText,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _showUrlInput ? 'Ẩn nhập liên kết URL' : 'Dán đường dẫn ảnh trực tiếp (URL)',
+                    _showUrlInput
+                        ? 'Ẩn nhập liên kết URL'
+                        : 'Dán đường dẫn ảnh trực tiếp (URL)',
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -412,21 +443,26 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     style: const TextStyle(fontSize: 13),
                     decoration: InputDecoration(
                       hintText: 'https://example.com/avatar.jpg',
-                      hintStyle: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                      hintStyle: const TextStyle(
+                          fontSize: 12, color: AppColors.textSecondaryLight),
                       filled: true,
                       fillColor: AppColors.surfaceLight,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.borderLight),
+                        borderSide:
+                            const BorderSide(color: AppColors.borderLight),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.borderLight),
+                        borderSide:
+                            const BorderSide(color: AppColors.borderLight),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 1.5),
                       ),
                     ),
                   ),
@@ -437,10 +473,14 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryDark,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Áp dụng', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  child: const Text('Áp dụng',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -484,7 +524,8 @@ class _AvatarPickerSheetState extends State<AvatarPickerSheet> {
                     color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: AppColors.textPrimaryLight, size: 20),
+                  child:
+                      Icon(icon, color: AppColors.textPrimaryLight, size: 20),
                 ),
                 const SizedBox(width: 10),
                 Expanded(

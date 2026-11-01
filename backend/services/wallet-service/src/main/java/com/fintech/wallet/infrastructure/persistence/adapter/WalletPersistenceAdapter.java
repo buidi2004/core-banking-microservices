@@ -49,6 +49,11 @@ public class WalletPersistenceAdapter implements WalletPersistencePort {
     }
 
     @Override
+    public java.util.List<Wallet> findAllWallets() {
+        return walletRepository.findAll().stream().map(mapper::toDomain).toList();
+    }
+
+    @Override
     public BigDecimal sumAllBalances() {
         return walletRepository.sumAllBalances();
     }

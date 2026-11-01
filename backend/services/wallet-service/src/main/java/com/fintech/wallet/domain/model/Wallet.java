@@ -122,6 +122,11 @@ public class Wallet {
         return status;
     }
 
+    public void setStatus(WalletStatus status) {
+        this.status = status;
+        this.updatedAt = Instant.now();
+    }
+
     public Long getDailyLimit() {
         return dailyLimit;
     }

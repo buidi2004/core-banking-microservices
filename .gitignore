@@ -74,4 +74,11 @@ mobile/scratch/
 ### AI Agent Teamwork Runtime ###
 .agents/teamwork/
 
+### Graphify knowledge graph (rebuild: graphify extract . --code-only) ###
+graphify-out/
+.graphify/
 
+
+
+__pycache__/
+*.pyc

@@ -1,6 +1,6 @@
 # ⚙️ Sen Hồng Core Banking Backend Microservices
 
-[![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
+[![Java 25](https://img.shields.io/badge/Java-25-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot 3](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![gRPC](https://img.shields.io/badge/gRPC-Protobuf-blue.svg)](https://grpc.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791.svg)](https://www.postgresql.org/)
@@ -135,4 +135,3 @@ mvn -f services/payment-service/pom.xml spring-boot:run
 3. **Pessimistic Row-Level Lock:** Áp dụng `SELECT FOR UPDATE` trên bảng `wallets` để đảm bảo an toàn tuyệt đối khi hàng trăm giao dịch nạp/rút diễn ra cùng lúc trên cùng một ví.
 4. **Redlock Distributed Locking:** Khóa cấp độ cụm phân tán thông qua Redis, ngăn chặn hiện tượng double-spend giữa các instances của microservices.
 5. **Idempotency Multi-Layer:** Lũy trị kép bằng cả Redis TTL và Unique Constraint trong cơ sở dữ liệu.
-

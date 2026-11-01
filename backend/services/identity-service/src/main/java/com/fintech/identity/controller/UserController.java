@@ -21,7 +21,7 @@ public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/me")
+    @GetMapping({"/me", "/profile"})
     public ResponseEntity<ApiResponse<UserProfileResponse>> getCurrentUser(
             @RequestHeader(value = "X-User-Id") String userId) {
         log.debug("Lấy thông tin người dùng hiện tại từ header X-User-Id={}", userId);
@@ -29,7 +29,7 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
-    @PutMapping("/profile")
+    @PutMapping({"/profile", "/me"})
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateProfile(
             @RequestHeader(value = "X-User-Id") String userId,
             @RequestBody UpdateProfileRequest request) {

@@ -162,6 +162,7 @@ class DioClient {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'X-Tunnel-Skip-AntiPhishing-Page': 'true',
+            'ngrok-skip-browser-warning': 'true',
           },
         ),
       );
@@ -302,6 +303,7 @@ class DioClient {
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
           'X-Tunnel-Skip-AntiPhishing-Page': 'true',
+          'ngrok-skip-browser-warning': 'true',
         },
       ),
     );

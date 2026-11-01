@@ -1,0 +1,10 @@
+# Windsurf rules — Sen Hồng Core Banking
+
+> **ĐỌC `AGENTS.md` TRƯỚC** — điểm vào chung cho mọi AI agent: bản đồ repo, luồng nghiệp vụ
+> (P2P Saga, Outbox, double-entry ledger, Maker-Checker), cổng dịch vụ và quy ước code.
+
+- Có `graphify-out/graph.json` → chạy `graphify query "<câu hỏi>"` trước khi grep/đọc source.
+  Dùng `graphify path` / `graphify explain` / `graphify affected` cho câu hỏi về quan hệ.
+- Chưa có graph → `bash scripts/graphify-bootstrap.sh` (offline, ~2 phút, không cần API key).
+- Sửa code xong → `graphify update .`.
+- Chi tiết: `docs/GRAPHIFY.md`.

@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Notification Service — 4 tầng (Kafka/Rabbit · WebSocket · FCM)",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 6,
+    "cellW": 222,
+    "cellH": 100,
+    "gapX": 176,
+    "gapY": 96
+  },
+  "components": [
+    {
+      "id": "entry",
+      "type": "external",
+      "label": "API Gateway + Mobile",
+      "sublabel": "REST :8085 · STOMP /ws-native",
+      "tag": "HTTP / WS",
+      "row": 1,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "presentation",
+      "type": "backend",
+      "label": "Presentation",
+      "sublabel": "9 class · 17 endpoint",
+      "tag": "Controller · DTO · Exception",
+      "row": 1,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "application",
+      "type": "backend",
+      "label": "Application",
+      "sublabel": "4 class · 12 method",
+      "tag": "Use case · Saga · Outbox",
+      "row": 1,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "Domain",
+      "sublabel": "5 class · 3 method",
+      "tag": "Entity · Port · Rule",
+      "row": 1,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "type": "backend",
+      "label": "Infrastructure",
+      "sublabel": "17 class · 24 method",
+      "tag": "Adapter · Repository · Consumer",
+      "row": 1,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL :5437",
+      "sublabel": "ewallet_notification_db",
+      "tag": "JPA",
+      "row": 0,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "mq",
+      "type": "messagebus",
+      "label": "RabbitMQ :5672",
+      "sublabel": "notification.transaction.events",
+      "tag": "consumer",
+      "row": 2,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka :9092",
+      "sublabel": "banking.payment.transaction-lifecycle.v1",
+      "tag": "consumer",
+      "row": 3,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "fcm",
+      "type": "cloud",
+      "label": "Firebase FCM",
+      "sublabel": "push notification",
+      "tag": "HTTPS",
+      "row": 4,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "entry-presentation",
+      "from": "entry",
+      "to": "presentation",
+      "variant": "emphasis",
+      "label": "REST + STOMP"
+    },
+    {
+      "id": "presentation-application",
+      "from": "presentation",
+      "to": "application",
+      "variant": "default",
+      "label": "service"
+    },
+    {
+      "id": "application-domain",
+      "from": "application",
+      "to": "domain",
+      "variant": "default",
+      "label": "entity"
+    },
+    {
+      "id": "infra-domain",
+      "from": "infrastructure",
+      "to": "domain",
+      "variant": "default",
+      "label": "JPA repo"
+    },
+    {
+      "id": "infra-db",
+      "from": "infrastructure",
+      "to": "db",
+      "variant": "default"
+    },
+    {
+      "id": "mq-infra",
+      "from": "mq",
+      "to": "infrastructure",
+      "variant": "dashed"
+    },
+    {
+      "id": "kafka-infra",
+      "from": "kafka",
+      "to": "infrastructure",
+      "variant": "dashed"
+    },
+    {
+      "id": "infra-fcm",
+      "from": "infrastructure",
+      "to": "fcm",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Tầng 1 · Presentation (9 class)",
+      "items": [
+        "DTO (4): ApiResponse, PageResponse, RegisterDeviceTokenRequest, TicketMessage",
+        "DeviceController: POST /api/v1/devices/register · DELETE /api/v1/devices/unregister",
+        "GlobalExceptionHandler: handleIllegalArgument(IllegalArgumentException e), handleMissingParam(MissingServletRequestParameterException e), handleValidation(MethodArgumentNotValidException e), handleGeneric(Exception e)",
+        "NotificationController: GET /api/v1/notifications · GET /api/v1/notifications/unread-count · PATCH /api/v1/notifications/{id}/read · PATCH /api/v1/notifications/read-all · PUT /api/v1/notifications/settings",
+        "PromotionController: GET /api/v1/promotions · GET /api/v1/promotions/campaigns · POST /api/v1/promotions/redeem · POST /api/v1/promotions/apply · GET /api/v1/promotions/my-vouchers",
+        "SupportController: POST /api/v1/support/tickets · GET /api/v1/support/tickets · GET /api/v1/support/tickets/{id} · POST /api/v1/support/tickets/{id}/messages · GET /api/v1/support/faq",
+        "RegisterDeviceTokenRequest",
+        "TicketMessage"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Tầng 2 · Application (4 class)",
+      "items": [
+        "DeviceTokenService: registerDeviceToken(String userId, String fcmToken, String deviceType, String deviceModel, String appVersion), unregisterDeviceToken(String userId, String fcmToken)",
+        "NotificationService: markAsRead(String userId, String notificationId), markAllAsRead(String userId, String type), existsForTransaction(String userId, String transactionId, String status), save(Notification notification), countUnread(String …",
+        "PromotionService: redeemVoucher(String userId, String code), applyVoucher(String userId, String code, BigDecimal orderAmount)",
+        "SupportService: createTicket(String userId, String subject, String category, String initialMessage), addMessage(String ticketId, String senderId, String senderType, String content)"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Tầng 3 · Domain (5 class)",
+      "items": [
+        "DeviceToken: create(String userId, String platform, String token, String deviceModel, String appVersion), assignTo(String userId, String platform)",
+        "Notification: create(String userId, String type, String title, String body, String channel, String dataPayload)",
+        "Promotion: id: UUID, name: String, description: String, type: String, targetAmount: Long, rewardAmount: Long, maxRewardPerUser: Long, totalRewardBudget: Long, rewardClaimed: Long, participantLimit: Integer, participantsCount: Inte…",
+        "SupportTicket: id: UUID, userId: String, subject: String, description: String, category: String, status: String, priority: String, messagesJson: String, resolvedAt: Instant, resolvedBy: String, createdAt: Instant, updatedAt: Instant",
+        "Voucher: id: UUID, code: String, title: String, description: String, discountType: String, discountValue: Long, minOrderAmount: Long, maxDiscountAmount: Long, validFrom: Instant, validUntil: Instant, usageLimit: Integer, usedCou…"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Tầng 4 · Infrastructure (17 class)",
+      "items": [
+        "NotificationApplication",
+        "NotificationConsumer: onTransactionEvent(TransactionEvent event)",
+        "FirebaseConfig: init()",
+        "RabbitMqConfig: transactionExchange(), deadLetterExchange(), notificationQueue(), notificationDlq(), notificationBinding(Queue notificationQueue, TopicExchange transactionExchange), notificationDlqBinding(Queue notificationDlq, DirectE…",
+        "WebSocketConfig: configureMessageBroker(MessageBrokerRegistry config), registerStompEndpoints(StompEndpointRegistry registry)",
+        "KafkaConsumerConfig: notificationKafkaConsumerFactory(), notificationKafkaProducerFactory(), notificationKafkaTemplate(ProducerFactory<String, String> notificationKafkaProducerFactory), notificationKafkaListenerContainerFactory(ConsumerFact…",
+        "NotificationKafkaConsumer: onTransactionEvent(ConsumerRecord<String, String> record, Acknowledgment acknowledgment)",
+        "EventIdempotencyStore: markProcessed(String eventId), forget(String eventId)",
+        "FcmPushSender: sendPushNotification(String userId, String title, String body, Map<String, String> data)",
+        "NotificationPayload",
+        "UserPhoneResolver: resolve(String userId)",
+        "WebSocketNotifier: pushToWallet(String walletId, NotificationPayload payload), pushToUser(String userId, NotificationPayload payload)",
+        "DeviceTokenRepository (interface): interface",
+        "NotificationRepository (interface): interface",
+        "PromotionRepository (interface): interface",
+        "SupportTicketRepository (interface): interface",
+        "VoucherRepository (interface): interface"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Phụ thuộc & luồng nghiệp vụ",
+      "items": [
+        "Hai consumer song song: NotificationConsumer (Rabbit) + NotificationKafkaConsumer (Kafka lifecycle)",
+        "NotificationService: lưu Notification + WebSocketNotifier (/topic/notifications) + FcmPushSender",
+        "DeviceTokenService: register/unregister token; UserPhoneResolver: tra số điện thoại cho SMS format",
+        "PromotionService + SupportService + Voucher: module khuyến mãi / hỗ trợ khách hàng"
+      ]
+    }
+  ]
+}

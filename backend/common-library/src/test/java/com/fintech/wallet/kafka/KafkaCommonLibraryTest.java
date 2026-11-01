@@ -13,7 +13,6 @@ import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.SendResult;
 
 import java.math.BigDecimal;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;

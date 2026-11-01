@@ -71,7 +71,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 ),
               );
             } finally {
-              if (sheetOpen && mounted) setSheetState(() => isSendingOtp = false);
+              if (sheetOpen && mounted) {
+                setSheetState(() => isSendingOtp = false);
+              }
             }
           }
 
@@ -118,7 +120,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               // Đổi mã OTP 6 số thành otpToken JWT trước khi gửi lên backend.
               String otpToken = otpCtrl.text.trim();
               final phone = await AppSecureStorage.safeRead(
-                  AppSecureStorage.instance, key: AppConstants.keyPhoneNumber);
+                  AppSecureStorage.instance,
+                  key: AppConstants.keyPhoneNumber);
               if (phone != null && phone.isNotEmpty) {
                 final verifyRes = await AuthRemoteDataSource().verifyOtpFull(
                   phoneNumber: phone,
@@ -126,9 +129,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   purpose: 'CHANGE_PASSWORD',
                 );
                 otpToken = (verifyRes['otpToken'] ??
-                        verifyRes['tempToken'] ??
-                        otpToken)
-                    as String;
+                    verifyRes['tempToken'] ??
+                    otpToken) as String;
               }
 
               await AuthRemoteDataSource().changePassword(
@@ -142,8 +144,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               messenger.showSnackBar(
                 const SnackBar(
                   backgroundColor: AppColors.emeraldGreen,
-                  content: Text(
-                      'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.'),
+                  content:
+                      Text('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.'),
                 ),
               );
               router.go('/auth/login');
@@ -156,7 +158,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 ),
               );
             } finally {
-              if (sheetOpen && mounted) setSheetState(() => isSubmitting = false);
+              if (sheetOpen && mounted) {
+                setSheetState(() => isSubmitting = false);
+              }
             }
           }
 
@@ -241,7 +245,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                     decoration: InputDecoration(
                       labelText: 'Xác nhận mật khẩu mới',
                       labelStyle: const TextStyle(color: Colors.white70),
-                      prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill,
+                      prefixIcon: const Icon(
+                          CupertinoIcons.checkmark_shield_fill,
                           color: AppColors.bottomBarCyan),
                       filled: true,
                       fillColor: Colors.white.withValues(alpha: 0.05),
@@ -267,7 +272,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                             )
                           : const Icon(CupertinoIcons.mail_solid, size: 18),
                       label: Text(
-                        otpSent ? 'Gửi lại mã OTP qua Gmail' : 'Gửi mã OTP qua Gmail',
+                        otpSent
+                            ? 'Gửi lại mã OTP qua Gmail'
+                            : 'Gửi mã OTP qua Gmail',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -280,7 +287,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         color: AppColors.emeraldGreen.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: AppColors.emeraldGreen.withValues(alpha: 0.3)),
+                            color:
+                                AppColors.emeraldGreen.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -313,7 +321,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         counterText: '',
                         labelText: 'Mã OTP (6 số)',
                         labelStyle: const TextStyle(color: Colors.white70),
-                        prefixIcon: const Icon(CupertinoIcons.number_circle_fill,
+                        prefixIcon: const Icon(
+                            CupertinoIcons.number_circle_fill,
                             color: AppColors.bottomBarCyan),
                         filled: true,
                         fillColor: Colors.white.withValues(alpha: 0.05),
@@ -355,8 +364,10 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       Navigator.pop(ctx);
                       context.push('/auth/forgot-password');
                     },
-                    icon: const Icon(CupertinoIcons.arrow_counterclockwise_circle_fill,
-                        size: 16, color: AppColors.bottomBarCyan),
+                    icon: const Icon(
+                        CupertinoIcons.arrow_counterclockwise_circle_fill,
+                        size: 16,
+                        color: AppColors.bottomBarCyan),
                     label: const Text(
                       'Quên mật khẩu? Khôi phục qua Gmail',
                       style: TextStyle(
@@ -494,7 +505,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       child: Text(
         title,
         style: const TextStyle(
-          color: AppColors.bottomBarCyan,
+          color: AppColors.primary,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
           fontSize: 12,
@@ -509,11 +520,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
-          colors: [Color(0xFF0F2B48), Color(0xFF0C1929)],
+          colors: [Color(0xFF0F2B48), AppColors.deepNavy],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: AppColors.emeraldGreen.withValues(alpha: 0.4)),
+        border:
+            Border.all(color: AppColors.emeraldGreen.withValues(alpha: 0.4)),
         boxShadow: [
           BoxShadow(
             color: AppColors.emeraldGreen.withValues(alpha: 0.12),
@@ -550,13 +562,16 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      'ĐIỂM AN TOÀN: XUẤT SẮC',
-                      style: TextStyle(
-                        color: AppColors.emeraldGreen,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        letterSpacing: 0.5,
+                    Expanded(
+                      child: Text(
+                        'ĐIỂM AN TOÀN: XUẤT SẮC',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.emeraldGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                     SizedBox(width: 6),
@@ -567,7 +582,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 SizedBox(height: 3),
                 Text(
                   'Tài khoản được bảo vệ bởi 4 lớp an ninh: Chip CCCD eKYC C06, Smart OTP PKI, FaceMatch 3D và Mã hóa phần cứng Keystore.',
-                  style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.35),
+                  style: TextStyle(
+                      color: Colors.white70, fontSize: 11, height: 1.35),
                 ),
               ],
             ),
@@ -583,11 +599,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: const LinearGradient(
-          colors: [Color(0xFF132A48), Color(0xFF0C1929)],
+          colors: [AppColors.cardNavy, AppColors.deepNavy],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.35)),
+        border:
+            Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.35)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.3),
@@ -602,38 +619,47 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.bottomBarCyan.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.bottomBarCyan.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(CupertinoIcons.device_phone_portrait,
+                          color: AppColors.bottomBarCyan, size: 20),
                     ),
-                    child: const Icon(CupertinoIcons.device_phone_portrait,
-                        color: AppColors.bottomBarCyan, size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'SMART OTP SEN HỒNG (PKI)',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          letterSpacing: 0.5,
-                        ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'SMART OTP SEN HỒNG (PKI)',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            'Thiết bị chính: Thiết bị này',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Thiết bị chính: Thiết bị này',
-                        style: TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -645,7 +671,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 child: const Text(
                   'ĐANG HOẠT ĐỘNG',
                   style: TextStyle(
-                    color: AppColors.emeraldGreen,
+                    color: Colors.white,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
@@ -656,7 +682,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           const SizedBox(height: 14),
           const Text(
             'Khóa ký số bảo mật: 8F7D-42A1-998C-EE10\nChu kỳ sinh mã xác thực: 30 giây tự động, không phụ thuộc sóng di động SMS.',
-            style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.4),
+            style:
+                TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.4),
           ),
           const SizedBox(height: 14),
           Row(
@@ -665,8 +692,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 child: OutlinedButton(
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.3)),
+                    side:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.3)),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                   onPressed: () => context.push('/set-pin'),
@@ -679,7 +706,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.bottomBarCyan,
-                    foregroundColor: const Color(0xFF030B17),
+                    foregroundColor: AppColors.inkNavy,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                   onPressed: () {
@@ -714,14 +741,14 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             title: const Text(
               'Xác thực FaceMatch khi GD > 10 triệu',
               style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.white,
-              ),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: AppColors.textPrimaryLight),
             ),
             subtitle: const Text(
               'Bắt buộc theo QĐ 2345/QĐ-NHNN để đối soát khuôn mặt với chip CCCD',
-              style: TextStyle(fontSize: 11, color: Colors.white54),
+              style:
+                  TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
             ),
             onChanged: (v) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -739,14 +766,14 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             title: const Text(
               'Đăng nhập nhanh bằng FaceID / Vân tay',
               style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.white,
-              ),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                  color: AppColors.textPrimaryLight),
             ),
             subtitle: const Text(
               'Sử dụng cảm biến sinh trắc học tích hợp trên thiết bị',
-              style: TextStyle(fontSize: 11, color: Colors.white54),
+              style:
+                  TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
             ),
             onChanged: (v) {
               HapticFeedback.selectionClick();
@@ -759,21 +786,21 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             child: ListTile(
               onTap: () => context.push('/profile/ekyc'),
               leading: const Icon(CupertinoIcons.camera_viewfinder,
-                  color: AppColors.bottomBarCyan, size: 22),
+                  color: AppColors.primaryText, size: 22),
               title: const Text(
                 'Cập nhật lại khuôn mặt & chip CCCD (eKYC)',
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: Colors.white,
-                ),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: AppColors.textPrimaryLight),
               ),
               subtitle: const Text(
                 'Quét lại chip NFC khi vừa được cấp thẻ CCCD gắn chip mới',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textSecondaryLight, size: 18),
             ),
           ),
         ],
@@ -799,10 +826,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   title: Text(
                     _thresholdLabels[idx],
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textPrimaryLight,
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,
-                      fontSize: 12.5,
+                      fontSize: 16,
                     ),
                   ),
                   trailing: Icon(
@@ -810,8 +839,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                         ? CupertinoIcons.checkmark_circle_fill
                         : CupertinoIcons.circle,
                     color: isSelected
-                        ? AppColors.bottomBarCyan
-                        : Colors.white24,
+                        ? AppColors.primary
+                        : AppColors.textSecondaryLight,
                     size: 18,
                   ),
                 ),
@@ -840,9 +869,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       const Text(
                         'Vùng An Toàn Địa Lý (Geo-Fencing)',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.textPrimaryLight,
                           fontWeight: FontWeight.w600,
-                          fontSize: 13,
+                          fontSize: 16,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -851,7 +880,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                             ? 'Đang chặn các IP và giao dịch ngoài lãnh thổ Việt Nam'
                             : 'Đang cho phép giao dịch quốc tế toàn cầu',
                         style: const TextStyle(
-                            color: Colors.white54, fontSize: 11),
+                            color: AppColors.textSecondaryLight, fontSize: 13),
                       ),
                     ],
                   ),
@@ -870,18 +899,19 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
+                color: AppColors.infoBg,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Row(
                 children: [
                   Icon(CupertinoIcons.airplane,
-                      color: AppColors.bottomBarCyan, size: 16),
+                      color: AppColors.primary, size: 18),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Khi xuất cảnh ra nước ngoài, hãy tắt tính năng này để giao dịch bình thường.',
-                      style: TextStyle(color: Colors.white70, fontSize: 10.5),
+                      style: TextStyle(
+                          color: AppColors.textSecondaryLight, fontSize: 13),
                     ),
                   ),
                 ],
@@ -900,18 +930,19 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         children: [
           SwitchListTile.adaptive(
             value: _twoFactorAuth,
-            activeTrackColor: AppColors.bottomBarCyan,
+            activeTrackColor: AppColors.primary,
             title: const Text(
               'Xác thực 2 lớp (2FA)',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.white,
+                fontSize: 16,
+                color: AppColors.textPrimaryLight,
               ),
             ),
             subtitle: const Text(
               'Yêu cầu Smart OTP khi đăng nhập từ thiết bị lạ',
-              style: TextStyle(fontSize: 11, color: Colors.white54),
+              style:
+                  TextStyle(fontSize: 16, color: AppColors.textSecondaryLight),
             ),
             onChanged: (v) {
               HapticFeedback.selectionClick();
@@ -921,18 +952,19 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           _buildDivider(),
           SwitchListTile.adaptive(
             value: _pinLockApp,
-            activeTrackColor: AppColors.bottomBarCyan,
+            activeTrackColor: AppColors.primary,
             title: const Text(
               'Tự động khóa app khi rời màn hình',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Colors.white,
+                fontSize: 16,
+                color: AppColors.textPrimaryLight,
               ),
             ),
             subtitle: const Text(
               'Yêu cầu FaceID hoặc PIN mỗi khi mở lại ứng dụng',
-              style: TextStyle(fontSize: 11, color: Colors.white54),
+              style:
+                  TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
             ),
             onChanged: (v) {
               HapticFeedback.selectionClick();
@@ -945,21 +977,22 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             child: ListTile(
               onTap: () => context.push('/settings/devices'),
               leading: const Icon(CupertinoIcons.device_phone_portrait,
-                  color: AppColors.bottomBarCyan, size: 22),
+                  color: AppColors.primary, size: 22),
               title: const Text(
                 'Quản lý thiết bị đăng nhập',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: Colors.white,
+                  fontSize: 16,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Quản lý phiên đăng nhập và thiết bị tin cậy',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textSecondaryLight, size: 16),
             ),
           ),
         ],
@@ -979,16 +1012,17 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 'Đổi mật khẩu đăng nhập',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: Colors.white,
+                  fontSize: 16,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Nên đổi mật khẩu định kỳ 90 ngày để an toàn tài khoản',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textSecondaryLight, size: 16),
               onTap: _showChangePasswordModal,
             ),
           ),
@@ -1000,16 +1034,17 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 'Đổi mã PIN giao dịch 6 số',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: Colors.white,
+                  fontSize: 16,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Mã PIN bảo mật dùng để ký duyệt mọi lệnh chuyển và rút tiền',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textSecondaryLight, size: 16),
               onTap: () => context.push('/settings/change-pin'),
             ),
           ),
@@ -1021,16 +1056,17 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 'Quên mã PIN giao dịch?',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: AppColors.bottomBarCyan,
+                  fontSize: 16,
+                  color: AppColors.primary,
                 ),
               ),
               subtitle: const Text(
                 'Xác minh Face Match để cấp lại mã PIN trực tuyến tức thì',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textSecondaryLight, size: 16),
               onTap: () => context.push('/auth/forgot-pin'),
             ),
           ),
@@ -1042,16 +1078,17 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 'Xác thực Chip CCCD qua NFC',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
-                  color: Colors.white,
+                  fontSize: 16,
+                  color: AppColors.textPrimaryLight,
                 ),
               ),
               subtitle: const Text(
                 'Đọc chip bảo mật C06 BCA theo chuẩn Quyết định 2345',
-                style: TextStyle(fontSize: 11, color: Colors.white54),
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.textSecondaryLight),
               ),
               trailing: const Icon(CupertinoIcons.chevron_forward,
-                  color: Colors.white38, size: 16),
+                  color: AppColors.textSecondaryLight, size: 16),
               onTap: () => context.push('/profile/nfc-reader'),
             ),
           ),
@@ -1062,15 +1099,27 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
   Widget _buildSecurityAuditLogCard() {
     final auditLogs = [
-      {'title': 'Quét quyền trợ năng (Accessibility)', 'status': 'AN TOÀN', 'time': 'Hôm nay - 14:30'},
-      {'title': 'Kiểm tra phần mềm quay lén màn hình', 'status': 'KHÔNG CÓ', 'time': 'Hôm qua - 09:15'},
-      {'title': 'Kiểm tra Root / Magisk / Jailbreak', 'status': 'CHUẨN GỐC', 'time': '01/09/2026'},
+      {
+        'title': 'Quét quyền trợ năng (Accessibility)',
+        'status': 'AN TOÀN',
+        'time': 'Hôm nay - 14:30'
+      },
+      {
+        'title': 'Kiểm tra phần mềm quay lén màn hình',
+        'status': 'KHÔNG CÓ',
+        'time': 'Hôm qua - 09:15'
+      },
+      {
+        'title': 'Kiểm tra Root / Magisk / Jailbreak',
+        'status': 'CHUẨN GỐC',
+        'time': '01/09/2026'
+      },
     ];
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0C1929).withValues(alpha: 0.8),
+        color: AppColors.deepNavy.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
@@ -1081,19 +1130,25 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      log['title']!,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                    Text(
-                      log['time']!,
-                      style: const TextStyle(color: Colors.white38, fontSize: 10),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        log['title']!,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                      Text(
+                        log['time']!,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            const TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1104,7 +1159,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   child: Text(
                     log['status']!,
                     style: const TextStyle(
-                      color: AppColors.emeraldGreen,
+                      color: AppColors.emeraldGreenLight,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1133,32 +1188,32 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             shape: BoxShape.circle,
           ),
           child: const Icon(CupertinoIcons.lock_shield_fill,
-              color: AppColors.error, size: 22),
+              color: AppColors.errorText, size: 22),
         ),
         title: const Text(
           'Khóa Khẩn Cấp Toàn Bộ Tài Khoản & Thẻ',
           style: TextStyle(
-            color: AppColors.error,
+            color: AppColors.errorText,
             fontWeight: FontWeight.bold,
-            fontSize: 13.5,
+            fontSize: 16,
           ),
         ),
         subtitle: const Text(
           'Kích hoạt trong 30 giây khi nghi ngờ bị lừa đảo hoặc thất lạc máy',
-          style: TextStyle(fontSize: 11, color: Colors.white54),
+          style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
         ),
         trailing: const Icon(CupertinoIcons.chevron_forward,
-            color: AppColors.error, size: 16),
+            color: AppColors.errorText, size: 18),
       ),
     );
   }
 
   Widget _buildDivider() {
-    return Divider(
+    return const Divider(
       height: 1,
       indent: 16,
       endIndent: 16,
-      color: Colors.white.withValues(alpha: 0.08),
+      color: AppColors.borderLight,
     );
   }
 }

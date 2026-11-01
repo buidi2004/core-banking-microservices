@@ -16,7 +16,8 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchCtrl = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   String _query = '';
-  int _selectedFilterIdx = 0; // 0: Tat ca, 1: Dich vu, 2: Thu huong, 3: Huong dan
+  int _selectedFilterIdx =
+      0; // 0: Tat ca, 1: Dich vu, 2: Thu huong, 3: Huong dan
 
   @override
   void initState() {
@@ -215,14 +216,16 @@ class _SearchScreenState extends State<SearchScreen> {
           focusNode: _focusNode,
           autofocus: false,
           onChanged: (val) => setState(() => _query = val),
-          style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 16),
+          style:
+              const TextStyle(color: AppColors.textPrimaryLight, fontSize: 16),
           decoration: InputDecoration(
             hintText: 'Tìm chức năng, dịch vụ, hóa đơn, CCCD...',
             hintStyle: const TextStyle(color: AppColors.textMutedLight),
             border: InputBorder.none,
             suffixIcon: _query.isNotEmpty
                 ? IconButton(
-                    icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textMutedLight, size: 18),
+                    icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                        color: AppColors.textMutedLight, size: 18),
                     onPressed: () {
                       _searchCtrl.clear();
                       setState(() => _query = '');
@@ -255,7 +258,8 @@ class _SearchScreenState extends State<SearchScreen> {
             // Body list
             Expanded(
               child: ListView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
                 children: [
@@ -275,14 +279,20 @@ class _SearchScreenState extends State<SearchScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            _query.isEmpty ? 'Tất cả chức năng ngân hàng' : 'Kết quả tìm kiếm (${_results.length})',
-                            style: AppTypography.titleMedium(color: AppColors.primaryDark),
+                            _query.isEmpty
+                                ? 'Tất cả chức năng ngân hàng'
+                                : 'Kết quả tìm kiếm (${_results.length})',
+                            style: AppTypography.titleMedium(
+                                color: AppColors.primaryDark),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (_results.isEmpty) ...[
                           const SizedBox(width: 8),
-                          const Text('Không có kết quả', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 12)),
+                          const Text('Không có kết quả',
+                              style: TextStyle(
+                                  color: AppColors.textSecondaryLight,
+                                  fontSize: 12)),
                         ],
                       ],
                     ),
@@ -295,11 +305,18 @@ class _SearchScreenState extends State<SearchScreen> {
                       alignment: Alignment.center,
                       child: Column(
                         children: [
-                          const Icon(CupertinoIcons.search, size: 48, color: AppColors.textMutedLight),
+                          const Icon(CupertinoIcons.search,
+                              size: 48, color: AppColors.textMutedLight),
                           const SizedBox(height: 12),
-                          Text('Không tìm thấy kết quả cho "$_query"', style: const TextStyle(color: AppColors.textSecondaryLight)),
+                          Text('Không tìm thấy kết quả cho "$_query"',
+                              style: const TextStyle(
+                                  color: AppColors.textSecondaryLight)),
                           const SizedBox(height: 6),
-                          const Text('Thử tìm bằng từ khóa khác như "chuyển tiền", "điện", "tiết kiệm"', style: TextStyle(color: AppColors.textMutedLight, fontSize: 12)),
+                          const Text(
+                              'Thử tìm bằng từ khóa khác như "chuyển tiền", "điện", "tiết kiệm"',
+                              style: TextStyle(
+                                  color: AppColors.textMutedLight,
+                                  fontSize: 12)),
                         ],
                       ),
                     )
@@ -318,16 +335,29 @@ class _SearchScreenState extends State<SearchScreen> {
     final isSelected = _selectedFilterIdx == index;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? Colors.white : AppColors.textPrimaryLight)),
-        selected: isSelected,
-        selectedColor: AppColors.primary,
-        backgroundColor: AppColors.dividerLight,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isSelected ? AppColors.primary : AppColors.borderLight)),
-        onSelected: (_) {
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
           HapticFeedback.selectionClick();
           setState(() => _selectedFilterIdx = index);
         },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: isSelected ? AppColors.primary : AppColors.borderLight),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? Colors.white : AppColors.textPrimaryLight,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -339,13 +369,28 @@ class _SearchScreenState extends State<SearchScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text('Tìm kiếm gần đây', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
+            const Expanded(
+              child: Text(
+                'Tìm kiếm gần đây',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: AppColors.textPrimaryLight),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
             InkWell(
               onTap: () {
                 HapticFeedback.mediumImpact();
                 setState(() => _recentSearches.clear());
               },
-              child: const Text('Xóa lịch sử', style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.w600)),
+              child: const Text('Xóa lịch sử',
+                  style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600)),
             ),
           ],
         ),
@@ -358,7 +403,8 @@ class _SearchScreenState extends State<SearchScreen> {
               onTap: () => _applyKeyword(item),
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: AppColors.dividerLight,
                   borderRadius: BorderRadius.circular(10),
@@ -367,9 +413,12 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(CupertinoIcons.clock, size: 14, color: AppColors.textSecondaryLight),
+                    const Icon(CupertinoIcons.clock,
+                        size: 14, color: AppColors.textSecondaryLight),
                     const SizedBox(width: 6),
-                    Text(item, style: const TextStyle(fontSize: 12, color: AppColors.textPrimaryLight)),
+                    Text(item,
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.textPrimaryLight)),
                   ],
                 ),
               ),
@@ -388,7 +437,11 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             Icon(CupertinoIcons.flame_fill, size: 16, color: AppColors.primary),
             SizedBox(width: 6),
-            Text('Xu hướng tìm kiếm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
+            Text('Xu hướng tìm kiếm',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: AppColors.textPrimaryLight)),
           ],
         ),
         const SizedBox(height: 8),
@@ -397,9 +450,15 @@ class _SearchScreenState extends State<SearchScreen> {
           runSpacing: 8,
           children: _trendingKeywords.map((kw) {
             return ActionChip(
-              label: Text(kw, style: const TextStyle(fontSize: 12, color: AppColors.primaryDark, fontWeight: FontWeight.w500)),
+              label: Text(kw,
+                  style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.primaryDark,
+                      fontWeight: FontWeight.w500)),
               backgroundColor: AppColors.surfaceLight,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10), side: const BorderSide(color: AppColors.borderSubtle)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: AppColors.borderSubtle)),
               onPressed: () => _applyKeyword(kw),
             );
           }).toList(),
@@ -427,7 +486,8 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Material(
           type: MaterialType.transparency,
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             onTap: () {
               HapticFeedback.lightImpact();
               context.push(f['route'] as String);
@@ -439,32 +499,49 @@ class _SearchScreenState extends State<SearchScreen> {
                 color: AppColors.primary.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(f['icon'] as IconData, color: AppColors.primary, size: 22),
+              child: Icon(f['icon'] as IconData,
+                  color: AppColors.primary, size: 22),
             ),
             title: Row(
               children: [
                 Expanded(
                   child: Text(
                     f['title'] as String,
-                    style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.titleMedium(
+                            color: AppColors.textPrimaryLight)
+                        .copyWith(fontSize: 14),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.dividerLight,
-                    borderRadius: BorderRadius.circular(6),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.dividerLight,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(f['category'] as String,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textSecondaryLight)),
                   ),
-                  child: Text(f['category'] as String, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondaryLight)),
                 ),
               ],
             ),
-            subtitle: Text(f['sub'] as String, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-            trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+            subtitle: Text(f['sub'] as String,
+                style: AppTypography.bodySmall(
+                    color: AppColors.textSecondaryLight)),
+            trailing: const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 16),
           ),
         ),
       ),
     );
   }
 }
-

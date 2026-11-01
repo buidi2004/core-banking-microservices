@@ -25,19 +25,22 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     {
       'sender': 'agent',
       'name': 'CSKH Sen Hồng (Thu Hằng)',
-      'text': 'Xin chào quý khách! Em là chuyên viên hỗ trợ trực tuyến 24/7 của Ví Sen Hồng. Em có thể hỗ trợ gì cho quý khách ạ?',
+      'text':
+          'Xin chào quý khách! Em là chuyên viên hỗ trợ trực tuyến 24/7 của Ví Sen Hồng. Em có thể hỗ trợ gì cho quý khách ạ?',
       'time': '10:30',
     },
     {
       'sender': 'user',
       'name': 'Tôi',
-      'text': 'Chào bạn, cho mình hỏi giao dịch chuyển tiền Napas 247 hạn mức tối đa một ngày là bao nhiêu vậy?',
+      'text':
+          'Chào bạn, cho mình hỏi giao dịch chuyển tiền Napas 247 hạn mức tối đa một ngày là bao nhiêu vậy?',
       'time': '10:31',
     },
     {
       'sender': 'agent',
       'name': 'CSKH Sen Hồng (Thu Hằng)',
-      'text': 'Dạ hiện tại tài khoản của quý khách đã hoàn tất eKYC Cấp 2, hạn mức chuyển tiền liên ngân hàng là 100.000.000đ/ngày. Nếu cần nâng lên 500.000.000đ, quý khách chỉ cần kích hoạt Chữ ký số Smart OTP tại mục Hồ sơ cá nhân ạ!',
+      'text':
+          'Dạ hiện tại tài khoản của quý khách đã hoàn tất eKYC Cấp 2, hạn mức chuyển tiền liên ngân hàng là 100.000.000đ/ngày. Nếu cần nâng lên 500.000.000đ, quý khách chỉ cần kích hoạt Chữ ký số Smart OTP tại mục Hồ sơ cá nhân ạ!',
       'time': '10:32',
     },
   ];
@@ -71,7 +74,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         _messages.add({
           'sender': 'agent',
           'name': 'Trợ Lý Tự Động',
-          'text': 'Cảm ơn quý khách đã gửi thông tin. Kênh Live Chat trực tiếp với chuyên viên CSKH đang trong giai đoạn nâng cấp. Quý khách vui lòng tạo Ticket hỗ trợ hoặc gọi Hotline 1900 8888 để được hỗ trợ 24/7.',
+          'text':
+              'Cảm ơn quý khách đã gửi thông tin. Kênh Live Chat trực tiếp với chuyên viên CSKH đang trong giai đoạn nâng cấp. Quý khách vui lòng tạo Ticket hỗ trợ hoặc gọi Hotline 1900 8888 để được hỗ trợ 24/7.',
           'time': 'Vừa xong',
         });
       });
@@ -103,22 +107,35 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                 CircleAvatar(
                   radius: 18,
                   backgroundColor: AppColors.primaryDark,
-                  child: Icon(CupertinoIcons.person_fill, color: Colors.white, size: 20),
+                  child: Icon(CupertinoIcons.person_fill,
+                      color: Colors.white, size: 20),
                 ),
                 Positioned(
                   bottom: 0,
                   right: 0,
-                  child: CircleAvatar(radius: 5, backgroundColor: AppColors.emeraldGreen),
+                  child: CircleAvatar(
+                      radius: 5, backgroundColor: AppColors.emeraldGreen),
                 ),
               ],
             ),
             SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('CSKH Sen Hồng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text('Trực tuyến 24/7 • Phản hồi tức thì', style: TextStyle(fontSize: 11, color: AppColors.emeraldGreenLight)),
-              ],
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('CSKH Sen Hồng',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Trực tuyến 24/7 • Phản hồi tức thì',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 11, color: AppColors.successTextLight),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -133,12 +150,14 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               color: AppColors.primary.withOpacity(0.08),
               child: const Row(
                 children: [
-                  Icon(CupertinoIcons.info_circle_fill, size: 16, color: AppColors.primary),
+                  Icon(CupertinoIcons.info_circle_fill,
+                      size: 16, color: AppColors.primary),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Kênh Trợ Lý Tự Động. Kênh kết nối trực tiếp chuyên viên CSKH đang được phát triển.',
-                      style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textSecondaryLight),
                     ),
                   ),
                 ],
@@ -148,7 +167,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               child: ListView.builder(
                 controller: _scrollCtrl,
                 physics: const AlwaysScrollableScrollPhysics(),
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.all(16),
                 itemCount: _messages.length + (_isAgentTyping ? 1 : 0),
                 itemBuilder: (context, idx) {
@@ -157,7 +177,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       alignment: Alignment.centerLeft,
                       child: Container(
                         margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: const BorderRadius.only(
@@ -180,13 +201,17 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           children: [
                             Text(
                               'Thu Hằng đang soạn phản hồi',
-                              style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight, fontStyle: FontStyle.italic),
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondaryLight,
+                                  fontStyle: FontStyle.italic),
                             ),
                             SizedBox(width: 8),
                             SizedBox(
                               width: 12,
                               height: 12,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryText),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: AppColors.primaryText),
                             ),
                           ],
                         ),
@@ -196,11 +221,14 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                   final msg = _messages[idx];
                   final isUser = msg['sender'] == 'user';
                   return Align(
-                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment:
+                        isUser ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 12),
-                      constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.78),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
                         gradient: isUser ? AppColors.primaryGradient : null,
                         color: isUser ? null : Colors.white,
@@ -210,27 +238,38 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           bottomLeft: Radius.circular(isUser ? 16 : 4),
                           bottomRight: Radius.circular(isUser ? 4 : 16),
                         ),
-                        border: isUser ? null : Border.all(color: AppColors.borderLight),
+                        border: isUser
+                            ? null
+                            : Border.all(color: AppColors.borderLight),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(isUser ? 0.15 : 0.05),
+                            color:
+                                Colors.black.withOpacity(isUser ? 0.15 : 0.05),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Column(
-                        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                        crossAxisAlignment: isUser
+                            ? CrossAxisAlignment.end
+                            : CrossAxisAlignment.start,
                         children: [
                           if (!isUser)
                             Padding(
                               padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(msg['name']!, style: const TextStyle(fontSize: 11, color: AppColors.primaryText, fontWeight: FontWeight.bold)),
+                              child: Text(msg['name']!,
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.primaryText,
+                                      fontWeight: FontWeight.bold)),
                             ),
                           Text(
                             msg['text']!,
                             style: TextStyle(
-                              color: isUser ? AppColors.textPrimaryLight : AppColors.textPrimaryLight,
+                              color: isUser
+                                  ? Colors.white
+                                  : AppColors.textPrimaryLight,
                               fontSize: 14,
                               height: 1.35,
                             ),
@@ -238,7 +277,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           const SizedBox(height: 4),
                           Text(
                             msg['time']!,
-                            style: TextStyle(color: isUser ? AppColors.textSecondaryLight : AppColors.textMutedLight, fontSize: 10),
+                            style: TextStyle(
+                              color: isUser
+                                  ? Colors.white.withOpacity(0.82)
+                                  : AppColors.textSecondaryLight,
+                              fontSize: 10,
+                            ),
                           ),
                         ],
                       ),
@@ -259,7 +303,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     child: ActionChip(
                       backgroundColor: Colors.white,
                       side: const BorderSide(color: AppColors.borderLight),
-                      label: Text(qr, style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w500)),
+                      label: Text(qr,
+                          style: const TextStyle(
+                              color: AppColors.textPrimaryLight,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500)),
                       onPressed: () => _sendMessage(qr),
                     ),
                   );
@@ -277,11 +325,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(CupertinoIcons.paperclip, color: AppColors.primaryText),
+                    icon: const Icon(CupertinoIcons.paperclip,
+                        color: AppColors.primaryText),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Đã chọn tệp đính kèm hóa đơn/biên lai'),
+                          content:
+                              Text('Đã chọn tệp đính kèm hóa đơn/biên lai'),
                           duration: Duration(seconds: 1),
                         ),
                       );
@@ -293,12 +343,20 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       style: const TextStyle(color: AppColors.textPrimaryLight),
                       decoration: InputDecoration(
                         hintText: 'Nhập tin nhắn hỗ trợ...',
-                        hintStyle: const TextStyle(color: AppColors.textMutedLight),
+                        hintStyle:
+                            const TextStyle(color: AppColors.textMutedLight),
                         filled: true,
                         fillColor: AppColors.surfaceLight,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: AppColors.borderLight)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: const BorderSide(color: AppColors.borderLight)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide:
+                                const BorderSide(color: AppColors.borderLight)),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide:
+                                const BorderSide(color: AppColors.borderLight)),
                       ),
                       onSubmitted: _sendMessage,
                     ),
@@ -317,7 +375,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       ],
                     ),
                     child: IconButton(
-                      icon: const Icon(CupertinoIcons.paperplane_fill, color: AppColors.textPrimaryLight, size: 18),
+                      icon: const Icon(CupertinoIcons.paperplane_fill,
+                          color: Colors.white, size: 18),
                       onPressed: () => _sendMessage(_msgCtrl.text),
                     ),
                   ),

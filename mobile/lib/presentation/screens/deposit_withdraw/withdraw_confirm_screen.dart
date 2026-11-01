@@ -47,7 +47,9 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
 
   Future<void> _loadHolderName() async {
     try {
-      final cachedName = await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyFullName);
+      final cachedName = await AppSecureStorage.safeRead(
+          AppSecureStorage.instance,
+          key: AppConstants.keyFullName);
       if (cachedName != null && cachedName.isNotEmpty && mounted) {
         setState(() => _holderName = cachedName.toUpperCase());
       }
@@ -143,7 +145,8 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                   children: [
                     const InlineWarningBanner(
                       title: 'Lưu ý an toàn rút tiền',
-                      message: 'Tiền chỉ được rút về tài khoản ngân hàng chính chủ. Quý khách vui lòng kiểm tra chính xác số tài khoản trước khi nhập mã PIN.',
+                      message:
+                          'Tiền chỉ được rút về tài khoản ngân hàng chính chủ. Quý khách vui lòng kiểm tra chính xác số tài khoản trước khi nhập mã PIN.',
                       type: AlertType.info,
                     ),
                     const SizedBox(height: 14),
@@ -155,28 +158,34 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                         padding: const EdgeInsets.all(20),
                         child: Column(
                           children: [
-                            Text('Số tiền rút về tài khoản', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                            Text('Số tiền rút về tài khoản',
+                                style: AppTypography.bodySmall(
+                                    color: AppColors.textSecondaryLight)),
                             const SizedBox(height: 6),
                             Text(
                               CurrencyFormatter.formatVND(widget.amount),
                               style: const TextStyle(
-                                color: AppColors.primaryLight,
+                                color: AppColors.successTextLight,
                                 fontSize: 32,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-                            const Divider(height: 28, color: AppColors.cardBorderLight),
+                            const Divider(
+                                height: 28, color: AppColors.cardBorderLight),
                             _buildRow('Ngân hàng nhận', widget.bank),
                             const SizedBox(height: 10),
                             _buildRow('Số tài khoản', widget.acc),
                             const SizedBox(height: 10),
                             _buildRow('Người thụ hưởng', _holderName),
                             const SizedBox(height: 10),
-                            _buildRow('Kênh chuyển mạch', 'NAPAS 24/7 Realtime'),
+                            _buildRow(
+                                'Kênh chuyển mạch', 'NAPAS 24/7 Realtime'),
                             const SizedBox(height: 10),
-                            _buildRow('Phí dịch vụ', 'Miễn phí (0đ)', isHighlight: true),
+                            _buildRow('Phí dịch vụ', 'Miễn phí (0đ)',
+                                isHighlight: true),
                             const SizedBox(height: 10),
-                            _buildRow('Thời gian nhận', 'Tức thời (trong 30 giây)'),
+                            _buildRow(
+                                'Thời gian nhận', 'Tức thời (trong 30 giây)'),
                           ],
                         ),
                       ),
@@ -192,34 +201,64 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(CupertinoIcons.chart_pie_fill, color: AppColors.primaryText, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Hạn mức rút tiền trong ngày', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
-                                  ],
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(CupertinoIcons.chart_pie_fill,
+                                          color: AppColors.primaryText, size: 18),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text('Hạn mức rút tiền trong ngày',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: AppColors.textPrimaryLight)),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                Text('50.000.000 đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryText)),
+                                SizedBox(width: 8),
+                                Text('50.000.000 đ',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: AppColors.primaryText)),
                               ],
                             ),
                             const SizedBox(height: 10),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(6),
                               child: LinearProgressIndicator(
-                                value: ((widget.amount + 5000000) / 50000000).clamp(0.05, 1.0),
+                                value: ((widget.amount + 5000000) / 50000000)
+                                    .clamp(0.05, 1.0),
                                 backgroundColor: AppColors.dividerLight,
-                                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emeraldGreen),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    AppColors.emeraldGreen),
                                 minHeight: 6,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Giao dịch này: ${CurrencyFormatter.formatVND(widget.amount)}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
-                                const Text('Còn lại: 45.000.000 đ', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.successTextLight)),
+                                Expanded(
+                                  child: Text(
+                                      'Giao dịch này: ${CurrencyFormatter.formatVND(widget.amount)}',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondaryLight)),
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text('Còn lại: 45.000.000 đ',
+                                      textAlign: TextAlign.right,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.successTextLight)),
+                                ),
                               ],
                             ),
                           ],
@@ -230,7 +269,8 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
 
                     // Security & Regulatory Compliance Card
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(14),
@@ -240,12 +280,15 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(CupertinoIcons.lock_shield_fill, color: AppColors.successTextLight, size: 16),
+                              Icon(CupertinoIcons.lock_shield_fill,
+                                  color: AppColors.successTextLight, size: 16),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Giao dịch được mã hóa an toàn qua Smart OTP PKI và xác thực đa yếu tố theo QĐ 2345/QĐ-NHNN.',
-                                  style: TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
+                                  style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppColors.textSecondaryLight),
                                 ),
                               ),
                             ],
@@ -253,12 +296,15 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                           SizedBox(height: 6),
                           Row(
                             children: [
-                              Icon(CupertinoIcons.info_circle_fill, color: AppColors.primaryText, size: 16),
+                              Icon(CupertinoIcons.info_circle_fill,
+                                  color: AppColors.primaryText, size: 16),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Lưu ý: Chỉ rút tiền về tài khoản ngân hàng chính chủ trùng tên với tài khoản SenBank.',
-                                  style: TextStyle(fontSize: 11, color: AppColors.textMutedLight),
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textMutedLight),
                                 ),
                               ),
                             ],
@@ -268,7 +314,10 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    Text('Nhập mã PIN hoặc xác thực FaceID để ký lệnh rút tiền', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600)),
+                    Text('Nhập mã PIN hoặc xác thực FaceID để ký lệnh rút tiền',
+                        style: AppTypography.titleMedium(
+                                color: AppColors.textPrimaryLight)
+                            .copyWith(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
 
                     Row(
@@ -281,42 +330,62 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                           height: 16,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isFilled ? AppColors.primary : Colors.transparent,
-                            border: Border.all(color: isFilled ? AppColors.primary : AppColors.textMutedLight, width: 2),
+                            color: isFilled
+                                ? AppColors.primary
+                                : Colors.transparent,
+                            border: Border.all(
+                                color: isFilled
+                                    ? AppColors.primary
+                                    : AppColors.textMutedLight,
+                                width: 2),
                           ),
                         );
                       }),
                     ),
                     const SizedBox(height: 10),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _handleBiometric,
-                          icon: const Icon(CupertinoIcons.viewfinder_circle_fill, color: Colors.white, size: 18),
-                          label: const Text('Sinh trắc học', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 12)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.emeraldGreen,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _handleBiometric,
+                            icon: const Icon(
+                                CupertinoIcons.viewfinder_circle_fill,
+                                color: Colors.white,
+                                size: 18),
+                            label: const Text('Sinh trắc học',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.successTextLight,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        TextButton(
-                          onPressed: () => context.push('/auth/forgot-pin'),
-                          child: const Text(
-                            'Quên mã PIN?',
-                            style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13),
+                          const SizedBox(width: 12),
+                          TextButton(
+                            onPressed: () => context.push('/auth/forgot-pin'),
+                            child: const Text(
+                              'Quên mã PIN?',
+                              style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.all(32),
@@ -347,10 +416,14 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.emeraldGreen.withOpacity(0.12),
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.4), width: 1.2),
+                              border: Border.all(
+                                  color:
+                                      AppColors.emeraldGreen.withOpacity(0.4),
+                                  width: 1.2),
                             ),
                             child: const Center(
-                              child: Icon(CupertinoIcons.viewfinder_circle_fill, color: AppColors.successTextLight, size: 26),
+                              child: Icon(CupertinoIcons.viewfinder_circle_fill,
+                                  color: AppColors.successTextLight, size: 26),
                             ),
                           ),
                         ),
@@ -359,7 +432,8 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                           width: 68,
                           height: 68,
                           child: IconButton(
-                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryText, size: 26),
+                            icon: const Icon(CupertinoIcons.delete_left_fill,
+                                color: AppColors.primaryText, size: 26),
                             onPressed: _handleBackspace,
                           ),
                         ),
@@ -378,16 +452,24 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
+        Expanded(
+          flex: 5,
+          child: Text(label,
+              style: AppTypography.bodyMedium(
+                  color: AppColors.textSecondaryLight)),
+        ),
         const SizedBox(width: 12),
-        Flexible(
+        Expanded(
+          flex: 6,
           child: Text(
             value,
             textAlign: TextAlign.right,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.titleMedium(
-              color: isHighlight ? AppColors.successTextLight : AppColors.textPrimaryLight,
+              color: isHighlight
+                  ? AppColors.successTextLight
+                  : AppColors.textPrimaryLight,
             ),
           ),
         ),
@@ -424,7 +506,10 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
         child: Center(
           child: Text(
             label,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+            style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimaryLight),
           ),
         ),
       ),

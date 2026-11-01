@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -20,6 +22,11 @@ class SmoothFintechPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    // Tôn trọng thiết lập "Giảm chuyển động" (Reduce Motion) của iOS/Android.
+    if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+      return child;
+    }
+
     final primaryCurve = CurvedAnimation(
       parent: animation,
       curve: _fluidCurve,
@@ -116,6 +123,11 @@ abstract final class AppPageTransitions {
   // Đường cong chuyển động êm dịu đồng nhất cho toàn app
   static const Curve fluidCurve = Cubic(0.16, 1.0, 0.3, 1.0);
 
+  /// Trên iOS luôn trả về [CupertinoPage] để giữ gesture vuốt-mép-trái quay lại.
+  /// Các hiệu ứng tùy biến chỉ áp dụng cho nền tảng khác.
+  static bool get _useNativeIosPage =>
+      defaultTargetPlatform == TargetPlatform.iOS;
+
   /// Hiệu ứng mở Tìm kiếm (Search Transition):
   /// Nhịp độ 460ms chậm rãi, mượt mà kết hợp trượt nhẹ 10% từ dưới lên và phóng nhẹ (0.96 -> 1.0)
   static Page<T> searchTransition<T>({
@@ -123,12 +135,18 @@ abstract final class AppPageTransitions {
     required LocalKey key,
     Duration duration = const Duration(milliseconds: 460),
   }) {
+    if (_useNativeIosPage) {
+      return CupertinoPage<T>(key: key, child: child);
+    }
     return CustomTransitionPage<T>(
       key: key,
       child: child,
       transitionDuration: duration,
       reverseTransitionDuration: const Duration(milliseconds: 360),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+          return child;
+        }
         final curve = CurvedAnimation(
           parent: animation,
           curve: fluidCurve,
@@ -173,12 +191,18 @@ abstract final class AppPageTransitions {
     required LocalKey key,
     Duration duration = const Duration(milliseconds: 460),
   }) {
+    if (_useNativeIosPage) {
+      return CupertinoPage<T>(key: key, child: child);
+    }
     return CustomTransitionPage<T>(
       key: key,
       child: child,
       transitionDuration: duration,
       reverseTransitionDuration: const Duration(milliseconds: 360),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+          return child;
+        }
         final curve = CurvedAnimation(
           parent: animation,
           curve: fluidCurve,
@@ -223,12 +247,18 @@ abstract final class AppPageTransitions {
     required LocalKey key,
     Duration duration = const Duration(milliseconds: 500),
   }) {
+    if (_useNativeIosPage) {
+      return CupertinoPage<T>(key: key, child: child);
+    }
     return CustomTransitionPage<T>(
       key: key,
       child: child,
       transitionDuration: duration,
       reverseTransitionDuration: const Duration(milliseconds: 360),
       transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        if (MediaQuery.maybeOf(context)?.disableAnimations ?? false) {
+          return child;
+        }
         final curve = CurvedAnimation(
           parent: animation,
           curve: Curves.easeOutBack,

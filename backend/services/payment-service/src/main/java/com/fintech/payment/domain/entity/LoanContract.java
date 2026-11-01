@@ -70,7 +70,16 @@ public class LoanContract {
 
     @Column(name = "status", length = 20, nullable = false)
     @Builder.Default
-    private String status = "DISBURSED";
+    private String status = "PENDING_APPROVAL";
+
+    @Column(name = "approved_by", length = 50)
+    private String approvedBy;
+
+    @Column(name = "approved_at")
+    private Instant approvedAt;
+
+    @Column(name = "reject_reason", length = 255)
+    private String rejectReason;
 
     @Column(name = "disbursed_at")
     private Instant disbursedAt;

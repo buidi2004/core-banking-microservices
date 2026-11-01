@@ -44,7 +44,10 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
       if (token == null || token.isEmpty) return;
 
       final savedPhone = await storage.read(key: AppConstants.keyPhoneNumber);
-      if (savedPhone != null && savedPhone.isNotEmpty && mounted && _accountNumber.isEmpty) {
+      if (savedPhone != null &&
+          savedPhone.isNotEmpty &&
+          mounted &&
+          _accountNumber.isEmpty) {
         setState(() => _accountNumber = savedPhone);
       }
 
@@ -65,7 +68,9 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
   @override
   Widget build(BuildContext context) {
     final title = _displayName.isNotEmpty ? _displayName : 'Quý khách';
-    final sub = _accountNumber.isNotEmpty ? '$_accountNumber • STK: $_accountNumber' : 'Ví Sen Hồng';
+    final sub = _accountNumber.isNotEmpty
+        ? '$_accountNumber • STK: $_accountNumber'
+        : 'Ví Sen Hồng';
 
     return Drawer(
       backgroundColor: AppColors.textPrimaryLight,
@@ -77,12 +82,18 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.balanceCardGradient.colors.first, AppColors.primaryDark, AppColors.primary],
+                  colors: [
+                    AppColors.balanceCardGradient.colors.first,
+                    AppColors.primaryDark,
+                    AppColors.primary
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 border: Border(
-                  bottom: BorderSide(color: AppColors.bottomBarCyan.withOpacity(0.4), width: 1.5),
+                  bottom: BorderSide(
+                      color: AppColors.bottomBarCyan.withOpacity(0.4),
+                      width: 1.5),
                 ),
               ),
               child: Column(
@@ -100,7 +111,8 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
                         },
                       ),
                       IconButton(
-                        icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textSecondaryLight),
+                        icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                            color: AppColors.textSecondaryLight),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -116,12 +128,14 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
                       children: [
                         Text(
                           title,
-                          style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
+                          style: AppTypography.titleLarge(
+                              color: AppColors.textPrimaryLight),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           sub,
-                          style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                          style: AppTypography.bodySmall(
+                              color: AppColors.textSecondaryLight),
                         ),
                       ],
                     ),
@@ -134,15 +148,20 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.emeraldGreen.withOpacity(0.25),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.5)),
+                        border: Border.all(
+                            color: AppColors.emeraldGreen.withOpacity(0.5)),
                       ),
                       child: const Text(
                         'Đã Định Danh eKYC Cấp 2',
-                        style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 11, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: AppColors.textPrimaryLight,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -257,7 +276,8 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
                     }
                   }
                 },
-                icon: const Icon(CupertinoIcons.square_arrow_right_fill, size: 18),
+                icon: const Icon(CupertinoIcons.square_arrow_right_fill,
+                    size: 18),
                 label: const Text('Đăng xuất tài khoản'),
               ),
             ),
@@ -273,14 +293,19 @@ class _SideMenuDrawerState extends State<SideMenuDrawer> {
     required String title,
     required String route,
   }) {
-    return Material(type: MaterialType.transparency, child: ListTile(
-      leading: Icon(icon, color: AppColors.primaryText, size: 20),
-      title: Text(title, style: AppTypography.bodyMedium(color: AppColors.textPrimaryLight)),
-      trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedDark, size: 14),
-      onTap: () {
-        Navigator.pop(context);
-        context.push(route);
-      },
-    ));
+    return Material(
+        type: MaterialType.transparency,
+        child: ListTile(
+          leading: Icon(icon, color: AppColors.primaryText, size: 20),
+          title: Text(title,
+              style:
+                  AppTypography.bodyMedium(color: AppColors.textPrimaryLight)),
+          trailing: const Icon(CupertinoIcons.chevron_forward,
+              color: AppColors.textMutedDark, size: 14),
+          onTap: () {
+            Navigator.pop(context);
+            context.push(route);
+          },
+        ));
   }
 }

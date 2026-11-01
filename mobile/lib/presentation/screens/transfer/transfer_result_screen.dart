@@ -8,6 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/core/theme/apple_hig_tokens.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
@@ -48,10 +49,18 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.status.toUpperCase() == 'SUCCESS') {
+      AppHaptics.success();
+    } else {
+      AppHaptics.error();
+    }
     final now = DateTime.now();
-    _txId = widget.transactionId ?? 'SHB${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.millisecond.toString().padLeft(3, '0')}882';
-    _napasTraceNo = '882${now.second.toString().padLeft(2, '0')}${now.millisecond.toString().padLeft(3, '0')}';
-    _timestamp = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} - ${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
+    _txId = widget.transactionId ??
+        'SHB${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.millisecond.toString().padLeft(3, '0')}882';
+    _napasTraceNo =
+        '882${now.second.toString().padLeft(2, '0')}${now.millisecond.toString().padLeft(3, '0')}';
+    _timestamp =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')} - ${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}';
     _loadSourceAccount();
     _loadPostTransferBalance();
   }
@@ -108,15 +117,28 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Chọn chu kỳ chuyển tiền', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
+        title: const Text('Chọn chu kỳ chuyển tiền',
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimaryLight)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: cycles.map((c) {
               final isSel = _recurringCycle == c;
               return ListTile(
-                title: Text(c, style: TextStyle(fontSize: 13, fontWeight: isSel ? FontWeight.bold : FontWeight.normal, color: isSel ? AppColors.primary : AppColors.textPrimaryLight)),
-                trailing: isSel ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.primary, size: 18) : null,
+                title: Text(c,
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                        color: isSel
+                            ? AppColors.primary
+                            : AppColors.textPrimaryLight)),
+                trailing: isSel
+                    ? const Icon(CupertinoIcons.checkmark_circle_fill,
+                        color: AppColors.primary, size: 18)
+                    : null,
                 onTap: () {
                   setModalState(() => _recurringCycle = c);
                   setState(() => _recurringCycle = c);
@@ -158,12 +180,15 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  const Icon(CupertinoIcons.calendar_today, color: AppColors.primary, size: 24),
+                  const Icon(CupertinoIcons.calendar_today,
+                      color: AppColors.primary, size: 24),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Đặt lịch chuyển tiền định kỳ',
-                      style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                      style: AppTypography.titleMedium(
+                              color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.bold),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -172,23 +197,36 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
               const SizedBox(height: 8),
               Text(
                 'Tự động chuyển ${CurrencyFormatter.formatVND(widget.amount)} đến "${widget.recipient}" theo chu kỳ bạn chọn.',
-                style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                style: AppTypography.bodySmall(
+                    color: AppColors.textSecondaryLight),
               ),
               const SizedBox(height: 16),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: const Icon(CupertinoIcons.repeat, color: AppColors.primary),
-                title: const Text('Chu kỳ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                subtitle: Text(_recurringCycle, style: const TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.bold)),
+                leading:
+                    const Icon(CupertinoIcons.repeat, color: AppColors.primary),
+                title: const Text('Chu kỳ',
+                    style:
+                        TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text(_recurringCycle,
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold)),
                 trailing: const Icon(CupertinoIcons.chevron_forward, size: 16),
                 onTap: () => _showCyclePicker(setModalState),
               ),
               const Divider(height: 1),
               const ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreen),
-                title: Text('Xác thực Smart OTP', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                subtitle: Text('Tự động ký theo QĐ 2345/QĐ-NHNN', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+                leading: Icon(CupertinoIcons.checkmark_shield_fill,
+                    color: AppColors.emeraldGreen),
+                title: Text('Xác thực Smart OTP',
+                    style:
+                        TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                subtitle: Text('Tự động ký theo QĐ 2345/QĐ-NHNN',
+                    style: TextStyle(
+                        fontSize: 12, color: AppColors.textSecondaryLight)),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -196,15 +234,20 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                   Navigator.of(ctx).pop();
                   setState(() => _isRecurringScheduled = true);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Đã thiết lập lịch chuyển tiền định kỳ: $_recurringCycle!')),
+                    SnackBar(
+                        content: Text(
+                            'Đã thiết lập lịch chuyển tiền định kỳ: $_recurringCycle!')),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
                   backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Xác nhận đặt lịch', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: const Text('Xác nhận đặt lịch',
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -236,12 +279,14 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(CupertinoIcons.building_2_fill,
-                        color: AppColors.textPrimaryLight, size: 16),
+                        color: Colors.white, size: 16),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'NGÂN HÀNG SỐ SEN HỒNG',
-                    style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(
+                    style: AppTypography.bodySmall(
+                            color: AppColors.textSecondaryLight)
+                        .copyWith(
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
                     ),
@@ -275,15 +320,21 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: (isSuccess ? AppColors.emeraldGreen : AppColors.error).withOpacity(0.3),
+                      color:
+                          (isSuccess ? AppColors.emeraldGreen : AppColors.error)
+                              .withOpacity(0.3),
                       blurRadius: 18,
                       spreadRadius: 2,
                     ),
                   ],
                 ),
                 child: Icon(
-                  isSuccess ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.xmark_circle_fill,
-                  color: isSuccess ? AppColors.emeraldGreen : AppColors.error,
+                  isSuccess
+                      ? CupertinoIcons.checkmark_circle_fill
+                      : CupertinoIcons.xmark_circle_fill,
+                  color: isSuccess
+                      ? AppColors.successTextLight
+                      : AppColors.errorText,
                   size: 44,
                 ),
               ),
@@ -292,17 +343,22 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
               Text(
                 isSuccess ? 'Giao Dịch Thành Công' : 'Giao Dịch Thất Bại',
                 style: AppTypography.displaySmall(
-                  color: isSuccess ? AppColors.textPrimaryLight : AppColors.error,
+                  color:
+                      isSuccess ? AppColors.textPrimaryLight : AppColors.error,
                 ).copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 4),
-              Text(_timestamp, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+              Text(_timestamp,
+                  style: AppTypography.bodySmall(
+                      color: AppColors.textSecondaryLight)),
               const SizedBox(height: 14),
 
               Text(
                 CurrencyFormatter.formatVND(widget.amount),
                 style: AppTypography.displayLarge(
-                  color: isSuccess ? AppColors.emeraldGreen : AppColors.error,
+                  color: isSuccess
+                      ? AppColors.successTextLight
+                      : AppColors.errorText,
                 ).copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
@@ -324,72 +380,101 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                     children: [
                       // Digital Stamp Watermark Seal
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: (isSuccess ? AppColors.primary : AppColors.error).withOpacity(0.08),
+                          color:
+                              (isSuccess ? AppColors.primary : AppColors.error)
+                                  .withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: (isSuccess ? AppColors.primary : AppColors.error).withOpacity(0.3)),
+                          border: Border.all(
+                              color: (isSuccess
+                                      ? AppColors.primary
+                                      : AppColors.error)
+                                  .withOpacity(0.3)),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isSuccess ? CupertinoIcons.lock_shield_fill : CupertinoIcons.exclamationmark_triangle_fill,
-                              color: isSuccess ? AppColors.primary : AppColors.error,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              isSuccess
-                                  ? 'CHỨNG TỪ ĐIỆN TỬ - SMART OTP XÁC THỰC'
-                                  : 'GIAO DỊCH BỊ TỪ CHỐI BỞI HỆ THỐNG',
-                              style: AppTypography.bodySmall(
-                                color: isSuccess ? AppColors.primary : AppColors.error,
-                              ).copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 10,
-                                letterSpacing: 0.5,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isSuccess
+                                    ? CupertinoIcons.lock_shield_fill
+                                    : CupertinoIcons
+                                        .exclamationmark_triangle_fill,
+                                color: isSuccess
+                                    ? AppColors.primary
+                                    : AppColors.error,
+                                size: 16,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Text(
+                                isSuccess
+                                    ? 'CHỨNG TỪ ĐIỆN TỬ - SMART OTP XÁC THỰC'
+                                    : 'GIAO DỊCH BỊ TỪ CHỐI BỞI HỆ THỐNG',
+                                style: AppTypography.bodySmall(
+                                  color: isSuccess
+                                      ? AppColors.primary
+                                      : AppColors.error,
+                                ).copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 10,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
 
                       // Core Banking Ref
-                      _buildCopyableRow('Mã giao dịch (FT)', _txId, 'Mã giao dịch'),
+                      _buildCopyableRow(
+                          'Mã giao dịch (FT)', _txId, 'Mã giao dịch'),
                       const Divider(height: 16, color: AppColors.dividerLight),
 
                       // Napas Trace
-                      _buildCopyableRow('Mã tham chiếu Napas', _napasTraceNo, 'Mã Napas Trace'),
+                      _buildCopyableRow('Mã tham chiếu Napas', _napasTraceNo,
+                          'Mã Napas Trace'),
                       const Divider(height: 16, color: AppColors.dividerLight),
 
                       // Method
-                      _buildReceiptRow('Phương thức', 'Chuyển tiền nội bộ SenBank 24/7'),
+                      _buildReceiptRow(
+                          'Phương thức', 'Chuyển tiền nội bộ SenBank 24/7'),
                       const Divider(height: 16, color: AppColors.dividerLight),
 
                       // Source Account
-                      _buildReceiptRow('Tài khoản nguồn', '${_sourceAccount.isNotEmpty ? _sourceAccount : 'Tài khoản chính'} (Ví Sen Hồng)'),
+                      _buildReceiptRow('Tài khoản nguồn',
+                          '${_sourceAccount.isNotEmpty ? _sourceAccount : 'Tài khoản chính'} (Ví Sen Hồng)'),
                       const Divider(height: 16, color: AppColors.dividerLight),
 
                       // Recipient
-                      _buildReceiptRow('Người thụ hưởng', widget.recipient.toUpperCase(), isHighlight: true),
-                      if (widget.phoneNumber != null && widget.phoneNumber!.isNotEmpty) ...[
-                        const Divider(height: 16, color: AppColors.dividerLight),
-                        _buildReceiptRow('Tài khoản / SĐT nhận', widget.phoneNumber!),
+                      _buildReceiptRow(
+                          'Người thụ hưởng', widget.recipient.toUpperCase(),
+                          isHighlight: true),
+                      if (widget.phoneNumber != null &&
+                          widget.phoneNumber!.isNotEmpty) ...[
+                        const Divider(
+                            height: 16, color: AppColors.dividerLight),
+                        _buildReceiptRow(
+                            'Tài khoản / SĐT nhận', widget.phoneNumber!),
                       ],
                       const Divider(height: 16, color: AppColors.dividerLight),
 
                       // Bank
-                      _buildReceiptRow('Ngân hàng thụ hưởng', 'Ví Sen Hồng (Nội bộ)'),
+                      _buildReceiptRow(
+                          'Ngân hàng thụ hưởng', 'Ví Sen Hồng (Nội bộ)'),
                       const Divider(height: 16, color: AppColors.dividerLight),
 
                       // Fee
-                      _buildReceiptRow('Phí dịch vụ', '0 đ (Miễn phí)', valueColor: AppColors.emeraldGreen),
+                      _buildReceiptRow('Phí dịch vụ', '0 đ (Miễn phí)',
+                          valueColor: AppColors.successTextLight),
                       const Divider(height: 16, color: AppColors.dividerLight),
 
                       // Note
-                      _buildReceiptRow('Lời nhắn', widget.note.isEmpty ? 'Chuyen tiền' : widget.note),
+                      _buildReceiptRow('Lời nhắn',
+                          widget.note.isEmpty ? 'Chuyen tiền' : widget.note),
                       const Divider(height: 16, color: AppColors.dividerLight),
 
                       // Balance with eye toggle
@@ -398,12 +483,17 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                         children: [
                           Row(
                             children: [
-                              Text('Số dư ví sau GD', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                              Text('Số dư ví sau GD',
+                                  style: AppTypography.bodySmall(
+                                      color: AppColors.textSecondaryLight)),
                               const SizedBox(width: 6),
                               GestureDetector(
-                                onTap: () => setState(() => _isBalanceVisible = !_isBalanceVisible),
+                                onTap: () => setState(() =>
+                                    _isBalanceVisible = !_isBalanceVisible),
                                 child: Icon(
-                                  _isBalanceVisible ? CupertinoIcons.eye_fill : CupertinoIcons.eye_slash_fill,
+                                  _isBalanceVisible
+                                      ? CupertinoIcons.eye_fill
+                                      : CupertinoIcons.eye_slash_fill,
                                   size: 16,
                                   color: AppColors.primary,
                                 ),
@@ -415,12 +505,15 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                             child: Text(
                               _isBalanceVisible
                                   ? (_postTransferBalance != null
-                                      ? CurrencyFormatter.formatVND(_postTransferBalance!)
+                                      ? CurrencyFormatter.formatVND(
+                                          _postTransferBalance!)
                                       : 'Đang cập nhật...')
                                   : '******** đ',
                               textAlign: TextAlign.right,
                               overflow: TextOverflow.ellipsis,
-                              style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600),
+                              style: AppTypography.titleMedium(
+                                      color: AppColors.textPrimaryLight)
+                                  .copyWith(fontWeight: FontWeight.w600),
                             ),
                           ),
                         ],
@@ -439,11 +532,16 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                         child: Row(
                           children: [
                             QrImageView(
-                              data: 'https://verify.senbank.vn/receipt/$_txId?amount=${widget.amount.toInt()}',
+                              data:
+                                  'https://verify.senbank.vn/receipt/$_txId?amount=${widget.amount.toInt()}',
                               version: QrVersions.auto,
                               size: 64,
-                              eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.textPrimaryLight),
-                              dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: AppColors.textPrimaryLight),
+                              eyeStyle: const QrEyeStyle(
+                                  eyeShape: QrEyeShape.square,
+                                  color: AppColors.textPrimaryLight),
+                              dataModuleStyle: const QrDataModuleStyle(
+                                  dataModuleShape: QrDataModuleShape.square,
+                                  color: AppColors.textPrimaryLight),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -452,12 +550,16 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                                 children: [
                                   Text(
                                     'Tra cứu biên lai điện tử',
-                                    style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                                    style: AppTypography.bodySmall(
+                                            color: AppColors.textPrimaryLight)
+                                        .copyWith(fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     'Quét mã QR để tra cứu chứng từ gốc có chữ ký số. Hợp lệ theo Nghị định 52/2024/NĐ-CP.',
-                                    style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 10),
+                                    style: AppTypography.bodySmall(
+                                            color: AppColors.textSecondaryLight)
+                                        .copyWith(fontSize: 10),
                                   ),
                                 ],
                               ),
@@ -478,39 +580,56 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () {
-                        setState(() => _isBeneficiarySaved = !_isBeneficiarySaved);
+                        setState(
+                            () => _isBeneficiarySaved = !_isBeneficiarySaved);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_isBeneficiarySaved ? 'Đã lưu "${widget.recipient}" vào danh bạ tin cậy!' : 'Đã xóa khỏi danh bạ'),
+                            content: Text(_isBeneficiarySaved
+                                ? 'Đã lưu "${widget.recipient}" vào danh bạ tin cậy!'
+                                : 'Đã xóa khỏi danh bạ'),
                             duration: const Duration(seconds: 2),
                           ),
                         );
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 10),
                         decoration: BoxDecoration(
-                          color: _isBeneficiarySaved ? AppColors.emeraldGreen.withOpacity(0.12) : Colors.white.withOpacity(0.85),
+                          color: _isBeneficiarySaved
+                              ? AppColors.emeraldGreen.withOpacity(0.12)
+                              : Colors.white.withOpacity(0.85),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _isBeneficiarySaved ? AppColors.emeraldGreen : AppColors.borderSubtle,
+                            color: _isBeneficiarySaved
+                                ? AppColors.emeraldGreen
+                                : AppColors.borderSubtle,
                           ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              _isBeneficiarySaved ? CupertinoIcons.person_crop_circle_badge_checkmark : CupertinoIcons.person_badge_plus_fill,
+                              _isBeneficiarySaved
+                                  ? CupertinoIcons
+                                      .person_crop_circle_badge_checkmark
+                                  : CupertinoIcons.person_badge_plus_fill,
                               size: 16,
-                              color: _isBeneficiarySaved ? AppColors.emeraldGreen : AppColors.primary,
+                              color: _isBeneficiarySaved
+                                  ? AppColors.emeraldGreen
+                                  : AppColors.primary,
                             ),
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                _isBeneficiarySaved ? 'Đã lưu danh bạ' : 'Lưu thụ hưởng',
+                                _isBeneficiarySaved
+                                    ? 'Đã lưu danh bạ'
+                                    : 'Lưu thụ hưởng',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: _isBeneficiarySaved ? AppColors.emeraldGreen : AppColors.textPrimaryLight,
+                                  color: _isBeneficiarySaved
+                                      ? AppColors.emeraldGreen
+                                      : AppColors.textPrimaryLight,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -525,12 +644,17 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                     child: GestureDetector(
                       onTap: _showScheduleModal,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 10),
                         decoration: BoxDecoration(
-                          color: _isRecurringScheduled ? AppColors.primary.withOpacity(0.12) : Colors.white.withOpacity(0.85),
+                          color: _isRecurringScheduled
+                              ? AppColors.primary.withOpacity(0.12)
+                              : Colors.white.withOpacity(0.85),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _isRecurringScheduled ? AppColors.primary : AppColors.borderSubtle,
+                            color: _isRecurringScheduled
+                                ? AppColors.primary
+                                : AppColors.borderSubtle,
                           ),
                         ),
                         child: Row(
@@ -539,16 +663,22 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                             Icon(
                               CupertinoIcons.calendar_badge_plus,
                               size: 16,
-                              color: _isRecurringScheduled ? AppColors.primary : AppColors.primary,
+                              color: _isRecurringScheduled
+                                  ? AppColors.primary
+                                  : AppColors.primary,
                             ),
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
-                                _isRecurringScheduled ? 'Đã đặt định kỳ' : 'Chuyển định kỳ',
+                                _isRecurringScheduled
+                                    ? 'Đã đặt định kỳ'
+                                    : 'Chuyển định kỳ',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: _isRecurringScheduled ? AppColors.primary : AppColors.textPrimaryLight,
+                                  color: _isRecurringScheduled
+                                      ? AppColors.primary
+                                      : AppColors.textPrimaryLight,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -570,16 +700,20 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Đang tải biên lai điện tử định dạng PDF (kèm chữ ký số SHA-256)...')),
+                          const SnackBar(
+                              content: Text(
+                                  'Đang tải biên lai điện tử định dạng PDF (kèm chữ ký số SHA-256)...')),
                         );
                       },
-                      icon: const Icon(CupertinoIcons.arrow_down_doc_fill, size: 18, color: AppColors.primaryDark),
+                      icon: const Icon(CupertinoIcons.arrow_down_doc_fill,
+                          size: 18, color: AppColors.primaryDark),
                       label: const Text('Tải biên lai PDF'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimaryLight,
                         backgroundColor: Colors.white.withOpacity(0.9),
                         side: const BorderSide(color: AppColors.borderSubtle),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                         padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
                     ),
@@ -589,16 +723,20 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Đang tạo ảnh biên lai bảo mật để chia sẻ...')),
+                          const SnackBar(
+                              content: Text(
+                                  'Đang tạo ảnh biên lai bảo mật để chia sẻ...')),
                         );
                       },
-                      icon: const Icon(CupertinoIcons.share_up, size: 18, color: AppColors.primaryDark),
+                      icon: const Icon(CupertinoIcons.share_up,
+                          size: 18, color: AppColors.primaryDark),
                       label: const Text('Chia sẻ ảnh GD'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimaryLight,
                         backgroundColor: Colors.white.withOpacity(0.9),
                         side: const BorderSide(color: AppColors.borderSubtle),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                         padding: const EdgeInsets.symmetric(vertical: 13),
                       ),
                     ),
@@ -616,7 +754,8 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                   minimumSize: const Size(double.infinity, 50),
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               ),
               const SizedBox(height: 10),
@@ -628,7 +767,8 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                   minimumSize: const Size(double.infinity, 50),
                   foregroundColor: AppColors.primaryDark,
                   side: const BorderSide(color: AppColors.primary, width: 1.5),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16)),
                 ),
               ),
 
@@ -638,7 +778,8 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     children: [
                       _buildRouterTile(
@@ -646,25 +787,37 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                         label: 'Quản lý danh bạ người thụ hưởng',
                         onTap: () => context.push('/beneficiaries'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.clock_fill,
                         label: 'Xem chi tiết giao dịch trong Lịch sử',
                         onTap: () => context.push('/history'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.arrow_right_arrow_left_circle_fill,
                         label: 'Tạo yêu cầu chia tiền nhóm cho khoản này',
                         onTap: () => context.push('/transfer/request'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.qrcode,
                         label: 'Mở mã QR cá nhân nhận tiền chuyển lại',
                         onTap: () => context.push('/my-qr'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.qrcode_viewfinder,
                         label: 'Quét mã VietQR thanh toán khác',
@@ -687,9 +840,16 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+        Expanded(
+          flex: 5,
+          child: Text(
+            label,
+            style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+          ),
+        ),
         const SizedBox(width: 12),
-        Flexible(
+        Expanded(
+          flex: 6,
           child: GestureDetector(
             onTap: () => _copyToClipboard(value, toastLabel),
             behavior: HitTestBehavior.opaque,
@@ -703,14 +863,17 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                     textAlign: TextAlign.right,
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
-                    style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(
+                    style: AppTypography.titleMedium(
+                            color: AppColors.textPrimaryLight)
+                        .copyWith(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Icon(CupertinoIcons.doc_on_doc_fill, size: 15, color: AppColors.primary),
+                const Icon(CupertinoIcons.doc_on_doc_fill,
+                    size: 15, color: AppColors.primary),
               ],
             ),
           ),
@@ -719,19 +882,29 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
     );
   }
 
-  Widget _buildReceiptRow(String label, String value, {bool isHighlight = false, Color? valueColor}) {
+  Widget _buildReceiptRow(String label, String value,
+      {bool isHighlight = false, Color? valueColor}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+        Expanded(
+          flex: 5,
+          child: Text(
+            label,
+            style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+          ),
+        ),
         const SizedBox(width: 12),
-        Flexible(
+        Expanded(
+          flex: 6,
           child: Text(
             value,
             textAlign: TextAlign.right,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.titleMedium(color: valueColor ?? AppColors.textPrimaryLight).copyWith(
+            style: AppTypography.titleMedium(
+                    color: valueColor ?? AppColors.textPrimaryLight)
+                .copyWith(
               fontWeight: isHighlight ? FontWeight.bold : FontWeight.w500,
               fontSize: 13,
             ),
@@ -741,7 +914,10 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -753,14 +929,16 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
             Expanded(
               child: Text(
                 label,
-                style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+                style:
+                    AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                        .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),
     );
   }
 }
-

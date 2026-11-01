@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { Role, CashDeposit, VaultSummary, LedgerBalance, CustomerAccount, LoggedInStaff } from './types';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Role, CashDeposit, VaultSummary, LedgerBalance, CustomerAccount, LoggedInStaff, LoanApplication } from './types';
 import { INITIAL_DEPOSITS, CUSTOMER_ACCOUNTS, STAFF_ACCOUNTS, OPENING_VAULT_BALANCE, MAX_VAULT_LIMIT } from './data';
 import { generateReceiptHash } from './utils';
+import { ApiService } from './api';
 import { RoleSwitcher } from './components/RoleSwitcher';
 import { TellerForm } from './components/TellerForm';
 import { TransferForm } from './components/TransferForm';
@@ -11,20 +12,117 @@ import { TransactionHistory } from './components/TransactionHistory';
 import { DoubleEntryLedger } from './components/DoubleEntryLedger';
 import { ReceiptModal } from './components/ReceiptModal';
 import { LoginForm } from './components/LoginForm';
-import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut } from 'lucide-react';
+import { LoanManagement } from './components/LoanManagement';
+import { AccountManagement } from './components/AccountManagement';
+import { LedgerManagement } from './components/LedgerManagement';
+import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut, Wallet, FileText, RefreshCw, CheckCircle2, Scale, Users } from 'lucide-react';
 import './styles.css';
 
 export default function App() {
-  // Trạng thái đăng nhập cán bộ (Mặc định tự động đăng nhập Teller 1)
-  const [currentStaff, setCurrentStaff] = useState<LoggedInStaff | null>(STAFF_ACCOUNTS[0]);
+  // Trạng thái đăng nhập cán bộ (Khởi tạo từ localStorage nếu có token)
+  const [currentStaff, setCurrentStaff] = useState<LoggedInStaff | null>(() => {
+    try {
+      const saved = localStorage.getItem('senhong_staff_session');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.token) return parsed;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [activeTab, setActiveTab] = useState<'DEPOSIT' | 'LOANS' | 'LEDGER' | 'ACCOUNTS'>('DEPOSIT');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [accounts, setAccounts] = useState<CustomerAccount[]>(CUSTOMER_ACCOUNTS);
   const [deposits, setDeposits] = useState<CashDeposit[]>(INITIAL_DEPOSITS);
+  const [loans, setLoans] = useState<LoanApplication[]>([]);
   const [receiptDeposit, setReceiptDeposit] = useState<CashDeposit | null>(null);
+  const [isOnlineBackend, setIsOnlineBackend] = useState<boolean>(false);
+  const [backendVaultSummary, setBackendVaultSummary] = useState<VaultSummary | null>(null);
 
   const role: Role = currentStaff?.role || 'TELLER';
 
+  // Lưu phiên đăng nhập cán bộ
+  const handleSetStaff = (staff: LoggedInStaff | null) => {
+    setCurrentStaff(staff);
+    if (staff) {
+      try {
+        localStorage.setItem('senhong_staff_session', JSON.stringify(staff));
+      } catch {}
+    } else {
+      localStorage.removeItem('senhong_staff_session');
+    }
+  };
+
+  // Tự động kết nối và xác thực cán bộ teller1 mặc định nếu chưa có phiên
+  useEffect(() => {
+    if (!currentStaff) {
+      ApiService.loginStaff('teller1', 'DemoPass#2026!').then(res => {
+        if (res.success && res.staff) {
+          handleSetStaff(res.staff);
+        }
+      });
+    }
+  }, []);
+
+  // Tải dữ liệu thật từ Backend qua API Gateway
+  const loadBackendData = useCallback(async () => {
+    if (!currentStaff || !currentStaff.token) return;
+    try {
+      // 1. Tải báo cáo két quỹ thực tế từ Backend
+      const vault = await ApiService.fetchVaultSummary(currentStaff);
+      if (vault) {
+        setBackendVaultSummary(vault);
+        setIsOnlineBackend(true);
+      }
+
+      // 2. Tải danh sách nạp quầy từ Backend
+      const realDeposits = await ApiService.fetchDeposits(currentStaff);
+      if (realDeposits.length > 0) {
+        setDeposits(realDeposits);
+        setIsOnlineBackend(true);
+      }
+
+      // 3. Tải danh sách hồ sơ vay chờ duyệt
+      const pendingLoans = await ApiService.fetchPendingLoans(currentStaff);
+      setLoans(pendingLoans);
+      if (pendingLoans.length > 0) {
+        setIsOnlineBackend(true);
+      }
+
+      // 4. Tải danh mục tài khoản ví thật từ Database
+      const adminAccounts = await ApiService.fetchAdminAccounts(currentStaff);
+      if (adminAccounts.length > 0) {
+        const mappedAccounts: CustomerAccount[] = adminAccounts.map(acc => ({
+          accountNumber: acc.accountNumber || acc.walletId,
+          phoneNumber: acc.phoneNumber,
+          citizenId: acc.userId,
+          customerName: acc.customerName,
+          balance: acc.balance,
+          status: acc.status,
+          kycTier: (acc.kycTier as any) || 'VERIFIED_BIOMETRIC',
+          branchName: 'Chi nhánh Quận 1 (TP.HCM)'
+        }));
+        setAccounts(mappedAccounts);
+        setIsOnlineBackend(true);
+      }
+    } catch (e) {
+      console.warn('Backend currently offline or unreachable, using local state:', e);
+      setIsOnlineBackend(false);
+    }
+  }, [currentStaff]);
+
+  useEffect(() => {
+    loadBackendData();
+    // Polling tự động làm mới mỗi 15 giây
+    const timer = setInterval(loadBackendData, 15000);
+    return () => clearInterval(timer);
+  }, [loadBackendData]);
+
   const vaultSummary = useMemo<VaultSummary>(() => {
+    if (backendVaultSummary) return backendVaultSummary;
     const completed = deposits.filter(d => d.status === 'COMPLETED');
     const pending = deposits.filter(d => d.status === 'PENDING_APPROVAL');
     const totalCashIn = completed.reduce((sum, d) => sum + d.amount, 0);
@@ -36,21 +134,27 @@ export default function App() {
       successCount: completed.length,
       pendingCount: pending.length,
     };
-  }, [deposits]);
+  }, [backendVaultSummary, deposits]);
 
   const ledgerBalance = useMemo<LedgerBalance>(() => {
     const total = vaultSummary.totalCashIn;
     return { debit1011: total, credit4211: total, delta: 0 };
   }, [vaultSummary.totalCashIn]);
 
-  const handleRoleSwitch = (newRole: Role) => {
-    const targetStaff = STAFF_ACCOUNTS.find(s => s.role === newRole);
-    if (targetStaff) {
-      setCurrentStaff(targetStaff);
+  // Chuyển đổi vai trò và tự động lấy JWT Token thật tương ứng
+  const handleRoleSwitch = async (newRole: Role) => {
+    const targetUser = newRole === 'TELLER' ? 'teller1' : 'manager1';
+    const authRes = await ApiService.loginStaff(targetUser, 'DemoPass#2026!');
+    if (authRes.success && authRes.staff) {
+      handleSetStaff(authRes.staff);
+    } else {
+      const targetStaff = STAFF_ACCOUNTS.find(s => s.role === newRole);
+      if (targetStaff) handleSetStaff(targetStaff);
     }
   };
 
-  const handleCreateDeposit = (data: {
+  // Lập lệnh nạp tiền tại quầy (Maker)
+  const handleCreateDeposit = async (data: {
     accountNumber: string;
     customerName: string;
     citizenId: string;
@@ -59,11 +163,14 @@ export default function App() {
     note: string;
   }) => {
     if (!currentStaff) return;
+
+    // 1. Gửi lệnh nạp tiền tới Backend API Gateway thực tế
+    const apiResult = await ApiService.createDeposit(currentStaff, data);
     const isAutoApprove = data.amount <= 50_000_000;
-    const code = 'DEP-' + Math.floor(Math.random() * 899999 + 100000);
-    
+    const code = apiResult.data?.depositCode || ('DEP-' + Math.floor(Math.random() * 899999 + 100000));
+
     const newDeposit: CashDeposit = {
-      id: Date.now().toString(),
+      id: apiResult.data?.id || Date.now().toString(),
       code,
       customerName: data.customerName,
       accountNumber: data.accountNumber,
@@ -90,9 +197,15 @@ export default function App() {
       ));
       setReceiptDeposit(newDeposit);
     }
+
+    if (apiResult.success) {
+      // Reload lại từ server
+      setTimeout(loadBackendData, 500);
+    }
   };
 
-  const handleApprove = (id: string) => {
+  // Phê duyệt nạp tiền quầy (Checker)
+  const handleApprove = async (id: string) => {
     if (!currentStaff) return;
     const dep = deposits.find(d => d.id === id);
     if (!dep) return;
@@ -102,6 +215,9 @@ export default function App() {
       alert('⛔ LỖI 403 FORBIDDEN: Quy chuẩn Maker-Checker! Bạn là người lập lệnh (Maker) nên KHÔNG ĐƯỢC PHÉP tự phê duyệt lệnh của chính mình.');
       return;
     }
+
+    // Gọi Backend API phê duyệt
+    const apiResult = await ApiService.approveDeposit(currentStaff, dep.id);
 
     const hash = generateReceiptHash(dep.code, dep.amount, dep.accountNumber);
 
@@ -126,54 +242,46 @@ export default function App() {
       hash,
     };
     setReceiptDeposit(updated);
+
+    if (apiResult.success) {
+      setTimeout(loadBackendData, 500);
+    }
   };
 
-  const handleReject = (id: string) => {
+  // Từ chối nạp tiền quầy (Checker)
+  const handleReject = async (id: string) => {
     const reason = prompt('Nhập lý do từ chối (Tuân thủ phòng chống rửa tiền AML):', 'Nguồn tiền mặt không chứng minh được');
-    if (!reason) return;
+    if (!reason || !currentStaff) return;
+
+    await ApiService.rejectDeposit(currentStaff, id, reason);
     setDeposits(prev => prev.map(d => d.id === id ? { ...d, status: 'REJECTED', rejectionReason: reason } : d));
+    setTimeout(loadBackendData, 500);
   };
 
-  const handleP2PTransfer = (data: {
+  // Chuyển tiền P2P
+  const handleP2PTransfer = async (data: {
     senderPhone: string;
     receiverPhone: string;
     amount: number;
     note: string;
   }) => {
-    // Gọi BE API để thực hiện P2P transfer
-    // Sử dụng fetch thông qua Gateway proxy
-    fetch('http://localhost:8080/api/v1/payments/transfer', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Token sẽ tự động gửi qua proxy hoặc cần auth header
-      },
-      body: JSON.stringify({
-        senderPhone: data.senderPhone,
-        receiverPhone: data.receiverPhone,
-        amount: data.amount,
-        note: data.note || 'Chuyển tiền ví điện tử'
-      })
-    })
-    .then(async response => {
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.message || 'Lỗi không xác định');
-      }
-      // Refresh deposits và transaction history
-      // TODO: Implement proper state refresh
+    if (!currentStaff) {
+      alert('Vui lòng đăng nhập trước khi thực hiện chuyển tiền!');
+      return;
+    }
+
+    const result = await ApiService.transferP2p(currentStaff, data);
+    if (result.success) {
       alert('✅ ' + result.message);
-      console.log('P2P Transfer result:', result);
-    })
-    .catch(error => {
-      console.error('P2P Transfer error:', error);
-      alert('❌ ' + error.message);
-    });
+      loadBackendData();
+    } else {
+      alert('❌ ' + result.message);
+    }
   };
 
   const closeReceipt = () => setReceiptDeposit(null);
 
-  // Nếu chưa đăng nhập -> Hiển thị Màn hình Đăng nhập
+  // Màn hình Đăng nhập nếu chưa xác thực cán bộ
   if (!currentStaff) {
     return (
       <div className={`app ${isDarkMode ? 'theme-dark' : ''}`}>
@@ -181,17 +289,29 @@ export default function App() {
           <span className="badge-pill">BẢO MẬT CORE BANKING</span>
           <span>HỆ THỐNG XÁC THỰC CÁN BỘ — CẤP QUYỀN GIAO DỊCH VIÊN & KIỂM SOÁT VIÊN</span>
         </div>
-        <LoginForm onLoginSuccess={setCurrentStaff} />
+        <LoginForm onLoginSuccess={handleSetStaff} />
       </div>
     );
   }
 
   return (
     <div className={`app ${isDarkMode ? 'theme-dark' : ''}`}>
-      {/* Top Banner - Góc Vuông */}
-      <div className="demo-banner">
-        <span className="badge-pill">CORE BANKING 2026</span>
-        <span>HỆ THỐNG GIAO DỊCH QUẦY — QUY CHUẨN MAKER-CHECKER & SỔ CÁI BẢO TOÀN (DELTA = 0.00 VND)</span>
+      {/* Top Banner */}
+      <div className="demo-banner" style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="badge-pill">CORE BANKING 2026</span>
+          <span>HỆ THỐNG GIAO DỊCH QUẦY — QUY CHUẨN MAKER-CHECKER &amp; SỔ CÁI BẢO TOÀN (DELTA = 0.00 VND)</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
+          <span style={{
+            display: 'inline-block',
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: isOnlineBackend ? '#10b981' : '#f59e0b'
+          }} />
+          <span>{isOnlineBackend ? 'Đã kết nối Backend API Gateway' : 'Chế độ Cục bộ / API Offline'}</span>
+        </div>
       </div>
 
       {/* Navbar Header Ngân Hàng */}
@@ -234,11 +354,11 @@ export default function App() {
           {/* Nút chuyển đổi vai trò nhanh */}
           <RoleSwitcher role={role} onSwitch={handleRoleSwitch} />
 
-          {/* Nút Đăng Xuất - Bo Viên Thuốc */}
+          {/* Nút Đăng Xuất */}
           <button
             type="button"
             className="btn btn-outline"
-            onClick={() => setCurrentStaff(null)}
+            onClick={() => handleSetStaff(null)}
             style={{ padding: '6px 14px', fontSize: '12px', gap: '5px' }}
             title="Đăng xuất phiên làm việc"
           >
@@ -246,7 +366,7 @@ export default function App() {
             <span>Đăng Xuất</span>
           </button>
 
-          {/* Nút chuyển đổi Giao diện Sáng / Tối - Bo Viên Thuốc */}
+          {/* Nút chuyển đổi Giao diện Sáng / Tối */}
           <button
             type="button"
             className="btn btn-outline"
@@ -259,30 +379,163 @@ export default function App() {
         </div>
       </nav>
 
+      {/* Navigation Sub-Tabs */}
+      <div style={{
+        maxWidth: '1280px',
+        margin: '16px auto 0 auto',
+        padding: '0 24px',
+        display: 'flex',
+        gap: '12px'
+      }}>
+        <button
+          type="button"
+          onClick={() => setActiveTab('DEPOSIT')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'DEPOSIT' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'DEPOSIT' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'DEPOSIT' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <Wallet size={16} />
+          <span>Giao Dịch Nạp Tiền Quầy &amp; Chuyển Khoản</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('LOANS');
+            loadBackendData();
+          }}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'LOANS' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'LOANS' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'LOANS' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <FileText size={16} />
+          <span>Phê Duyệt Hồ Sơ Vay Tín Dụng</span>
+          {loans.filter(l => l.status === 'PENDING_APPROVAL').length > 0 && (
+            <span style={{
+              background: '#ef4444',
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 800,
+              padding: '2px 7px',
+              borderRadius: '999px'
+            }}>
+              {loans.filter(l => l.status === 'PENDING_APPROVAL').length}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('LEDGER')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'LEDGER' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'LEDGER' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'LEDGER' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <Scale size={16} />
+          <span>Sổ Cái Kép &amp; Đối Soát Bút Toán (Δ = 0.00)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('ACCOUNTS')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'ACCOUNTS' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'ACCOUNTS' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'ACCOUNTS' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <Users size={16} />
+          <span>Danh Mục &amp; Bộ Lọc Tài Khoản (Admin/Giám Đốc)</span>
+        </button>
+      </div>
+
       {/* Main Container */}
-      <div className="container">
-        <div className="grid-layout">
-          <div>
-            {role === 'TELLER' ? (
-              <>
-                <TellerForm onSubmit={handleCreateDeposit} accounts={accounts} />
-                <TransferForm onTransfer={handleP2PTransfer} accounts={accounts} />
-              </>
-            ) : (
-              <ManagerQueue
-                deposits={deposits.filter(d => d.status === 'PENDING_APPROVAL')}
-                currentUserId={currentStaff.id}
-                onApprove={handleApprove}
-                onReject={handleReject}
-              />
-            )}
+      <div className="container" style={{ marginTop: '0' }}>
+        {activeTab === 'DEPOSIT' && (
+          <div className="grid-layout">
+            <div>
+              {role === 'TELLER' ? (
+                <>
+                  <TellerForm onSubmit={handleCreateDeposit} accounts={accounts} />
+                  <TransferForm onTransfer={handleP2PTransfer} accounts={accounts} />
+                </>
+              ) : (
+                <ManagerQueue
+                  deposits={deposits.filter(d => d.status === 'PENDING_APPROVAL')}
+                  currentUserId={currentStaff.id}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                />
+              )}
+            </div>
+            <div>
+              <VaultSummaryWidget summary={vaultSummary} />
+              <TransactionHistory deposits={deposits} onReceipt={setReceiptDeposit} />
+              <DoubleEntryLedger ledger={ledgerBalance} />
+            </div>
           </div>
-          <div>
-            <VaultSummaryWidget summary={vaultSummary} />
-            <TransactionHistory deposits={deposits} onReceipt={setReceiptDeposit} />
-            <DoubleEntryLedger ledger={ledgerBalance} />
-          </div>
-        </div>
+        )}
+
+        {activeTab === 'LOANS' && (
+          <LoanManagement
+            currentStaff={currentStaff}
+            loans={loans}
+            onRefresh={loadBackendData}
+            onLoanApproved={() => {
+              loadBackendData();
+            }}
+          />
+        )}
+
+        {activeTab === 'LEDGER' && (
+          <LedgerManagement staff={currentStaff} />
+        )}
+
+        {activeTab === 'ACCOUNTS' && (
+          <AccountManagement staff={currentStaff} />
+        )}
       </div>
 
       {/* Modal In Biên Lai */}

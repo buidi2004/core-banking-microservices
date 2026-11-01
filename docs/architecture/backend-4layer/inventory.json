@@ -1,0 +1,4653 @@
+{
+  "services": {
+    "api-gateway": [
+      {
+        "name": "GatewayApplication",
+        "kind": "class",
+        "package": "com.fintech.gateway",
+        "layer": "infrastructure",
+        "path": "backend/services/api-gateway/src/main/java/com/fintech/gateway/GatewayApplication.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "JwtAuthenticationFilter",
+        "kind": "class",
+        "package": "com.fintech.gateway",
+        "layer": "presentation",
+        "path": "backend/services/api-gateway/src/main/java/com/fintech/gateway/JwtAuthenticationFilter.java",
+        "methods": [
+          "filter(ServerWebExchange exchange, GatewayFilterChain chain)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "JwtAuthenticationFilterGatewayFilterFactory",
+        "kind": "class",
+        "package": "com.fintech.gateway",
+        "layer": "presentation",
+        "path": "backend/services/api-gateway/src/main/java/com/fintech/gateway/JwtAuthenticationFilterGatewayFilterFactory.java",
+        "methods": [
+          "apply(Config config)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      }
+    ],
+    "identity-service": [
+      {
+        "name": "IdentityApplication",
+        "kind": "class",
+        "package": "com.fintech.identity",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/IdentityApplication.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "AuthController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/AuthController.java",
+        "methods": [
+          "register(RegisterRequest request)",
+          "login(LoginRequest request, HttpServletRequest httpRequest)",
+          "refreshToken(RefreshTokenRequest request)",
+          "logout(String authHeader, String userId, String deviceId)",
+          "sendOtp(OtpSendRequest request, String phoneNumber, String purpose, String email)",
+          "verifyOtp(OtpVerifyRequest request, String phoneNumber, String otp, String code, String purpose)",
+          "forgotPassword(ForgotPasswordRequest request, String phoneNumber)",
+          "resetPassword(ResetPasswordRequest request, String phoneNumber, String otp, String otpToken, String newPass...)",
+          "requestChangePasswordOtp(String userId)",
+          "requestChangePinOtp(String userId)",
+          "changePassword(String authHeader, String headerUserId, .validation.Valid ChangePasswordRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/auth/register -> register",
+          "POST /api/v1/auth/login -> login",
+          "POST /api/v1/auth/refresh -> refreshToken",
+          "POST /api/v1/auth/logout -> logout",
+          "POST /api/v1/auth/otp/send -> sendOtp",
+          "POST /api/v1/auth/otp/verify -> verifyOtp",
+          "POST /api/v1/auth/forgot-password -> forgotPassword",
+          "POST /api/v1/auth/reset-password -> resetPassword",
+          "POST /api/v1/auth/change-password/otp -> requestChangePasswordOtp",
+          "POST /api/v1/auth/change-pin/otp -> requestChangePinOtp",
+          "POST /api/v1/auth/change-password -> changePassword"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "FeedbackController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/FeedbackController.java",
+        "methods": [
+          "submitFeedback(String userId, Map<String, Object> payload)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/feedback -> submitFeedback"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "GlobalExceptionHandler",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/GlobalExceptionHandler.java",
+        "methods": [
+          "handleInvalidPin(InvalidPinException e)",
+          "handlePinLocked(PinLockedException e)",
+          "handlePinNotSet(PinNotSetException e)",
+          "handleIllegalArgument(IllegalArgumentException e)",
+          "handleIllegalState(IllegalStateException e)",
+          "handleSecurity(SecurityException e)",
+          "handleJwt(JwtException e)",
+          "handleMissingHeader(MissingRequestHeaderException e)",
+          "handleValidation(MethodArgumentNotValidException e)",
+          "handleGeneralException(Exception e)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "InternalUserController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/InternalUserController.java",
+        "methods": [
+          "byPhone(String phoneNumber)",
+          "byId(String id)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/internal/users/by-phone -> byPhone",
+          "GET /api/v1/internal/users/{id} -> byId"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KycController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/KycController.java",
+        "methods": [
+          "submitKyc(String userId, KycSubmitRequest request)",
+          "reviewKyc(String kycId, String status, // APPROVED hoặc REJECTED String reason, String adminId)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/kyc/submit -> submitKyc",
+          "GET /api/v1/kyc/status -> getKycStatus",
+          "PUT /api/v1/kyc/{kycId}/review -> reviewKyc"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LegalController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/LegalController.java",
+        "methods": [
+          "recordConsent(String userId, Map<String, Object> payload)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/legal/terms -> getTerms",
+          "POST /api/v1/legal/consent -> recordConsent"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ReferralController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/ReferralController.java",
+        "methods": [
+          "applyReferralCode(String userId, Map<String, String> payload)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/referrals/code -> getReferralCode",
+          "GET /api/v1/referrals/history -> getReferralHistory",
+          "POST /api/v1/referrals/apply -> applyReferralCode"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SecurityBiometricController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/SecurityBiometricController.java",
+        "methods": [
+          "verifyBiometric(String userId, Map<String, Object> payload)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/security/biometric/verify -> verifyBiometric"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SessionController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/SessionController.java",
+        "methods": [
+          "revokeSession(String userId, String sessionId)",
+          "registerFcm(String userId, String deviceId, java.util.Map<String, String> payload)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/sessions -> getActiveSessions",
+          "DELETE /api/v1/sessions/{sessionId} -> revokeSession",
+          "POST /api/v1/sessions/{deviceId}/fcm -> registerFcm"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "StaffController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/StaffController.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/staff/branch/{branchId} -> getStaffByBranch"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/UserController.java",
+        "methods": [
+          "updateProfile(String userId, UpdateProfileRequest request)",
+          "uploadAvatar(String userId, java.util.Map<String, String> payload)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/users/me -> getCurrentUser",
+          "PUT /api/v1/users/profile -> updateProfile",
+          "POST /api/v1/users/me/avatar -> uploadAvatar"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserPinController",
+        "kind": "class",
+        "package": "com.fintech.identity.controller",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/controller/UserPinController.java",
+        "methods": [
+          "verifyPin(String userId, PinVerifyRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/users/pin/set -> setPin",
+          "POST /api/v1/users/pin/verify -> verifyPin"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserEntity",
+        "kind": "class",
+        "package": "com.fintech.identity.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/domain/entity/UserEntity.java",
+        "methods": [],
+        "fields": [
+          "id: String",
+          "username: String",
+          "phoneNumber: String",
+          "passwordHash: String",
+          "fullName: String",
+          "email: String",
+          "role: String",
+          "status: String",
+          "kycTier: String",
+          "branchId: String",
+          "pinHash: String",
+          "pinFailedAttempts: Integer",
+          "pinLockedUntil: Instant",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserKycEntity",
+        "kind": "class",
+        "package": "com.fintech.identity.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/domain/entity/UserKycEntity.java",
+        "methods": [],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "documentType: String",
+          "documentNumber: String",
+          "frontImageUrl: String",
+          "backImageUrl: String",
+          "faceImageUrl: String",
+          "ocrExtractedData: String",
+          "verificationStatus: String",
+          "rejectReason: String",
+          "verifiedBy: String",
+          "verifiedAt: Instant",
+          "createdAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserProfileEntity",
+        "kind": "class",
+        "package": "com.fintech.identity.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/domain/entity/UserProfileEntity.java",
+        "methods": [],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "avatarUrl: String",
+          "dateOfBirth: LocalDate",
+          "address: String",
+          "gender: String",
+          "identityCardNumber: String",
+          "identityCardIssuedDate: LocalDate",
+          "identityCardIssuedPlace: String",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserSessionEntity",
+        "kind": "class",
+        "package": "com.fintech.identity.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/domain/entity/UserSessionEntity.java",
+        "methods": [],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "deviceId: String",
+          "deviceName: String",
+          "deviceOs: String",
+          "ipAddress: String",
+          "userAgent: String",
+          "refreshTokenHash: String",
+          "expiresAt: Instant",
+          "isRevoked: Boolean",
+          "createdAt: Instant",
+          "lastAccessedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ApiResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/ApiResponse.java",
+        "methods": [
+          "ok(T data, String message)",
+          "ok(T data)",
+          "error(String error, String message)",
+          "error(String message)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "AuthResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/AuthResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ChangePasswordRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/ChangePasswordRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ForgotPasswordRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/ForgotPasswordRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KycResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/KycResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KycSubmitRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/KycSubmitRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoginRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/LoginRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OtpSendRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/OtpSendRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OtpSendResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/OtpSendResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OtpVerifyRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/OtpVerifyRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OtpVerifyResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/OtpVerifyResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PinSetRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinSetRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PinVerifyRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PinVerifyResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/PinVerifyResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "RefreshTokenRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/RefreshTokenRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "RegisterRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/RegisterRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ResetPasswordRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/ResetPasswordRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SessionResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/SessionResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "StaffResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/StaffResponse.java",
+        "methods": [
+          "fromEntity(UserEntity user)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UpdateProfileRequest",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/UpdateProfileRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserProfileResponse",
+        "kind": "class",
+        "package": "com.fintech.identity.dto",
+        "layer": "presentation",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/dto/UserProfileResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "InvalidPinException",
+        "kind": "class",
+        "package": "com.fintech.identity.exception",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/exception/InvalidPinException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PinLockedException",
+        "kind": "class",
+        "package": "com.fintech.identity.exception",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/exception/PinLockedException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PinNotSetException",
+        "kind": "class",
+        "package": "com.fintech.identity.exception",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/exception/PinNotSetException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "IdentityEventPublisher",
+        "kind": "class",
+        "package": "com.fintech.identity.messaging",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/messaging/IdentityEventPublisher.java",
+        "methods": [
+          "publishUserRegistered(UserRegisteredEvent event)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "RabbitMQConfig",
+        "kind": "class",
+        "package": "com.fintech.identity.messaging",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/messaging/RabbitMQConfig.java",
+        "methods": [
+          "walletExchange()",
+          "jsonMessageConverter()",
+          "rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter jsonMessageConverter)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserKycRepository",
+        "kind": "interface",
+        "package": "com.fintech.identity.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/repository/UserKycRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserProfileRepository",
+        "kind": "interface",
+        "package": "com.fintech.identity.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/repository/UserProfileRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserRepository",
+        "kind": "interface",
+        "package": "com.fintech.identity.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/repository/UserRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserSessionRepository",
+        "kind": "interface",
+        "package": "com.fintech.identity.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/repository/UserSessionRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "JwtTokenProvider",
+        "kind": "class",
+        "package": "com.fintech.identity.security",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/security/JwtTokenProvider.java",
+        "methods": [
+          "generateAccessToken(String userId, String phoneNumber, String role, String kycTier)",
+          "generateAccessToken(String userId, String phoneNumber, String role, String kycTier, String branchId, String fullName)",
+          "generateRefreshToken(String userId)",
+          "generatePinToken(String userId)",
+          "generateOtpToken(String phoneNumber, String purpose)",
+          "validateOtpToken(String token, String expectedPhone, String expectedPurpose)",
+          "parseAndValidateToken(String token)",
+          "blacklistToken(String token)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SecurityConfig",
+        "kind": "class",
+        "package": "com.fintech.identity.security",
+        "layer": "infrastructure",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/security/SecurityConfig.java",
+        "methods": [
+          "passwordEncoder()",
+          "securityFilterChain(HttpSecurity http)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "AuthService",
+        "kind": "class",
+        "package": "com.fintech.identity.service",
+        "layer": "application",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/service/AuthService.java",
+        "methods": [
+          "register(RegisterRequest request)",
+          "login(LoginRequest request, String ipAddress, String userAgent)",
+          "refreshToken(RefreshTokenRequest request)",
+          "changePassword(String bearerToken, String headerUserId, ChangePasswordRequest request)",
+          "logout(String bearerToken, String userId, String deviceId)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "EmailService",
+        "kind": "class",
+        "package": "com.fintech.identity.service",
+        "layer": "application",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/service/EmailService.java",
+        "methods": [
+          "sendOtpEmail(String recipientEmail, String otpCode, String purpose)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KycService",
+        "kind": "class",
+        "package": "com.fintech.identity.service",
+        "layer": "application",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/service/KycService.java",
+        "methods": [
+          "submitKyc(String userId, KycSubmitRequest request)",
+          "reviewKyc(String kycId, String status, String reason, String verifiedBy)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OtpService",
+        "kind": "class",
+        "package": "com.fintech.identity.service",
+        "layer": "application",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/service/OtpService.java",
+        "methods": [
+          "sendOtp(String phoneNumber, String purpose)",
+          "sendOtp(String phoneNumber, String purpose, String explicitEmail)",
+          "sendOtpForUser(String userId, String purpose)",
+          "verifyOtp(String phoneNumber, String code, String purpose)",
+          "forgotPassword(String phoneNumber)",
+          "resetPassword(String phoneNumber, String otpToken, String newPassword)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SessionService",
+        "kind": "class",
+        "package": "com.fintech.identity.service",
+        "layer": "application",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/service/SessionService.java",
+        "methods": [
+          "revokeSession(String userId, String sessionId)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "StaffService",
+        "kind": "class",
+        "package": "com.fintech.identity.service",
+        "layer": "application",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/service/StaffService.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserPinService",
+        "kind": "class",
+        "package": "com.fintech.identity.service",
+        "layer": "application",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/service/UserPinService.java",
+        "methods": [
+          "verifyPin(String userId, String pin)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserService",
+        "kind": "class",
+        "package": "com.fintech.identity.service",
+        "layer": "application",
+        "path": "backend/services/identity-service/src/main/java/com/fintech/identity/service/UserService.java",
+        "methods": [
+          "updateProfile(String userId, UpdateProfileRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      }
+    ],
+    "wallet-service": [
+      {
+        "name": "WalletCoreApplication",
+        "kind": "class",
+        "package": "com.fintech.wallet",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/WalletCoreApplication.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletInternalApplicationService",
+        "kind": "class",
+        "package": "com.fintech.wallet.application.service",
+        "layer": "application",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/application/service/WalletInternalApplicationService.java",
+        "methods": [
+          "debitWallet(String walletId, long amount, String transactionId, String idempotencyKey)",
+          "creditWallet(String walletId, long amount, String transactionId, String idempotencyKey)",
+          "reserveBalance(String walletId, long amount, String transactionId, long reserveDurationSeconds)",
+          "releaseBalance(String reservationId, String transactionId)",
+          "checkLimit(String walletId, long amount, String transactionType, String userId)",
+          "DebitResult(boolean success, Long balanceAfter, String errorCode, String errorMessage)",
+          "CreditResult(boolean success, Long balanceAfter, String errorCode, String errorMessage)",
+          "ReserveResult(boolean success, Long reservedAmount, String reservationId, String errorCode, String errorMes...)",
+          "ReleaseResult(boolean success, String errorCode, String errorMessage)",
+          "LimitCheckResult(boolean allowed, Long availableBalance, Long dailyLimitRemaining, Long transactionLimitRemain...)",
+          "GetWalletResult(boolean found, String walletId, String userId, Long balance, String currency, String status, ...)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Wallet",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/entity/Wallet.java",
+        "methods": [
+          "prePersist()",
+          "availableBalance()"
+        ],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "balance: Long",
+          "reservedBalance: Long",
+          "currency: String",
+          "status: String",
+          "dailyLimit: Long",
+          "dailySpent: Long",
+          "version: Long",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "AccountLockedException",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.exception",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/exception/AccountLockedException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "InsufficientBalanceException",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.exception",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/exception/InsufficientBalanceException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "InvalidMoneyException",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.exception",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/exception/InvalidMoneyException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LockAcquisitionException",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.exception",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/exception/LockAcquisitionException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletNotFoundException",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.exception",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/exception/WalletNotFoundException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Money",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.model",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/model/Money.java",
+        "methods": [
+          "zero(String currency)",
+          "of(BigDecimal amount, String currency)",
+          "of(double amount, String currency)",
+          "of(String amount, String currency)",
+          "add(Money money)",
+          "subtract(Money money)"
+        ],
+        "fields": [
+          "CURRENCY_PATTERN: Pattern",
+          "amount: BigDecimal",
+          "currency: String"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Wallet",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.model",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/model/Wallet.java",
+        "methods": [
+          "createNew(String ownerId, String currency)",
+          "deposit(Money amount)",
+          "withdraw(Money amount)"
+        ],
+        "fields": [
+          "id: String",
+          "ownerId: String",
+          "balance: Money",
+          "reservedBalance: BigDecimal",
+          "createdAt: Instant",
+          "updatedAt: Instant",
+          "version: Long",
+          "status: WalletStatus",
+          "dailyLimit: Long",
+          "dailySpent: Long"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletStatus",
+        "kind": "enum",
+        "package": "com.fintech.wallet.domain.model",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/model/WalletStatus.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "DistributedLockPort",
+        "kind": "interface",
+        "package": "com.fintech.wallet.domain.port.out",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/port/out/DistributedLockPort.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletPersistencePort",
+        "kind": "interface",
+        "package": "com.fintech.wallet.domain.port.out",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/domain/port/out/WalletPersistencePort.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletInternalGrpcService",
+        "kind": "class",
+        "package": "com.fintech.wallet.grpc",
+        "layer": "presentation",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/grpc/WalletInternalGrpcService.java",
+        "methods": [
+          "debitWallet(com.fintech.wallet.grpc.DebitRequest request, StreamObserver<com.fintech.wallet.grpc.DebitRes...)",
+          "creditWallet(com.fintech.wallet.grpc.CreditRequest request, StreamObserver<com.fintech.wallet.grpc.CreditR...)",
+          "reserveBalance(com.fintech.wallet.grpc.ReserveRequest request, StreamObserver<com.fintech.wallet.grpc.Reserv...)",
+          "releaseBalance(com.fintech.wallet.grpc.ReleaseRequest request, StreamObserver<com.fintech.wallet.grpc.Releas...)",
+          "checkLimit(com.fintech.wallet.grpc.LimitCheckRequest request, StreamObserver<com.fintech.wallet.grpc.Lim...)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "RabbitMqConfig",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.amqp",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/amqp/RabbitMqConfig.java",
+        "methods": [
+          "messageConverter()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserRegisteredWalletConsumer",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.amqp.consumer",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/amqp/consumer/UserRegisteredWalletConsumer.java",
+        "methods": [
+          "handleUserRegistered(UserRegisteredEvent event)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [
+          "RabbitListener wallet.user.registered.queue -> handleUserRegistered"
+        ],
+        "listener_meta": [
+          {
+            "kind": "RabbitListener",
+            "method": "handleUserRegistered",
+            "queues": "wallet.user.registered.queue"
+          }
+        ]
+      },
+      {
+        "name": "RedisLockAdapter",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.cache",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/cache/RedisLockAdapter.java",
+        "methods": [
+          "executeWithLock(String lockKey, long timeoutSeconds, Supplier<T> supplier)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "GrpcServerConfig",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.grpc",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/grpc/GrpcServerConfig.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletHealthIndicator",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.health",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/health/WalletHealthIndicator.java",
+        "methods": [
+          "health()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletBalanceChangedKafkaProducer",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.kafka",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/kafka/WalletBalanceChangedKafkaProducer.java",
+        "methods": [
+          "publishBalanceChanged(WalletBalanceChangedPayload payload)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletKafkaProducerConfig",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.kafka",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/kafka/WalletKafkaProducerConfig.java",
+        "methods": [
+          "walletProducerFactory()",
+          "walletKafkaTemplate(ProducerFactory<String, Object> walletProducerFactory)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletMetrics",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.metrics",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/metrics/WalletMetrics.java",
+        "methods": [
+          "incrementSuccess()",
+          "incrementFailure()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletPersistenceAdapter",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.persistence.adapter",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/persistence/adapter/WalletPersistenceAdapter.java",
+        "methods": [
+          "saveWallet(Wallet wallet)",
+          "findWalletById(String walletId)",
+          "findWalletByIdForUpdate(String walletId)",
+          "findWalletByOwnerId(String ownerId)",
+          "sumAllBalances()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletJpaEntity",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.persistence.entity",
+        "layer": "domain",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/persistence/entity/WalletJpaEntity.java",
+        "methods": [],
+        "fields": [
+          "id: String",
+          "ownerId: String",
+          "balance: BigDecimal",
+          "reservedBalance: BigDecimal",
+          "currency: String",
+          "status: String",
+          "dailyLimit: Long",
+          "dailySpent: Long",
+          "createdAt: Instant",
+          "updatedAt: Instant",
+          "version: Long"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletMapper",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.persistence.mapper",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/persistence/mapper/WalletMapper.java",
+        "methods": [
+          "toDomain(WalletJpaEntity entity)",
+          "toJpaEntity(Wallet domain)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SpringDataWalletRepository",
+        "kind": "interface",
+        "package": "com.fintech.wallet.infrastructure.persistence.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/persistence/repository/SpringDataWalletRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletRestController",
+        "kind": "class",
+        "package": "com.fintech.wallet.infrastructure.web",
+        "layer": "presentation",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/infrastructure/web/WalletRestController.java",
+        "methods": [
+          "myWallet(String userId)",
+          "walletDetail(String walletId)",
+          "recipientInfo(String walletId, String phoneNumber)",
+          "estimateFee(String type, double amount, String currency)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/wallets/me -> myWallet",
+          "GET /api/v1/wallets/{walletId} -> walletDetail",
+          "GET /api/v1/wallets/recipient-info -> recipientInfo",
+          "GET /api/v1/wallets/fees/estimate -> estimateFee"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletRepository",
+        "kind": "interface",
+        "package": "com.fintech.wallet.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/repository/WalletRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletGrpcService",
+        "kind": "class",
+        "package": "com.fintech.wallet.service",
+        "layer": "application",
+        "path": "backend/services/wallet-service/src/main/java/com/fintech/wallet/service/WalletGrpcService.java",
+        "methods": [
+          "debitWallet(String walletId, Long amount, String transactionId, String idempotencyKey)",
+          "creditWallet(String walletId, Long amount, String transactionId, String idempotencyKey)",
+          "reserveBalance(String walletId, Long amount, String transactionId, int reserveDurationSeconds)",
+          "releaseBalance(String reservationId, String transactionId)",
+          "checkLimit(String walletId, Long amount, String transactionType, String userId)",
+          "success(Long balanceAfter)",
+          "failure(String errorCode, String errorMessage)",
+          "success(Long balanceAfter)",
+          "failure(String errorCode, String errorMessage)",
+          "success(Long reservedAmount, String reservationId)",
+          "failure(String errorCode, String errorMessage)",
+          "success()",
+          "failure(String errorCode, String errorMessage)",
+          "allowed(boolean allowed)",
+          "availableBalance(Long availableBalance)",
+          "dailyLimitRemaining(Long dailyLimitRemaining)",
+          "transactionLimitRemaining(Long transactionLimitRemaining)",
+          "errorCode(String errorCode)",
+          "errorMessage(String errorMessage)",
+          "build()",
+          "found(String walletId, String userId, Long balance, String currency, String status)",
+          "notFound()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      }
+    ],
+    "payment-service": [
+      {
+        "name": "PaymentApplication",
+        "kind": "class",
+        "package": "com.fintech.payment",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/PaymentApplication.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BankAccountController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/BankAccountController.java",
+        "methods": [
+          "linkBankAccount(String userId, LinkBankAccountRequest request)",
+          "unlinkBankAccount(String userId, String bankAccountId)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/bank-accounts -> getBankAccounts",
+          "POST /api/v1/bank-accounts/link -> linkBankAccount",
+          "DELETE /api/v1/bank-accounts/{id} -> unlinkBankAccount",
+          "PATCH /api/v1/bank-accounts/{id}/default -> setDefaultBankAccount"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BankController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/BankController.java",
+        "methods": [
+          "listBanks()",
+          "BankDto(String id, String code, String name, String shortName, String bin, String logoUrl, Boolean ac...)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/payments/banks -> listBanks"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BeneficiaryController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/BeneficiaryController.java",
+        "methods": [
+          "addBeneficiary(String userId, CreateBeneficiaryRequest request)",
+          "deleteBeneficiary(String userId, String id)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/beneficiaries -> getBeneficiaries",
+          "POST /api/v1/beneficiaries -> addBeneficiary",
+          "DELETE /api/v1/beneficiaries/{id} -> deleteBeneficiary"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BillController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/BillController.java",
+        "methods": [
+          "lookup(String type, String customerCode)",
+          "pay(String userId, BillPaymentRequest request)",
+          "topup(String userId, PhoneTopupRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/bills/lookup -> lookup",
+          "POST /api/v1/bills/pay -> pay",
+          "POST /api/v1/bills/topup -> topup"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CardController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/CardController.java",
+        "methods": [
+          "issueCard(String userId, String userName, CardIssueRequest request)",
+          "updateCardStatus(String userId, String cardId, CardStatusRequest request)",
+          "updateCardSettings(String userId, String cardId, CardSettingsRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/cards -> getCards",
+          "POST /api/v1/cards/issue -> issueCard",
+          "PATCH /api/v1/cards/{id}/status -> updateCardStatus",
+          "PUT /api/v1/cards/{id}/settings -> updateCardSettings"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CashDepositController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/CashDepositController.java",
+        "methods": [
+          "createDeposit(CashDepositRequest request, String headerMakerId, String headerIdemKey)",
+          "approveDeposit(String id, String headerCheckerId, String headerRole, CashDepositApproveRequest request, Stri...)",
+          "rejectDeposit(String id, String headerCheckerId, String headerRole, CashDepositRejectRequest request, Strin...)",
+          "listDeposits(String status, String makerId, String branchId)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/cash/deposits -> createDeposit",
+          "POST /api/v1/cash/deposits/{id}/approve -> approveDeposit",
+          "POST /api/v1/cash/deposits/{id}/reject -> rejectDeposit",
+          "GET /api/v1/cash/deposits -> listDeposits",
+          "GET /api/v1/cash/vault/summary -> getVaultSummary"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ConfigLimitController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/ConfigLimitController.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/config/limits -> getLimits",
+          "GET /api/v1/config/limits/status -> getLimitStatus"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "DepositWithdrawController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/DepositWithdrawController.java",
+        "methods": [
+          "deposit(String headerUserId, DepositRequest request)",
+          "withdraw(String headerUserId, String headerPinToken, WithdrawRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/payments/deposit -> deposit",
+          "POST /api/v1/payments/withdraw -> withdraw"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "FundingSourceController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/FundingSourceController.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/funding-sources -> getFundingSources"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/LoanController.java",
+        "methods": [
+          "applyLoan(String userId, LoanApplicationRequest request)",
+          "repayTerm(String userId, String id, LoanRepaymentRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/loans/products -> getProducts",
+          "POST /api/v1/loans/apply -> applyLoan",
+          "GET /api/v1/loans -> getUserLoans",
+          "GET /api/v1/loans/{id} -> getLoanDetail",
+          "GET /api/v1/loans/{id}/schedule -> getLoanSchedule",
+          "POST /api/v1/loans/{id}/repay -> repayTerm"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/LotteryController.java",
+        "methods": [
+          "buyTicket(String userId, LotteryBuyRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/lottery/results -> getLatestResults",
+          "GET /api/v1/lottery/my-tickets -> getMyTickets",
+          "POST /api/v1/lottery/buy -> buyTicket"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "MoneyRequestController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/MoneyRequestController.java",
+        "methods": [
+          "create(MoneyRequestRequest request)",
+          "accept(String id, String payerUserId)",
+          "reject(String id, String payerUserId)",
+          "cancel(String id, String userId)",
+          "list(String userId)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/payments/money-requests -> create",
+          "POST /api/v1/payments/money-requests/{id}/accept -> accept",
+          "POST /api/v1/payments/money-requests/{id}/reject -> reject",
+          "GET /api/v1/payments/money-requests/{id} -> getDetail",
+          "POST /api/v1/payments/money-requests/{id}/cancel -> cancel",
+          "GET /api/v1/payments/money-requests/received -> getReceived",
+          "GET /api/v1/payments/money-requests/sent -> getSent",
+          "GET /api/v1/payments/money-requests/user/{userId} -> list"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SavingsController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/SavingsController.java",
+        "methods": [
+          "openSavings(String userId, OpenSavingsRequest request)",
+          "settleSavings(String userId, String id, SettleSavingsRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/savings/products -> getProducts",
+          "POST /api/v1/savings/accounts -> openSavings",
+          "GET /api/v1/savings/accounts -> getUserSavings",
+          "GET /api/v1/savings/accounts/{id} -> getSavingsDetail",
+          "POST /api/v1/savings/accounts/{id}/settle -> settleSavings"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TransactionHistoryController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransactionHistoryController.java",
+        "methods": [
+          "exportTransactions(String format, String walletId)",
+          "list(String walletId, String type, int page, int size)",
+          "detail(String id, String walletId)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "ANY /api/v1/transactions/api/v1/transactions -> getReceiptPdf",
+          "GET /api/v1/transactions/{id}/receipt.pdf -> getReceiptPdf",
+          "GET /api/v1/transactions/export/{format} -> exportTransactions",
+          "GET /api/v1/transactions -> list",
+          "GET /api/v1/transactions/{id} -> detail"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TransferController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/TransferController.java",
+        "methods": [
+          "p2pTransfer(String headerUserId, String headerPinToken, TransferRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/payments/transfer -> p2pTransfer",
+          "GET /api/v1/payments/transfer/{transactionId} -> getTransaction"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserQrController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/UserQrController.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/users/me/qrcode -> getMyQrCode"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "VietQrController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/VietQrController.java",
+        "methods": [
+          "generateVietQr(VietQrGenerateRequest request)",
+          "decodeVietQr(VietQrDecodeRequest request, String qrString)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/payments/vietqr/generate -> generateVietQr",
+          "POST /api/v1/payments/vietqr/decode -> decodeVietQr"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletMutationController",
+        "kind": "class",
+        "package": "com.fintech.payment.controller",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/controller/WalletMutationController.java",
+        "methods": [
+          "deposit(String headerUserId, DepositRequest request)",
+          "withdraw(String headerUserId, String headerPinToken, WithdrawRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/wallets/deposit -> deposit",
+          "POST /api/v1/wallets/withdraw -> withdraw"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Bank",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/Bank.java",
+        "methods": [
+          "prePersist()"
+        ],
+        "fields": [
+          "id: String",
+          "code: String",
+          "name: String",
+          "shortName: String",
+          "bin: String",
+          "logoUrl: String",
+          "active: Boolean",
+          "createdAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BankAccount",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/BankAccount.java",
+        "methods": [
+          "prePersist()"
+        ],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "bankId: String",
+          "accountNumber: String",
+          "accountHolderName: String",
+          "verified: Boolean",
+          "defaultAccount: Boolean",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Beneficiary",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/Beneficiary.java",
+        "methods": [
+          "prePersist()"
+        ],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "beneficiaryUserId: String",
+          "beneficiaryWalletId: String",
+          "beneficiaryPhone: String",
+          "fullName: String",
+          "bankCode: String",
+          "accountNumber: String",
+          "nickname: String",
+          "createdAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Bill",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/Bill.java",
+        "methods": [
+          "prePersist()"
+        ],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "billId: String",
+          "serviceType: String",
+          "providerCode: String",
+          "customerCode: String",
+          "customerName: String",
+          "customerAddress: String",
+          "period: String",
+          "amount: BigDecimal",
+          "fee: BigDecimal",
+          "dueDate: LocalDate",
+          "status: String",
+          "paidAt: Instant",
+          "paidByUserId: String",
+          "transactionId: String",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Card",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/Card.java",
+        "methods": [
+          "prePersist()"
+        ],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "cardNumber: String",
+          "maskedNumber: String",
+          "cardHolder: String",
+          "cardType: String",
+          "cardTier: String",
+          "scheme: String",
+          "expiryDate: String",
+          "cvv: String",
+          "creditLimit: BigDecimal",
+          "availableLimit: BigDecimal",
+          "status: String",
+          "colorScheme: String",
+          "physical: Boolean",
+          "deliveryAddress: String",
+          "onlinePayment: Boolean",
+          "intlPayment: Boolean",
+          "contactless: Boolean",
+          "atmWithdraw: Boolean",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CashDeposit",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/CashDeposit.java",
+        "methods": [
+          "prePersist()",
+          "approve(String checkerId)",
+          "reject(String checkerId, String reason)",
+          "complete()"
+        ],
+        "fields": [
+          "id: String",
+          "depositCode: String",
+          "accountNumber: String",
+          "customerName: String",
+          "amount: Long",
+          "currency: String",
+          "makerId: String",
+          "checkerId: String",
+          "branchId: String",
+          "status: String",
+          "idempotencyKey: String",
+          "rejectionReason: String",
+          "createdAt: Instant",
+          "approvedAt: Instant",
+          "completedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "FundingSource",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/FundingSource.java",
+        "methods": [
+          "prePersist()"
+        ],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "sourceType: String",
+          "sourceRefId: String",
+          "active: Boolean",
+          "priority: Integer",
+          "createdAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanContract",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/LoanContract.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "userId: String",
+          "walletId: String",
+          "contractNumber: String",
+          "productType: String",
+          "productName: String",
+          "principalAmount: BigDecimal",
+          "annualInterestRate: BigDecimal",
+          "termMonths: Integer",
+          "totalInterest: BigDecimal",
+          "totalRepayment: BigDecimal",
+          "remainingPrincipal: BigDecimal",
+          "monthlyPayment: BigDecimal",
+          "purpose: String",
+          "status: String",
+          "disbursedAt: Instant",
+          "firstDueDate: LocalDate",
+          "scheduleItems: List<LoanScheduleItem>",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanScheduleItem",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/LoanScheduleItem.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "loanContractId: UUID",
+          "loanContract: LoanContract",
+          "termNumber: Integer",
+          "dueDate: LocalDate",
+          "principalAmount: BigDecimal",
+          "interestAmount: BigDecimal",
+          "totalAmount: BigDecimal",
+          "remainingBalance: BigDecimal",
+          "status: String",
+          "paidDate: LocalDate",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryDraw",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/LotteryDraw.java",
+        "methods": [],
+        "fields": [
+          "id: String",
+          "gameName: String",
+          "drawPeriod: String",
+          "drawDate: String",
+          "winningNumbers: String",
+          "specialNumber: Integer",
+          "jackpot1Amount: Long",
+          "jackpot2Amount: Long",
+          "winnersJ1: Integer",
+          "winnersJ2: Integer",
+          "createdAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryTicket",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/LotteryTicket.java",
+        "methods": [],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "ticketCode: String",
+          "gameName: String",
+          "drawPeriod: String",
+          "selectedNumbers: String",
+          "amount: Long",
+          "quantity: Integer",
+          "status: String",
+          "winningAmount: Long",
+          "createdAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "MoneyRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/MoneyRequest.java",
+        "methods": [
+          "prePersist()",
+          "create(String requesterId, String targetUserId, Long amount, Instant expiresAt, String note)",
+          "accept()",
+          "reject()",
+          "expire()"
+        ],
+        "fields": [
+          "id: String",
+          "requesterId: String",
+          "targetUserId: String",
+          "amount: Long",
+          "status: String",
+          "note: String",
+          "createdAt: Instant",
+          "expiresAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OutboxEvent",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/OutboxEvent.java",
+        "methods": [
+          "prePersist()",
+          "pending(String aggregateType, String aggregateId, String eventType, String payload)",
+          "markPublished()",
+          "markFailed()",
+          "incrementRetry()"
+        ],
+        "fields": [
+          "id: String",
+          "aggregateType: String",
+          "aggregateId: String",
+          "eventType: String",
+          "payload: String",
+          "status: String",
+          "retryCount: Integer",
+          "createdAt: Instant",
+          "publishedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SavingsAccount",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/SavingsAccount.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "userId: String",
+          "walletId: String",
+          "accountNumber: String",
+          "productType: String",
+          "productName: String",
+          "principal: BigDecimal",
+          "interestRate: BigDecimal",
+          "termMonths: Integer",
+          "expectedInterest: BigDecimal",
+          "accruedInterest: BigDecimal",
+          "rolloverType: String",
+          "status: String",
+          "startDate: LocalDate",
+          "maturityDate: LocalDate",
+          "settledDate: Instant",
+          "settledAmount: BigDecimal",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TelcoTopup",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/TelcoTopup.java",
+        "methods": [
+          "prePersist()"
+        ],
+        "fields": [
+          "id: String",
+          "userId: String",
+          "phoneNumber: String",
+          "telcoCode: String",
+          "topupAmount: BigDecimal",
+          "discountAmount: BigDecimal",
+          "netAmount: BigDecimal",
+          "status: String",
+          "transactionId: String",
+          "serialNumber: String",
+          "createdAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Transaction",
+        "kind": "class",
+        "package": "com.fintech.payment.domain.entity",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/domain/entity/Transaction.java",
+        "methods": [
+          "prePersist()",
+          "initiate(String transactionCode, String sourceWalletId, String targetWalletId, String senderId, String...)",
+          "markDebited()",
+          "markCreditPending()",
+          "markSuccess()",
+          "markFailed(String reason)",
+          "markReversed()"
+        ],
+        "fields": [
+          "id: String",
+          "transactionCode: String",
+          "sourceWalletId: String",
+          "targetWalletId: String",
+          "senderId: String",
+          "receiverId: String",
+          "amount: Long",
+          "fee: Long",
+          "currency: String",
+          "type: String",
+          "status: String",
+          "idempotencyKey: String",
+          "failureReason: String",
+          "note: String",
+          "sourceBalanceAfter: Long",
+          "targetBalanceAfter: Long",
+          "createdAt: Instant",
+          "updatedAt: Instant",
+          "version: Long"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ApiResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/ApiResponse.java",
+        "methods": [
+          "success(String message, T data)",
+          "error(String message)",
+          "error(String errorCode, String message)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BankAccountDto",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/BankAccountDto.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BeneficiaryDto",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/BeneficiaryDto.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BillLookupResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/BillLookupResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BillPaymentRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/BillPaymentRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BillPaymentResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/BillPaymentResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CardDto",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CardDto.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CardIssueRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CardIssueRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CardSettingsRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CardSettingsRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CardStatusRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CardStatusRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CashDepositApproveRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CashDepositApproveRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CashDepositRejectRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CashDepositRejectRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CashDepositRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CashDepositRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CashDepositResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CashDepositResponse.java",
+        "methods": [
+          "from(CashDeposit entity)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CreateBeneficiaryRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/CreateBeneficiaryRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "DepositRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositRequest.java",
+        "methods": [
+          "resolveIdempotencyKey()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "DepositResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/DepositResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "FundingSourceDto",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/FundingSourceDto.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LinkBankAccountRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LinkBankAccountRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanApplicationRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LoanApplicationRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanApplicationResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LoanApplicationResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanProductDto",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LoanProductDto.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanRepaymentRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LoanRepaymentRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanRepaymentResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LoanRepaymentResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanScheduleResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LoanScheduleResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryBuyRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LotteryBuyRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryBuyResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LotteryBuyResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryResultDto",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LotteryResultDto.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryTicketDto",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/LotteryTicketDto.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "MoneyRequestRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/MoneyRequestRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "MoneyRequestResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/MoneyRequestResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OpenSavingsRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/OpenSavingsRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PhoneTopupRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/PhoneTopupRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PhoneTopupResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/PhoneTopupResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SavingsAccountResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/SavingsAccountResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SavingsProductDto",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/SavingsProductDto.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SettleSavingsRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/SettleSavingsRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SettleSavingsResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/SettleSavingsResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TransferRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/TransferRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TransferResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/TransferResponse.java",
+        "methods": [
+          "from(com.fintech.payment.saga.SagaContext ctx)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "VaultSummaryResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/VaultSummaryResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "VietQrDecodeRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/VietQrDecodeRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "VietQrDecodeResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/VietQrDecodeResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "VietQrGenerateRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/VietQrGenerateRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "VietQrResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/VietQrResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WithdrawRequest",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawRequest.java",
+        "methods": [
+          "resolveIdempotencyKey()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WithdrawResponse",
+        "kind": "class",
+        "package": "com.fintech.payment.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/dto/WithdrawResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "GlobalExceptionHandler",
+        "kind": "class",
+        "package": "com.fintech.payment.exception",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/exception/GlobalExceptionHandler.java",
+        "methods": [
+          "handleMakerCheckerViolation(MakerCheckerViolationException ex)",
+          "handleIllegalArgument(IllegalArgumentException ex)",
+          "handleIllegalState(IllegalStateException ex)",
+          "handleValidation(MethodArgumentNotValidException ex)",
+          "handleGeneric(Exception ex)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "MakerCheckerViolationException",
+        "kind": "class",
+        "package": "com.fintech.payment.exception",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/exception/MakerCheckerViolationException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletGrpcClient",
+        "kind": "class",
+        "package": "com.fintech.payment.grpc",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/grpc/WalletGrpcClient.java",
+        "methods": [
+          "debit(String walletId, Long amount, String transactionId, String idempotencyKey)",
+          "credit(String walletId, Long amount, String transactionId, String idempotencyKey)",
+          "reserve(String walletId, Long amount, String transactionId, int reserveDurationSeconds)",
+          "release(String reservationId, String transactionId)",
+          "checkLimit(String walletId, Long amount, String transactionType, String userId)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletBalanceResult",
+        "kind": "class",
+        "package": "com.fintech.payment.grpc.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/grpc/dto/WalletBalanceResult.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletInfoResult",
+        "kind": "class",
+        "package": "com.fintech.payment.grpc.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/grpc/dto/WalletInfoResult.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletLimitResult",
+        "kind": "class",
+        "package": "com.fintech.payment.grpc.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/grpc/dto/WalletLimitResult.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletReservationResult",
+        "kind": "class",
+        "package": "com.fintech.payment.grpc.dto",
+        "layer": "presentation",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/grpc/dto/WalletReservationResult.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KafkaConfig",
+        "kind": "class",
+        "package": "com.fintech.payment.kafka",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/kafka/KafkaConfig.java",
+        "methods": [
+          "paymentProducerFactory()",
+          "paymentKafkaTemplate(ProducerFactory<String, Object> producerFactory)",
+          "paymentTransactionLifecycleTopic()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PaymentKafkaProducer",
+        "kind": "class",
+        "package": "com.fintech.payment.kafka",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/kafka/PaymentKafkaProducer.java",
+        "methods": [
+          "sendLifecycleEvent(String transactionId, String eventType, Object payload)",
+          "sendCashDepositCompleted(String depositCode, String accountNumber, String customerName, Long amount, String branchId)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OutboxRelay",
+        "kind": "class",
+        "package": "com.fintech.payment.outbox",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/outbox/OutboxRelay.java",
+        "methods": [
+          "relayPendingEvents()",
+          "saveEvent(String aggregateType, String aggregateId, String eventType, String payload)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OutboxRelayConfig",
+        "kind": "class",
+        "package": "com.fintech.payment.outbox",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/outbox/OutboxRelayConfig.java",
+        "methods": [
+          "jsonMessageConverter(com.fasterxml.jackson.databind.ObjectMapper objectMapper)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BankAccountRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/BankAccountRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BankRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/BankRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BeneficiaryRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/BeneficiaryRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BillRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/BillRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CardRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/CardRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CashDepositRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/CashDepositRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "FundingSourceRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/FundingSourceRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanContractRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/LoanContractRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanScheduleItemRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/LoanScheduleItemRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryDrawRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/LotteryDrawRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryTicketRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/LotteryTicketRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "MoneyRequestRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/MoneyRequestRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "OutboxEventRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/OutboxEventRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SavingsAccountRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/SavingsAccountRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TelcoTopupRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/TelcoTopupRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TransactionRepository",
+        "kind": "interface",
+        "package": "com.fintech.payment.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/repository/TransactionRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "MakerCheckerRule",
+        "kind": "class",
+        "package": "com.fintech.payment.rule",
+        "layer": "domain",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/rule/MakerCheckerRule.java",
+        "methods": [
+          "validateDifferentActors(String makerId, String checkerId)",
+          "requiresCheckerApproval(long amount)",
+          "approveDeposit(CashDeposit deposit, String checkerId)",
+          "rejectDeposit(CashDeposit deposit, String checkerId, String reason)"
+        ],
+        "fields": [
+          "autoApproveLimit: long"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PaymentSagaOrchestrator",
+        "kind": "class",
+        "package": "com.fintech.payment.saga",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/saga/PaymentSagaOrchestrator.java",
+        "methods": [
+          "transferP2p(String sourceUserId, String targetUserId, Long amount, String currency, String note, String i...)",
+          "deposit(String userId, String walletId, Long amount, String currency, String idempotencyKey)",
+          "withdraw(String userId, String walletId, Long amount, String currency, String bankAccountId, String id...)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SagaContext",
+        "kind": "class",
+        "package": "com.fintech.payment.saga",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/saga/SagaContext.java",
+        "methods": [
+          "sourceDebited(String balanceAfter)",
+          "targetCredited(String balanceAfter)",
+          "succeeded()",
+          "failed(String reason)",
+          "reversed()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PinTokenValidator",
+        "kind": "class",
+        "package": "com.fintech.payment.security",
+        "layer": "infrastructure",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/security/PinTokenValidator.java",
+        "methods": [
+          "validatePinToken(String pinToken, String expectedUserId)",
+          "validate(String userId, String pinToken)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BankAccountService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/BankAccountService.java",
+        "methods": [
+          "linkBankAccount(String userId, LinkBankAccountRequest request)",
+          "unlinkBankAccount(String userId, String bankAccountId)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BeneficiaryService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/BeneficiaryService.java",
+        "methods": [
+          "addBeneficiary(String userId, CreateBeneficiaryRequest request)",
+          "deleteBeneficiary(String userId, String id)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BillService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/BillService.java",
+        "methods": [
+          "lookupBill(String type, String customerCode)",
+          "payBill(String userId, BillPaymentRequest request)",
+          "topupPhone(String userId, PhoneTopupRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "CardService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/CardService.java",
+        "methods": [
+          "generateCardNumber(String prefix)",
+          "maskCardNumber(String cardNumber)",
+          "issueCard(String userId, String cardHolderName, CardIssueRequest request)",
+          "updateCardStatus(String userId, String cardId, CardStatusRequest request)",
+          "updateCardSettings(String userId, String cardId, CardSettingsRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "FundingSourceService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/FundingSourceService.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LoanService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/LoanService.java",
+        "methods": [
+          "applyLoan(String userId, LoanApplicationRequest request)",
+          "repayTerm(String loanId, String userId, LoanRepaymentRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LotteryService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/LotteryService.java",
+        "methods": [
+          "buyTicket(String userId, LotteryBuyRequest req)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ReceiptExportService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/ReceiptExportService.java",
+        "methods": [
+          "generateReceiptPdf(String transactionId)",
+          "exportTransactions(String walletId, String format)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SavingsService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/SavingsService.java",
+        "methods": [
+          "openSavings(String userId, OpenSavingsRequest request)",
+          "settleSavings(String id, String userId, SettleSavingsRequest request)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "VietQrService",
+        "kind": "class",
+        "package": "com.fintech.payment.service",
+        "layer": "application",
+        "path": "backend/services/payment-service/src/main/java/com/fintech/payment/service/VietQrService.java",
+        "methods": [
+          "generateVietQr(VietQrGenerateRequest request)",
+          "decodeVietQr(String qrString)",
+          "calculateCrc16(String input)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      }
+    ],
+    "ledger-service": [
+      {
+        "name": "LedgerApplication",
+        "kind": "class",
+        "package": "com.fintech.ledger",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/LedgerApplication.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TransactionEventMessage",
+        "kind": "class",
+        "package": "com.fintech.ledger.application.dto",
+        "layer": "presentation",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/application/dto/TransactionEventMessage.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KafkaEventEnvelope",
+        "kind": "class",
+        "package": "com.fintech.ledger.application.kafka",
+        "layer": "application",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/application/kafka/KafkaEventEnvelope.java",
+        "methods": [
+          "timestampInstant()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KafkaLedgerEventTranslator",
+        "kind": "class",
+        "package": "com.fintech.ledger.application.kafka",
+        "layer": "application",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/application/kafka/KafkaLedgerEventTranslator.java",
+        "methods": [
+          "fromWalletBalanceChanged(KafkaEventEnvelope envelope)",
+          "fromPaymentLifecycle(KafkaEventEnvelope envelope)",
+          "fromPaymentLifecycle(KafkaEventEnvelope envelope, String messageKey)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KafkaTopicConstants",
+        "kind": "class",
+        "package": "com.fintech.ledger.application.kafka",
+        "layer": "application",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/application/kafka/KafkaTopicConstants.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerPersistencePort",
+        "kind": "interface",
+        "package": "com.fintech.ledger.application.port",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/application/port/LedgerPersistencePort.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerService",
+        "kind": "class",
+        "package": "com.fintech.ledger.application.service",
+        "layer": "application",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/application/service/LedgerService.java",
+        "methods": [
+          "recordTransactionPosting(TransactionEventMessage event)",
+          "verifyLedgerBalance()",
+          "LedgerReconciliationResult(BigDecimal totalDebit, BigDecimal totalCredit, boolean balanced)",
+          "LedgerTurnoverSummary(BigDecimal totalDebit, BigDecimal totalCredit, BigDecimal delta, boolean balanced, BigDecimal...)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerUnbalancedException",
+        "kind": "class",
+        "package": "com.fintech.ledger.domain.exception",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/domain/exception/LedgerUnbalancedException.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "AccountType",
+        "kind": "enum",
+        "package": "com.fintech.ledger.domain.model",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/domain/model/AccountType.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "JournalEntry",
+        "kind": "class",
+        "package": "com.fintech.ledger.domain.model",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/domain/model/JournalEntry.java",
+        "methods": [
+          "createOriginal(String transactionId, String description, String referenceNumber, List<LedgerPosting> postings)",
+          "createReversal(String transactionId, String description, String referenceNumber, String reversalOf, List<Led...)",
+          "rehydrate(String id, String transactionId, String entryNumber, LocalDate entryDate, String description,...)",
+          "compensatePostings()"
+        ],
+        "fields": [
+          "id: String",
+          "transactionId: String",
+          "entryNumber: String",
+          "entryDate: LocalDate",
+          "description: String",
+          "referenceNumber: String",
+          "status: JournalEntryStatus",
+          "reversalOf: String",
+          "postedAt: Instant",
+          "postings: List<LedgerPosting>"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "JournalEntryStatus",
+        "kind": "enum",
+        "package": "com.fintech.ledger.domain.model",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/domain/model/JournalEntryStatus.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerAccount",
+        "kind": "class",
+        "package": "com.fintech.ledger.domain.model",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/domain/model/LedgerAccount.java",
+        "methods": [
+          "of(String id, String code, String name, AccountType type, BigDecimal balance, String currency)",
+          "create(String code, String name, AccountType type, String currency)",
+          "bankSettlement(String currency)",
+          "cashOnHand(String currency)",
+          "walletAccountCode(String walletId)",
+          "walletAccountName(String walletId)"
+        ],
+        "fields": [
+          "id: String",
+          "code: String",
+          "name: String",
+          "type: AccountType",
+          "balance: BigDecimal",
+          "currency: String"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerPosting",
+        "kind": "class",
+        "package": "com.fintech.ledger.domain.model",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/domain/model/LedgerPosting.java",
+        "methods": [
+          "invert()"
+        ],
+        "fields": [
+          "id: String",
+          "journalEntryId: String",
+          "accountId: String",
+          "side: PostingSide",
+          "amount: BigDecimal",
+          "currency: String"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PostingSide",
+        "kind": "enum",
+        "package": "com.fintech.ledger.domain.model",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/domain/model/PostingSide.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "AmqpConfig",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.amqp",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/amqp/AmqpConfig.java",
+        "methods": [
+          "transactionExchange()",
+          "deadLetterExchange()",
+          "ledgerQueue()",
+          "ledgerDlq()",
+          "ledgerBinding(Queue ledgerQueue, TopicExchange transactionExchange)",
+          "ledgerDlqBinding(Queue ledgerDlq, DirectExchange deadLetterExchange)",
+          "ledgerMessageConverter()",
+          "ledgerRetryInterceptor()",
+          "ledgerListenerContainerFactory(ConnectionFactory connectionFactory, MessageConverter ledgerMessageConverter, RetryOperations...)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerEventConsumer",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.amqp",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/amqp/LedgerEventConsumer.java",
+        "methods": [
+          "onTransactionEvent(TransactionEventMessage event)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [
+          "RabbitListener ledger.transaction.events -> onTransactionEvent"
+        ],
+        "listener_meta": [
+          {
+            "kind": "RabbitListener",
+            "method": "onTransactionEvent",
+            "queues": "ledger.transaction.events"
+          }
+        ]
+      },
+      {
+        "name": "KafkaTopicConfig",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.kafka",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/kafka/KafkaTopicConfig.java",
+        "methods": [
+          "ledgerKafkaListenerContainerFactory(ConsumerFactory consumerFactory, KafkaOperations deadLetterKafkaTemplate)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerKafkaConsumer",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.kafka",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/kafka/LedgerKafkaConsumer.java",
+        "methods": [
+          "onWalletBalanceChanged(KafkaEventEnvelope envelope, String messageKey, Acknowledgment acknowledgment)",
+          "onPaymentLifecycle(KafkaEventEnvelope envelope, String messageKey, Acknowledgment acknowledgment)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [
+          "KafkaListener banking.wallet.balance-changed.v1 -> onWalletBalanceChanged",
+          "KafkaListener banking.payment.transaction-lifecycle.v1 -> onPaymentLifecycle"
+        ],
+        "listener_meta": [
+          {
+            "kind": "KafkaListener",
+            "method": "onWalletBalanceChanged",
+            "topics": "banking.wallet.balance-changed.v1"
+          },
+          {
+            "kind": "KafkaListener",
+            "method": "onPaymentLifecycle",
+            "topics": "banking.payment.transaction-lifecycle.v1"
+          }
+        ]
+      },
+      {
+        "name": "LedgerPersistenceAdapter",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.persistence.adapter",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/persistence/adapter/LedgerPersistenceAdapter.java",
+        "methods": [
+          "saveAccount(LedgerAccount account)",
+          "findAccountByCode(String code)",
+          "findAccountByName(String name)",
+          "findAllAccounts()",
+          "findAccountById(String accountId)",
+          "saveJournalEntry(JournalEntry entry)",
+          "findJournalEntryById(String entryId)",
+          "findJournalEntryByReference(String referenceNumber)",
+          "findPostedEntryByTransactionId(String transactionId)",
+          "findEntriesByTransactionId(String transactionId)",
+          "findAllEntries()",
+          "findPostingsByEntryId(String entryId)",
+          "findPostingsByAccountId(String accountId, Instant from, Instant toExclusive)",
+          "sumAmount(PostingSide side)",
+          "existsJournalEntryByReference(String referenceNumber)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "JournalEntryJpaEntity",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.persistence.entity",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/persistence/entity/JournalEntryJpaEntity.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "transactionId: String",
+          "entryNumber: Long",
+          "entryDate: LocalDate",
+          "description: String",
+          "referenceNumber: String",
+          "status: String",
+          "reversalOf: UUID",
+          "postedAt: LocalDateTime",
+          "createdAt: LocalDateTime"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerAccountJpaEntity",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.persistence.entity",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/persistence/entity/LedgerAccountJpaEntity.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "code: String",
+          "name: String",
+          "type: String",
+          "balance: BigDecimal",
+          "currency: String",
+          "active: boolean",
+          "description: String",
+          "createdAt: LocalDateTime",
+          "updatedAt: LocalDateTime"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerPostingJpaEntity",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.persistence.entity",
+        "layer": "domain",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/persistence/entity/LedgerPostingJpaEntity.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "journalEntryId: UUID",
+          "accountId: UUID",
+          "side: String",
+          "amount: BigDecimal",
+          "currency: String",
+          "description: String",
+          "createdAt: LocalDateTime"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerDomainMapper",
+        "kind": "class",
+        "package": "com.fintech.ledger.infrastructure.persistence.mapper",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/persistence/mapper/LedgerDomainMapper.java",
+        "methods": [
+          "toJpa(LedgerAccount account)",
+          "toDomain(LedgerAccountJpaEntity entity)",
+          "toJpa(JournalEntry entry)",
+          "toJpa(String journalEntryId, LedgerPosting posting)",
+          "toDomainWithoutEntry(LedgerPostingJpaEntity entity)",
+          "toDomain(JournalEntryJpaEntity entity, List<LedgerPostingJpaEntity> postingEntities)",
+          "toInstant(java.time.LocalDateTime localDateTime)",
+          "toLocalDateTime(java.time.Instant instant)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SpringJournalEntryRepository",
+        "kind": "interface",
+        "package": "com.fintech.ledger.infrastructure.persistence.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/persistence/repository/SpringJournalEntryRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SpringLedgerAccountRepository",
+        "kind": "interface",
+        "package": "com.fintech.ledger.infrastructure.persistence.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/persistence/repository/SpringLedgerAccountRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SpringLedgerPostingRepository",
+        "kind": "interface",
+        "package": "com.fintech.ledger.infrastructure.persistence.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/infrastructure/persistence/repository/SpringLedgerPostingRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerApiExceptionHandler",
+        "kind": "class",
+        "package": "com.fintech.ledger.presentation.controller",
+        "layer": "presentation",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/controller/LedgerApiExceptionHandler.java",
+        "methods": [
+          "handleUnbalanced(LedgerUnbalancedException e)",
+          "handleNotFound(NoSuchElementException e)",
+          "handleBadRequest(IllegalArgumentException e)",
+          "handleGeneric(Exception e)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerController",
+        "kind": "class",
+        "package": "com.fintech.ledger.presentation.controller",
+        "layer": "presentation",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/controller/LedgerController.java",
+        "methods": [
+          "checkLedgerBalance()"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/ledger/summary -> getTurnoverSummary",
+          "GET /api/v1/ledger/accounts -> getAccounts",
+          "GET /api/v1/ledger/accounts/balance-check -> checkLedgerBalance",
+          "GET /api/v1/ledger/statement/{walletId} -> getWalletStatement",
+          "GET /api/v1/ledger/statement/{walletId}/account -> getWalletAccount",
+          "GET /api/v1/ledger/entries -> getJournalEntries",
+          "GET /api/v1/ledger/entries/{entryId} -> getJournalEntry",
+          "GET /api/v1/ledger/transactions/{transactionId} -> getEntriesByTransaction"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "LedgerQueryController",
+        "kind": "class",
+        "package": "com.fintech.ledger.presentation.controller",
+        "layer": "presentation",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/controller/LedgerQueryController.java",
+        "methods": [
+          "CashSummaryResponse(BigDecimal totalDebit1011, BigDecimal totalCredit4211, BigDecimal debit1011, BigDecimal credi...)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/ledger/cash-summary -> getCashSummary"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ApiErrorResponse",
+        "kind": "class",
+        "package": "com.fintech.ledger.presentation.dto",
+        "layer": "presentation",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/dto/ApiErrorResponse.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ApiResponse",
+        "kind": "class",
+        "package": "com.fintech.ledger.presentation.dto",
+        "layer": "presentation",
+        "path": "backend/services/ledger-service/src/main/java/com/fintech/ledger/presentation/dto/ApiResponse.java",
+        "methods": [
+          "ok(String message, T data)",
+          "created(String message, T data)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      }
+    ],
+    "notification-service": [
+      {
+        "name": "NotificationApplication",
+        "kind": "class",
+        "package": "com.fintech.notification",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/NotificationApplication.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "NotificationConsumer",
+        "kind": "class",
+        "package": "com.fintech.notification.amqp",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/amqp/NotificationConsumer.java",
+        "methods": [
+          "onTransactionEvent(TransactionEvent event)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [
+          "RabbitListener notification.transaction.events -> onTransactionEvent"
+        ],
+        "listener_meta": [
+          {
+            "kind": "RabbitListener",
+            "method": "onTransactionEvent",
+            "queues": "notification.transaction.events"
+          }
+        ]
+      },
+      {
+        "name": "FirebaseConfig",
+        "kind": "class",
+        "package": "com.fintech.notification.config",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/config/FirebaseConfig.java",
+        "methods": [
+          "init()"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "RabbitMqConfig",
+        "kind": "class",
+        "package": "com.fintech.notification.config",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/config/RabbitMqConfig.java",
+        "methods": [
+          "transactionExchange()",
+          "deadLetterExchange()",
+          "notificationQueue()",
+          "notificationDlq()",
+          "notificationBinding(Queue notificationQueue, TopicExchange transactionExchange)",
+          "notificationDlqBinding(Queue notificationDlq, DirectExchange deadLetterExchange)",
+          "jsonMessageConverter(ObjectMapper objectMapper)",
+          "retryInterceptor()",
+          "rabbitListenerContainerFactory(ConnectionFactory connectionFactory, MessageConverter jsonMessageConverter, RetryOperationsIn...)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WebSocketConfig",
+        "kind": "class",
+        "package": "com.fintech.notification.config",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/config/WebSocketConfig.java",
+        "methods": [
+          "configureMessageBroker(MessageBrokerRegistry config)",
+          "registerStompEndpoints(StompEndpointRegistry registry)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "DeviceController",
+        "kind": "class",
+        "package": "com.fintech.notification.controller",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/controller/DeviceController.java",
+        "methods": [
+          "registerDeviceToken(String userId, RegisterDeviceTokenRequest request)",
+          "unregisterDeviceToken(String userId, String fcmToken)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/devices/register -> registerDeviceToken",
+          "DELETE /api/v1/devices/unregister -> unregisterDeviceToken"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "GlobalExceptionHandler",
+        "kind": "class",
+        "package": "com.fintech.notification.controller",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/controller/GlobalExceptionHandler.java",
+        "methods": [
+          "handleIllegalArgument(IllegalArgumentException e)",
+          "handleMissingParam(MissingServletRequestParameterException e)",
+          "handleValidation(MethodArgumentNotValidException e)",
+          "handleGeneric(Exception e)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "NotificationController",
+        "kind": "class",
+        "package": "com.fintech.notification.controller",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/controller/NotificationController.java",
+        "methods": [
+          "markAsRead(String userId, String id)",
+          "markAllAsRead(String userId, String type)",
+          "updateSettings(String userId, boolean transactionEnabled, boolean promoEnabled)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/notifications -> getNotifications",
+          "GET /api/v1/notifications/unread-count -> getUnreadCount",
+          "PATCH /api/v1/notifications/{id}/read -> markAsRead",
+          "PATCH /api/v1/notifications/read-all -> markAllAsRead",
+          "PUT /api/v1/notifications/settings -> updateSettings"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PromotionController",
+        "kind": "class",
+        "package": "com.fintech.notification.controller",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/controller/PromotionController.java",
+        "methods": [
+          "redeemVoucher(String userId, String code)",
+          "applyVoucher(String userId, String code, BigDecimal orderAmount)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "GET /api/v1/promotions -> getActivePromotions",
+          "GET /api/v1/promotions/campaigns -> getActiveCampaigns",
+          "POST /api/v1/promotions/redeem -> redeemVoucher",
+          "POST /api/v1/promotions/apply -> applyVoucher",
+          "GET /api/v1/promotions/my-vouchers -> getMyVouchers"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SupportController",
+        "kind": "class",
+        "package": "com.fintech.notification.controller",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/controller/SupportController.java",
+        "methods": [
+          "createTicket(String userId, String subject, String category, String initialMessage)",
+          "addMessage(String userId, String id, String content)"
+        ],
+        "fields": [],
+        "endpoints": [
+          "POST /api/v1/support/tickets -> createTicket",
+          "GET /api/v1/support/tickets -> getTickets",
+          "GET /api/v1/support/tickets/{id} -> getTicketDetail",
+          "POST /api/v1/support/tickets/{id}/messages -> addMessage",
+          "GET /api/v1/support/faq -> getFaqs"
+        ],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "ApiResponse",
+        "kind": "class",
+        "package": "com.fintech.notification.dto",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/dto/ApiResponse.java",
+        "methods": [
+          "success(String message, T data)",
+          "error(String message)",
+          "error(String message, String errorCode)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PageResponse",
+        "kind": "class",
+        "package": "com.fintech.notification.dto",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/dto/PageResponse.java",
+        "methods": [
+          "of(List<T> content, int page, int size, long totalElements)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "RegisterDeviceTokenRequest",
+        "kind": "class",
+        "package": "com.fintech.notification.dto",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/dto/RegisterDeviceTokenRequest.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "TicketMessage",
+        "kind": "record",
+        "package": "com.fintech.notification.dto",
+        "layer": "presentation",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/dto/TicketMessage.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "DeviceToken",
+        "kind": "class",
+        "package": "com.fintech.notification.entity",
+        "layer": "domain",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/entity/DeviceToken.java",
+        "methods": [
+          "create(String userId, String platform, String token, String deviceModel, String appVersion)",
+          "assignTo(String userId, String platform)"
+        ],
+        "fields": [
+          "id: UUID",
+          "userId: String",
+          "platform: String",
+          "token: String",
+          "deviceModel: String",
+          "appVersion: String",
+          "active: boolean",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Notification",
+        "kind": "class",
+        "package": "com.fintech.notification.entity",
+        "layer": "domain",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/entity/Notification.java",
+        "methods": [
+          "create(String userId, String type, String title, String body, String channel, String dataPayload)"
+        ],
+        "fields": [
+          "id: UUID",
+          "userId: String",
+          "type: String",
+          "title: String",
+          "body: String",
+          "channel: String",
+          "dataPayload: String",
+          "read: boolean",
+          "sentAt: Instant",
+          "deliveredAt: Instant",
+          "readAt: Instant",
+          "createdAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Promotion",
+        "kind": "class",
+        "package": "com.fintech.notification.entity",
+        "layer": "domain",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/entity/Promotion.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "name: String",
+          "description: String",
+          "type: String",
+          "targetAmount: Long",
+          "rewardAmount: Long",
+          "maxRewardPerUser: Long",
+          "totalRewardBudget: Long",
+          "rewardClaimed: Long",
+          "participantLimit: Integer",
+          "participantsCount: Integer",
+          "startDate: Instant",
+          "endDate: Instant",
+          "active: boolean",
+          "rulesJson: String",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SupportTicket",
+        "kind": "class",
+        "package": "com.fintech.notification.entity",
+        "layer": "domain",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/entity/SupportTicket.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "userId: String",
+          "subject: String",
+          "description: String",
+          "category: String",
+          "status: String",
+          "priority: String",
+          "messagesJson: String",
+          "resolvedAt: Instant",
+          "resolvedBy: String",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "Voucher",
+        "kind": "class",
+        "package": "com.fintech.notification.entity",
+        "layer": "domain",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/entity/Voucher.java",
+        "methods": [],
+        "fields": [
+          "id: UUID",
+          "code: String",
+          "title: String",
+          "description: String",
+          "discountType: String",
+          "discountValue: Long",
+          "minOrderAmount: Long",
+          "maxDiscountAmount: Long",
+          "validFrom: Instant",
+          "validUntil: Instant",
+          "usageLimit: Integer",
+          "usedCount: Integer",
+          "active: boolean",
+          "createdAt: Instant",
+          "updatedAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KafkaConsumerConfig",
+        "kind": "class",
+        "package": "com.fintech.notification.kafka",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/kafka/KafkaConsumerConfig.java",
+        "methods": [
+          "notificationKafkaConsumerFactory()",
+          "notificationKafkaProducerFactory()",
+          "notificationKafkaTemplate(ProducerFactory<String, String> notificationKafkaProducerFactory)",
+          "notificationKafkaListenerContainerFactory(ConsumerFactory<String, String> notificationKafkaConsumerFactory, KafkaTemplate<String, Strin...)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "NotificationKafkaConsumer",
+        "kind": "class",
+        "package": "com.fintech.notification.kafka",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/kafka/NotificationKafkaConsumer.java",
+        "methods": [
+          "onTransactionEvent(ConsumerRecord<String, String> record, Acknowledgment acknowledgment)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [
+          "KafkaListener banking.payment.transaction-lifecycle.v1 -> onTransactionEvent"
+        ],
+        "listener_meta": [
+          {
+            "kind": "KafkaListener",
+            "method": "onTransactionEvent",
+            "topics": "banking.payment.transaction-lifecycle.v1"
+          }
+        ]
+      },
+      {
+        "name": "EventIdempotencyStore",
+        "kind": "class",
+        "package": "com.fintech.notification.notification",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/notification/EventIdempotencyStore.java",
+        "methods": [
+          "markProcessed(String eventId)",
+          "forget(String eventId)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "FcmPushSender",
+        "kind": "class",
+        "package": "com.fintech.notification.notification",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/notification/FcmPushSender.java",
+        "methods": [
+          "sendPushNotification(String userId, String title, String body, Map<String, String> data)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "NotificationPayload",
+        "kind": "class",
+        "package": "com.fintech.notification.notification",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/notification/NotificationPayload.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserPhoneResolver",
+        "kind": "class",
+        "package": "com.fintech.notification.notification",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/notification/UserPhoneResolver.java",
+        "methods": [
+          "resolve(String userId)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WebSocketNotifier",
+        "kind": "class",
+        "package": "com.fintech.notification.notification",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/notification/WebSocketNotifier.java",
+        "methods": [
+          "pushToWallet(String walletId, NotificationPayload payload)",
+          "pushToUser(String userId, NotificationPayload payload)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "DeviceTokenRepository",
+        "kind": "interface",
+        "package": "com.fintech.notification.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/repository/DeviceTokenRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "NotificationRepository",
+        "kind": "interface",
+        "package": "com.fintech.notification.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/repository/NotificationRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PromotionRepository",
+        "kind": "interface",
+        "package": "com.fintech.notification.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/repository/PromotionRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SupportTicketRepository",
+        "kind": "interface",
+        "package": "com.fintech.notification.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/repository/SupportTicketRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "VoucherRepository",
+        "kind": "interface",
+        "package": "com.fintech.notification.repository",
+        "layer": "infrastructure",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/repository/VoucherRepository.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "DeviceTokenService",
+        "kind": "class",
+        "package": "com.fintech.notification.service",
+        "layer": "application",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/service/DeviceTokenService.java",
+        "methods": [
+          "registerDeviceToken(String userId, String fcmToken, String deviceType, String deviceModel, String appVersion)",
+          "unregisterDeviceToken(String userId, String fcmToken)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "NotificationService",
+        "kind": "class",
+        "package": "com.fintech.notification.service",
+        "layer": "application",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/service/NotificationService.java",
+        "methods": [
+          "markAsRead(String userId, String notificationId)",
+          "markAllAsRead(String userId, String type)",
+          "existsForTransaction(String userId, String transactionId, String status)",
+          "save(Notification notification)",
+          "countUnread(String userId)",
+          "updateSettings(String userId, boolean transactionEnabled, boolean promoEnabled)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PromotionService",
+        "kind": "class",
+        "package": "com.fintech.notification.service",
+        "layer": "application",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/service/PromotionService.java",
+        "methods": [
+          "redeemVoucher(String userId, String code)",
+          "applyVoucher(String userId, String code, BigDecimal orderAmount)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "SupportService",
+        "kind": "class",
+        "package": "com.fintech.notification.service",
+        "layer": "application",
+        "path": "backend/services/notification-service/src/main/java/com/fintech/notification/service/SupportService.java",
+        "methods": [
+          "createTicket(String userId, String subject, String category, String initialMessage)",
+          "addMessage(String ticketId, String senderId, String senderType, String content)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      }
+    ],
+    "common-library": [
+      {
+        "name": "TransactionEvent",
+        "kind": "class",
+        "package": "com.fintech.wallet.domain.event",
+        "layer": "domain",
+        "path": "backend/common-library/src/main/java/com/fintech/wallet/domain/event/TransactionEvent.java",
+        "methods": [],
+        "fields": [
+          "eventId: String",
+          "transactionId: String",
+          "type: String",
+          "status: String",
+          "sourceWalletId: String",
+          "targetWalletId: String",
+          "sourceUserId: String",
+          "targetUserId: String",
+          "sourcePhone: String",
+          "targetPhone: String",
+          "amount: BigDecimal",
+          "feeAmount: BigDecimal",
+          "currency: String",
+          "sourceBalanceAfter: BigDecimal",
+          "targetBalanceAfter: BigDecimal",
+          "note: String",
+          "occurredAt: Instant"
+        ],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "UserRegisteredEvent",
+        "kind": "record",
+        "package": "com.fintech.wallet.domain.event",
+        "layer": "domain",
+        "path": "backend/common-library/src/main/java/com/fintech/wallet/domain/event/UserRegisteredEvent.java",
+        "methods": [
+          "phoneNumber()",
+          "of(String userId, String phone, String fullName, Integer kycTier, String countryCode)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "BaseKafkaProducer",
+        "kind": "class",
+        "package": "com.fintech.wallet.kafka",
+        "layer": "infrastructure",
+        "path": "backend/common-library/src/main/java/com/fintech/wallet/kafka/BaseKafkaProducer.java",
+        "methods": [
+          "send(String topic, String key, KafkaEventEnvelope<T> envelope)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KafkaErrorHandlerFactory",
+        "kind": "class",
+        "package": "com.fintech.wallet.kafka",
+        "layer": "infrastructure",
+        "path": "backend/common-library/src/main/java/com/fintech/wallet/kafka/KafkaErrorHandlerFactory.java",
+        "methods": [
+          "createDeadLetterErrorHandler(KafkaOperations<?, ?> kafkaOperations)",
+          "createDeadLetterErrorHandler(KafkaOperations<?, ?> kafkaOperations, BackOff backOff)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KafkaEventEnvelope",
+        "kind": "record",
+        "package": "com.fintech.wallet.kafka",
+        "layer": "infrastructure",
+        "path": "backend/common-library/src/main/java/com/fintech/wallet/kafka/KafkaEventEnvelope.java",
+        "methods": [
+          "of(String producerService, String topic, T payload)",
+          "of(String traceId, String producerService, String topic, T payload)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "KafkaTopicConstants",
+        "kind": "class",
+        "package": "com.fintech.wallet.kafka",
+        "layer": "infrastructure",
+        "path": "backend/common-library/src/main/java/com/fintech/wallet/kafka/KafkaTopicConstants.java",
+        "methods": [],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "PaymentTransactionLifecyclePayload",
+        "kind": "record",
+        "package": "com.fintech.wallet.kafka",
+        "layer": "infrastructure",
+        "path": "backend/common-library/src/main/java/com/fintech/wallet/kafka/PaymentTransactionLifecyclePayload.java",
+        "methods": [
+          "of(String transactionId, String traceId, LifecycleStatus status, String sourceWalletId, String t...)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      },
+      {
+        "name": "WalletBalanceChangedPayload",
+        "kind": "record",
+        "package": "com.fintech.wallet.kafka",
+        "layer": "infrastructure",
+        "path": "backend/common-library/src/main/java/com/fintech/wallet/kafka/WalletBalanceChangedPayload.java",
+        "methods": [
+          "debit(String walletId, BigDecimal previous, BigDecimal amount, String currency, String transactionId)",
+          "credit(String walletId, BigDecimal previous, BigDecimal amount, String currency, String transactionId)",
+          "reserve(String walletId, BigDecimal previous, BigDecimal amount, String reservationId)",
+          "release(String walletId, BigDecimal previous, BigDecimal amount, String reservationId)"
+        ],
+        "fields": [],
+        "endpoints": [],
+        "listeners": [],
+        "listener_meta": []
+      }
+    ]
+  }
+}

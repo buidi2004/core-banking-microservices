@@ -46,12 +46,24 @@ class VietnamHeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
-    final displayAmount = isHidden ? '••••••••' : _currencyFormatter.format(balance);
+    final displayAmount =
+        isHidden ? '••••••••' : _currencyFormatter.format(balance);
     final bannerHeight = 355.0 + topPadding;
 
-    return SizedBox(
+    return Container(
       height: bannerHeight,
       width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF041E3A),
+            Color(0xFF0A2E50),
+            Color(0xFF0E4D7A),
+          ],
+        ),
+      ),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -67,15 +79,17 @@ class VietnamHeroHeader extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black,       // 0% -> 50%: Giữ 100% độ rõ cho thông tin và kiến trúc
+                    Colors
+                        .black, // 0% -> 50%: Giữ 100% độ rõ cho thông tin và kiến trúc
                     Colors.black,
-                    Color(0xF5000000),  // 60%: Bắt đầu chuyển tiếp siêu êm
-                    Color(0xD8000000),  // 70%
-                    Color(0xA0000000),  // 78%
-                    Color(0x60000000),  // 86%
-                    Color(0x28000000),  // 93%
-                    Color(0x0A000000),  // 97%
-                    Colors.transparent, // 100%: Hoàn toàn trong suốt, hòa tan mượt mà vào nền kính
+                    Color(0xF5000000), // 60%: Bắt đầu chuyển tiếp siêu êm
+                    Color(0xD8000000), // 70%
+                    Color(0xA0000000), // 78%
+                    Color(0x60000000), // 86%
+                    Color(0x28000000), // 93%
+                    Color(0x0A000000), // 97%
+                    Colors
+                        .transparent, // 100%: Hoàn toàn trong suốt, hòa tan mượt mà vào nền kính
                   ],
                   stops: [0.0, 0.50, 0.60, 0.70, 0.78, 0.86, 0.93, 0.97, 1.0],
                 ).createShader(bounds);
@@ -109,127 +123,177 @@ class VietnamHeroHeader extends StatelessWidget {
             ),
           ),
 
-            // 3. NỘI DUNG TÀI KHOẢN Ở NỬA TRÊN (Không che tòa nhà hay quảng trường)
-            Positioned(
-              top: topPadding + 10,
-              left: 14,
-              right: 14,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // HÀNG 1: THÔNG BÁO & TÌM KIẾM (TRÁI) & LỜI CHÀO + AVATAR (PHẢI)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Cụm Nút chuông thông báo & Tìm kiếm (bên trái)
-                      Row(
-                        children: [
-                          Stack(
-                            children: [
-                              Container(
-                                width: 38,
-                                height: 38,
-                                decoration: BoxDecoration(
+          // 3. NỘI DUNG TÀI KHOẢN Ở NỬA TRÊN (Không che tòa nhà hay quảng trường)
+          Positioned(
+            top: topPadding + 10,
+            left: 14,
+            right: 14,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // HÀNG 1: THÔNG BÁO & TÌM KIẾM (TRÁI) & LỜI CHÀO + AVATAR (PHẢI)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Cụm Nút chuông thông báo & Tìm kiếm (bên trái)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.black.withOpacity(0.25),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 44,
+                                  minHeight: 44,
+                                ),
+                                tooltip: 'Thông báo',
+                                onPressed: () {
+                                  HapticFeedback.selectionClick();
+                                  onNotificationTap?.call();
+                                },
+                                icon: const Icon(
+                                  CupertinoIcons.bell_fill,
+                                  color: Colors.white,
+                                  size: 19,
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 3,
+                              top: 3,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFEF4444),
                                   shape: BoxShape.circle,
-                                  color: Colors.black.withOpacity(0.25),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.3),
-                                    width: 0.8,
-                                  ),
                                 ),
-                                child: IconButton(
-                                  padding: EdgeInsets.zero,
-                                  onPressed: () {
-                                    HapticFeedback.selectionClick();
-                                    onNotificationTap?.call();
-                                  },
-                                  icon: const Icon(
-                                    CupertinoIcons.bell_fill,
-                                    color: Colors.white,
-                                    size: 19,
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                right: 3,
-                                top: 3,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFEF4444),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.black.withOpacity(0.25),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
-                                width: 0.8,
                               ),
                             ),
-                            child: IconButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                HapticFeedback.selectionClick();
-                                onSearchTap?.call();
-                              },
-                              icon: const Icon(
-                                CupertinoIcons.search,
-                                color: Colors.white,
-                                size: 19,
-                              ),
+                          ],
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withOpacity(0.25),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 0.8,
                             ),
                           ),
-                        ],
-                      ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 44,
+                              minHeight: 44,
+                            ),
+                            tooltip: 'Tìm kiếm',
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              onSearchTap?.call();
+                            },
+                            icon: const Icon(
+                              CupertinoIcons.search,
+                              color: Colors.white,
+                              size: 19,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withOpacity(0.25),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(
+                              minWidth: 44,
+                              minHeight: 44,
+                            ),
+                            tooltip: 'Quét mã QR',
+                            onPressed: () {
+                              HapticFeedback.selectionClick();
+                              onQr?.call();
+                            },
+                            icon: const Icon(
+                              CupertinoIcons.qrcode_viewfinder,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
 
-                      // Cụm Lời chào & Avatar (sát lề phải)
-                      InkWell(
+                    const SizedBox(width: 8),
+                    // Cụm Lời chào & Avatar (sát lề phải)
+                    Expanded(
+                      child: InkWell(
                         onTap: onProfileTap,
                         borderRadius: BorderRadius.circular(24),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'Xin chào,',
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white70,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Xin chào,',
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  displayName.isEmpty ? 'Chưa có thông tin' : displayName,
-                                  style: GoogleFonts.inter(
-                                    color: Colors.white,
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.2,
-                                    shadows: const [
-                                      Shadow(
-                                        color: Colors.black45,
-                                        blurRadius: 4,
-                                        offset: Offset(0, 1),
-                                      ),
-                                    ],
+                                  Text(
+                                    displayName.isEmpty
+                                        ? 'Chưa có thông tin'
+                                        : displayName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.inter(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.2,
+                                      shadows: const [
+                                        Shadow(
+                                          color: Colors.black45,
+                                          blurRadius: 4,
+                                          offset: Offset(0, 1),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             const UserAvatarWidget(
                               radius: 19,
                               borderColor: AppColors.bottomBarCyan,
@@ -239,16 +303,19 @@ class VietnamHeroHeader extends StatelessWidget {
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
 
-                  const SizedBox(height: 18),
+                const SizedBox(height: 18),
 
-                  // HÀNG 2: CHIP EMV + TK THANH TOÁN & HUY HIỆU SENBANK PREMIER
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                // HÀNG 2: CHIP EMV + TK THANH TOÁN & HUY HIỆU SENBANK PREMIER
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(
                             CupertinoIcons.creditcard_fill,
@@ -262,148 +329,157 @@ class VietnamHeroHeader extends StatelessWidget {
                             color: Colors.white70,
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            'TK THANH TOÁN',
-                            style: GoogleFonts.inter(
-                              color: Colors.white70,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.8,
+                          Flexible(
+                            child: Text(
+                              'TK THANH TOÁN',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                color: Colors.white70,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                              ),
                             ),
                           ),
                         ],
                       ),
+                    ),
+                    const SizedBox(width: 8),
 
-                      // Huy hiệu SenBank Premier
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.35),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: AppColors.bottomBarCyan.withOpacity(0.5),
-                            width: 0.8,
-                          ),
+                    // Huy hiệu SenBank Premier
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 9, vertical: 3.5),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.35),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.bottomBarCyan.withOpacity(0.5),
+                          width: 0.8,
                         ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/icons/senbank_lotus_isolated.png',
+                            width: 14,
+                            height: 14,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'SenBank Premier',
+                            style: GoogleFonts.inter(
+                              color: AppColors.bottomBarCyan,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                // HÀNG 3: SỐ TÀI KHOẢN VỚI NÚT SAO CHÉP NHANH & MẮT ẨN/HIỆN
+                Row(
+                  children: [
+                    Text(
+                      'STK:',
+                      style: GoogleFonts.inter(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(child: _CopyStkChip(accountNumber: accountNumber)),
+                    const Spacer(),
+                    // Khả dụng + Icon Mắt
+                    InkWell(
+                      onTap: onToggleVisibility,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 2),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Image.asset(
-                              'assets/icons/senbank_lotus_isolated.png',
-                              width: 14,
-                              height: 14,
-                            ),
-                            const SizedBox(width: 5),
                             Text(
-                              'SenBank Premier',
+                              'Khả dụng',
                               style: GoogleFonts.inter(
-                                color: AppColors.bottomBarCyan,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.2,
+                                color: Colors.white70,
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w500,
                               ),
+                            ),
+                            const SizedBox(width: 6),
+                            AppMorphIcon(
+                              icon: isHidden
+                                  ? CupertinoIcons.eye_slash_fill
+                                  : CupertinoIcons.eye_fill,
+                              size: 16,
+                              color: Colors.white,
+                              spring: MorphSprings.snappy,
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
 
-                  const SizedBox(height: 10),
+                const SizedBox(height: 6),
 
-                  // HÀNG 3: SỐ TÀI KHOẢN VỚI NÚT SAO CHÉP NHANH & MẮT ẨN/HIỆN
-                  Row(
-                    children: [
-                      Text(
-                        'STK:',
-                        style: GoogleFonts.inter(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      _CopyStkChip(accountNumber: accountNumber),
-                      const Spacer(),
-                      // Khả dụng + Icon Mắt
-                      InkWell(
-                        onTap: onToggleVisibility,
-                        borderRadius: BorderRadius.circular(6),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          child: Row(
-                            children: [
-                              Text(
-                                'Khả dụng',
-                                style: GoogleFonts.inter(
-                                  color: Colors.white70,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              AppMorphIcon(
-                                icon: isHidden ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
-                                size: 16,
-                                color: Colors.white,
-                                spring: MorphSprings.snappy,
-                              ),
-                            ],
+                // HÀNG 4: SỐ TIỀN HIỂN THỊ CHUẨN TYPOGRAPHY TÀI CHÍNH
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      displayAmount,
+                      style: GoogleFonts.outfit(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.6,
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black54,
+                            blurRadius: 8,
+                            offset: Offset(0, 2),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // HÀNG 4: SỐ TIỀN HIỂN THỊ CHUẨN TYPOGRAPHY TÀI CHÍNH
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Text(
-                        displayAmount,
-                        style: GoogleFonts.outfit(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.6,
-                          shadows: const [
-                            Shadow(
-                              color: Colors.black54,
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      'VND',
+                      style: GoogleFonts.outfit(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.bottomBarCyan, // Cyan highlight
+                        letterSpacing: 0.8,
+                        shadows: const [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 4,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 7),
-                      Text(
-                        'VND',
-                        style: GoogleFonts.outfit(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF26E5DC), // Cyan highlight
-                          letterSpacing: 0.8,
-                          shadows: const [
-                            Shadow(
-                              color: Colors.black45,
-                              blurRadius: 4,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -428,7 +504,8 @@ class _CopyStkChipState extends State<_CopyStkChip> {
       SnackBar(
         content: Row(
           children: [
-            const Icon(CupertinoIcons.checkmark_circle_fill, color: Colors.white),
+            const Icon(CupertinoIcons.checkmark_circle_fill,
+                color: Colors.white),
             const SizedBox(width: 8),
             Text(
               'Đã sao chép STK: ${widget.accountNumber}',
@@ -436,7 +513,7 @@ class _CopyStkChipState extends State<_CopyStkChip> {
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF0F3E6D),
+        backgroundColor: AppColors.brandNavy,
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -456,29 +533,41 @@ class _CopyStkChipState extends State<_CopyStkChip> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
         decoration: BoxDecoration(
-          color: _copied ? const Color(0xFF26E5DC).withOpacity(0.18) : Colors.black.withOpacity(0.25),
+          color: _copied
+              ? AppColors.bottomBarCyan.withOpacity(0.18)
+              : Colors.black.withOpacity(0.25),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
-            color: _copied ? const Color(0xFF26E5DC).withOpacity(0.8) : Colors.white.withOpacity(0.2),
+            color: _copied
+                ? AppColors.bottomBarCyan.withOpacity(0.8)
+                : Colors.white.withOpacity(0.2),
             width: 0.8,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              widget.accountNumber.isEmpty ? 'Chưa có số tài khoản' : widget.accountNumber,
-              style: GoogleFonts.outfit(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1.0,
+            Flexible(
+              child: Text(
+                widget.accountNumber.isEmpty
+                    ? 'Chưa có số tài khoản'
+                    : widget.accountNumber,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.outfit(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                ),
               ),
             ),
             const SizedBox(width: 5),
             AppMorphIcon(
-              icon: _copied ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.doc_on_doc_fill,
-              color: _copied ? const Color(0xFF26E5DC) : Colors.white70,
+              icon: _copied
+                  ? CupertinoIcons.checkmark_circle_fill
+                  : CupertinoIcons.doc_on_doc_fill,
+              color: _copied ? AppColors.bottomBarCyan : Colors.white70,
               size: 13,
               spring: MorphSprings.snappy,
             ),

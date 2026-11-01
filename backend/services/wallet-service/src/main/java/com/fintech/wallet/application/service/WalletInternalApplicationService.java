@@ -68,7 +68,7 @@ public class WalletInternalApplicationService {
             return DebitResult.failure("WALLET_NOT_ACTIVE", "Wallet is " + wallet.getStatus() + ", cannot debit");
         }
 
-        String lockKey = "grpc:debit:" + walletId;
+        String lockKey = "wallet:lock:" + walletId;
         try {
             return distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () -> {
                 Wallet locked = walletPersistencePort.findWalletByIdForUpdate(walletId)
@@ -122,7 +122,7 @@ public class WalletInternalApplicationService {
             return CreditResult.failure("WALLET_NOT_ACTIVE", "Wallet is " + wallet.getStatus() + ", cannot credit");
         }
 
-        String lockKey = "grpc:credit:" + walletId;
+        String lockKey = "wallet:lock:" + walletId;
         try {
             return distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () -> {
                 Wallet locked = walletPersistencePort.findWalletByIdForUpdate(walletId)
@@ -168,7 +168,7 @@ public class WalletInternalApplicationService {
             return ReserveResult.failure("WALLET_NOT_ACTIVE", "Wallet is " + wallet.getStatus());
         }
 
-        String lockKey = "grpc:reserve:" + walletId;
+        String lockKey = "wallet:lock:" + walletId;
         try {
             return distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () -> {
                 Wallet locked = walletPersistencePort.findWalletByIdForUpdate(walletId)
@@ -226,7 +226,7 @@ public class WalletInternalApplicationService {
         Wallet wallet = walletPersistencePort.findWalletByIdForUpdate(reservation.walletId())
                 .orElseThrow(() -> new WalletNotFoundException("Wallet not found: " + reservation.walletId()));
 
-        String lockKey = "grpc:release:" + reservation.walletId();
+        String lockKey = "wallet:lock:" + reservation.walletId();
         try {
             return distributedLockPort.executeWithLock(lockKey, LOCK_TIMEOUT_SECONDS, () -> {
                 Wallet locked = walletPersistencePort.findWalletByIdForUpdate(reservation.walletId())

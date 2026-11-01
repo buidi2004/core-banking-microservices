@@ -68,6 +68,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/api/v1/legal/terms",
             "/api/v1/banks",
             "/api/v1/payments/banks",
+            "/api/v1/savings/products",
+            "/api/v1/loans/products",
             "/actuator/health",
             "/fallback/",
             "/ws",
@@ -76,6 +78,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private final SecretKey secretKey;
     private final ReactiveStringRedisTemplate redisTemplate;
+    // L1 Cache: lưu tạm kết quả kiểm tra token hợp lệ trong 10 giây để giảm tải Redis
+    private final java.util.Map<String, Long> validTokenL1Cache = new java.util.concurrent.ConcurrentHashMap<>();
 
     public JwtAuthenticationFilter(
             @Value("${wallet.jwt.secret:SuperSecretKeyForFintechWalletAppShouldBeAtLeast32BytesLong!}") String secret,
@@ -157,9 +161,18 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         // Fallback: hash token nếu không có jti (tương thích token phát hành trước Giai đoạn 3)
         String blacklistKey = BLACKLIST_KEY_PREFIX + (jti != null ? jti : Integer.toHexString(bearerToken.hashCode()));
 
-        // Bước 2: Kiểm tra Redis blacklist (token vừa logout) - fail-closed nếu Redis lỗi
         String finalRole = role;
         String finalBranchIdClaim = branchIdClaim;
+        String finalUserRoles = userRoles;
+
+        // L1 Cache: Kiểm tra nhanh trong bộ nhớ RAM Gateway trước khi gọi Redis
+        Long cachedExpiry = validTokenL1Cache.get(blacklistKey);
+        long now = System.currentTimeMillis();
+        if (cachedExpiry != null && cachedExpiry > now) {
+            return forwardAuthenticatedRequest(exchange, chain, sanitizedRequest, userId, phone, kycTier, finalRole, finalUserRoles, finalBranchIdClaim, path);
+        }
+
+        // Bước 2: Kiểm tra Redis blacklist (token vừa logout) - fail-closed nếu Redis lỗi
         return redisTemplate.hasKey(blacklistKey)
                 .defaultIfEmpty(Boolean.FALSE)
                 .onErrorResume(e -> {
@@ -168,28 +181,41 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 })
                 .flatMap(isBlacklisted -> {
                     if (Boolean.TRUE.equals(isBlacklisted)) {
+                        validTokenL1Cache.remove(blacklistKey);
                         log.warn("Gateway rejected blacklisted token for user {}", userId);
                         return unauthorized(exchange, "Token has been revoked (logout)");
                     }
 
-                    // Bước 3: Inject header tin cậy xuống downstream microservices
-                    var requestMutator = sanitizedRequest.mutate()
-                            .header(HEADER_USER_ID, userId)
-                            .header(HEADER_USER_PHONE, phone != null ? phone : "")
-                            .header(HEADER_USER_KYC_TIER, kycTier != null ? kycTier : DEFAULT_KYC_TIER)
-                            .header(HEADER_USER_ROLE, finalRole)
-                            .header(HEADER_USER_ROLES, userRoles);
-
-                    if (finalBranchIdClaim != null && !finalBranchIdClaim.isBlank()
-                            && sanitizedRequest.getHeaders().getFirst(HEADER_BRANCH_ID) == null) {
-                        requestMutator.header(HEADER_BRANCH_ID, finalBranchIdClaim);
+                    // Lưu L1 cache 10 giây cho token hợp lệ
+                    validTokenL1Cache.put(blacklistKey, now + 10_000L);
+                    if (validTokenL1Cache.size() > 10_000) {
+                        validTokenL1Cache.entrySet().removeIf(entry -> entry.getValue() < now);
                     }
 
-                    ServerHttpRequest authenticatedRequest = requestMutator.build();
-
-                    log.debug("Gateway authenticated user={} path={} -> injecting trusted headers", userId, path);
-                    return chain.filter(exchange.mutate().request(authenticatedRequest).build());
+                    // Bước 3: Inject header tin cậy xuống downstream microservices
+                    return forwardAuthenticatedRequest(exchange, chain, sanitizedRequest, userId, phone, kycTier, finalRole, finalUserRoles, finalBranchIdClaim, path);
                 });
+    }
+
+    private Mono<Void> forwardAuthenticatedRequest(ServerWebExchange exchange, GatewayFilterChain chain,
+                                                   ServerHttpRequest sanitizedRequest, String userId,
+                                                   String phone, String kycTier, String finalRole,
+                                                   String userRoles, String finalBranchIdClaim, String path) {
+        var requestMutator = sanitizedRequest.mutate()
+                .header(HEADER_USER_ID, userId)
+                .header(HEADER_USER_PHONE, phone != null ? phone : "")
+                .header(HEADER_USER_KYC_TIER, kycTier != null ? kycTier : DEFAULT_KYC_TIER)
+                .header(HEADER_USER_ROLE, finalRole)
+                .header(HEADER_USER_ROLES, userRoles);
+
+        if (finalBranchIdClaim != null && !finalBranchIdClaim.isBlank()
+                && sanitizedRequest.getHeaders().getFirst(HEADER_BRANCH_ID) == null) {
+            requestMutator.header(HEADER_BRANCH_ID, finalBranchIdClaim);
+        }
+
+        ServerHttpRequest authenticatedRequest = requestMutator.build();
+        log.debug("Gateway authenticated user={} path={} -> injecting trusted headers", userId, path);
+        return chain.filter(exchange.mutate().request(authenticatedRequest).build());
     }
 
     private boolean isPublicPath(String path) {

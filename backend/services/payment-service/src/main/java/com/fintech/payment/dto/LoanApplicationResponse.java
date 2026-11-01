@@ -20,12 +20,15 @@ public class LoanApplicationResponse {
     private String productName;
     private BigDecimal principalAmount;
     private BigDecimal annualInterestRate;
-    private int termMonths;
+    private Integer termMonths;
     private BigDecimal totalInterest;
     private BigDecimal totalRepayment;
     private BigDecimal monthlyPayment;
     private String status;
     private String disbursedAt;
     private String firstDueDate;
+    private String approvedBy;
+    private String approvedAt;
+    private String rejectReason;
 }
 

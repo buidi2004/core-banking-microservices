@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Identity Service — 4 tầng (Auth · KYC · OTP · Session)",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 6,
+    "cellW": 222,
+    "cellH": 100,
+    "gapX": 176,
+    "gapY": 96
+  },
+  "components": [
+    {
+      "id": "entry",
+      "type": "external",
+      "label": "API Gateway :8080",
+      "sublabel": "Client → /api/v1/auth, /users",
+      "tag": "HTTP + JWT",
+      "row": 1,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "presentation",
+      "type": "backend",
+      "label": "Presentation",
+      "sublabel": "33 class · 32 endpoint",
+      "tag": "Controller · DTO · Exception",
+      "row": 1,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "application",
+      "type": "backend",
+      "label": "Application",
+      "sublabel": "8 class · 17 method",
+      "tag": "Use case · Saga · Outbox",
+      "row": 1,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "Domain",
+      "sublabel": "4 class",
+      "tag": "Entity · Port · Rule",
+      "row": 1,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "type": "backend",
+      "label": "Infrastructure",
+      "sublabel": "12 class · 14 method",
+      "tag": "Adapter · Repository · Consumer",
+      "row": 1,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL :5433",
+      "sublabel": "ewallet_identity_db · Flyway V1-V*",
+      "tag": "JPA",
+      "row": 0,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis :6379",
+      "sublabel": "OTP · session · PIN lock",
+      "tag": "TTL",
+      "row": 2,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "mq",
+      "type": "messagebus",
+      "label": "RabbitMQ :5672",
+      "sublabel": "user.registered event",
+      "tag": "AMQP",
+      "row": 3,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "smtp",
+      "type": "external",
+      "label": "Gmail SMTP",
+      "sublabel": "OTP / reset password",
+      "tag": "SMTP",
+      "row": 4,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "entry-presentation",
+      "from": "entry",
+      "to": "presentation",
+      "variant": "emphasis",
+      "label": "HTTPS · JWT"
+    },
+    {
+      "id": "presentation-application",
+      "from": "presentation",
+      "to": "application",
+      "variant": "default",
+      "label": "gọi use case"
+    },
+    {
+      "id": "application-domain",
+      "from": "application",
+      "to": "domain",
+      "variant": "default",
+      "label": "domain model"
+    },
+    {
+      "id": "infra-domain",
+      "from": "infrastructure",
+      "to": "domain",
+      "variant": "default",
+      "label": "implements port"
+    },
+    {
+      "id": "infra-db",
+      "from": "infrastructure",
+      "to": "db",
+      "variant": "default"
+    },
+    {
+      "id": "infra-redis",
+      "from": "infrastructure",
+      "to": "redis",
+      "variant": "default"
+    },
+    {
+      "id": "infra-mq",
+      "from": "infrastructure",
+      "to": "mq",
+      "variant": "dashed"
+    },
+    {
+      "id": "app-smtp",
+      "from": "application",
+      "to": "smtp",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Tầng 1 · Presentation (33 class)",
+      "items": [
+        "DTO (21): ApiResponse, AuthResponse, ChangePasswordRequest, ForgotPasswordRequest, KycResponse, KycSubmitRequest, LoginRequest, OtpSendRequest, OtpSendResponse, OtpVerifyRequest, OtpVerifyResponse, PinSetRequest, PinVerifyRequest, PinVerifyResponse, RefreshTokenRequest…",
+        "AuthController: POST /api/v1/auth/register · POST /api/v1/auth/login · POST /api/v1/auth/refresh · POST /api/v1/auth/logout · POST /api/v1/auth/otp/send · POST /api/v1/auth/otp/verify · POST /api/v1/auth/forgot-password · POST /api/v1/…",
+        "FeedbackController: POST /api/v1/feedback",
+        "GlobalExceptionHandler: handleInvalidPin(InvalidPinException e), handlePinLocked(PinLockedException e), handlePinNotSet(PinNotSetException e), handleIllegalArgument(IllegalArgumentException e), handleIllegalState(IllegalStateException e), hand…",
+        "InternalUserController: GET /api/v1/internal/users/by-phone · GET /api/v1/internal/users/{id}",
+        "KycController: POST /api/v1/kyc/submit · GET /api/v1/kyc/status · PUT /api/v1/kyc/{kycId}/review",
+        "LegalController: GET /api/v1/legal/terms · POST /api/v1/legal/consent",
+        "ReferralController: GET /api/v1/referrals/code · GET /api/v1/referrals/history · POST /api/v1/referrals/apply",
+        "SecurityBiometricController: POST /api/v1/security/biometric/verify",
+        "SessionController: GET /api/v1/sessions · DELETE /api/v1/sessions/{sessionId} · POST /api/v1/sessions/{deviceId}/fcm",
+        "StaffController: GET /api/v1/staff/branch/{branchId}",
+        "UserController: GET /api/v1/users/me · PUT /api/v1/users/profile · POST /api/v1/users/me/avatar",
+        "UserPinController: POST /api/v1/users/pin/set · POST /api/v1/users/pin/verify",
+        "AuthResponse",
+        "ChangePasswordRequest",
+        "ForgotPasswordRequest",
+        "KycResponse",
+        "KycSubmitRequest",
+        "LoginRequest",
+        "OtpSendRequest",
+        "OtpSendResponse",
+        "OtpVerifyRequest",
+        "OtpVerifyResponse",
+        "PinSetRequest",
+        "PinVerifyRequest",
+        "PinVerifyResponse",
+        "RefreshTokenRequest",
+        "RegisterRequest",
+        "ResetPasswordRequest",
+        "SessionResponse",
+        "UpdateProfileRequest",
+        "UserProfileResponse"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Tầng 2 · Application (8 class)",
+      "items": [
+        "AuthService: register(RegisterRequest request), login(LoginRequest request, String ipAddress, String userAgent), refreshToken(RefreshTokenRequest request), changePassword(String bearerToken, String headerUserId, ChangePasswordReques…",
+        "EmailService: sendOtpEmail(String recipientEmail, String otpCode, String purpose)",
+        "KycService: submitKyc(String userId, KycSubmitRequest request), reviewKyc(String kycId, String status, String reason, String verifiedBy)",
+        "OtpService: sendOtp(String phoneNumber, String purpose), sendOtp(String phoneNumber, String purpose, String explicitEmail), sendOtpForUser(String userId, String purpose), verifyOtp(String phoneNumber, String code, String purpose), …",
+        "SessionService: revokeSession(String userId, String sessionId)",
+        "StaffService",
+        "UserPinService: verifyPin(String userId, String pin)",
+        "UserService: updateProfile(String userId, UpdateProfileRequest request)"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Tầng 3 · Domain (4 class)",
+      "items": [
+        "UserEntity: id: String, username: String, phoneNumber: String, passwordHash: String, fullName: String, email: String, role: String, status: String, kycTier: String, branchId: String, pinHash: String, pinFailedAttempts: Integer, pin…",
+        "UserKycEntity: id: String, userId: String, documentType: String, documentNumber: String, frontImageUrl: String, backImageUrl: String, faceImageUrl: String, ocrExtractedData: String, verificationStatus: String, rejectReason: String, ve…",
+        "UserProfileEntity: id: String, userId: String, avatarUrl: String, dateOfBirth: LocalDate, address: String, gender: String, identityCardNumber: String, identityCardIssuedDate: LocalDate, identityCardIssuedPlace: String, createdAt: Instant,…",
+        "UserSessionEntity: id: String, userId: String, deviceId: String, deviceName: String, deviceOs: String, ipAddress: String, userAgent: String, refreshTokenHash: String, expiresAt: Instant, isRevoked: Boolean, createdAt: Instant, lastAccesse…"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Tầng 4 · Infrastructure (12 class)",
+      "items": [
+        "IdentityApplication",
+        "InvalidPinException",
+        "PinLockedException",
+        "PinNotSetException",
+        "IdentityEventPublisher: publishUserRegistered(UserRegisteredEvent event)",
+        "RabbitMQConfig: walletExchange(), jsonMessageConverter(), rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter jsonMessageConverter)",
+        "UserKycRepository (interface): interface",
+        "UserProfileRepository (interface): interface",
+        "UserRepository (interface): interface",
+        "UserSessionRepository (interface): interface",
+        "JwtTokenProvider: generateAccessToken(String userId, String phoneNumber, String role, String kycTier), generateAccessToken(String userId, String phoneNumber, String role, String kycTier, String branchId, String fullName), generateRefresh…",
+        "SecurityConfig: passwordEncoder(), securityFilterChain(HttpSecurity http)"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Phụ thuộc & luồng nghiệp vụ",
+      "items": [
+        "AuthService: register, login, refresh, logout, changePassword, resetPassword",
+        "OtpService: sendOtp, verifyOtp (Redis TTL) · EmailService: sendOtpMail",
+        "JwtTokenProvider: access/refresh token · SecurityConfig: BCrypt(12) + filter chain",
+        "IdentityEventPublisher → RabbitMQ user.registered → Wallet tự tạo ví"
+      ]
+    }
+  ]
+}

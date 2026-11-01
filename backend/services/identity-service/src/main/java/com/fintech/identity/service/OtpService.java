@@ -32,6 +32,24 @@ public class OtpService {
     private static final int OTP_EXPIRY_SECONDS = 180; // 3 phút
     private static final int MAX_ATTEMPTS = 3;
 
+    /**
+     * Quy tắc nghiệp vụ bảo mật ngân hàng:
+     * Mã xác thực OTP qua Email (Gmail) CHỈ ĐƯỢC PHÉP sử dụng cho 3 luồng:
+     * 1. Đăng ký tài khoản mới (REGISTER)
+     * 2. Quên mật khẩu & Khôi phục mật khẩu (FORGOT_PASSWORD, RESET_PASSWORD, CHANGE_PASSWORD)
+     * 3. Đổi mã PIN & Cấp lại mã PIN giao dịch (RESET_PIN, CHANGE_PIN)
+     */
+    public static final java.util.Set<String> ALLOWED_PURPOSES = java.util.Set.of(
+            "REGISTER",
+            "FORGOT_PASSWORD",
+            "RESET_PASSWORD",
+            "CHANGE_PASSWORD",
+            "RESET_PIN",
+            "CHANGE_PIN",
+            "LOAN",
+            "LOAN_APPLY"
+    );
+
     private final SecureRandom random = new SecureRandom();
 
     public OtpSendResponse sendOtp(String phoneNumber, String purpose) {
@@ -41,6 +59,21 @@ public class OtpService {
     public OtpSendResponse sendOtp(String phoneNumber, String purpose, String explicitEmail) {
         String cleanPhone = phoneNumber.trim();
         String resolvedPurpose = (purpose != null && !purpose.isBlank()) ? purpose : "FORGOT_PASSWORD";
+        String upperPurpose = resolvedPurpose.toUpperCase();
+
+        if (!ALLOWED_PURPOSES.contains(upperPurpose)) {
+            throw new IllegalArgumentException("Mục đích OTP '" + resolvedPurpose + "' không được hỗ trợ. " +
+                    "Hệ thống chỉ gửi OTP qua Gmail cho 3 nghiệp vụ: Đăng ký tài khoản mới, Quên/Đổi mật khẩu, và Đổi/Cấp lại mã PIN.");
+        }
+
+        if ("REGISTER".equalsIgnoreCase(upperPurpose)) {
+            if (userRepository.existsByPhoneNumber(cleanPhone)) {
+                throw new IllegalArgumentException("Số điện thoại " + cleanPhone + " đã tồn tại trong hệ thống.");
+            }
+            if (explicitEmail != null && !explicitEmail.isBlank() && userRepository.existsByEmail(explicitEmail.trim().toLowerCase())) {
+                throw new IllegalArgumentException("Email " + explicitEmail + " đã được sử dụng.");
+            }
+        }
 
         // Generate 6-digit random code
         String code = String.format("%06d", random.nextInt(1_000_000));

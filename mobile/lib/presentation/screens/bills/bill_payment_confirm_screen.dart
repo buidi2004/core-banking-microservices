@@ -31,7 +31,8 @@ class BillPaymentConfirmScreen extends StatefulWidget {
   });
 
   @override
-  State<BillPaymentConfirmScreen> createState() => _BillPaymentConfirmScreenState();
+  State<BillPaymentConfirmScreen> createState() =>
+      _BillPaymentConfirmScreenState();
 }
 
 class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
@@ -64,11 +65,24 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
 
   IconData _getServiceIcon() {
     final p = widget.provider.toLowerCase();
-    if (p.contains('evn') || p.contains('điện')) return CupertinoIcons.bolt_fill;
-    if (p.contains('nước') || p.contains('sawaco') || p.contains('viwaco')) return CupertinoIcons.drop_fill;
-    if (p.contains('vnpt') || p.contains('fpt') || p.contains('viettel') || p.contains('internet')) return CupertinoIcons.wifi;
-    if (p.contains('truyền hình') || p.contains('k+')) return CupertinoIcons.tv_fill;
-    if (p.contains('học phí') || p.contains('trường')) return CupertinoIcons.book_fill;
+    if (p.contains('evn') || p.contains('điện')) {
+      return CupertinoIcons.bolt_fill;
+    }
+    if (p.contains('nước') || p.contains('sawaco') || p.contains('viwaco')) {
+      return CupertinoIcons.drop_fill;
+    }
+    if (p.contains('vnpt') ||
+        p.contains('fpt') ||
+        p.contains('viettel') ||
+        p.contains('internet')) {
+      return CupertinoIcons.wifi;
+    }
+    if (p.contains('truyền hình') || p.contains('k+')) {
+      return CupertinoIcons.tv_fill;
+    }
+    if (p.contains('học phí') || p.contains('trường')) {
+      return CupertinoIcons.book_fill;
+    }
     return CupertinoIcons.square_list_fill;
   }
 
@@ -83,14 +97,17 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
       if (!canCheck && !isSupported) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thiết bị chưa cài đặt bảo mật sinh trắc học')),
+          const SnackBar(
+              content: Text('Thiết bị chưa cài đặt bảo mật sinh trắc học')),
         );
         return;
       }
 
       final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Xác thực khuôn mặt / vân tay để thanh toán hóa đơn ${widget.provider}',
-        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
+        localizedReason:
+            'Xác thực khuôn mặt / vân tay để thanh toán hóa đơn ${widget.provider}',
+        options:
+            const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
       );
 
       if (authenticated) {
@@ -202,7 +219,10 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppColors.primaryDark, AppColors.primary, AppColors.bottomBarCyan],
+                    colors: [
+                      AppColors.royalBlue,
+                      AppColors.primaryDark,
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -249,7 +269,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: AppColors.textPrimaryLight,
+                              color: Colors.white,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
@@ -258,7 +278,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                           Text(
                             'Mã KH: ${widget.customerCode}',
                             style: const TextStyle(
-                              color: AppColors.textSecondaryLight,
+                              color: Colors.white70,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -281,29 +301,47 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                     children: [
                       _buildDetailRow('Đơn vị cung cấp', widget.provider),
                       const SizedBox(height: 10),
-                      _buildDetailRow('Mã khách hàng / Danh bạ', widget.customerCode),
+                      _buildDetailRow(
+                          'Mã khách hàng / Danh bạ', widget.customerCode),
                       const SizedBox(height: 10),
                       _buildDetailRow('Kỳ cước thanh toán', 'Kỳ gần nhất'),
                       const SizedBox(height: 10),
-                      _buildDetailRow('Phí giao dịch', '0 đ (Miễn phí)', valueColor: AppColors.successTextLight),
-                      const Divider(height: 24, color: AppColors.cardBorderLight),
+                      _buildDetailRow('Phí giao dịch', '0 đ (Miễn phí)',
+                          valueColor: AppColors.successTextLight),
+                      const Divider(
+                          height: 24, color: AppColors.cardBorderLight),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Tổng tiền thanh toán', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
-                          Text(
-                            CurrencyFormatter.formatVND(widget.amount),
-                            style: AppTypography.displayMedium(color: AppColors.primaryText).copyWith(fontWeight: FontWeight.w900),
+                          Expanded(
+                            child: Text('Tổng tiền thanh toán',
+                                style: AppTypography.titleMedium(
+                                        color: AppColors.textPrimaryLight)
+                                    .copyWith(fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              CurrencyFormatter.formatVND(widget.amount),
+                              textAlign: TextAlign.right,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.displayMedium(
+                                      color: AppColors.primaryText)
+                                  .copyWith(fontWeight: FontWeight.w900),
+                            ),
                           ),
                         ],
                       ),
-                      if (CurrencyFormatter.toVietnameseWords(widget.amount).isNotEmpty) ...[
+                      if (CurrencyFormatter.toVietnameseWords(widget.amount)
+                          .isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
                             'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(widget.amount)} đồng',
-                            style: AppTypography.bodySmall(color: AppColors.primaryText).copyWith(
+                            style: AppTypography.bodySmall(
+                                    color: AppColors.primaryText)
+                                .copyWith(
                               fontStyle: FontStyle.italic,
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
@@ -334,16 +372,22 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                               color: AppColors.primary.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(CupertinoIcons.creditcard_fill, color: AppColors.primaryText, size: 22),
+                            child: const Icon(CupertinoIcons.creditcard_fill,
+                                color: AppColors.primaryText, size: 22),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Nguồn tiền thanh toán', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                                Text('Nguồn tiền thanh toán',
+                                    style: AppTypography.bodySmall(
+                                        color: AppColors.textSecondaryLight)),
                                 const SizedBox(height: 2),
-                                Text('Ví Sen Hồng Chính Chủ', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
+                                Text('Ví Sen Hồng Chính Chủ',
+                                    style: AppTypography.titleSmall(
+                                            color: AppColors.textPrimaryLight)
+                                        .copyWith(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 2),
                                 Text(
                                   _isLoadingBalance
@@ -351,7 +395,9 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                                       : 'Khả dụng: ${CurrencyFormatter.formatVND(_walletBalance)}',
                                   style: TextStyle(
                                     fontSize: 11,
-                                    color: hasEnoughBalance ? AppColors.successTextLight : AppColors.errorText,
+                                    color: hasEnoughBalance
+                                        ? AppColors.successTextLight
+                                        : AppColors.errorText,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -362,27 +408,44 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryDark,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                minimumSize: const Size(0, 32),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                minimumSize: const Size(0, 44),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
                               ),
                               onPressed: () => context.push('/deposit'),
-                              child: const Text('Nạp thêm', style: TextStyle(fontSize: 11, color: AppColors.textPrimaryLight)),
+                              child: const Text('Nạp thêm',
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textPrimaryLight)),
                             )
                           else
-                            const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight, size: 20),
+                            const Icon(CupertinoIcons.checkmark_circle_fill,
+                                color: AppColors.successTextLight, size: 20),
                         ],
                       ),
-                      const Divider(height: 20, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 20, color: AppColors.cardBorderLight),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
-                            children: [
-                              Icon(CupertinoIcons.arrow_2_circlepath_circle, color: AppColors.primaryText, size: 18),
-                              SizedBox(width: 8),
-                              Text('Tự động trừ tiền kỳ tiếp theo', style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight, fontWeight: FontWeight.w500)),
-                            ],
+                          const Expanded(
+                            child: Row(
+                              children: [
+                                Icon(CupertinoIcons.arrow_2_circlepath_circle,
+                                    color: AppColors.primaryText, size: 18),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text('Tự động trừ tiền kỳ tiếp theo',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: AppColors.textPrimaryLight,
+                                          fontWeight: FontWeight.w500)),
+                                ),
+                              ],
+                            ),
                           ),
                           Switch.adaptive(
                             value: _autoDebit,
@@ -403,13 +466,18 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                 child: Column(
                   children: [
                     Text(
-                      _isSubmitting ? 'Đang xác thực giao dịch an toàn...' : 'Nhập mã PIN 6 số để xác nhận',
-                      style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                      _isSubmitting
+                          ? 'Đang xác thực giao dịch an toàn...'
+                          : 'Nhập mã PIN 6 số để xác nhận',
+                      style: AppTypography.titleMedium(
+                              color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Bảo mật 2 lớp PCI-DSS • Hóa đơn điện tử e-Invoice',
-                      style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight),
                     ),
                   ],
                 ),
@@ -419,7 +487,9 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
               if (_isSubmitting)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.primaryLight)),
+                  child: Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.primaryLight)),
                 )
               else
                 CustomPinNumpad(
@@ -441,16 +511,21 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.06),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                  border:
+                      Border.all(color: AppColors.primary.withOpacity(0.15)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.successTextLight, size: 18),
+                    Icon(CupertinoIcons.checkmark_shield_fill,
+                        color: AppColors.successTextLight, size: 18),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Chứng từ thanh toán hóa đơn điện tử có giá trị pháp lý theo Thông tư 78/2021/TT-BTC của Bộ Tài chính.',
-                        style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, height: 1.35),
+                        style: TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontSize: 11,
+                            height: 1.35),
                       ),
                     ),
                   ],
@@ -469,14 +544,22 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
+        Expanded(
+          flex: 5,
+          child: Text(label,
+              style: AppTypography.bodyMedium(
+                  color: AppColors.textSecondaryLight)),
+        ),
         const SizedBox(width: 8),
         Expanded(
+          flex: 6,
           child: Text(
             value,
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.titleSmall(color: valueColor ?? AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600),
+            style: AppTypography.titleSmall(
+                    color: valueColor ?? AppColors.textPrimaryLight)
+                .copyWith(fontWeight: FontWeight.w600),
           ),
         ),
       ],

@@ -11,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * Controller xử lý hồ sơ eKYC xác minh danh tính.
  */
@@ -37,6 +39,12 @@ public class KycController {
             @RequestHeader(value = "X-User-Id") String userId) {
         KycResponse response = kycService.getKycStatus(userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<ApiResponse<List<KycResponse>>> getPendingKycs() {
+        List<KycResponse> response = kycService.getPendingKycs();
+        return ResponseEntity.ok(ApiResponse.ok(response, "Lấy danh sách hồ sơ eKYC chờ duyệt thành công"));
     }
 
     @PutMapping("/{kycId}/review")

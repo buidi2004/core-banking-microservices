@@ -171,5 +171,46 @@ class OtpServiceTest {
         verify(userRepository).save(user);
         verify(userSessionRepository).deleteByUserId("user-uuid-123");
     }
+
+    @Test
+    @DisplayName("sendOtp: Đăng ký tài khoản mới (REGISTER) gửi OTP thành công")
+    void sendOtp_Register_Success() {
+        String phone = "0912345678";
+        String email = "newuser@gmail.com";
+
+        when(userRepository.existsByPhoneNumber(phone)).thenReturn(false);
+        when(userRepository.existsByEmail(email)).thenReturn(false);
+
+        OtpSendResponse response = otpService.sendOtp(phone, "REGISTER", email);
+
+        assertThat(response).isNotNull();
+        assertThat(response.getPhoneNumber()).isEqualTo(phone);
+        verify(emailService).sendOtpEmail(eq(email), anyString(), eq("REGISTER"));
+    }
+
+    @Test
+    @DisplayName("sendOtp: Cấp lại/Đổi mã PIN (RESET_PIN / CHANGE_PIN) gửi OTP thành công")
+    void sendOtp_ResetPin_Success() {
+        String phone = "0987654321";
+        UserEntity user = UserEntity.builder()
+                .id("u-1")
+                .phoneNumber(phone)
+                .email("user@gmail.com")
+                .build();
+        when(userRepository.findByPhoneNumber(phone)).thenReturn(Optional.of(user));
+
+        OtpSendResponse response = otpService.sendOtp(phone, "RESET_PIN");
+
+        assertThat(response).isNotNull();
+        verify(emailService).sendOtpEmail(eq("user@gmail.com"), anyString(), eq("RESET_PIN"));
+    }
+
+    @Test
+    @DisplayName("sendOtp: Mục đích OTP không thuộc 3 nhóm nghiệp vụ được phép sẽ bị từ chối")
+    void sendOtp_InvalidPurpose_ThrowsException() {
+        assertThatThrownBy(() -> otpService.sendOtp("0987654321", "INVALID_PURPOSE"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("không được hỗ trợ");
+    }
 }
 

@@ -119,9 +119,11 @@ class _CardsScreenState extends State<CardsScreen> {
       useSafeArea: true,
       showDragHandle: true,
       backgroundColor: AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 28),
+        padding: EdgeInsets.fromLTRB(
+            24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,17 +134,22 @@ class _CardsScreenState extends State<CardsScreen> {
                 Expanded(
                   child: Text(
                     'Đăng Ký Phát Hành Thẻ Vật Lý',
-                    style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
+                    style: AppTypography.titleLarge(
+                        color: AppColors.textPrimaryLight),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(CupertinoIcons.xmark, color: AppColors.textPrimaryLight)),
+                IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(CupertinoIcons.xmark,
+                        color: AppColors.textPrimaryLight)),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               'Thẻ vật lý công nghệ dập nổi cao cấp tích hợp chip vi mạch EMV contactless sẽ được chuyển phát nhanh miễn phí tới địa chỉ của bạn.',
-              style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+              style:
+                  AppTypography.bodySmall(color: AppColors.textSecondaryLight),
             ),
             const SizedBox(height: 16),
             Container(
@@ -156,12 +163,16 @@ class _CardsScreenState extends State<CardsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(CupertinoIcons.location_fill, color: AppColors.primary, size: 20),
+                      Icon(CupertinoIcons.location_fill,
+                          color: AppColors.primary, size: 20),
                       SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           'Địa chỉ nhận thẻ: P. Hàng Bạc, Q. Hoàn Kiếm, Hà Nội (Địa chỉ thường trú CCCD)',
-                          style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 13, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                              color: AppColors.textPrimaryLight,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
@@ -169,17 +180,30 @@ class _CardsScreenState extends State<CardsScreen> {
                   SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(CupertinoIcons.clock_fill, color: AppColors.primary, size: 20),
+                      Icon(CupertinoIcons.clock_fill,
+                          color: AppColors.primary, size: 20),
                       SizedBox(width: 10),
-                      Text('Thời gian giao dự kiến: 3 - 5 ngày làm việc', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
+                      Expanded(
+                        child: Text('Thời gian giao dự kiến: 3 - 5 ngày làm việc',
+                            style: TextStyle(
+                                color: AppColors.textSecondaryLight,
+                                fontSize: 13)),
+                      ),
                     ],
                   ),
                   SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(CupertinoIcons.gift_fill, color: AppColors.primary, size: 20),
+                      Icon(CupertinoIcons.gift_fill,
+                          color: AppColors.primary, size: 20),
                       SizedBox(width: 10),
-                      Text('Phí phát hành & Giao hàng: MIỄN PHÍ 100%', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 13)),
+                      Expanded(
+                        child: Text('Phí phát hành & Giao hàng: MIỄN PHÍ 100%',
+                            style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13)),
+                      ),
                     ],
                   ),
                 ],
@@ -192,7 +216,8 @@ class _CardsScreenState extends State<CardsScreen> {
                 showFeatureUnavailable(
                   context,
                   feature: 'Phát hành thẻ vật lý',
-                  reason: 'Dịch vụ phát hành thẻ vật lý dập nổi đang trong giai đoạn triển khai cùng đối tác phát hành thẻ.',
+                  reason:
+                      'Dịch vụ phát hành thẻ vật lý dập nổi đang trong giai đoạn triển khai cùng đối tác phát hành thẻ.',
                 );
               },
               child: const Text('Xác nhận đăng ký phát hành'),
@@ -215,7 +240,8 @@ class _CardsScreenState extends State<CardsScreen> {
         actions: [
           IconButton(
             onPressed: () => context.push('/payment-methods'),
-            icon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
+            icon:
+                const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
             tooltip: 'Thêm phương thức thanh toán',
           ),
         ],
@@ -245,12 +271,16 @@ class _CardsScreenState extends State<CardsScreen> {
                       builder: (context, child) {
                         double value = 0.0;
                         if (_cardPageCtrl.position.haveDimensions) {
-                          value = (_cardPageCtrl.page ?? _currentCardIdx.toDouble()) - idx;
+                          value = (_cardPageCtrl.page ??
+                                  _currentCardIdx.toDouble()) -
+                              idx;
                         } else {
                           value = (_currentCardIdx - idx).toDouble();
                         }
-                        final scale = (1.0 - (value.abs() * 0.1)).clamp(0.9, 1.0);
-                        final opacity = (1.0 - (value.abs() * 0.35)).clamp(0.65, 1.0);
+                        final scale =
+                            (1.0 - (value.abs() * 0.1)).clamp(0.9, 1.0);
+                        final opacity =
+                            (1.0 - (value.abs() * 0.35)).clamp(0.65, 1.0);
                         return Transform.scale(
                           scale: scale,
                           child: Opacity(
@@ -281,7 +311,8 @@ class _CardsScreenState extends State<CardsScreen> {
                     width: isSelected ? 24 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.bottomBarCyan : Colors.white24,
+                      color:
+                          isSelected ? AppColors.bottomBarCyan : Colors.white24,
                       borderRadius: BorderRadius.circular(4),
                     ),
                   );
@@ -296,7 +327,8 @@ class _CardsScreenState extends State<CardsScreen> {
                 child: GlassCard(
                   quality: GlassQuality.minimal,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -305,16 +337,22 @@ class _CardsScreenState extends State<CardsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                activeCard['type'] == 'credit' ? 'Hạn mức khả dụng' : 'Số dư tài khoản thẻ',
-                                style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                                activeCard['type'] == 'credit'
+                                    ? 'Hạn mức khả dụng'
+                                    : 'Số dư tài khoản thẻ',
+                                style: AppTypography.bodySmall(
+                                    color: AppColors.textSecondaryLight),
                               ),
                               const SizedBox(height: 2),
                               FittedBox(
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerLeft,
                                 child: Text(
-                                  CurrencyFormatter.formatVND(activeCard['available'] as double),
-                                  style: AppTypography.titleLarge(color: AppColors.emeraldGreen).copyWith(fontWeight: FontWeight.bold),
+                                  CurrencyFormatter.formatVND(
+                                      activeCard['available'] as double),
+                                  style: AppTypography.titleLarge(
+                                          color: AppColors.successTextLight)
+                                      .copyWith(fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -322,16 +360,21 @@ class _CardsScreenState extends State<CardsScreen> {
                         ),
                         const SizedBox(width: 12),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                            border: Border.all(
+                                color: AppColors.primary.withOpacity(0.3)),
                           ),
                           child: Text(
                             'Tổng hạn mức:\n${CurrencyFormatter.formatVND(activeCard['limit'] as double)}',
                             textAlign: TextAlign.right,
-                            style: const TextStyle(color: Colors.white70, fontSize: 11, height: 1.2),
+                            style: const TextStyle(
+                                color: AppColors.textSecondaryLight,
+                                fontSize: 13,
+                                height: 1.3),
                           ),
                         ),
                       ],
@@ -356,7 +399,8 @@ class _CardsScreenState extends State<CardsScreen> {
                         showFeatureUnavailable(
                           context,
                           feature: 'Quản lý thanh toán Online',
-                          reason: 'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
+                          reason:
+                              'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
                         );
                       },
                     ),
@@ -370,7 +414,8 @@ class _CardsScreenState extends State<CardsScreen> {
                         showFeatureUnavailable(
                           context,
                           feature: 'Quản lý chi tiêu quốc tế',
-                          reason: 'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
+                          reason:
+                              'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
                         );
                       },
                     ),
@@ -384,7 +429,8 @@ class _CardsScreenState extends State<CardsScreen> {
                         showFeatureUnavailable(
                           context,
                           feature: 'Quản lý rút tiền ATM',
-                          reason: 'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
+                          reason:
+                              'Hệ thống Switchboard thẻ đang trong lộ trình tích hợp Core Banking.',
                         );
                       },
                     ),
@@ -401,12 +447,18 @@ class _CardsScreenState extends State<CardsScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.balanceCardGradient.colors[0], AppColors.primaryDark, AppColors.primary],
+                      colors: [
+                        AppColors.balanceCardGradient.colors[0],
+                        AppColors.primaryDark,
+                        AppColors.primary
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AppColors.bottomBarCyan.withOpacity(0.4), width: 1),
+                    border: Border.all(
+                        color: AppColors.bottomBarCyan.withOpacity(0.4),
+                        width: 1),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.bottomBarGlow.withOpacity(0.2),
@@ -424,7 +476,8 @@ class _CardsScreenState extends State<CardsScreen> {
                           color: Colors.white.withOpacity(0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(CupertinoIcons.sparkles, color: AppColors.bottomBarCyan, size: 24),
+                        child: const Icon(CupertinoIcons.sparkles,
+                            color: AppColors.bottomBarCyan, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -433,12 +486,16 @@ class _CardsScreenState extends State<CardsScreen> {
                           children: [
                             Text(
                               'ĐẶC QUYỀN THẺ SEN HỒNG',
-                              style: AppTypography.titleSmall(color: Colors.white).copyWith(fontWeight: FontWeight.bold),
+                              style:
+                                  AppTypography.titleSmall(color: Colors.white)
+                                      .copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               'Hoàn 5% chi tiêu ăn uống & du lịch. Tặng bảo hiểm du lịch toàn cầu tới 10.5 tỷ đồng.',
-                              style: AppTypography.bodySmall(color: Colors.white70).copyWith(fontSize: 11),
+                              style:
+                                  AppTypography.bodySmall(color: Colors.white70)
+                                      .copyWith(fontSize: 11),
                             ),
                           ],
                         ),
@@ -453,7 +510,9 @@ class _CardsScreenState extends State<CardsScreen> {
               // 4. MANAGEMENT OPTIONS LIST
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Quản lý bảo mật & Tính năng thẻ', style: AppTypography.titleLarge(color: AppColors.textPrimaryLight)),
+                child: Text('Quản lý bảo mật & Tính năng thẻ',
+                    style: AppTypography.titleLarge(
+                        color: AppColors.textPrimaryLight)),
               ),
               const SizedBox(height: 12),
 
@@ -462,9 +521,12 @@ class _CardsScreenState extends State<CardsScreen> {
                 child: Column(
                   children: [
                     _buildCardOption(
-                      icon: _showDetails ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
+                      icon: _showDetails
+                          ? CupertinoIcons.eye_slash_fill
+                          : CupertinoIcons.eye_fill,
                       title: 'Xem số thẻ & mã bảo mật CVV',
-                      subtitle: 'Hiển thị đầy đủ thông tin để thanh toán online',
+                      subtitle:
+                          'Hiển thị đầy đủ thông tin để thanh toán online',
                       trailing: Switch.adaptive(
                         value: _showDetails,
                         activeTrackColor: AppColors.primary,
@@ -476,7 +538,8 @@ class _CardsScreenState extends State<CardsScreen> {
                               const SnackBar(
                                 duration: Duration(seconds: 2),
                                 backgroundColor: AppColors.warningText,
-                                content: Text('Cảnh báo: Tuyệt đối không chia sẻ mã CVV với bất kỳ ai, kể cả nhân viên ngân hàng.'),
+                                content: Text(
+                                    'Cảnh báo: Tuyệt đối không chia sẻ mã CVV với bất kỳ ai, kể cả nhân viên ngân hàng.'),
                               ),
                             );
                           }
@@ -484,9 +547,15 @@ class _CardsScreenState extends State<CardsScreen> {
                       ),
                     ),
                     _buildCardOption(
-                      icon: _isLocked ? CupertinoIcons.lock_open_fill : CupertinoIcons.lock_fill,
-                      title: _isLocked ? 'Mở khóa thẻ' : 'Khóa thẻ tạm thời khẩn cấp',
-                      subtitle: _isLocked ? 'Thẻ đang bị tạm khóa giao dịch' : 'Bảo vệ an toàn khi nghi ngờ lộ thông tin',
+                      icon: _isLocked
+                          ? CupertinoIcons.lock_open_fill
+                          : CupertinoIcons.lock_fill,
+                      title: _isLocked
+                          ? 'Mở khóa thẻ'
+                          : 'Khóa thẻ tạm thời khẩn cấp',
+                      subtitle: _isLocked
+                          ? 'Thẻ đang bị tạm khóa giao dịch'
+                          : 'Bảo vệ an toàn khi nghi ngờ lộ thông tin',
                       trailing: Switch.adaptive(
                         value: _isLocked,
                         activeTrackColor: AppColors.error,
@@ -496,36 +565,43 @@ class _CardsScreenState extends State<CardsScreen> {
                     _buildCardOption(
                       icon: CupertinoIcons.creditcard,
                       title: 'Phát hành thẻ vật lý dập nổi',
-                      subtitle: 'Chuyển phát nhanh thẻ dập nổi tận nhà miễn phí',
-                      trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                      subtitle:
+                          'Chuyển phát nhanh thẻ dập nổi tận nhà miễn phí',
+                      trailing: const Icon(CupertinoIcons.chevron_forward,
+                          color: AppColors.textMutedLight, size: 16),
                       onTap: _showPhysicalCardModal,
                     ),
                     _buildCardOption(
                       icon: CupertinoIcons.lock_shield_fill,
                       title: 'Đổi mã PIN thẻ ATM',
                       subtitle: 'Đổi mã PIN 6 số rút tiền tại cây ATM',
-                      trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                      trailing: const Icon(CupertinoIcons.chevron_forward,
+                          color: AppColors.textMutedLight, size: 16),
                       onTap: () => context.push('/auth/set-pin'),
                     ),
                     _buildCardOption(
                       icon: CupertinoIcons.slider_horizontal_3,
                       title: 'Cài đặt hạn mức thanh toán',
-                      subtitle: 'Hạn mức chi tiêu trực tuyến mỗi ngày theo eKYC',
-                      trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                      subtitle:
+                          'Hạn mức chi tiêu trực tuyến mỗi ngày theo eKYC',
+                      trailing: const Icon(CupertinoIcons.chevron_forward,
+                          color: AppColors.textMutedLight, size: 16),
                       onTap: () => context.push('/profile/kyc-level'),
                     ),
                     _buildCardOption(
                       icon: CupertinoIcons.creditcard_fill,
                       title: 'Phương thức thanh toán & Nguồn tiền',
                       subtitle: 'Liên kết thẻ Visa, Mastercard, JCB quốc tế',
-                      trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                      trailing: const Icon(CupertinoIcons.chevron_forward,
+                          color: AppColors.textMutedLight, size: 16),
                       onTap: () => context.push('/payment-methods'),
                     ),
                     _buildCardOption(
                       icon: CupertinoIcons.building_2_fill,
                       title: 'Tài khoản ngân hàng liên kết',
                       subtitle: 'Quản lý tài khoản nạp/rút ngân hàng nội địa',
-                      trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                      trailing: const Icon(CupertinoIcons.chevron_forward,
+                          color: AppColors.textMutedLight, size: 16),
                       onTap: () => context.push('/bank-cards'),
                     ),
                   ],
@@ -541,7 +617,9 @@ class _CardsScreenState extends State<CardsScreen> {
   Widget _buildCardItem(Map<String, dynamic> card) {
     final isLocked = _isLocked;
     final useAsset = card['useAsset'] as bool;
-    final displayNum = _showDetails ? card['number'] as String : card['maskedNumber'] as String;
+    final displayNum = _showDetails
+        ? card['number'] as String
+        : card['maskedNumber'] as String;
     final displayExpiry = _showDetails ? card['expiry'] as String : '••/••';
     final displayCvv = _showDetails ? card['cvv'] as String : '•••';
 
@@ -555,8 +633,10 @@ class _CardsScreenState extends State<CardsScreen> {
       child: Container(
         height: 220,
         decoration: BoxDecoration(
+          color: AppColors.cardNavy,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.bottomBarCyan.withOpacity(0.35), width: 1.2),
+          border: Border.all(
+              color: AppColors.bottomBarCyan.withOpacity(0.35), width: 1.2),
           boxShadow: [
             BoxShadow(
               color: AppColors.bottomBarGlow.withOpacity(0.12),
@@ -581,8 +661,16 @@ class _CardsScreenState extends State<CardsScreen> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: card['colorScheme'] == 'napas'
-                          ? [AppColors.balanceCardGradient.colors[0], AppColors.primaryDark, AppColors.primary]
-                          : [AppColors.textPrimaryLight, AppColors.cardDark, AppColors.primaryDark],
+                          ? [
+                              AppColors.balanceCardGradient.colors[0],
+                              AppColors.primaryDark,
+                              AppColors.primary
+                            ]
+                          : [
+                              AppColors.textPrimaryLight,
+                              AppColors.cardDark,
+                              AppColors.primaryDark
+                            ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -618,7 +706,10 @@ class _CardsScreenState extends State<CardsScreen> {
                         Expanded(
                           child: Row(
                             children: [
-                              Image.asset('assets/icons/senbank_lotus_isolated.png', width: 22, height: 22),
+                              Image.asset(
+                                  'assets/icons/senbank_lotus_isolated.png',
+                                  width: 22,
+                                  height: 22),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -637,16 +728,25 @@ class _CardsScreenState extends State<CardsScreen> {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: (isLocked ? AppColors.error : AppColors.emeraldGreen).withOpacity(0.25),
+                            color: isLocked
+                                ? AppColors.errorBg
+                                : AppColors.successBg,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: (isLocked ? AppColors.error : AppColors.emeraldGreen).withOpacity(0.6)),
+                            border: Border.all(
+                              color: isLocked
+                                  ? AppColors.errorBorder
+                                  : AppColors.successBorder,
+                            ),
                           ),
                           child: Text(
                             isLocked ? 'ĐÃ KHÓA' : 'HOẠT ĐỘNG',
                             style: TextStyle(
-                              color: isLocked ? AppColors.error : AppColors.emeraldGreen,
+                              color: isLocked
+                                  ? AppColors.errorText
+                                  : AppColors.successTextLight,
                               fontWeight: FontWeight.bold,
                               fontSize: 10.5,
                             ),
@@ -657,18 +757,30 @@ class _CardsScreenState extends State<CardsScreen> {
 
                     // Row 2: Chip EMV & Contactless
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Icon(
-                          CupertinoIcons.creditcard_fill,
-                          color: AppColors.bottomBarCyan,
-                          size: 24,
+                        const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              CupertinoIcons.creditcard_fill,
+                              color: AppColors.bottomBarCyan,
+                              size: 24,
+                            ),
+                            SizedBox(width: 10),
+                            Icon(CupertinoIcons.radiowaves_right,
+                                color: Colors.white70, size: 20),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        const Icon(CupertinoIcons.radiowaves_right, color: Colors.white70, size: 20),
-                        const Spacer(),
-                        Text(
-                          card['tier'] as String,
-                          style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.w600),
+                        Flexible(
+                          child: Text(
+                            card['tier'] as String,
+                            style: const TextStyle(
+                                color: AppColors.bottomBarCyan,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),
@@ -687,7 +799,12 @@ class _CardsScreenState extends State<CardsScreen> {
                               fontSize: 19,
                               letterSpacing: 2.2,
                               fontWeight: FontWeight.w700,
-                              shadows: [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2))],
+                              shadows: [
+                                Shadow(
+                                    color: Colors.black54,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2))
+                              ],
                             ),
                           ),
                         ),
@@ -698,17 +815,29 @@ class _CardsScreenState extends State<CardsScreen> {
                             Expanded(
                               child: Text(
                                 card['holder'] as String,
-                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Row(
-                              children: [
-                                Text('HSD: $displayExpiry', style: const TextStyle(color: Colors.white70, fontSize: 11)),
-                                const SizedBox(width: 10),
-                                Text('CVV: $displayCvv', style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold)),
-                              ],
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Row(
+                                children: [
+                                  Text('HSD: $displayExpiry',
+                                      style: const TextStyle(
+                                          color: Colors.white70, fontSize: 11)),
+                                  const SizedBox(width: 10),
+                                  Text('CVV: $displayCvv',
+                                      style: const TextStyle(
+                                          color: AppColors.bottomBarCyan,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -737,7 +866,8 @@ class _CardsScreenState extends State<CardsScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isActive ? AppColors.primary.withOpacity(0.15) : Colors.white,
+            color:
+                isActive ? AppColors.primary.withOpacity(0.15) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isActive ? AppColors.primary : AppColors.borderLight,
@@ -747,12 +877,17 @@ class _CardsScreenState extends State<CardsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: isActive ? AppColors.primary : AppColors.textMutedLight, size: 16),
+              Icon(icon,
+                  color:
+                      isActive ? AppColors.primary : AppColors.textMutedLight,
+                  size: 16),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
-                  color: isActive ? AppColors.primary : AppColors.textSecondaryLight,
+                  color: isActive
+                      ? AppColors.primary
+                      : AppColors.textSecondaryLight,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -779,7 +914,8 @@ class _CardsScreenState extends State<CardsScreen> {
           type: MaterialType.transparency,
           child: ListTile(
             onTap: onTap,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             leading: Container(
               width: 42,
               height: 42,
@@ -789,9 +925,15 @@ class _CardsScreenState extends State<CardsScreen> {
               ),
               child: Icon(icon, color: AppColors.primary, size: 20),
             ),
-            title: Text(title, style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
-            subtitle: Text(subtitle, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-            trailing: trailing ?? const Icon(CupertinoIcons.chevron_forward, size: 18, color: AppColors.textMutedLight),
+            title: Text(title,
+                style: AppTypography.titleMedium(
+                    color: AppColors.textPrimaryLight)),
+            subtitle: Text(subtitle,
+                style: AppTypography.bodySmall(
+                    color: AppColors.textSecondaryLight)),
+            trailing: trailing ??
+                const Icon(CupertinoIcons.chevron_forward,
+                    size: 18, color: AppColors.textMutedLight),
           ),
         ),
       ),
@@ -808,7 +950,9 @@ class _CardsScreenState extends State<CardsScreen> {
         title: Row(
           children: [
             Icon(
-              willLock ? CupertinoIcons.lock_shield_fill : CupertinoIcons.lock_open_fill,
+              willLock
+                  ? CupertinoIcons.lock_shield_fill
+                  : CupertinoIcons.lock_open_fill,
               color: willLock ? AppColors.error : AppColors.primary,
               size: 24,
             ),
@@ -816,7 +960,8 @@ class _CardsScreenState extends State<CardsScreen> {
             Expanded(
               child: Text(
                 willLock ? 'Khóa Thẻ Tạm Thời' : 'Mở Khóa Thẻ',
-                style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
+                style:
+                    AppTypography.titleLarge(color: AppColors.textPrimaryLight),
               ),
             ),
           ],
@@ -830,13 +975,15 @@ class _CardsScreenState extends State<CardsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Hủy', style: TextStyle(color: AppColors.textSecondaryLight)),
+            child: const Text('Hủy',
+                style: TextStyle(color: AppColors.textSecondaryLight)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: willLock ? AppColors.error : AppColors.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(willLock ? 'Xác nhận khóa' : 'Xác nhận mở'),
@@ -850,10 +997,9 @@ class _CardsScreenState extends State<CardsScreen> {
       await showFeatureUnavailable(
         context,
         feature: willLock ? 'Khóa thẻ tạm thời' : 'Mở khóa thẻ',
-        reason: 'Hệ thống Switchboard khóa thẻ đang trong quá trình tích hợp Core Banking. Để khóa thẻ khẩn cấp 24/7, quý khách vui lòng liên hệ hotline 1900 8888.',
+        reason:
+            'Hệ thống Switchboard khóa thẻ đang trong quá trình tích hợp Core Banking. Để khóa thẻ khẩn cấp 24/7, quý khách vui lòng liên hệ hotline 1900 8888.',
       );
     }
   }
-
-
 }

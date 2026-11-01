@@ -29,7 +29,32 @@ public class LoanController {
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "user-me") String userId,
             @Valid @RequestBody LoanApplicationRequest request) {
         LoanApplicationResponse response = loanService.applyLoan(userId, request);
-        return ResponseEntity.ok(ApiResponse.success("Hồ sơ vay đã được tiếp nhận và giải ngân tự động", response));
+        return ResponseEntity.ok(ApiResponse.success("Hồ sơ vay đã được tiếp nhận thành công và đang chờ cán bộ ngân hàng phê duyệt", response));
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<ApiResponse<List<LoanApplicationResponse>>> getPendingLoans() {
+        List<LoanApplicationResponse> list = loanService.getPendingLoans();
+        return ResponseEntity.ok(ApiResponse.success("Lấy danh sách hồ sơ vay chờ duyệt thành công", list));
+    }
+
+    @PostMapping("/{id}/approve")
+    public ResponseEntity<ApiResponse<LoanApplicationResponse>> approveLoan(
+            @PathVariable("id") String id,
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "teller1") String staffUsername,
+            @RequestHeader(value = "X-User-Roles", required = false, defaultValue = "ROLE_TELLER") String staffRole) {
+        LoanApplicationResponse response = loanService.approveLoan(id, staffUsername, staffRole);
+        return ResponseEntity.ok(ApiResponse.success("Phê duyệt và giải ngân khoản vay thành công", response));
+    }
+
+    @PostMapping("/{id}/reject")
+    public ResponseEntity<ApiResponse<LoanApplicationResponse>> rejectLoan(
+            @PathVariable("id") String id,
+            @RequestParam(value = "reason", required = false) String reason,
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "teller1") String staffUsername,
+            @RequestHeader(value = "X-User-Roles", required = false, defaultValue = "ROLE_TELLER") String staffRole) {
+        LoanApplicationResponse response = loanService.rejectLoan(id, staffUsername, staffRole, reason);
+        return ResponseEntity.ok(ApiResponse.success("Từ chối hồ sơ vay thành công", response));
     }
 
     @GetMapping

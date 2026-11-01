@@ -1,0 +1,614 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Backend Sen Hồng — 4 tầng trên 5 microservices",
+    "quality_profile": "standard",
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 5,
+    "cellW": 206,
+    "cellH": 96,
+    "gapX": 176,
+    "gapY": 96
+  },
+  "components": [
+    {
+      "id": "identity-presentation",
+      "type": "backend",
+      "label": "Identity",
+      "sublabel": "Presentation",
+      "tag": "33 class · 32 endpoint",
+      "row": 0,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "wallet-presentation",
+      "type": "backend",
+      "label": "Wallet",
+      "sublabel": "Presentation",
+      "tag": "2 class · 4 endpoint",
+      "row": 0,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "payment-presentation",
+      "type": "backend",
+      "label": "Payment",
+      "sublabel": "Presentation",
+      "tag": "69 class · 59 endpoint",
+      "row": 0,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "ledger-presentation",
+      "type": "backend",
+      "label": "Ledger",
+      "sublabel": "Presentation",
+      "tag": "6 class · 9 endpoint",
+      "row": 0,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "notification-presentation",
+      "type": "backend",
+      "label": "Notification",
+      "sublabel": "Presentation",
+      "tag": "9 class · 17 endpoint",
+      "row": 0,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "identity-application",
+      "type": "backend",
+      "label": "Identity",
+      "sublabel": "Application",
+      "tag": "8 class · 17 method",
+      "row": 1,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "wallet-application",
+      "type": "backend",
+      "label": "Wallet",
+      "sublabel": "Application",
+      "tag": "2 class · 33 method",
+      "row": 1,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "payment-application",
+      "type": "backend",
+      "label": "Payment",
+      "sublabel": "Application",
+      "tag": "14 class · 33 method",
+      "row": 1,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "ledger-application",
+      "type": "backend",
+      "label": "Ledger",
+      "sublabel": "Application",
+      "tag": "4 class · 8 method",
+      "row": 1,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "notification-application",
+      "type": "backend",
+      "label": "Notification",
+      "sublabel": "Application",
+      "tag": "4 class · 12 method",
+      "row": 1,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "identity-domain",
+      "type": "backend",
+      "label": "Identity",
+      "sublabel": "Domain",
+      "tag": "4 class",
+      "row": 2,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "wallet-domain",
+      "type": "backend",
+      "label": "Wallet",
+      "sublabel": "Domain",
+      "tag": "12 class · 11 method",
+      "row": 2,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "payment-domain",
+      "type": "backend",
+      "label": "Payment",
+      "sublabel": "Domain",
+      "tag": "17 class · 32 method",
+      "row": 2,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "ledger-domain",
+      "type": "backend",
+      "label": "Ledger",
+      "sublabel": "Domain",
+      "tag": "11 class · 11 method",
+      "row": 2,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "notification-domain",
+      "type": "backend",
+      "label": "Notification",
+      "sublabel": "Domain",
+      "tag": "5 class · 3 method",
+      "row": 2,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "identity-infrastructure",
+      "type": "backend",
+      "label": "Identity",
+      "sublabel": "Infrastructure",
+      "tag": "12 class · 14 method",
+      "row": 3,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "wallet-infrastructure",
+      "type": "backend",
+      "label": "Wallet",
+      "sublabel": "Infrastructure",
+      "tag": "13 class · 16 method",
+      "row": 3,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "payment-infrastructure",
+      "type": "backend",
+      "label": "Payment",
+      "sublabel": "Infrastructure",
+      "tag": "23 class · 17 method",
+      "row": 3,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "ledger-infrastructure",
+      "type": "backend",
+      "label": "Ledger",
+      "sublabel": "Infrastructure",
+      "tag": "10 class · 36 method",
+      "row": 3,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "notification-infrastructure",
+      "type": "backend",
+      "label": "Notification",
+      "sublabel": "Infrastructure",
+      "tag": "17 class · 24 method",
+      "row": 3,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "identity-db",
+      "type": "database",
+      "label": "PostgreSQL :5433",
+      "sublabel": "ewallet_identity_db",
+      "tag": "JPA · Flyway",
+      "row": 4,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "wallet-db",
+      "type": "database",
+      "label": "PostgreSQL :5434",
+      "sublabel": "ewallet_wallet_db",
+      "tag": "JPA · Flyway",
+      "row": 4,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "payment-db",
+      "type": "database",
+      "label": "PostgreSQL :5435",
+      "sublabel": "ewallet_payment_db",
+      "tag": "outbox_events",
+      "row": 4,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "ledger-db",
+      "type": "database",
+      "label": "PostgreSQL :5436",
+      "sublabel": "ewallet_ledger_db",
+      "tag": "append-only",
+      "row": 4,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "notification-db",
+      "type": "database",
+      "label": "PostgreSQL :5437",
+      "sublabel": "ewallet_notification_db",
+      "tag": "JPA · Flyway",
+      "row": 4,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Tầng 1 · Presentation — Controller · DTO · gRPC/REST",
+      "wraps": [
+        "identity-presentation",
+        "wallet-presentation",
+        "payment-presentation",
+        "ledger-presentation",
+        "notification-presentation"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Tầng 2 · Application — Use case · Saga · Outbox",
+      "wraps": [
+        "identity-application",
+        "wallet-application",
+        "payment-application",
+        "ledger-application",
+        "notification-application"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Tầng 3 · Domain — Entity · Port · Rule",
+      "wraps": [
+        "identity-domain",
+        "wallet-domain",
+        "payment-domain",
+        "ledger-domain",
+        "notification-domain"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Tầng 4 · Infrastructure — Adapter · Repository · Consumer",
+      "wraps": [
+        "identity-infrastructure",
+        "wallet-infrastructure",
+        "payment-infrastructure",
+        "ledger-infrastructure",
+        "notification-infrastructure"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Database-per-Service — PostgreSQL ×5 (:5433–:5437)",
+      "wraps": [
+        "identity-db",
+        "wallet-db",
+        "payment-db",
+        "ledger-db",
+        "notification-db"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "identity-p-a",
+      "from": "identity-presentation",
+      "to": "identity-application",
+      "label": "use case",
+      "labelDy": 58
+    },
+    {
+      "id": "identity-a-d",
+      "from": "identity-application",
+      "to": "identity-domain",
+      "label": "domain model",
+      "labelDy": 58
+    },
+    {
+      "id": "identity-i-d",
+      "from": "identity-infrastructure",
+      "to": "identity-domain",
+      "label": "implements port",
+      "labelDy": -40
+    },
+    {
+      "id": "identity-to-db",
+      "from": "identity-infrastructure",
+      "to": "identity-db",
+      "label": "JPA",
+      "labelDy": 58
+    },
+    {
+      "id": "wallet-p-a",
+      "from": "wallet-presentation",
+      "to": "wallet-application",
+      "label": "use case",
+      "labelDy": 58
+    },
+    {
+      "id": "wallet-a-d",
+      "from": "wallet-application",
+      "to": "wallet-domain",
+      "label": "domain model",
+      "labelDy": 58
+    },
+    {
+      "id": "wallet-i-d",
+      "from": "wallet-infrastructure",
+      "to": "wallet-domain",
+      "label": "implements port",
+      "labelDy": -40
+    },
+    {
+      "id": "wallet-to-db",
+      "from": "wallet-infrastructure",
+      "to": "wallet-db",
+      "label": "JPA",
+      "labelDy": 58
+    },
+    {
+      "id": "payment-p-a",
+      "from": "payment-presentation",
+      "to": "payment-application",
+      "label": "use case",
+      "labelDy": 58
+    },
+    {
+      "id": "payment-a-d",
+      "from": "payment-application",
+      "to": "payment-domain",
+      "label": "domain model",
+      "labelDy": 58
+    },
+    {
+      "id": "payment-i-d",
+      "from": "payment-infrastructure",
+      "to": "payment-domain",
+      "label": "implements port",
+      "labelDy": -40
+    },
+    {
+      "id": "payment-to-db",
+      "from": "payment-infrastructure",
+      "to": "payment-db",
+      "label": "JPA",
+      "labelDy": 58
+    },
+    {
+      "id": "ledger-p-a",
+      "from": "ledger-presentation",
+      "to": "ledger-application",
+      "label": "use case",
+      "labelDy": 58
+    },
+    {
+      "id": "ledger-a-d",
+      "from": "ledger-application",
+      "to": "ledger-domain",
+      "label": "domain model",
+      "labelDy": 58
+    },
+    {
+      "id": "ledger-i-d",
+      "from": "ledger-infrastructure",
+      "to": "ledger-domain",
+      "label": "implements port",
+      "labelDy": -40
+    },
+    {
+      "id": "ledger-to-db",
+      "from": "ledger-infrastructure",
+      "to": "ledger-db",
+      "label": "JPA",
+      "labelDy": 58
+    },
+    {
+      "id": "notification-p-a",
+      "from": "notification-presentation",
+      "to": "notification-application",
+      "label": "use case",
+      "labelDy": 58
+    },
+    {
+      "id": "notification-a-d",
+      "from": "notification-application",
+      "to": "notification-domain",
+      "label": "domain model",
+      "labelDy": 58
+    },
+    {
+      "id": "notification-i-d",
+      "from": "notification-infrastructure",
+      "to": "notification-domain",
+      "label": "implements port",
+      "labelDy": -40
+    },
+    {
+      "id": "notification-to-db",
+      "from": "notification-infrastructure",
+      "to": "notification-db",
+      "label": "JPA",
+      "labelDy": 58
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Tầng 1 — Presentation",
+      "items": [
+        "Identity: 33 class · 32 endpoint",
+        "Wallet: 2 class · 4 endpoint",
+        "Payment: 69 class · 59 endpoint",
+        "Ledger: 6 class · 9 endpoint",
+        "Notification: 9 class · 17 endpoint"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Tầng 2 — Application",
+      "items": [
+        "Identity: 8 class · 17 method",
+        "Wallet: 2 class · 33 method",
+        "Payment: 14 class · 33 method",
+        "Ledger: 4 class · 8 method",
+        "Notification: 4 class · 12 method"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Tầng 3 — Domain",
+      "items": [
+        "Identity: 4 class",
+        "Wallet: 12 class · 11 method",
+        "Payment: 17 class · 32 method",
+        "Ledger: 11 class · 11 method",
+        "Notification: 5 class · 3 method"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Tầng 4 — Infrastructure",
+      "items": [
+        "Identity: 12 class · 14 method",
+        "Wallet: 13 class · 16 method",
+        "Payment: 23 class · 17 method",
+        "Ledger: 10 class · 36 method",
+        "Notification: 17 class · 24 method"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Phụ thuộc liên service & hạ tầng dùng chung",
+      "items": [
+        "Payment → Wallet: gRPC :9090 (Reserve / Debit / Credit / Release / CheckLimit)",
+        "Payment → RabbitMQ wallet.transaction.events (routing key transaction.*) → Ledger + Notification",
+        "Wallet → Kafka banking.wallet.balance-changed.v1 → Ledger + Notification",
+        "Payment → Kafka banking.payment.transaction-lifecycle.v1 → Ledger + Notification",
+        "Identity → RabbitMQ user.registered → Wallet tự tạo ví",
+        "Identity + Wallet + API Gateway → Redis :6379 (OTP, session, JWT blacklist, distributed lock)",
+        "Notification → Firebase FCM + STOMP /topic/notifications (WebSocket)",
+        "common-library: wallet.proto, KafkaEventEnvelope, topic constants, BaseKafkaProducer"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Ghi chú đọc sơ đồ",
+      "items": [
+        "Sơ đồ này chỉ vẽ cạnh tầng → tầng và tầng Infrastructure → database của chính service đó.",
+        "Toàn bộ cạnh broker/liên service (fan-out đầy đủ) nằm ở sơ đồ “Bản đồ phụ thuộc”.",
+        "Chi tiết từng class + method + endpoint: xem 5 sơ đồ per-service."
+      ]
+    }
+  ]
+}

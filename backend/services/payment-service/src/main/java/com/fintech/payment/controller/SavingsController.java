@@ -24,6 +24,12 @@ public class SavingsController {
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách sản phẩm tiết kiệm thành công", products));
     }
 
+    @GetMapping("/admin/accounts")
+    public ResponseEntity<ApiResponse<List<SavingsAccountResponse>>> getAllSavingsAccounts() {
+        List<SavingsAccountResponse> list = savingsService.getAllSavingsAccounts();
+        return ResponseEntity.ok(ApiResponse.success("Lấy toàn bộ danh sách sổ tiết kiệm thành công", list));
+    }
+
     @PostMapping("/accounts")
     public ResponseEntity<ApiResponse<SavingsAccountResponse>> openSavings(
             @RequestHeader(value = "X-User-Id", required = false, defaultValue = "user-me") String userId,

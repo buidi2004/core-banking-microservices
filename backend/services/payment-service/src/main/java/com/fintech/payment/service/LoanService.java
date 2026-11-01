@@ -56,8 +56,12 @@ public class LoanService {
 
     @Transactional
     public LoanApplicationResponse applyLoan(String userId, LoanApplicationRequest request) {
-        if (request.getPinToken() != null && !request.getPinToken().isBlank()) {
+        if (request.getOtpToken() != null && !request.getOtpToken().isBlank()) {
+            pinTokenValidator.validateOtp(request.getOtpToken(), "LOAN_APPLY");
+        } else if (request.getPinToken() != null && !request.getPinToken().isBlank()) {
             pinTokenValidator.validate(userId, request.getPinToken());
+        } else {
+            throw new IllegalArgumentException("Vui lòng nhập và xác thực mã OTP trước khi nộp hồ sơ vay vốn");
         }
 
         BigDecimal minAmount = new BigDecimal("5000000");
@@ -111,17 +115,7 @@ public class LoanService {
 
         BigDecimal totalRepayment = request.getAmount().add(totalInterest);
 
-        // Core banking in-house auto-disbursement: credit to user wallet immediately
-        var creditRes = walletGrpcClient.credit(
-                request.getWalletId(),
-                request.getAmount().longValue(),
-                "LOAN_DISBURSEMENT",
-                "Giải ngân khoản vay " + contractNumber
-        );
-        if (creditRes != null && !creditRes.isSuccess()) {
-            throw new IllegalStateException("Giải ngân vào ví thất bại: " + creditRes.getErrorMessage());
-        }
-
+        // Chuyển sang trạng thái PENDING_APPROVAL chờ cán bộ duyệt
         LoanContract contract = LoanContract.builder()
                 .userId(userId)
                 .walletId(request.getWalletId())
@@ -136,22 +130,119 @@ public class LoanService {
                 .remainingPrincipal(request.getAmount())
                 .monthlyPayment(firstMonthlyPayment)
                 .purpose(request.getPurpose())
-                .status("DISBURSED")
-                .disbursedAt(Instant.now())
-                .firstDueDate(firstDueDate)
+                .status("PENDING_APPROVAL")
                 .build();
 
         LoanContract savedContract = loanContractRepository.save(contract);
+        log.info("Received loan application {} of {} VND for user {}, pending staff approval",
+                contractNumber, request.getAmount(), userId);
 
-        for (LoanScheduleItem item : scheduleItems) {
-            item.setLoanContractId(savedContract.getId());
+        return toResponse(savedContract);
+    }
+
+    public List<LoanApplicationResponse> getPendingLoans() {
+        return loanContractRepository.findByStatusOrderByCreatedAtDesc("PENDING_APPROVAL").stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public LoanApplicationResponse approveLoan(String loanId, String staffUsername, String staffRole) {
+        if (staffRole == null || (!staffRole.contains("TELLER") && !staffRole.contains("MANAGER"))) {
+            throw new SecurityException("Chỉ cán bộ giao dịch viên (TELLER) hoặc kiểm soát viên (MANAGER) mới có quyền duyệt khoản vay");
+        }
+
+        UUID uuid = UUID.fromString(loanId);
+        LoanContract contract = loanContractRepository.findById(uuid)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hợp đồng vay: " + loanId));
+
+        if (!"PENDING_APPROVAL".equals(contract.getStatus())) {
+            throw new IllegalStateException("Khoản vay không ở trạng thái chờ duyệt. Trạng thái hiện tại: " + contract.getStatus());
+        }
+
+        // Giải ngân vào ví người dùng qua gRPC
+        String disbTxId = "LN_DISB_" + contract.getContractNumber();
+        String disbIdemKey = "idem:loan:disb:" + contract.getContractNumber();
+        var creditRes = walletGrpcClient.credit(
+                contract.getWalletId(),
+                contract.getPrincipalAmount().longValue(),
+                disbTxId,
+                disbIdemKey
+        );
+        if (creditRes != null && !creditRes.isSuccess()) {
+            throw new IllegalStateException("Giải ngân vào ví thất bại: " + creditRes.getErrorMessage());
+        }
+
+        // Tạo lịch trả nợ
+        LocalDate startDate = LocalDate.now();
+        LocalDate firstDueDate = startDate.plusMonths(1);
+        int termMonths = contract.getTermMonths();
+        BigDecimal monthlyRate = contract.getAnnualInterestRate()
+                .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+                .divide(BigDecimal.valueOf(12), 6, RoundingMode.HALF_UP);
+        BigDecimal monthlyPrincipal = contract.getPrincipalAmount().divide(BigDecimal.valueOf(termMonths), 0, RoundingMode.HALF_UP);
+        BigDecimal currentRemaining = contract.getPrincipalAmount();
+
+        List<LoanScheduleItem> scheduleItems = new ArrayList<>();
+        for (int i = 1; i <= termMonths; i++) {
+            BigDecimal termPrincipal = (i == termMonths) ? currentRemaining : monthlyPrincipal;
+            BigDecimal termInterest = currentRemaining.multiply(monthlyRate).setScale(0, RoundingMode.HALF_UP);
+            BigDecimal termTotal = termPrincipal.add(termInterest);
+            BigDecimal balanceAfter = currentRemaining.subtract(termPrincipal);
+
+            LoanScheduleItem item = LoanScheduleItem.builder()
+                    .loanContractId(contract.getId())
+                    .termNumber(i)
+                    .dueDate(startDate.plusMonths(i))
+                    .principalAmount(termPrincipal)
+                    .interestAmount(termInterest)
+                    .totalAmount(termTotal)
+                    .remainingBalance(balanceAfter)
+                    .status(i == 1 ? "DUE" : "UPCOMING")
+                    .build();
+
+            scheduleItems.add(item);
+            currentRemaining = balanceAfter;
         }
         loanScheduleItemRepository.saveAll(scheduleItems);
 
-        log.info("Disbursed loan {} of {} VND to wallet {} for user {}",
-                contractNumber, request.getAmount(), request.getWalletId(), userId);
+        contract.setStatus("DISBURSED");
+        contract.setDisbursedAt(Instant.now());
+        contract.setFirstDueDate(firstDueDate);
+        contract.setApprovedBy(staffUsername);
+        contract.setApprovedAt(Instant.now());
 
-        return toResponse(savedContract);
+        LoanContract updated = loanContractRepository.save(contract);
+        log.info("Staff {} ({}) approved and disbursed loan {} of {} VND",
+                staffUsername, staffRole, contract.getContractNumber(), contract.getPrincipalAmount());
+
+        return toResponse(updated);
+    }
+
+    @Transactional
+    public LoanApplicationResponse rejectLoan(String loanId, String staffUsername, String staffRole, String reason) {
+        if (staffRole == null || (!staffRole.contains("TELLER") && !staffRole.contains("MANAGER"))) {
+            throw new SecurityException("Chỉ cán bộ giao dịch viên (TELLER) hoặc kiểm soát viên (MANAGER) mới có quyền từ chối khoản vay");
+        }
+
+        UUID uuid = UUID.fromString(loanId);
+        LoanContract contract = loanContractRepository.findById(uuid)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy hợp đồng vay: " + loanId));
+
+        if (!"PENDING_APPROVAL".equals(contract.getStatus())) {
+            throw new IllegalStateException("Khoản vay không ở trạng thái chờ duyệt. Trạng thái hiện tại: " + contract.getStatus());
+        }
+
+        contract.setStatus("REJECTED");
+        contract.setApprovedBy(staffUsername);
+        contract.setApprovedAt(Instant.now());
+        contract.setRejectReason((reason != null && !reason.isBlank()) ? reason : "Không đủ điều kiện cấp tín dụng");
+
+        LoanContract updated = loanContractRepository.save(contract);
+        log.info("Staff {} ({}) rejected loan {}: reason={}",
+                staffUsername, staffRole, contract.getContractNumber(), contract.getRejectReason());
+
+        return toResponse(updated);
     }
 
     public List<LoanApplicationResponse> getUserLoans(String userId) {
@@ -215,11 +306,13 @@ public class LoanService {
         BigDecimal payAmount = request.getAmount() != null ? request.getAmount() : item.getTotalAmount();
 
         // Debit repayment from user wallet
+        String repayTxId = "LN_RPAY_" + contract.getContractNumber() + "_T" + request.getTermNumber();
+        String repayIdemKey = "idem:loan:repay:" + contract.getContractNumber() + "_T" + request.getTermNumber();
         var debitRes = walletGrpcClient.debit(
                 contract.getWalletId(),
                 payAmount.longValue(),
-                "LOAN_REPAYMENT",
-                "Thanh toán kỳ " + request.getTermNumber() + " hợp đồng " + contract.getContractNumber()
+                repayTxId,
+                repayIdemKey
         );
         if (debitRes != null && !debitRes.isSuccess()) {
             throw new IllegalStateException("Trừ tiền ví trả nợ thất bại: " + debitRes.getErrorMessage());
@@ -266,13 +359,16 @@ public class LoanService {
                 .productName(c.getProductName())
                 .principalAmount(c.getPrincipalAmount())
                 .annualInterestRate(c.getAnnualInterestRate())
-                .termMonths(c.getTermMonths())
+                .termMonths(c.getTermMonths() != null ? c.getTermMonths() : 0)
                 .totalInterest(c.getTotalInterest())
                 .totalRepayment(c.getTotalRepayment())
                 .monthlyPayment(c.getMonthlyPayment())
                 .status(c.getStatus())
                 .disbursedAt(c.getDisbursedAt() != null ? c.getDisbursedAt().toString() : null)
                 .firstDueDate(c.getFirstDueDate() != null ? c.getFirstDueDate().toString() : null)
+                .approvedBy(c.getApprovedBy())
+                .approvedAt(c.getApprovedAt() != null ? c.getApprovedAt().toString() : null)
+                .rejectReason(c.getRejectReason())
                 .build();
     }
 }

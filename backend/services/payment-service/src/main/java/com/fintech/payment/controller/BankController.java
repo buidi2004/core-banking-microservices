@@ -1,6 +1,5 @@
 package com.fintech.payment.controller;
 
-import com.fintech.payment.domain.entity.Bank;
 import com.fintech.payment.dto.ApiResponse;
 import com.fintech.payment.repository.BankRepository;
 import org.springframework.http.ResponseEntity;

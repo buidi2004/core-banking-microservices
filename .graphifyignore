@@ -1,0 +1,15 @@
+# Vendored agent tooling (archify skill) is not part of the banking codebase.
+.agents/skills/**
+.agents_workspace/**
+.agents/plugins/**
+
+# Release binaries / packaged artifacts
+releases/**
+*.apk
+*.aab
+
+# Generated / build output (also covered by .gitignore)
+**/target/**
+**/build/**
+node_modules/**
+.dart_tool/**

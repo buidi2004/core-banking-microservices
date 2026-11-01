@@ -34,7 +34,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Mã OTP khôi phục mật khẩu đã được gửi đến số điện thoại của bạn'),
+          content: Text(
+              'Mã OTP khôi phục mật khẩu đã được gửi đến số điện thoại của bạn'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -75,16 +76,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.12),
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.5),
+                    border: Border.all(
+                        color: AppColors.primary.withOpacity(0.3), width: 1.5),
                   ),
-                  child: const Icon(CupertinoIcons.lock_circle_fill, color: AppColors.primary, size: 38),
+                  child: const Icon(CupertinoIcons.lock_circle_fill,
+                      color: AppColors.primary, size: 38),
                 ),
               ),
               const SizedBox(height: 16),
               Center(
                 child: Text(
                   'Khôi Phục Mật Khẩu',
-                  style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w800),
+                  style: AppTypography.displaySmall(
+                          color: AppColors.textPrimaryLight)
+                      .copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               const SizedBox(height: 6),
@@ -92,7 +97,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Text(
                   'Xác thực số điện thoại để cấp lại mã đăng nhập an toàn',
                   textAlign: TextAlign.center,
-                  style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                  style: AppTypography.bodySmall(
+                      color: AppColors.textSecondaryLight),
                 ),
               ),
               const SizedBox(height: 24),
@@ -101,15 +107,40 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      _buildStepBadge(step: '1', title: 'Nhập SĐT', isActive: true, isDone: false),
-                      Expanded(child: Container(height: 1.5, color: AppColors.primary.withOpacity(0.4))),
-                      _buildStepBadge(step: '2', title: 'Xác thực OTP', isActive: false, isDone: false),
-                      Expanded(child: Container(height: 1.5, color: AppColors.cardBorderLight)),
-                      _buildStepBadge(step: '3', title: 'Tạo mật khẩu', isActive: false, isDone: false),
-                    ],
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildStepBadge(
+                            step: '1',
+                            title: 'Nhập SĐT',
+                            isActive: true,
+                            isDone: false),
+                        Container(
+                            width: 32,
+                            height: 1.5,
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            color: AppColors.primary.withOpacity(0.4)),
+                        _buildStepBadge(
+                            step: '2',
+                            title: 'Xác thực OTP',
+                            isActive: false,
+                            isDone: false),
+                        Container(
+                            width: 32,
+                            height: 1.5,
+                            margin: const EdgeInsets.symmetric(horizontal: 8),
+                            color: AppColors.cardBorderLight),
+                        _buildStepBadge(
+                            step: '3',
+                            title: 'Tạo mật khẩu',
+                            isActive: false,
+                            isDone: false),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -123,33 +154,55 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Số điện thoại đăng ký ví', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+                      Text('Số điện thoại đăng ký ví',
+                          style: AppTypography.titleMedium(
+                              color: AppColors.textPrimaryLight)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
-                        style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            color: AppColors.textPrimaryLight,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600),
                         decoration: InputDecoration(
-                          prefixIcon: const Icon(CupertinoIcons.phone_fill, color: AppColors.primary),
+                          prefixIcon: const Icon(CupertinoIcons.phone_fill,
+                              color: AppColors.primary),
                           hintText: 'Nhập số điện thoại đăng ký',
-                          hintStyle: const TextStyle(color: AppColors.textMutedLight),
+                          hintStyle:
+                              const TextStyle(color: AppColors.textMutedLight),
                           filled: true,
                           fillColor: AppColors.surfaceLight,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(
+                                  color: AppColors.borderLight)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(
+                                  color: AppColors.borderLight)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 1.5)),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
                         'Mã xác thực OTP 6 số sẽ được gửi qua tin nhắn SMS Brandname SenHongBank đến số thuê bao trên.',
-                        style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 12),
+                        style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight)
+                            .copyWith(fontSize: 12),
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: _isLoading ? null : _handleSendOtp,
                         child: _isLoading
-                            ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2))
                             : const Text('Tiếp tục & Nhận mã OTP'),
                       ),
                     ],
@@ -169,7 +222,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primary, size: 24),
+                    const Icon(CupertinoIcons.shield_lefthalf_fill,
+                        color: AppColors.primary, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -177,12 +231,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         children: [
                           const Text(
                             'Cảnh báo an ninh ngân hàng',
-                            style: TextStyle(color: AppColors.warningText, fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(
+                                color: AppColors.warningText,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Sen Hồng Bank KHÔNG BAO GIỜ yêu cầu bạn cung cấp mã OTP, mật khẩu hoặc số thẻ qua điện thoại, email hay mạng xã hội. Tuyệt đối không chia sẻ mã OTP cho bất kỳ ai.',
-                            style: TextStyle(color: AppColors.warningText.withOpacity(0.95), fontSize: 12, height: 1.35),
+                            style: TextStyle(
+                                color: AppColors.warningText.withOpacity(0.95),
+                                fontSize: 12,
+                                height: 1.35),
                           ),
                         ],
                       ),
@@ -195,7 +255,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               // Alternative Recovery Methods
               Text(
                 'Phương thức khôi phục khác',
-                style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w700),
+                style:
+                    AppTypography.titleMedium(color: AppColors.textPrimaryLight)
+                        .copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
 
@@ -213,15 +275,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             color: AppColors.emeraldGreen.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(CupertinoIcons.person_crop_circle_badge_checkmark, color: AppColors.emeraldGreen, size: 22),
+                          child: const Icon(
+                              CupertinoIcons.person_crop_circle_badge_checkmark,
+                              color: AppColors.successTextLight,
+                              size: 22),
                         ),
-                        title: Text('Xác thực khuôn mặt & CCCD gắn chip', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight)),
-                        subtitle: Text('Dành cho trường hợp mất số điện thoại hoặc đổi SIM mới', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                        trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                        title: Text('Xác thực khuôn mặt & CCCD gắn chip',
+                            style: AppTypography.titleSmall(
+                                color: AppColors.textPrimaryLight)),
+                        subtitle: Text(
+                            'Dành cho trường hợp mất số điện thoại hoặc đổi SIM mới',
+                            style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight)),
+                        trailing: const Icon(CupertinoIcons.chevron_forward,
+                            color: AppColors.textMutedLight, size: 16),
                         onTap: () => context.push('/profile/ekyc'),
                       ),
                     ),
-                    const Divider(height: 1, indent: 56, color: AppColors.cardBorderLight),
+                    const Divider(
+                        height: 1,
+                        indent: 56,
+                        color: AppColors.cardBorderLight),
                     Material(
                       type: MaterialType.transparency,
                       child: ListTile(
@@ -232,19 +306,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(CupertinoIcons.building_2_fill, color: AppColors.primary, size: 22),
+                          child: const Icon(CupertinoIcons.building_2_fill,
+                              color: AppColors.primary, size: 22),
                         ),
-                        title: Text('Đến phòng giao dịch gần nhất', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight)),
-                        subtitle: Text('Hỗ trợ cấp lại thông tin tại hơn 350 chi nhánh toàn quốc', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                        trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                        title: Text('Đến phòng giao dịch gần nhất',
+                            style: AppTypography.titleSmall(
+                                color: AppColors.textPrimaryLight)),
+                        subtitle: Text(
+                            'Hỗ trợ cấp lại thông tin tại hơn 350 chi nhánh toàn quốc',
+                            style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight)),
+                        trailing: const Icon(CupertinoIcons.chevron_forward,
+                            color: AppColors.textMutedLight, size: 16),
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Vui lòng mang theo CCCD gốc đến chi nhánh Sen Hồng Bank gần nhất.')),
+                            const SnackBar(
+                                content: Text(
+                                    'Vui lòng mang theo CCCD gốc đến chi nhánh Sen Hồng Bank gần nhất.')),
                           );
                         },
                       ),
                     ),
-                    const Divider(height: 1, indent: 56, color: AppColors.cardBorderLight),
+                    const Divider(
+                        height: 1,
+                        indent: 56,
+                        color: AppColors.cardBorderLight),
                     Material(
                       type: MaterialType.transparency,
                       child: ListTile(
@@ -255,14 +341,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                             color: AppColors.primary.withOpacity(0.12),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(CupertinoIcons.phone_circle_fill, color: AppColors.primary, size: 22),
+                          child: const Icon(CupertinoIcons.phone_circle_fill,
+                              color: AppColors.primary, size: 22),
                         ),
-                        title: Text('Tổng đài hỗ trợ 24/7 (Miễn phí)', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight)),
-                        subtitle: Text('Hotline: 1900 6868 (Bấm phím 1 để gặp điện thoại viên)', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                        trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                        title: Text('Tổng đài hỗ trợ 24/7 (Miễn phí)',
+                            style: AppTypography.titleSmall(
+                                color: AppColors.textPrimaryLight)),
+                        subtitle: Text(
+                            'Hotline: 1900 6868 (Bấm phím 1 để gặp điện thoại viên)',
+                            style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight)),
+                        trailing: const Icon(CupertinoIcons.chevron_forward,
+                            color: AppColors.textMutedLight, size: 16),
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Đang kết nối tới tổng đài CSKH Sen Hồng: 1900 6868')),
+                            const SnackBar(
+                                content: Text(
+                                    'Đang kết nối tới tổng đài CSKH Sen Hồng: 1900 6868')),
                           );
                         },
                       ),
@@ -275,7 +370,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               // Frequently Asked Questions
               Text(
                 'Câu hỏi thường gặp',
-                style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w700),
+                style:
+                    AppTypography.titleMedium(color: AppColors.textPrimaryLight)
+                        .copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
 
@@ -300,7 +397,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     children: [
                       _buildRouterTile(
@@ -308,25 +406,37 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         label: 'Quên mã PIN giao dịch? Cấp lại mã PIN',
                         onTap: () => context.push('/auth/forgot-pin'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_badge_plus_fill,
                         label: 'Chưa có tài khoản ví? Đăng ký ngay',
                         onTap: () => context.push('/auth/register'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.lock_shield_fill,
                         label: 'Chưa tạo mã PIN bảo mật? Thiết lập PIN',
                         onTap: () => context.push('/auth/set-pin'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.doc_text_fill,
                         label: 'Điều khoản dịch vụ & Chính sách bảo mật',
                         onTap: () => context.push('/auth/terms'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.phone_circle_fill,
                         label: 'Cần hỗ trợ khẩn cấp? Trung tâm CSKH 24/7',
@@ -347,8 +457,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       context.go('/auth/login');
                     }
                   },
-                  icon: const Icon(CupertinoIcons.arrow_left, size: 16, color: AppColors.primaryDark),
-                  label: const Text('Quay lại trang đăng nhập', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold)),
+                  icon: const Icon(CupertinoIcons.arrow_left,
+                      size: 16, color: AppColors.primaryDark),
+                  label: const Text('Quay lại trang đăng nhập',
+                      style: TextStyle(
+                          color: AppColors.primaryDark,
+                          fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -359,21 +473,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildStepBadge({required String step, required String title, required bool isActive, required bool isDone}) {
+  Widget _buildStepBadge(
+      {required String step,
+      required String title,
+      required bool isActive,
+      required bool isDone}) {
     return Column(
       children: [
         Container(
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: isActive || isDone ? AppColors.primary : AppColors.borderLight,
+            color:
+                isActive || isDone ? AppColors.primary : AppColors.borderLight,
             shape: BoxShape.circle,
           ),
           child: Center(
             child: Text(
               step,
               style: TextStyle(
-                color: isActive || isDone ? Colors.white : AppColors.textMutedLight,
+                color: isActive || isDone
+                    ? Colors.white
+                    : AppColors.textMutedLight,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -384,7 +505,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Text(
           title,
           style: TextStyle(
-            color: isActive ? AppColors.primaryDark : AppColors.textSecondaryLight,
+            color:
+                isActive ? AppColors.primaryDark : AppColors.textSecondaryLight,
             fontSize: 11,
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
           ),
@@ -399,15 +521,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        title: Text(q, style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontSize: 13)),
+        title: Text(q,
+            style: AppTypography.titleSmall(color: AppColors.textPrimaryLight)
+                .copyWith(fontSize: 13)),
         children: [
-          Text(a, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 12, height: 1.4)),
+          Text(a,
+              style:
+                  AppTypography.bodySmall(color: AppColors.textSecondaryLight)
+                      .copyWith(fontSize: 12, height: 1.4)),
         ],
       ),
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -417,9 +547,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             Icon(icon, color: AppColors.primary, size: 18),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
+              child: Text(label,
+                  style:
+                      AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),

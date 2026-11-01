@@ -39,7 +39,7 @@ services:
   # API GATEWAY (Internal port 8080, NO HOST PORTS)
   # ----------------------------------------------------------------------------
   api-gateway:
-    image: openjdk:17-slim
+    image: eclipse-temurin:25-jre-alpine
     container_name: ewallet-api-gateway
     restart: unless-stopped
     expose:

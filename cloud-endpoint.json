@@ -1,8 +1,8 @@
 {
-  "codespaceName": "solid-eureka-695rvv97vwjjh5wjq",
-  "gatewayUrl": "https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev",
-  "apiUrl": "https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/api/v1",
-  "wsUrl": "wss://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/ws-native",
-  "portalUrl": "https://solid-eureka-695rvv97vwjjh5wjq-5173.app.github.dev",
-  "updatedAt": "2026-10-23T03:19:30Z"
+  "codespaceName": "ngrok-tunnel-mutation-tubby-overstock",
+  "gatewayUrl": "https://mutation-tubby-overstock.ngrok-free.dev",
+  "apiUrl": "https://mutation-tubby-overstock.ngrok-free.dev/api/v1",
+  "wsUrl": "wss://mutation-tubby-overstock.ngrok-free.dev/ws-native",
+  "portalUrl": "http://localhost:5173",
+  "updatedAt": "2026-11-01T15:57:02Z"
 }

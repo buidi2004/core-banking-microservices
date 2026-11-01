@@ -56,5 +56,40 @@ public class PinTokenValidator {
             throw new IllegalArgumentException("Mã PIN không hợp lệ hoặc đã hết hạn xác thực");
         }
     }
+
+    public boolean validateOtpToken(String otpToken, String expectedPurpose) {
+        if (otpToken == null || otpToken.isBlank()) {
+            return false;
+        }
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(otpToken)
+                    .getPayload();
+
+            boolean isOtpType = "OTP_TOKEN".equals(claims.get("type"));
+            String purpose = claims.get("purpose", String.class);
+            boolean purposeMatch = expectedPurpose == null
+                    || expectedPurpose.equalsIgnoreCase(purpose)
+                    || "LOAN".equalsIgnoreCase(purpose)
+                    || "LOAN_APPLY".equalsIgnoreCase(purpose);
+
+            if (!isOtpType || !purposeMatch) {
+                log.warn("OtpToken không hợp lệ: isOtpType={}, purpose={}", isOtpType, purpose);
+                return false;
+            }
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            log.warn("Lỗi xác thực otpToken: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    public void validateOtp(String otpToken, String expectedPurpose) {
+        if (!validateOtpToken(otpToken, expectedPurpose)) {
+            throw new IllegalArgumentException("Mã xác thực OTP không hợp lệ hoặc đã hết hạn");
+        }
+    }
 }
 

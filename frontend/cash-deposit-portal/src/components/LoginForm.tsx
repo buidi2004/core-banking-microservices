@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { LoggedInStaff } from '../types';
 import { STAFF_ACCOUNTS } from '../data';
-import { Landmark, Lock, User, KeyRound, ShieldCheck, ArrowRight, LogIn, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { ApiService } from '../api';
+import { Landmark, Lock, User, KeyRound, ShieldCheck, ArrowRight, LogIn, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 
 interface LoginFormProps {
   onLoginSuccess: (staff: LoggedInStaff) => void;
@@ -11,34 +12,51 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [username, setUsername] = useState('teller1');
   const [password, setPassword] = useState('DemoPass#2026!');
   const [errorMsg, setErrorMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setIsLoading(true);
 
+    // 1. Thử gọi API thật POST /api/v1/auth/login qua Gateway
+    const realAuth = await ApiService.loginStaff(username.trim(), password);
+    if (realAuth.success && realAuth.staff) {
+      setIsLoading(false);
+      onLoginSuccess(realAuth.staff);
+      return;
+    }
+
+    // 2. Hỗ trợ Demo Staff Accounts nếu dùng tài khoản teller1/manager1 mặc định
     const trimmedUser = username.trim().toLowerCase();
     const staff = STAFF_ACCOUNTS.find(
       s => s.username.toLowerCase() === trimmedUser || (trimmedUser.startsWith('09') && s.username === 'teller1')
     );
 
-    if (!staff) {
-      setErrorMsg('Tên đăng nhập không tồn tại trên hệ thống Core Banking!');
+    if (staff && password === 'DemoPass#2026!') {
+      setIsLoading(false);
+      onLoginSuccess(staff);
       return;
     }
 
-    if (password !== 'DemoPass#2026!') {
-      setErrorMsg('Mật khẩu không chính xác! (Mật khẩu mặc định: DemoPass#2026!)');
-      return;
-    }
-
-    onLoginSuccess(staff);
+    setIsLoading(false);
+    setErrorMsg(realAuth.message || 'Tên đăng nhập hoặc mật khẩu không chính xác!');
   };
 
-  const handleQuickSelect = (staff: LoggedInStaff) => {
+  const handleQuickSelect = async (staff: LoggedInStaff) => {
     setUsername(staff.username);
     setPassword('DemoPass#2026!');
     setErrorMsg('');
-    onLoginSuccess(staff);
+    setIsLoading(true);
+
+    // Xác thực thực tế qua API Gateway để nhận JWT Access Token chính chủ
+    const realAuth = await ApiService.loginStaff(staff.username, 'DemoPass#2026!');
+    setIsLoading(false);
+    if (realAuth.success && realAuth.staff) {
+      onLoginSuccess(realAuth.staff);
+    } else {
+      onLoginSuccess(staff);
+    }
   };
 
   return (

@@ -3,7 +3,6 @@ package com.fintech.payment;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.payment.controller.CashDepositController;
 import com.fintech.payment.domain.entity.CashDeposit;
-import com.fintech.payment.dto.CashDepositApproveRequest;
 import com.fintech.payment.dto.CashDepositRejectRequest;
 import com.fintech.payment.dto.CashDepositRequest;
 import com.fintech.payment.exception.GlobalExceptionHandler;
@@ -25,7 +24,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;

@@ -1,32 +1,13 @@
 {
   "project_info": {
-    "project_number": "482530400515",
-    "project_id": "nganhang-bbcfe",
-    "storage_bucket": "nganhang-bbcfe.firebasestorage.app"
+    "project_number": "422540058373",
+    "project_id": "nganhang-f5311",
+    "storage_bucket": "nganhang-f5311.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:482530400515:android:8dac08689b4dc959f77136",
-        "android_client_info": {
-          "package_name": "com.anonymous.mobileapp"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDf-Rlw8Zghex0RpriBhbRKnoqQbvLs8YA"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:482530400515:android:8dac08689b4dc959f77136",
+        "mobilesdk_app_id": "1:422540058373:android:1821bb8cf14a8ae09f616c",
         "android_client_info": {
           "package_name": "com.senhong.sen_hong_bank"
         }
@@ -34,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDf-Rlw8Zghex0RpriBhbRKnoqQbvLs8YA"
+          "current_key": "AIzaSyC8DZDvmp6XvlzTmR0XDV7cI9bpQVtkRio"
         }
       ],
       "services": {

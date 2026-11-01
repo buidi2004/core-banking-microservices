@@ -182,6 +182,15 @@ class AuthRemoteDataSource {
     return Map<String, dynamic>.from(json['data'] as Map? ?? {});
   }
 
+  /// Yêu cầu gửi mã OTP tới Gmail chính chủ (định danh qua X-User-Id do Gateway inject)
+  /// để đổi hoặc cấp lại mã PIN giao dịch.
+  Future<Map<String, dynamic>> requestChangePinOtp() async {
+    final response = await _dio.post(ApiConstants.changePinOtp);
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map? ?? {});
+  }
+
   /// Đổi mật khẩu đăng nhập: yêu cầu OTP (otpToken) đã xác thực qua Gmail.
   Future<void> changePassword({
     required String oldPassword,

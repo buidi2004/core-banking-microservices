@@ -89,8 +89,8 @@ public class RedisLockAdapter implements DistributedLockPort {
             }
 
             try {
-                long backoffMs = Math.min(100L * (1L << i), 2000L)
-                        + ThreadLocalRandom.current().nextLong(50);
+                long backoffMs = Math.min(15L * (1L << i), 500L)
+                        + ThreadLocalRandom.current().nextLong(20);
                 Thread.sleep(backoffMs);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();

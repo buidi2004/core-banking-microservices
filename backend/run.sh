@@ -38,7 +38,7 @@ print_banner() {
     echo "  ██████╔╝██║  ██║╚██████╗██║ ╚██╗███████╗██║ ╚████║██████╔╝"
     echo "  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ "
     echo -e "${NC}"
-    echo -e " ${BOLD}BỘ ĐIỀU KHIỂN BACKEND MICROSERVICES (JAVA 17 / SPRING BOOT 3)${NC}"
+    echo -e " ${BOLD}BỘ ĐIỀU KHIỂN BACKEND MICROSERVICES (JAVA 25 / SPRING BOOT 3)${NC}"
     echo -e " Kiến trúc: ${BLUE}Database-per-Service (5 DBs) + Event-Driven (Kafka & RabbitMQ)${NC}"
     echo -e " ----------------------------------------------------------------------------------------"
 }
@@ -49,7 +49,7 @@ run_mvn() {
         mvn -f "$BACKEND_DIR/pom.xml" "$@"
     else
         echo -e "${YELLOW}ℹ️ Sử dụng Maven container (Docker fallback)...${NC}"
-        docker run --rm -v ~/.m2:/root/.m2 -v "$ROOT_DIR":/app -w /app/backend maven:3.9.6-eclipse-temurin-17-alpine mvn "$@"
+        docker run --rm -v ~/.m2:/root/.m2 -v "$ROOT_DIR":/app -w /app/backend maven:3.9.11-eclipse-temurin-25 mvn "$@"
     fi
 }
 
@@ -260,4 +260,3 @@ case "$COMMAND" in
         exit 1
         ;;
 esac
-

@@ -2,7 +2,6 @@ package com.fintech.payment.service;
 
 import com.fintech.payment.domain.entity.BankAccount;
 import com.fintech.payment.domain.entity.Card;
-import com.fintech.payment.domain.entity.FundingSource;
 import com.fintech.payment.dto.FundingSourceDto;
 import com.fintech.payment.repository.BankAccountRepository;
 import com.fintech.payment.repository.CardRepository;
@@ -14,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service

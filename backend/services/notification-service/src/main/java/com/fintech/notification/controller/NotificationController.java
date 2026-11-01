@@ -6,7 +6,6 @@ import com.fintech.notification.entity.Notification;
 import com.fintech.notification.service.NotificationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -45,7 +44,7 @@ public class NotificationController {
                 Map.of("unread", notificationService.countUnread(uid))));
     }
 
-    @PatchMapping("/{id}/read")
+    @RequestMapping(value = "/{id}/read", method = {org.springframework.web.bind.annotation.RequestMethod.PATCH, org.springframework.web.bind.annotation.RequestMethod.PUT, org.springframework.web.bind.annotation.RequestMethod.POST})
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @RequestHeader(name = "X-User-Id", required = false) String userId,
             @PathVariable String id) {
@@ -54,7 +53,7 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("Notification marked as read", null));
     }
 
-    @PatchMapping("/read-all")
+    @RequestMapping(value = "/read-all", method = {org.springframework.web.bind.annotation.RequestMethod.PATCH, org.springframework.web.bind.annotation.RequestMethod.PUT, org.springframework.web.bind.annotation.RequestMethod.POST})
     public ResponseEntity<ApiResponse<Void>> markAllAsRead(
             @RequestHeader(name = "X-User-Id", required = false) String userId,
             @RequestParam(required = false) String type) {

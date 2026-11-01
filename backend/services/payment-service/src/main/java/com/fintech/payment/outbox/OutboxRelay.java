@@ -8,9 +8,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -49,10 +49,10 @@ public class OutboxRelay {
     @Value("${saga.outbox.max-retry:5}")
     private int maxRetry;
 
-    @Transactional
     @Scheduled(fixedDelayString = "${saga.outbox.poll-interval-ms:2000}")
     public void relayPendingEvents() {
-        List<OutboxEvent> pending = outboxEventRepository.findPendingRetryable(maxRetry);
+        int limit = batchSize > 0 ? batchSize : 50;
+        List<OutboxEvent> pending = outboxEventRepository.findPendingRetryable(maxRetry, PageRequest.of(0, limit));
         if (pending.isEmpty()) {
             return;
         }

@@ -8,19 +8,22 @@ import '../../core/theme/app_colors.dart';
 
 /// Global notifier to keep user avatar in sync across all screens
 class UserAvatarNotifier {
-  static final ValueNotifier<String?> avatarNotifier = ValueNotifier<String?>(null);
+  static final ValueNotifier<String?> avatarNotifier =
+      ValueNotifier<String?>(null);
   static const _storage = AppSecureStorage.instance;
 
   static void update(String? url) {
     avatarNotifier.value = url;
     if (url != null && url.isNotEmpty) {
-      AppSecureStorage.safeWrite(_storage, key: AppConstants.keyAvatarUrl, value: url);
+      AppSecureStorage.safeWrite(_storage,
+          key: AppConstants.keyAvatarUrl, value: url);
     }
   }
 
   static Future<void> init() async {
     try {
-      final cached = await AppSecureStorage.safeRead(_storage, key: AppConstants.keyAvatarUrl);
+      final cached = await AppSecureStorage.safeRead(_storage,
+          key: AppConstants.keyAvatarUrl);
       if (cached != null && cached.isNotEmpty) {
         avatarNotifier.value = cached;
       }
@@ -71,7 +74,8 @@ class UserAvatarWidget extends StatelessWidget {
             shape: BoxShape.circle,
             border: showBorder
                 ? Border.all(
-                    color: borderColor ?? AppColors.primaryLight.withOpacity(0.8),
+                    color:
+                        borderColor ?? AppColors.primaryLight.withOpacity(0.8),
                     width: borderWidth,
                   )
                 : null,

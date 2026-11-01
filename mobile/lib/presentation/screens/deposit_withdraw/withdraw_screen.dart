@@ -23,7 +23,8 @@ class WithdrawScreen extends StatefulWidget {
 }
 
 class _WithdrawScreenState extends State<WithdrawScreen> {
-  final TextEditingController _amountCtrl = TextEditingController(text: '1000000');
+  final TextEditingController _amountCtrl =
+      TextEditingController(text: '1000000');
   int _selectedBankIdx = 0;
   bool _isSubmitting = false;
 
@@ -67,12 +68,16 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
         _recentWithdrawals = txs.map((tx) {
           final amt = (tx['amount'] as num?)?.toDouble() ?? 0.0;
           final timeStr = tx['createdAt'] as String? ?? '';
-          final statusStr = tx['status'] == 'SUCCESS' ? 'Rút thành công' : (tx['status'] ?? 'Thành công');
+          final statusStr = tx['status'] == 'SUCCESS'
+              ? 'Rút thành công'
+              : (tx['status'] ?? 'Thành công');
           final desc = tx['description'] as String? ?? 'Rút tiền về tài khoản';
           return {
             'bank': desc,
             'amount': amt,
-            'time': timeStr.isNotEmpty && timeStr.length >= 16 ? timeStr.substring(0, 16).replaceAll('T', ' ') : timeStr,
+            'time': timeStr.isNotEmpty && timeStr.length >= 16
+                ? timeStr.substring(0, 16).replaceAll('T', ' ')
+                : timeStr,
             'status': statusStr,
           };
         }).toList();
@@ -88,13 +93,15 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       final accounts = await BankAccountRemoteDataSource().getAccounts();
       if (!mounted) return;
       setState(() {
-        _linkedBanks = accounts.map((account) => {
-          'id': account['id'] as String,
-          'bank': account['bankCode'] as String? ?? '',
-          'acc': account['accountNumber'] as String? ?? '',
-          'name': account['accountHolderName'] as String? ?? '',
-          'logo': account['bankCode'] as String? ?? '?',
-        }).toList();
+        _linkedBanks = accounts
+            .map((account) => {
+                  'id': account['id'] as String,
+                  'bank': account['bankCode'] as String? ?? '',
+                  'acc': account['accountNumber'] as String? ?? '',
+                  'name': account['accountHolderName'] as String? ?? '',
+                  'logo': account['bankCode'] as String? ?? '?',
+                })
+            .toList();
         if (_selectedBankIdx >= _linkedBanks.length) _selectedBankIdx = 0;
       });
     } catch (error) {
@@ -131,13 +138,16 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppColors.primaryDark, AppColors.primary, AppColors.bottomBarCyan],
+                    colors: [AppColors.royalBlue, AppColors.primaryDark],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(color: AppColors.bottomBarGlow.withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 3)),
+                    BoxShadow(
+                        color: AppColors.bottomBarGlow.withOpacity(0.25),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3)),
                   ],
                 ),
                 child: Row(
@@ -147,14 +157,21 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('SỐ DƯ KHẢ DỤNG CỦA VÍ', style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, fontWeight: FontWeight.bold)),
+                          const Text('SỐ DƯ KHẢ DỤNG CỦA VÍ',
+                              style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600)),
                           const SizedBox(height: 4),
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
                             child: Text(
                               CurrencyFormatter.formatVND(_availableBalance),
-                              style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 24, fontWeight: FontWeight.w900),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700),
                             ),
                           ),
                         ],
@@ -165,15 +182,20 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppColors.primaryDark,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        minimumSize: const Size(0, 36),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        minimumSize: const Size(0, 44),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () {
                         HapticFeedback.selectionClick();
-                        setState(() => _amountCtrl.text = _availableBalance.toInt().toString());
+                        setState(() => _amountCtrl.text =
+                            _availableBalance.toInt().toString());
                       },
-                      child: const Text('Rút tất cả', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: const Text('Rút tất cả',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -190,16 +212,29 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.successTextLight, size: 28),
+                    Icon(CupertinoIcons.checkmark_shield_fill,
+                        color: AppColors.successTextLight, size: 28),
                     SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('HẠN MỨC RÚT TIỀN: 100.000.000 Đ / NGÀY', style: TextStyle(color: AppColors.successText, fontSize: 11, fontWeight: FontWeight.bold)),
+                          Text('HẠN MỨC RÚT TIỀN: 100.000.000 Đ / NGÀY',
+                              style: TextStyle(
+                                  color: AppColors.successText,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold)),
                           SizedBox(height: 2),
-                          Text('Miễn phí rút tiền còn lại: 10/10 lượt tháng này', style: TextStyle(color: AppColors.successText, fontSize: 13, fontWeight: FontWeight.bold)),
-                          Text('Tiền về tài khoản ngân hàng tức thì trong 30 giây (Napas 24/7)', style: TextStyle(color: AppColors.successText, fontSize: 11)),
+                          Text(
+                              'Miễn phí rút tiền còn lại: 10/10 lượt tháng này',
+                              style: TextStyle(
+                                  color: AppColors.successText,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold)),
+                          Text(
+                              'Tiền về tài khoản ngân hàng tức thì trong 30 giây (Napas 24/7)',
+                              style: TextStyle(
+                                  color: AppColors.successText, fontSize: 11)),
                         ],
                       ),
                     ),
@@ -216,17 +251,25 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Nhập số tiền cần rút', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+                      Text('Nhập số tiền cần rút',
+                          style: AppTypography.titleMedium(
+                              color: AppColors.textPrimaryLight)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _amountCtrl,
                         keyboardType: TextInputType.number,
-                        style: const TextStyle(color: AppColors.primaryLight, fontSize: 28, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700),
                         onChanged: (_) => setState(() {}),
                         decoration: InputDecoration(
                           suffixIcon: _amountCtrl.text.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(CupertinoIcons.clear_circled_solid, color: AppColors.textMutedLight, size: 20),
+                                  icon: const Icon(
+                                      CupertinoIcons.clear_circled_solid,
+                                      color: AppColors.textMutedLight,
+                                      size: 20),
                                   onPressed: () {
                                     HapticFeedback.selectionClick();
                                     setState(() => _amountCtrl.clear());
@@ -234,26 +277,39 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                                 )
                               : null,
                           suffixText: 'đ',
-                          suffixStyle: const TextStyle(color: AppColors.primaryLight, fontSize: 22, fontWeight: FontWeight.bold),
+                          suffixStyle: const TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600),
                           filled: true,
                           fillColor: AppColors.surfaceLight,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(
+                                  color: AppColors.borderLight)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(
+                                  color: AppColors.borderLight)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 1.5)),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 8),
                         child: Text(
-                          'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(double.tryParse(_amountCtrl.text) ?? 0)} đồng',
-                          style: AppTypography.bodySmall(color: AppColors.primaryLight).copyWith(
+                          'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(double.tryParse(_amountCtrl.text) ?? 0)}',
+                          style:
+                              AppTypography.bodySmall(color: AppColors.primary)
+                                  .copyWith(
                             fontStyle: FontStyle.italic,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       const SizedBox(height: 14),
-
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -261,11 +317,16 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                           return ActionChip(
                             label: Text(CurrencyFormatter.formatVND(amt)),
                             backgroundColor: AppColors.surfaceLight,
-                            labelStyle: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600),
-                            side: const BorderSide(color: AppColors.borderLight),
+                            labelStyle: const TextStyle(
+                                color: AppColors.textPrimaryLight,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600),
+                            side:
+                                const BorderSide(color: AppColors.borderLight),
                             onPressed: () {
                               HapticFeedback.selectionClick();
-                              setState(() => _amountCtrl.text = amt.toInt().toString());
+                              setState(() =>
+                                  _amountCtrl.text = amt.toInt().toString());
                             },
                           );
                         }).toList(),
@@ -283,7 +344,8 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   Expanded(
                     child: Text(
                       'Tài khoản ngân hàng nhận tiền',
-                      style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
+                      style: AppTypography.titleLarge(
+                          color: AppColors.textPrimaryLight),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -304,20 +366,24 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                 GlassCard(
                   quality: GlassQuality.minimal,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 24, horizontal: 16),
                     child: Column(
                       children: [
-                        const Icon(CupertinoIcons.creditcard, size: 44, color: AppColors.textMutedLight),
+                        const Icon(CupertinoIcons.creditcard,
+                            size: 44, color: AppColors.textMutedLight),
                         const SizedBox(height: 10),
                         Text(
                           'Chưa có tài khoản ngân hàng liên kết',
-                          style: AppTypography.titleMedium(color: AppColors.textPrimaryLight),
+                          style: AppTypography.titleMedium(
+                              color: AppColors.textPrimaryLight),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Vui lòng liên kết tài khoản ngân hàng chính chủ để rút tiền về tức thì 24/7',
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                          style: AppTypography.bodySmall(
+                              color: AppColors.textSecondaryLight),
                         ),
                         const SizedBox(height: 14),
                         ElevatedButton.icon(
@@ -325,7 +391,8 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                             await context.push('/bank-cards');
                             _loadBankAccounts();
                           },
-                          icon: const Icon(CupertinoIcons.plus_circle_fill, size: 16),
+                          icon: const Icon(CupertinoIcons.plus_circle_fill,
+                              size: 16),
                           label: const Text('Liên kết ngân hàng ngay'),
                         ),
                       ],
@@ -341,7 +408,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        border: isSelected ? Border.all(color: AppColors.primaryDark, width: 1.8) : null,
+                        border: isSelected
+                            ? Border.all(
+                                color: AppColors.primaryDark, width: 1.8)
+                            : null,
                       ),
                       child: GlassCard(
                         quality: GlassQuality.minimal,
@@ -353,24 +423,36 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                               setState(() => _selectedBankIdx = idx);
                             },
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(0.12),
-                              child: Text(b['logo']!, style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 11)),
+                              backgroundColor:
+                                  AppColors.primary.withOpacity(0.12),
+                              child: Text(b['logo']!,
+                                  style: const TextStyle(
+                                      color: AppColors.primaryText,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11)),
                             ),
                             title: Text(
                               '${b['bank']} - ${b['acc']}',
-                              style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                              style: AppTypography.titleSmall(
+                                      color: AppColors.textPrimaryLight)
+                                  .copyWith(fontWeight: FontWeight.bold),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
                               b['name']!,
-                              style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11),
+                              style: AppTypography.bodySmall(
+                                      color: AppColors.textSecondaryLight)
+                                  .copyWith(fontSize: 11),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             trailing: isSelected
-                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight)
-                                : const Icon(CupertinoIcons.circle, color: AppColors.textMutedLight),
+                                ? const Icon(
+                                    CupertinoIcons.checkmark_circle_fill,
+                                    color: AppColors.successTextLight)
+                                : const Icon(CupertinoIcons.circle,
+                                    color: AppColors.textMutedLight),
                           ),
                         ),
                       ),
@@ -391,13 +473,16 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                             await showFeatureUnavailable(
                               context,
                               feature: 'Rút tiền về ngân hàng',
-                              reason: 'Backend chưa cung cấp API rút tiền user-level (BE-REQ-06).',
+                              reason:
+                                  'Backend chưa cung cấp API rút tiền user-level (BE-REQ-06).',
                             );
                             return;
                           }
                           final amt = double.tryParse(_amountCtrl.text) ?? 0;
                           if (amt < 20000) {
-                            AppAlerts.showWarning(context, 'Số tiền rút tối thiểu là 20.000đ', title: 'Hạn mức rút tiền');
+                            AppAlerts.showWarning(
+                                context, 'Số tiền rút tối thiểu là 20.000đ',
+                                title: 'Hạn mức rút tiền');
                             return;
                           }
                           if (amt > _availableBalance) {
@@ -423,18 +508,25 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                           HapticFeedback.mediumImpact();
 
                           final target = _linkedBanks[_selectedBankIdx];
-                          await context.push('/withdraw/confirm?amount=$amt&bank=${target['bank']}&acc=${target['acc']}&bankAccountId=${target['id']}');
+                          await context.push(
+                              '/withdraw/confirm?amount=$amt&bank=${target['bank']}&acc=${target['acc']}&bankAccountId=${target['id']}');
                           if (mounted) setState(() => _isSubmitting = false);
                         },
                   child: _isSubmitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
                       : const Text('Tiếp tục xác nhận rút tiền'),
                 ),
               ),
               const SizedBox(height: 24),
 
               // Recent Withdrawals Log
-              Text('Giao dịch rút tiền gần đây', style: AppTypography.titleLarge(color: AppColors.textPrimaryLight)),
+              Text('Giao dịch rút tiền gần đây',
+                  style: AppTypography.titleLarge(
+                      color: AppColors.textPrimaryLight)),
               const SizedBox(height: 12),
 
               if (_isLoadingHistory)
@@ -452,11 +544,13 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                     child: Center(
                       child: Column(
                         children: [
-                          const Icon(CupertinoIcons.clock, color: AppColors.textMutedLight, size: 36),
+                          const Icon(CupertinoIcons.clock,
+                              color: AppColors.textMutedLight, size: 36),
                           const SizedBox(height: 8),
                           Text(
                             'Chưa có giao dịch rút tiền gần đây',
-                            style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                            style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight),
                           ),
                         ],
                       ),
@@ -480,7 +574,10 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                                 color: AppColors.primary.withOpacity(0.12),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(CupertinoIcons.arrow_up_circle_fill, color: AppColors.primaryText, size: 20),
+                              child: const Icon(
+                                  CupertinoIcons.arrow_up_circle_fill,
+                                  color: AppColors.primaryText,
+                                  size: 20),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -489,14 +586,20 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                                 children: [
                                   Text(
                                     item['bank'] as String,
-                                    style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold, fontSize: 13),
+                                    style: AppTypography.titleSmall(
+                                            color: AppColors.textPrimaryLight)
+                                        .copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
                                     item['time'] as String,
-                                    style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11),
+                                    style: AppTypography.bodySmall(
+                                            color: AppColors.textSecondaryLight)
+                                        .copyWith(fontSize: 11),
                                   ),
                                 ],
                               ),
@@ -507,11 +610,17 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                               children: [
                                 Text(
                                   '-${CurrencyFormatter.formatVND(item['amount'] as double)}',
-                                  style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: const TextStyle(
+                                      color: AppColors.primaryText,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13),
                                 ),
                                 Text(
                                   item['status'] as String,
-                                  style: const TextStyle(color: AppColors.successTextLight, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      color: AppColors.successTextLight,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),

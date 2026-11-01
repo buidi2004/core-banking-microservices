@@ -286,7 +286,7 @@ public class CashDepositController {
      * GET /api/v1/cash/vault/summary
      * Báo cáo thống kê quỹ tiền mặt trong ngày tại quầy giao dịch (Vault Summary).
      */
-    @GetMapping("/vault/summary")
+    @GetMapping({"/vault/summary", "/vault-summary"})
     public ResponseEntity<ApiResponse<VaultSummaryResponse>> getVaultSummary(
             @RequestParam(required = false, defaultValue = "BR_Q1") String branchId) {
 

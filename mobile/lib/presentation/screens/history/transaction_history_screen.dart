@@ -17,13 +17,19 @@ class TransactionHistoryScreen extends StatefulWidget {
   const TransactionHistoryScreen({super.key});
 
   @override
-  State<TransactionHistoryScreen> createState() => _TransactionHistoryScreenState();
+  State<TransactionHistoryScreen> createState() =>
+      _TransactionHistoryScreenState();
 }
 
 class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   int _selectedFilter = 0; // 0: Tất cả, 1: Chuyển, 2: Nạp/Rút, 3: Hóa đơn
 
-  final List<String> _filters = ['Tất cả', 'Chuyển tiền', 'Nạp / Rút', 'Hóa đơn'];
+  final List<String> _filters = [
+    'Tất cả',
+    'Chuyển tiền',
+    'Nạp / Rút',
+    'Hóa đơn'
+  ];
 
   final ScrollController _scrollController = ScrollController();
   List<Map<String, dynamic>> _allTransactions = [];
@@ -47,7 +53,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
       if (!_isLoadingMore && !_isLastPage && !_isLoading) {
         _loadMoreTransactions();
       }
@@ -122,7 +129,8 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       );
       if (mounted) {
         setState(() {
-          _allTransactions = List<Map<String, dynamic>>.from(res['items'] as List);
+          _allTransactions =
+              List<Map<String, dynamic>>.from(res['items'] as List);
           _isLastPage = (res['isLast'] ?? false) as bool;
           _currentPage = 0;
           _isLoading = false;
@@ -171,10 +179,14 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   Future<void> _exportStatement(String format) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final token = await AuthLocalDataSourceImpl(prefs: prefs).getAccessToken();
-      if (token == null || token.isEmpty) throw Exception('Vui lòng đăng nhập để xuất sao kê');
+      final token =
+          await AuthLocalDataSourceImpl(prefs: prefs).getAccessToken();
+      if (token == null || token.isEmpty) {
+        throw Exception('Vui lòng đăng nhập để xuất sao kê');
+      }
       final wallet = await WalletRemoteDataSource().getMyWallet();
-      final bytes = await TransactionRemoteDataSource().exportTransactions(walletId: wallet.walletId, format: format);
+      final bytes = await TransactionRemoteDataSource()
+          .exportTransactions(walletId: wallet.walletId, format: format);
       if (mounted) {
         AppAlerts.showSuccess(
           context,
@@ -197,10 +209,16 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
     final title = (tx['title'] as String? ?? '').toLowerCase();
     final type = (tx['type'] as String? ?? '').toLowerCase();
 
-    if (title.contains('điện thoại') || title.contains('viettel') || title.contains('vina') || title.contains('mobi') || type == 'recharge') {
+    if (title.contains('điện thoại') ||
+        title.contains('viettel') ||
+        title.contains('vina') ||
+        title.contains('mobi') ||
+        type == 'recharge') {
       return CupertinoIcons.device_phone_portrait;
     }
-    if (title.contains('evn') || title.contains('tiền điện') || type == 'electricity') {
+    if (title.contains('evn') ||
+        title.contains('tiền điện') ||
+        type == 'electricity') {
       return CupertinoIcons.bolt_fill;
     }
     if (title.contains('nước') || type == 'water') {
@@ -219,12 +237,14 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       return CupertinoIcons.ticket_fill;
     }
     final isPositive = ((tx['amount'] as num?)?.toDouble() ?? 0.0) > 0;
-    return isPositive ? CupertinoIcons.arrow_down_circle_fill : CupertinoIcons.arrow_up_circle_fill;
+    return isPositive
+        ? CupertinoIcons.arrow_down_circle_fill
+        : CupertinoIcons.arrow_up_circle_fill;
   }
 
   Color _getTransactionColor(Map<String, dynamic> tx) {
     final isPositive = ((tx['amount'] as num?)?.toDouble() ?? 0.0) > 0;
-    return isPositive ? AppColors.emeraldGreen : AppColors.primary;
+    return isPositive ? AppColors.successTextLight : AppColors.primary;
   }
 
   @override
@@ -241,7 +261,9 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                 backgroundColor: AppColors.surfaceLight,
                 useSafeArea: true,
                 showDragHandle: true,
-                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+                shape: const RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(24))),
                 builder: (ctx) => Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -254,63 +276,108 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                           Expanded(
                             child: Text(
                               'Xuất Sao Kê Giao Dịch',
-                              style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
+                              style: AppTypography.titleLarge(
+                                  color: AppColors.textPrimaryLight),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(CupertinoIcons.xmark, color: AppColors.textPrimaryLight)),
+                          IconButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              icon: const Icon(CupertinoIcons.xmark,
+                                  color: AppColors.textPrimaryLight)),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text('Chọn định dạng báo cáo cần tải về máy:', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                      Text('Chọn định dạng báo cáo cần tải về máy:',
+                          style: AppTypography.bodySmall(
+                              color: AppColors.textSecondaryLight)),
                       const SizedBox(height: 16),
-                      Material(type: MaterialType.transparency, child: ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: AppColors.error.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(CupertinoIcons.doc_fill, color: AppColors.errorText, size: 22),
-                        ),
-                        title: const Text('Tải file PDF (Có mộc đỏ điện tử)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
-                        subtitle: const Text('Phù hợp nộp chứng từ kế toán, xin visa', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _exportStatement('pdf');
-                        },
-                      )),
+                      Material(
+                          type: MaterialType.transparency,
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: AppColors.error.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(CupertinoIcons.doc_fill,
+                                  color: AppColors.errorText, size: 22),
+                            ),
+                            title: const Text(
+                                'Tải file PDF (Có mộc đỏ điện tử)',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimaryLight)),
+                            subtitle: const Text(
+                                'Phù hợp nộp chứng từ kế toán, xin visa',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondaryLight)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _exportStatement('pdf');
+                            },
+                          )),
                       const Divider(height: 1),
-                      Material(type: MaterialType.transparency, child: ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: AppColors.emeraldGreen.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(CupertinoIcons.table_fill, color: AppColors.successTextLight, size: 22),
-                        ),
-                        title: const Text('Tải file Excel (.XLSX)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
-                        subtitle: const Text('Dành cho phân tích thu chi cá nhân', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _exportStatement('excel');
-                        },
-                      )),
+                      Material(
+                          type: MaterialType.transparency,
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color:
+                                      AppColors.emeraldGreen.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(CupertinoIcons.table_fill,
+                                  color: AppColors.successTextLight, size: 22),
+                            ),
+                            title: const Text('Tải file Excel (.XLSX)',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimaryLight)),
+                            subtitle: const Text(
+                                'Dành cho phân tích thu chi cá nhân',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondaryLight)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _exportStatement('excel');
+                            },
+                          )),
                       const Divider(height: 1),
-                      Material(type: MaterialType.transparency, child: ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
-                          child: const Icon(CupertinoIcons.doc_text_fill, color: AppColors.primaryText, size: 22),
-                        ),
-                        title: const Text('Tải file CSV (.CSV)', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight)),
-                        subtitle: const Text('Dành cho tích hợp phần mềm tài chính', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          _exportStatement('csv');
-                        },
-                      )),
+                      Material(
+                          type: MaterialType.transparency,
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10)),
+                              child: const Icon(CupertinoIcons.doc_text_fill,
+                                  color: AppColors.primaryText, size: 22),
+                            ),
+                            title: const Text('Tải file CSV (.CSV)',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimaryLight)),
+                            subtitle: const Text(
+                                'Dành cho tích hợp phần mềm tài chính',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondaryLight)),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _exportStatement('csv');
+                            },
+                          )),
                     ],
                   ),
                 ),
               );
             },
-            icon: const Icon(CupertinoIcons.arrow_down_doc_fill, color: AppColors.primaryLight),
+            icon: const Icon(CupertinoIcons.arrow_down_doc_fill,
+                color: AppColors.primaryLight),
             tooltip: 'Xuất sao kê',
           ),
         ],
@@ -327,26 +394,41 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   final isSelected = _selectedFilter == idx;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(_filters[idx]),
-                      selected: isSelected,
-                      selectedColor: AppColors.primary,
-                      backgroundColor: Colors.white.withOpacity(0.8),
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : AppColors.textPrimaryLight,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      side: BorderSide(
-                        color: isSelected ? AppColors.bottomBarCyan : Colors.white.withOpacity(0.6),
-                        width: isSelected ? 1.5 : 1.0,
-                      ),
-                      shadowColor: AppColors.bottomBarGlow.withOpacity(0.4),
-                      elevation: isSelected ? 3 : 0,
-                      onSelected: (_) {
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
                         HapticFeedback.selectionClick();
                         setState(() => _selectedFilter = idx);
                         _loadTransactions(refresh: true);
                       },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primary
+                              : Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppColors.borderLight,
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Text(
+                          _filters[idx],
+                          style: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textPrimaryLight,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 }),
@@ -366,32 +448,41 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   child: child,
                 ),
                 child: KeyedSubtree(
-                  key: ValueKey('filter_${_selectedFilter}_loading_$_isLoading'),
+                  key:
+                      ValueKey('filter_${_selectedFilter}_loading_$_isLoading'),
                   child: (_selectedFilter == 2 || _selectedFilter == 3)
                       ? RefreshIndicator(
                           onRefresh: () => _loadTransactions(refresh: true),
                           color: AppColors.primary,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 40),
                             children: [
-                              SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                              SizedBox(
+                                  height: MediaQuery.of(context).size.height *
+                                      0.15),
                               Center(
                                 child: GlassCard(
                                   quality: GlassQuality.standard,
                                   child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 32),
                                     child: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
-                                            color: AppColors.primary.withOpacity(0.12),
+                                            color: AppColors.primary
+                                                .withOpacity(0.12),
                                             shape: BoxShape.circle,
                                           ),
                                           child: Icon(
-                                            _selectedFilter == 2 ? CupertinoIcons.arrow_down_circle_fill : CupertinoIcons.doc_text_fill,
+                                            _selectedFilter == 2
+                                                ? CupertinoIcons
+                                                    .arrow_down_circle_fill
+                                                : CupertinoIcons.doc_text_fill,
                                             size: 40,
                                             color: AppColors.primaryText,
                                           ),
@@ -399,12 +490,16 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                         const SizedBox(height: 16),
                                         Text(
                                           'Tính năng sắp ra mắt',
-                                          style: AppTypography.titleMedium(color: AppColors.textPrimaryLight),
+                                          style: AppTypography.titleMedium(
+                                              color:
+                                                  AppColors.textPrimaryLight),
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
                                           'Lịch sử ${_filters[_selectedFilter]} đang được phát triển cùng máy chủ (BE-REQ-06). Quý khách vui lòng đón chờ ở bản cập nhật tiếp theo!',
-                                          style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                                          style: AppTypography.bodySmall(
+                                              color:
+                                                  AppColors.textSecondaryLight),
                                           textAlign: TextAlign.center,
                                         ),
                                       ],
@@ -416,190 +511,308 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                           ),
                         )
                       : _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: AppColors.primaryLight))
-                      : _allTransactions.isEmpty
-                      ? RefreshIndicator(
-                          onRefresh: () => _loadTransactions(refresh: true),
-                          color: AppColors.primary,
-                          child: ListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              SizedBox(height: MediaQuery.of(context).size.height * 0.2),
-                              Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(CupertinoIcons.doc_text_fill, size: 56, color: AppColors.textMutedLight.withOpacity(0.5)),
-                                    const SizedBox(height: 14),
-                                    Text('Chưa có giao dịch nào', style: AppTypography.titleMedium(color: AppColors.textMutedLight)),
-                                    const SizedBox(height: 6),
-                                    Text('Kéo xuống để cập nhật biến động số dư', style: AppTypography.bodySmall(color: AppColors.textMutedLight.withOpacity(0.7))),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: () => _loadTransactions(refresh: true),
-                          color: AppColors.primary,
-                          child: ListView.builder(
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 120),
-                            itemCount: _allTransactions.length + (_isLoadingMore || _isLastPage ? 1 : 0),
-                            itemBuilder: (context, index) {
-                              if (index == _allTransactions.length) {
-                                if (_isLoadingMore) {
-                                  return const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 16),
-                                    child: Center(
-                                      child: SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryLight),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  child: Center(
-                                    child: Text(
-                                      'Đã hiển thị tất cả giao dịch',
-                                      style: AppTypography.bodySmall(color: AppColors.textMutedLight),
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              final tx = _allTransactions[index];
-                              final num rawAmount = (tx['amount'] as num?) ?? 0;
-                              final double amount = rawAmount.toDouble();
-                              final isPositive = amount > 0;
-                              final txIcon = _getTransactionIcon(tx);
-                              final txColor = _getTransactionColor(tx);
-                              final formattedDate = _formatTxDate(tx['date']?.toString());
-                              final desc = (tx['desc'] ?? tx['note'] ?? '').toString();
-                              final runningBalance = tx['runningBalance'] as num?;
-                              final statusStr = (tx['status'] ?? 'SUCCESS').toString();
-
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: GlassCard(
-                                  quality: GlassQuality.minimal, // Minimal: tối ưu 0 chi phí shader khi cuộn mượt mà
-                                  child: Material(type: MaterialType.transparency, child: ListTile(
-                                    onTap: () {
-                                      final uri = Uri(
-                                        path: '/history/detail',
-                                        queryParameters: {
-                                          'id': (tx['id'] ?? '').toString(),
-                                          'title': (tx['title'] ?? 'Giao dịch').toString(),
-                                          'amount': amount.toString(),
-                                          'time': (tx['date'] ?? '').toString(),
-                                          'note': (tx['desc'] ?? '').toString(),
-                                          'recipient': (tx['counterpartyName'] ?? '').toString(),
-                                        },
-                                      );
-                                      context.push(uri.toString());
-                                    },
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                    leading: Container(
-                                      width: 46,
-                                      height: 46,
-                                      decoration: BoxDecoration(
-                                        color: txColor.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(14),
-                                        border: Border.all(
-                                          color: txColor.withOpacity(0.24),
-                                          width: 1.2,
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        txIcon,
-                                        color: txColor,
-                                        size: 22,
-                                      ),
-                                    ),
-                                    title: Text(
-                                      (tx['title'] ?? 'Giao dịch').toString(),
-                                      style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold, fontSize: 13.5),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        if (desc.isNotEmpty) ...[
-                                          const SizedBox(height: 3),
-                                          Text(
-                                            desc,
-                                            style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                  color: AppColors.primaryLight))
+                          : _allTransactions.isEmpty
+                              ? RefreshIndicator(
+                                  onRefresh: () =>
+                                      _loadTransactions(refresh: true),
+                                  color: AppColors.primary,
+                                  child: ListView(
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      SizedBox(
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.2),
+                                      Center(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
+                                            Icon(CupertinoIcons.doc_text_fill,
+                                                size: 56,
+                                                color: AppColors.textMutedLight
+                                                    .withOpacity(0.5)),
+                                            const SizedBox(height: 14),
+                                            Text('Chưa có giao dịch nào',
+                                                style:
+                                                    AppTypography.titleMedium(
+                                                        color: AppColors
+                                                            .textMutedLight)),
+                                            const SizedBox(height: 6),
                                             Text(
-                                              formattedDate,
-                                              style: const TextStyle(fontSize: 11, color: AppColors.textMutedLight),
-                                            ),
-                                            if (runningBalance != null)
-                                              const SizedBox(width: 8),
-                                            if (runningBalance != null)
-                                              Flexible(
-                                                child: Text(
-                                                  'Số dư: ${CurrencyFormatter.formatVND(runningBalance)}',
-                                                  style: const TextStyle(fontSize: 11, color: AppColors.primaryLight, fontWeight: FontWeight.w600),
-                                                  maxLines: 1,
-                                                  overflow: TextOverflow.ellipsis,
-                                                ),
-                                              ),
+                                                'Kéo xuống để cập nhật biến động số dư',
+                                                style: AppTypography.bodySmall(
+                                                    color: AppColors
+                                                        .textMutedLight
+                                                        .withOpacity(0.7))),
                                           ],
                                         ),
-                                      ],
-                                    ),
-                                    trailing: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          alignment: Alignment.centerRight,
-                                          child: Text(
-                                            '${isPositive ? '+' : (amount < 0 ? '-' : '')}${CurrencyFormatter.formatVND(amount.abs())}',
-                                            style: AppTypography.titleMedium(
-                                              color: isPositive ? AppColors.emeraldGreenLight : AppColors.textPrimaryLight,
-                                            ).copyWith(fontWeight: FontWeight.bold, fontSize: 13.5),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: (statusStr == 'SUCCESS' ? AppColors.emeraldGreen : AppColors.primary).withOpacity(0.12),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: Text(
-                                            statusStr == 'SUCCESS' ? 'Thành công' : statusStr,
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color: statusStr == 'SUCCESS' ? AppColors.emeraldGreenLight : AppColors.primaryLight,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : RefreshIndicator(
+                                  onRefresh: () =>
+                                      _loadTransactions(refresh: true),
+                                  color: AppColors.primary,
+                                  child: ListView.builder(
+                                    controller: _scrollController,
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.fromLTRB(
+                                        20, 8, 20, 120),
+                                    itemCount: _allTransactions.length +
+                                        (_isLoadingMore || _isLastPage ? 1 : 0),
+                                    itemBuilder: (context, index) {
+                                      if (index == _allTransactions.length) {
+                                        if (_isLoadingMore) {
+                                          return const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 16),
+                                            child: Center(
+                                              child: SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                        color: AppColors
+                                                            .primaryLight),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 16),
+                                          child: Center(
+                                            child: Text(
+                                              'Đã hiển thị tất cả giao dịch',
+                                              style: AppTypography.bodySmall(
+                                                  color:
+                                                      AppColors.textMutedLight),
                                             ),
                                           ),
+                                        );
+                                      }
+
+                                      final tx = _allTransactions[index];
+                                      final num rawAmount =
+                                          (tx['amount'] as num?) ?? 0;
+                                      final double amount =
+                                          rawAmount.toDouble();
+                                      final isPositive = amount > 0;
+                                      final txIcon = _getTransactionIcon(tx);
+                                      final txColor = _getTransactionColor(tx);
+                                      final formattedDate =
+                                          _formatTxDate(tx['date']?.toString());
+                                      final desc =
+                                          (tx['desc'] ?? tx['note'] ?? '')
+                                              .toString();
+                                      final runningBalance =
+                                          tx['runningBalance'] as num?;
+                                      final statusStr =
+                                          (tx['status'] ?? 'SUCCESS')
+                                              .toString();
+
+                                      return Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 12),
+                                        child: GlassCard(
+                                          quality: GlassQuality
+                                              .minimal, // Minimal: tối ưu 0 chi phí shader khi cuộn mượt mà
+                                          child: Material(
+                                              type: MaterialType.transparency,
+                                              child: ListTile(
+                                                onTap: () {
+                                                  final uri = Uri(
+                                                    path: '/history/detail',
+                                                    queryParameters: {
+                                                      'id': (tx['id'] ?? '')
+                                                          .toString(),
+                                                      'title': (tx['title'] ??
+                                                              'Giao dịch')
+                                                          .toString(),
+                                                      'amount':
+                                                          amount.toString(),
+                                                      'time': (tx['date'] ?? '')
+                                                          .toString(),
+                                                      'note': (tx['desc'] ?? '')
+                                                          .toString(),
+                                                      'recipient':
+                                                          (tx['counterpartyName'] ??
+                                                                  '')
+                                                              .toString(),
+                                                    },
+                                                  );
+                                                  context.push(uri.toString());
+                                                },
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 8),
+                                                leading: Container(
+                                                  width: 46,
+                                                  height: 46,
+                                                  decoration: BoxDecoration(
+                                                    color: txColor
+                                                        .withOpacity(0.12),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            14),
+                                                    border: Border.all(
+                                                      color: txColor
+                                                          .withOpacity(0.24),
+                                                      width: 1.2,
+                                                    ),
+                                                  ),
+                                                  child: Icon(
+                                                    txIcon,
+                                                    color: txColor,
+                                                    size: 22,
+                                                  ),
+                                                ),
+                                                title: Text(
+                                                  (tx['title'] ?? 'Giao dịch')
+                                                      .toString(),
+                                                  style: AppTypography.titleMedium(
+                                                          color: AppColors
+                                                              .textPrimaryLight)
+                                                      .copyWith(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 13.5),
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                subtitle: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    if (desc.isNotEmpty) ...[
+                                                      const SizedBox(height: 3),
+                                                      Text(
+                                                        desc,
+                                                        style: AppTypography
+                                                            .bodySmall(
+                                                                color: AppColors
+                                                                    .textSecondaryLight),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ],
+                                                    const SizedBox(height: 4),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          formattedDate,
+                                                          style: const TextStyle(
+                                                              fontSize: 11,
+                                                              color: AppColors
+                                                                  .textMutedLight),
+                                                        ),
+                                                        if (runningBalance !=
+                                                            null)
+                                                          const SizedBox(
+                                                              width: 8),
+                                                        if (runningBalance !=
+                                                            null)
+                                                          Flexible(
+                                                            child: Text(
+                                                              'Số dư: ${CurrencyFormatter.formatVND(runningBalance)}',
+                                                              style: const TextStyle(
+                                                                  fontSize: 11,
+                                                                  color: AppColors
+                                                                      .primaryLight,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .w600),
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                          ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                trailing: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.end,
+                                                  children: [
+                                                    FittedBox(
+                                                      fit: BoxFit.scaleDown,
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      child: Text(
+                                                        '${isPositive ? '+' : (amount < 0 ? '-' : '')}${CurrencyFormatter.formatVND(amount.abs())}',
+                                                        style: AppTypography
+                                                            .titleMedium(
+                                                          color: isPositive
+                                                              ? AppColors
+                                                                  .emeraldGreenLight
+                                                              : AppColors
+                                                                  .textPrimaryLight,
+                                                        ).copyWith(
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontSize: 13.5),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 6,
+                                                          vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: (statusStr ==
+                                                                    'SUCCESS'
+                                                                ? AppColors
+                                                                    .emeraldGreen
+                                                                : AppColors
+                                                                    .primary)
+                                                            .withOpacity(0.12),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                      ),
+                                                      child: Text(
+                                                        statusStr == 'SUCCESS'
+                                                            ? 'Thành công'
+                                                            : statusStr,
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: statusStr == 'SUCCESS'
+                                                              ? AppColors
+                                                                  .emeraldGreenLight
+                                                              : AppColors
+                                                                  .primaryLight,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )),
                                         ),
-                                      ],
-                                    ),
-                                  )),
+                                      );
+                                    },
+                                  ),
                                 ),
-                              );
-                            },
-                          ),
-                        ),
                 ),
               ),
             ),

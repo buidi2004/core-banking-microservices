@@ -31,12 +31,20 @@ class _ConfigScreenState extends State<ConfigScreen> {
 
   final List<Map<String, dynamic>> _gateways = [
     {
+      'name': 'Ngrok Public Tunnel (Internet Core)',
+      'url': 'https://mutation-tubby-overstock.ngrok-free.dev/api/v1',
+      'ws': 'wss://mutation-tubby-overstock.ngrok-free.dev/ws-native',
+      'ping': 25,
+      'status': 'INTERNET SẴN SÀNG',
+      'isPrimary': true,
+    },
+    {
       'name': 'Localhost / ADB Reverse (Cổng 8080)',
       'url': 'http://localhost:8080/api/v1',
       'ws': 'ws://localhost:8080/ws-native',
       'ping': 12,
       'status': 'MẶC ĐỊNH LOCAL',
-      'isPrimary': true,
+      'isPrimary': false,
     },
     {
       'name': 'Android Emulator Bridge (10.0.2.2)',
@@ -48,11 +56,13 @@ class _ConfigScreenState extends State<ConfigScreen> {
     },
     {
       'name': 'GitHub Codespaces Cloud (Public 8080)',
-      'url': 'https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/api/v1',
-      'ws': 'wss://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/ws-native',
+      'url':
+          'https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/api/v1',
+      'ws':
+          'wss://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/ws-native',
       'ping': 45,
-      'status': 'MẶC ĐỊNH CLOUD DEMO',
-      'isPrimary': true,
+      'status': 'CLOUD DEMO',
+      'isPrimary': false,
     },
   ];
 
@@ -124,7 +134,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
     bool reachable = await DioClient.probeGatewayReachable(normApi);
     if (!reachable && normApi.contains('.app.github.dev')) {
       final siblingApi = DioClient.siblingCodespaceApiUrl(normApi);
-      if (siblingApi != null && await DioClient.probeGatewayReachable(siblingApi)) {
+      if (siblingApi != null &&
+          await DioClient.probeGatewayReachable(siblingApi)) {
         normApi = siblingApi;
         normWs = DioClient.deriveWsUrl(normApi);
         await DioClient.updateBaseUrl(normApi, newWsUrl: normWs);
@@ -143,7 +154,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: reachable ? AppColors.emeraldGreen : Colors.orange.shade800,
+        backgroundColor:
+            reachable ? AppColors.emeraldGreen : Colors.orange.shade800,
         content: Text(
           reachable
               ? 'Kết nối Gateway thành công ($normApi)! Độ trễ: $_pingMs ms'
@@ -232,7 +244,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: AppColors.emeraldGreen,
-        content: Text('Đã lưu & áp dụng Gateway: ${DioClient.sharedDio.options.baseUrl}'),
+        content: Text(
+            'Đã lưu & áp dụng Gateway: ${DioClient.sharedDio.options.baseUrl}'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -241,7 +254,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF030B17),
+      backgroundColor: AppColors.inkNavy,
       body: Stack(
         children: [
           // Background ambient gradient
@@ -286,7 +299,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 _buildAppBar(),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     children: [
                       _buildNetworkHealthCard(),
                       const SizedBox(height: 20),
@@ -294,7 +308,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       const SizedBox(height: 10),
                       _buildGatewaysList(),
                       const SizedBox(height: 20),
-                      _buildSectionHeader('TÙY CHỈNH ĐỊA CHỈ KẾT NỐI TRỰC TIẾP'),
+                      _buildSectionHeader(
+                          'TÙY CHỈNH ĐỊA CHỈ KẾT NỐI TRỰC TIẾP'),
                       const SizedBox(height: 10),
                       _buildEndpointsInputCard(),
                       const SizedBox(height: 20),
@@ -302,7 +317,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       const SizedBox(height: 10),
                       _buildProtocolsCard(),
                       const SizedBox(height: 20),
-                      _buildSectionHeader('NHẬT KÝ GÓI TIN MẠNG (LIVE PACKET LOGS)'),
+                      _buildSectionHeader(
+                          'NHẬT KÝ GÓI TIN MẠNG (LIVE PACKET LOGS)'),
                       const SizedBox(height: 10),
                       _buildLivePacketLogsCard(),
                       const SizedBox(height: 28),
@@ -323,7 +339,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF030B17).withValues(alpha: 0.75),
+        color: AppColors.inkNavy.withValues(alpha: 0.75),
         border: Border(
           bottom: BorderSide(
             color: Colors.white.withValues(alpha: 0.08),
@@ -381,7 +397,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
             decoration: BoxDecoration(
               color: AppColors.emeraldGreen.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.emeraldGreen.withValues(alpha: 0.4)),
+              border: Border.all(
+                  color: AppColors.emeraldGreen.withValues(alpha: 0.4)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -395,7 +412,11 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   ),
                 ),
                 const SizedBox(width: 5),
-                const Text('ONLINE', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                const Text('ONLINE',
+                    style: TextStyle(
+                        color: AppColors.emeraldGreen,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -435,24 +456,36 @@ class _ConfigScreenState extends State<ConfigScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(CupertinoIcons.waveform_path_ecg, color: AppColors.bottomBarCyan, size: 22),
-                  SizedBox(width: 10),
-                  Text(
-                    'Trạng Thái Đường Truyền Realtime',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ],
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(CupertinoIcons.waveform_path_ecg,
+                        color: AppColors.bottomBarCyan, size: 22),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Trạng Thái Đường Truyền Realtime',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: _testConnection,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: AppColors.bottomBarCyan.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.35)),
+                    border: Border.all(
+                        color: AppColors.bottomBarCyan.withValues(alpha: 0.35)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -461,12 +494,18 @@ class _ConfigScreenState extends State<ConfigScreen> {
                         const SizedBox(
                           width: 12,
                           height: 12,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.bottomBarCyan),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.bottomBarCyan),
                         )
                       else
-                        const Icon(CupertinoIcons.arrow_clockwise, color: AppColors.bottomBarCyan, size: 14),
+                        const Icon(CupertinoIcons.arrow_clockwise,
+                            color: AppColors.bottomBarCyan, size: 14),
                       const SizedBox(width: 5),
-                      const Text('Đo lại Ping', style: TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, fontSize: 11.5)),
+                      const Text('Đo lại Ping',
+                          style: TextStyle(
+                              color: AppColors.bottomBarCyan,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11.5)),
                     ],
                   ),
                 ),
@@ -477,9 +516,20 @@ class _ConfigScreenState extends State<ConfigScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildMetricCol('Độ trễ phản hồi (RTT)', '$_pingMs ms', AppColors.emeraldGreen),
-              _buildMetricCol('Tỷ lệ mất gói (Loss)', '0.0 %', AppColors.emeraldGreen),
-              _buildMetricCol('Băng thông lý thuyết', '1.2 Gbps', AppColors.bottomBarCyan),
+              Expanded(
+                child: _buildMetricCol('Độ trễ phản hồi (RTT)', '$_pingMs ms',
+                    AppColors.emeraldGreen),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildMetricCol(
+                    'Tỷ lệ mất gói (Loss)', '0.0 %', AppColors.emeraldGreen),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildMetricCol(
+                    'Băng thông lý thuyết', '1.2 Gbps', AppColors.bottomBarCyan),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -488,7 +538,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
             child: LinearProgressIndicator(
               value: (_pingMs / 100).clamp(0.1, 1.0),
               backgroundColor: Colors.white.withValues(alpha: 0.08),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emeraldGreen),
+              valueColor:
+                  const AlwaysStoppedAnimation<Color>(AppColors.emeraldGreen),
               minHeight: 6,
             ),
           ),
@@ -506,9 +557,16 @@ class _ConfigScreenState extends State<ConfigScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+        Text(label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white54, fontSize: 11)),
         const SizedBox(height: 3),
-        Text(val, style: TextStyle(color: valColor, fontWeight: FontWeight.w900, fontSize: 18)),
+        Text(val,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                color: valColor, fontWeight: FontWeight.w900, fontSize: 18)),
       ],
     );
   }
@@ -540,18 +598,22 @@ class _ConfigScreenState extends State<ConfigScreen> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: isSelected
-                  ? const Color(0xFF132A48)
-                  : const Color(0xFF0C1929).withValues(alpha: 0.8),
+                  ? AppColors.cardNavy
+                  : AppColors.deepNavy.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isSelected ? AppColors.bottomBarCyan : Colors.white.withValues(alpha: 0.08),
+                color: isSelected
+                    ? AppColors.bottomBarCyan
+                    : Colors.white.withValues(alpha: 0.08),
                 width: isSelected ? 1.5 : 1,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  isSelected ? CupertinoIcons.checkmark_circle_fill : CupertinoIcons.circle,
+                  isSelected
+                      ? CupertinoIcons.checkmark_circle_fill
+                      : CupertinoIcons.circle,
                   color: isSelected ? AppColors.bottomBarCyan : Colors.white38,
                   size: 20,
                 ),
@@ -562,18 +624,23 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     children: [
                       Text(
                         g['name'] as String,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         g['url'] as String,
-                        style: const TextStyle(color: Colors.white54, fontSize: 11),
+                        style: const TextStyle(
+                            color: Colors.white54, fontSize: 11),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.emeraldGreen.withValues(alpha: 0.2)
@@ -583,7 +650,8 @@ class _ConfigScreenState extends State<ConfigScreen> {
                   child: Text(
                     '${g['ping']} ms',
                     style: TextStyle(
-                      color: isSelected ? AppColors.emeraldGreen : Colors.white60,
+                      color:
+                          isSelected ? const Color(0xFF34D399) : Colors.white60,
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
                     ),
@@ -608,24 +676,36 @@ class _ConfigScreenState extends State<ConfigScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('REST API Base URL (Chỉ cần dán link cổng 8080)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const Expanded(
+                  child: Text('REST API Base URL (Chỉ cần dán link cổng 8080)',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.white70, fontSize: 12)),
+                ),
+                const SizedBox(width: 8),
                 GestureDetector(
                   onTap: _pasteCodespacesUrl,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: AppColors.bottomBarCyan.withValues(alpha: 0.18),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.45)),
+                      border: Border.all(
+                          color:
+                              AppColors.bottomBarCyan.withValues(alpha: 0.45)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(CupertinoIcons.doc_on_clipboard_fill, color: AppColors.bottomBarCyan, size: 12),
+                        Icon(CupertinoIcons.doc_on_clipboard_fill,
+                            color: AppColors.bottomBarCyan, size: 12),
                         SizedBox(width: 4),
                         Text(
                           'Dán nhanh',
-                          style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              color: AppColors.bottomBarCyan,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600),
                         ),
                       ],
                     ),
@@ -639,29 +719,47 @@ class _ConfigScreenState extends State<ConfigScreen> {
               onChanged: (val) {
                 _wsUrlCtrl.text = DioClient.deriveWsUrl(val);
               },
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
               decoration: InputDecoration(
                 hintText: 'https://xxx-8080.app.github.dev/api/v1',
-                hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12),
+                hintStyle: const TextStyle(
+                    color: Color(0xFF94A3B8), fontSize: 12),
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
             const SizedBox(height: 14),
-            const Text('WebSocket STOMP URL (Tự động đồng bộ từ REST URL)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const Text('WebSocket STOMP URL (Tự động đồng bộ từ REST URL)',
+                style: TextStyle(color: Colors.white70, fontSize: 12)),
             const SizedBox(height: 6),
             TextField(
               controller: _wsUrlCtrl,
-              style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
+              style: const TextStyle(
+                  color: Colors.white, fontSize: 13, fontFamily: 'monospace'),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white.withValues(alpha: 0.05),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               ),
             ),
           ],
@@ -708,29 +806,36 @@ class _ConfigScreenState extends State<ConfigScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Thời gian chờ kết nối (Timeout)',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13.5,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Thời gian chờ kết nối (Timeout)',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_timeoutSeconds.toInt()} giây (Mặc định chuẩn: 15s)',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.55),
-                        fontSize: 11.5,
+                      const SizedBox(height: 2),
+                      Text(
+                        '${_timeoutSeconds.toInt()} giây (Mặc định chuẩn: 15s)',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 11.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 SizedBox(
-                  width: 130,
+                  width: 120,
                   child: Slider(
                     value: _timeoutSeconds,
                     min: 5,
@@ -761,9 +866,16 @@ class _ConfigScreenState extends State<ConfigScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13.5)),
+              Text(title,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13.5)),
               const SizedBox(height: 2),
-              Text(subtitle, style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11.5)),
+              Text(subtitle,
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.55),
+                      fontSize: 11.5)),
             ],
           ),
         ),
@@ -794,16 +906,18 @@ class _ConfigScreenState extends State<ConfigScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: _packetLogs.map((p) {
-          final isOk = (p['status'] as int) == 200 || (p['status'] as int) == 101;
+          final isOk =
+              (p['status'] as int) == 200 || (p['status'] as int) == 101;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 5),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: p['method'] == 'POST'
-                        ? AppColors.primary.withValues(alpha: 0.2)
+                        ? const Color(0xFF38BDF8).withValues(alpha: 0.2)
                         : (p['method'] == 'WS'
                             ? AppColors.bottomBarCyan.withValues(alpha: 0.2)
                             : AppColors.bottomBarCyan.withValues(alpha: 0.2)),
@@ -813,7 +927,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     p['method'] as String,
                     style: TextStyle(
                       color: p['method'] == 'POST'
-                          ? AppColors.primary
+                          ? const Color(0xFF38BDF8)
                           : (p['method'] == 'WS'
                               ? AppColors.bottomBarCyan
                               : AppColors.bottomBarCyan),
@@ -827,14 +941,17 @@ class _ConfigScreenState extends State<ConfigScreen> {
                 Expanded(
                   child: Text(
                     p['path'] as String,
-                    style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'monospace'),
+                    style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontFamily: 'monospace'),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Text(
                   p['duration'] as String,
                   style: TextStyle(
-                    color: isOk ? AppColors.emeraldGreen : Colors.redAccent,
+                    color: isOk ? const Color(0xFF34D399) : Colors.redAccent,
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
@@ -856,16 +973,21 @@ class _ConfigScreenState extends State<ConfigScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         onPressed: _saveConfig,
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(CupertinoIcons.checkmark_seal_fill, size: 18),
-            SizedBox(width: 8),
-            Text('Lưu cấu hình Gateway', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          ],
+        child: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(CupertinoIcons.checkmark_seal_fill, size: 18),
+              SizedBox(width: 8),
+              Text('Lưu cấu hình Gateway',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            ],
+          ),
         ),
       ),
     );

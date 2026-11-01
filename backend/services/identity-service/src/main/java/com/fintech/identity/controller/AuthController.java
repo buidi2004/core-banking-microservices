@@ -58,14 +58,15 @@ public class AuthController {
     public ResponseEntity<ApiResponse<OtpSendResponse>> sendOtp(
             @RequestBody(required = false) OtpSendRequest request,
             @RequestParam(required = false) String phoneNumber,
-            @RequestParam(required = false) String purpose) {
+            @RequestParam(required = false) String purpose,
+            @RequestParam(required = false) String email) {
         String phone = (request != null && request.getPhoneNumber() != null) ? request.getPhoneNumber() : phoneNumber;
-        String email = (request != null) ? request.getEmail() : null;
+        String mail = (request != null && request.getEmail() != null) ? request.getEmail() : email;
         String purp = (request != null && request.getPurpose() != null) ? request.getPurpose() : purpose;
         if (phone == null || phone.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Số điện thoại không được để trống"));
         }
-        OtpSendResponse response = otpService.sendOtp(phone, purp, email);
+        OtpSendResponse response = otpService.sendOtp(phone, purp, mail);
         return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
     }
 
@@ -128,6 +129,21 @@ public class AuthController {
                     .body(ApiResponse.error("Không xác định được danh tính người dùng"));
         }
         OtpSendResponse response = otpService.sendOtpForUser(userId, "CHANGE_PASSWORD");
+        return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
+    }
+
+    /**
+     * Yêu cầu gửi mã OTP tới Gmail chính chủ của người dùng đang đăng nhập
+     * để đổi hoặc cấp lại mã PIN giao dịch (purpose=CHANGE_PIN).
+     */
+    @PostMapping("/change-pin/otp")
+    public ResponseEntity<ApiResponse<OtpSendResponse>> requestChangePinOtp(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Không xác định được danh tính người dùng"));
+        }
+        OtpSendResponse response = otpService.sendOtpForUser(userId, "CHANGE_PIN");
         return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
     }
 

@@ -18,27 +18,44 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   final PageController _bannerController = PageController();
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _voucherInputController = TextEditingController();
-  int _selectedTab = 0; // 0: Ưu Đãi, 1: Trả Góp Nhà & Xe, 2: Sự Kiện, 3: Voucher
+  int _selectedTab =
+      0; // 0: Ưu Đãi, 1: Trả Góp Nhà & Xe, 2: Sự Kiện, 3: Voucher
   int _currentBannerIndex = 0;
   int _selectedCategoryIndex = 0;
   String _searchQuery = '';
   Timer? _bannerTimer;
   List<Map<String, dynamic>> _apiVouchers = [];
   bool _isApplyingVoucher = false;
+  bool _bannerAutoScrollEnabled = true;
 
-  final List<String> _tabs = ['Ưu Đãi', 'Trả Góp Nhà & Xe', 'Sự Kiện', 'Voucher'];
+  final List<String> _tabs = [
+    'Ưu Đãi',
+    'Trả Góp Nhà & Xe',
+    'Sự Kiện',
+    'Voucher'
+  ];
 
   static List<Color> _safeGradient(dynamic val) {
-    if (val is List<Color> && val.length >= 2) return val;
+    List<Color> normalize(List<Color> colors) => colors
+        .map((color) => Color.fromARGB(
+              color.alpha,
+              (color.red * 0.70).round(),
+              (color.green * 0.70).round(),
+              (color.blue * 0.70).round(),
+            ))
+        .toList(growable: false);
+
+    if (val is List<Color> && val.length >= 2) return normalize(val);
     if (val is List) {
       final list = val.whereType<Color>().toList();
-      if (list.length >= 2) return list;
-      if (list.length == 1) return [list.first, list.first];
+      if (list.length >= 2) return normalize(list);
+      if (list.length == 1) return normalize([list.first, list.first]);
     }
-    return const [Color(0xFF0077B6), Color(0xFF00B4D8)];
+    return const [Color(0xFF00537F), Color(0xFF007E97)];
   }
 
-  static Color _safeColor(dynamic val, [Color fallback = const Color(0xFF00B4D8)]) {
+  static Color _safeColor(dynamic val,
+      [Color fallback = AppColors.bottomBarOcean]) {
     if (val is Color) return val;
     return fallback;
   }
@@ -60,42 +77,47 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   final List<Map<String, dynamic>> _heroBanners = const [
     {
       'title': 'Vay Mua Ô Tô VinFast VF3 - Lãi Suất 0%',
-      'subtitle': 'Hỗ trợ 85% giá trị xe, ân hạn nợ gốc 12 tháng, góp chỉ từ 2.9 triệu/tháng',
+      'subtitle':
+          'Hỗ trợ 85% giá trị xe, ân hạn nợ gốc 12 tháng, góp chỉ từ 2.9 triệu/tháng',
       'tag': '🚗 XE HOT 2026',
       'icon': CupertinoIcons.car_fill,
-      'gradient': [Color(0xFF0077B6), Color(0xFF00B4D8)],
+      'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
       'route': '/bills/quick-loan',
     },
     {
       'title': 'Gói Vay Mua Nhà An Cư - Lãi Suất 5.2%/Năm',
-      'subtitle': 'Vinhomes & Masterise: Cố định 24 tháng, thời hạn vay 35 năm, 0đ phạt trả trước',
+      'subtitle':
+          'Vinhomes & Masterise: Cố định 24 tháng, thời hạn vay 35 năm, 0đ phạt trả trước',
       'tag': '🏠 BẤT ĐỘNG SẢN',
       'icon': CupertinoIcons.house_fill,
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF056676)],
+      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
       'route': '/bills/quick-loan',
     },
     {
       'title': 'Trả Góp 0% iPhone 16 Pro Max & MacBook',
-      'subtitle': '0 đồng trả trước tại FPT Shop & Thế Giới Di Động qua thẻ tín dụng SenBank',
+      'subtitle':
+          '0 đồng trả trước tại FPT Shop & Thế Giới Di Động qua thẻ tín dụng SenBank',
       'tag': 'TRẢ GÓP 0%',
       'icon': CupertinoIcons.device_phone_portrait,
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF00B4D8)],
+      'gradient': [AppColors.brandNavy, AppColors.bottomBarOcean],
       'route': '/cards',
     },
     {
       'title': 'Mở Thẻ SenBank Visa Platinum - Hoàn 2 Triệu',
-      'subtitle': 'Hoàn tiền 50% chi tiêu kỳ đầu, miễn phí thường niên trọn đời',
+      'subtitle':
+          'Hoàn tiền 50% chi tiêu kỳ đầu, miễn phí thường niên trọn đời',
       'tag': '💳 SENBANK PREMIER',
       'icon': CupertinoIcons.creditcard_fill,
-      'gradient': [Color(0xFF0F2B48), Color(0xFF0077B6)],
+      'gradient': [Color(0xFF0F2B48), AppColors.brandBlue],
       'route': '/cards',
     },
     {
       'title': 'Vi Vu Hè Cùng Vietnam Airlines & Agoda',
-      'subtitle': 'Giảm 500.000đ vé máy bay khứ hồi & khách sạn 5 sao toàn quốc',
+      'subtitle':
+          'Giảm 500.000đ vé máy bay khứ hồi & khách sạn 5 sao toàn quốc',
       'tag': '✈️ DU LỊCH 5 SAO',
       'icon': CupertinoIcons.airplane,
-      'gradient': [Color(0xFF023E8A), Color(0xFF0096C7)],
+      'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
       'route': '/bills/input?service=Vé máy bay',
     },
   ];
@@ -111,11 +133,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'maxLimit': 'Tối đa 30 Tỷ',
       'duration': 'Thời hạn 35 năm',
       'tag': 'Ân hạn gốc 3 năm',
-      'desc': 'Tài trợ tới 85% giá trị hợp đồng mua bán nhà ở, căn hộ. Thủ tục thẩm định trực tuyến trong 24h.',
-      'gradient': [Color(0xFF0A2540), Color(0xFF0077B6)],
+      'desc':
+          'Tài trợ tới 85% giá trị hợp đồng mua bán nhà ở, căn hộ. Thủ tục thẩm định trực tuyến trong 24h.',
+      'gradient': [Color(0xFF0A2540), AppColors.brandBlue],
       'icon': CupertinoIcons.graph_square_fill,
       'type': 'house',
-      'badgeColor': Color(0xFF00B4D8),
+      'badgeColor': AppColors.bottomBarOcean,
     },
     {
       'title': 'Vay Trả Góp Ô Tô VinFast & Hyundai',
@@ -124,11 +147,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'maxLimit': 'Hỗ trợ 85% xe',
       'duration': 'Thời hạn 8 năm',
       'tag': 'Góp từ 2.9tr/tháng',
-      'desc': 'Ưu đãi tặng gói bảo hiểm vật chất 2 năm và miễn phí trạm sạc pin toàn quốc 1 năm.',
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF00B4D8)],
+      'desc':
+          'Ưu đãi tặng gói bảo hiểm vật chất 2 năm và miễn phí trạm sạc pin toàn quốc 1 năm.',
+      'gradient': [AppColors.brandNavy, AppColors.bottomBarOcean],
       'icon': CupertinoIcons.car_fill,
       'type': 'car',
-      'badgeColor': Color(0xFF00B4D8),
+      'badgeColor': AppColors.bottomBarOcean,
     },
     {
       'title': 'Trả Góp Xe Máy Điện VinFast Thông Minh',
@@ -137,11 +161,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'maxLimit': '0đ Trả trước',
       'duration': 'Kỳ hạn 12 - 24 tháng',
       'tag': 'Góp từ 390k/tháng',
-      'desc': 'Sở hữu ngay xe máy điện bảo vệ môi trường, chi phí sạc siêu tiết kiệm chỉ bằng 1/5 tiền xăng.',
-      'gradient': [Color(0xFF023E8A), Color(0xFF00B4D8)],
+      'desc':
+          'Sở hữu ngay xe máy điện bảo vệ môi trường, chi phí sạc siêu tiết kiệm chỉ bằng 1/5 tiền xăng.',
+      'gradient': [AppColors.royalBlue, AppColors.bottomBarOcean],
       'icon': CupertinoIcons.battery_charging,
       'type': 'bike',
-      'badgeColor': Color(0xFF26E5DC),
+      'badgeColor': AppColors.bottomBarCyan,
     },
     {
       'title': 'Trả Góp 0% Điện Máy & Công Nghệ Flagship',
@@ -150,11 +175,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'maxLimit': 'Hạn mức 100 Triệu',
       'duration': '3 - 6 - 9 - 12 tháng',
       'tag': 'Miễn phí chuyển đổi',
-      'desc': 'Áp dụng cho iPhone 16 Pro Max, MacBook Air M3, TV Sony OLED, Tủ lạnh Samsung Bespoke.',
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF0077B6)],
+      'desc':
+          'Áp dụng cho iPhone 16 Pro Max, MacBook Air M3, TV Sony OLED, Tủ lạnh Samsung Bespoke.',
+      'gradient': [AppColors.brandNavy, AppColors.brandBlue],
       'icon': CupertinoIcons.device_phone_portrait,
       'type': 'tech',
-      'badgeColor': Color(0xFF00B4D8),
+      'badgeColor': AppColors.bottomBarOcean,
     },
     {
       'title': 'Vay Tiêu Dùng Tín Chấp Siêu Tốc',
@@ -163,11 +189,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'maxLimit': 'Đến 150 Triệu',
       'duration': 'Duyệt 3 phút',
       'tag': 'Không thế chấp',
-      'desc': 'Giải ngân tiền mặt trực tiếp vào tài khoản ví SenBank. Không cần chứng minh thu nhập phức tạp.',
-      'gradient': [Color(0xFF005C8A), Color(0xFF0096C7)],
+      'desc':
+          'Giải ngân tiền mặt trực tiếp vào tài khoản ví SenBank. Không cần chứng minh thu nhập phức tạp.',
+      'gradient': [Color(0xFF005C8A), AppColors.oceanCyan],
       'icon': CupertinoIcons.bolt_horizontal_circle_fill,
       'type': 'loan',
-      'badgeColor': Color(0xFF26E5DC),
+      'badgeColor': AppColors.bottomBarCyan,
     },
   ];
 
@@ -182,7 +209,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'discount': '-50%',
       'progress': 0.88,
       'left': 'Còn 12 mã',
-      'gradient': [Color(0xFF023E8A), Color(0xFF0077B6)],
+      'gradient': [AppColors.royalBlue, AppColors.brandBlue],
       'icon': CupertinoIcons.cart_fill,
       'route': '/scan-qr',
     },
@@ -193,7 +220,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'discount': 'GIẢM 100K',
       'progress': 0.94,
       'left': 'Còn 6 mã',
-      'gradient': [Color(0xFF0077B6), Color(0xFF0096C7)],
+      'gradient': [AppColors.brandBlue, AppColors.oceanCyan],
       'icon': CupertinoIcons.bag_fill,
       'route': '/cards',
     },
@@ -204,7 +231,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'discount': '-40.000đ',
       'progress': 0.72,
       'left': 'Còn 28 mã',
-      'gradient': [Color(0xFF0096C7), Color(0xFF00B4D8)],
+      'gradient': [AppColors.oceanCyan, AppColors.bottomBarOcean],
       'icon': CupertinoIcons.car_fill,
       'route': '/transfer',
     },
@@ -215,7 +242,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'discount': '-30.000đ',
       'progress': 0.82,
       'left': 'Còn 15 mã',
-      'gradient': [Color(0xFF0077B6), Color(0xFF26E5DC)],
+      'gradient': [AppColors.brandBlue, AppColors.bottomBarCyan],
       'icon': CupertinoIcons.cart_fill,
       'route': '/scan-qr',
     },
@@ -226,7 +253,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'discount': 'MUA 1 TẶNG 1',
       'progress': 0.65,
       'left': 'Còn 35 mã',
-      'gradient': [Color(0xFF0F2B48), Color(0xFF0077B6)],
+      'gradient': [Color(0xFF0F2B48), AppColors.brandBlue],
       'icon': CupertinoIcons.play_circle_fill,
       'route': '/scan-qr',
     },
@@ -237,7 +264,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'discount': '-35%',
       'progress': 0.55,
       'left': 'Còn 45 mã',
-      'gradient': [Color(0xFF0A2540), Color(0xFF0096C7)],
+      'gradient': [Color(0xFF0A2540), AppColors.oceanCyan],
       'icon': CupertinoIcons.smiley_fill,
       'route': '/scan-qr',
     },
@@ -252,11 +279,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Highlands Coffee',
       'category': 'Ẩm thực & Cafe',
       'title': 'Mua 1 Tặng 1 Toàn Bộ Freeze & Trà Sen Vàng',
-      'desc': 'Áp dụng cho đồ uống cỡ Lớn khi thanh toán thẻ contactless hoặc quét VietQR SenBank.',
+      'desc':
+          'Áp dụng cho đồ uống cỡ Lớn khi thanh toán thẻ contactless hoặc quét VietQR SenBank.',
       'discount': 'MUA 1 TẶNG 1',
       'code': 'HLCOFFEE',
       'expiry': 'HSD: 30/09/2026',
-      'gradient': [Color(0xFF0077B6), Color(0xFF00B4D8)],
+      'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
       'icon': CupertinoIcons.cart_fill,
       'route': '/scan-qr',
       'condition': 'Tối đa 2 lần/tuần cho mỗi chủ tài khoản SenBank.',
@@ -272,7 +300,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'discount': 'GIẢM 50.000đ',
       'code': 'SENBE50',
       'expiry': 'HSD: 15/10/2026',
-      'gradient': [Color(0xFF023E8A), Color(0xFF0077B6)],
+      'gradient': [AppColors.royalBlue, AppColors.brandBlue],
       'icon': CupertinoIcons.car_fill,
       'route': '/transfer',
       'condition': 'Áp dụng cho mọi khung giờ, kể cả giờ cao điểm.',
@@ -284,14 +312,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'VinFast Auto',
       'category': 'Di chuyển & Xe',
       'title': 'Vay Mua Ô Tô Điện VinFast VF3, VF5, VF8 Lãi Suất 0%',
-      'desc': 'SenBank tài trợ 85% giá trị xe, tặng 1 năm sạc pin miễn phí tại tất cả trạm sạc V-Green.',
+      'desc':
+          'SenBank tài trợ 85% giá trị xe, tặng 1 năm sạc pin miễn phí tại tất cả trạm sạc V-Green.',
       'discount': '0% LÃI SUẤT',
       'code': 'VINFAST0',
       'expiry': 'HSD: 31/12/2026',
-      'gradient': [Color(0xFF0077B6), Color(0xFF00B4D8)],
+      'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
       'icon': CupertinoIcons.car_fill,
       'route': '/bills/quick-loan',
-      'condition': 'Kỳ hạn vay tối đa 8 năm, xét duyệt hồ sơ online trong 15 phút.',
+      'condition':
+          'Kỳ hạn vay tối đa 8 năm, xét duyệt hồ sơ online trong 15 phút.',
       'rating': 4.9,
       'used': '4.100',
     },
@@ -300,14 +330,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'SenBank Home Loan',
       'category': 'Trả góp & Vay',
       'title': 'Gói Vay Mua Nhà An Cư - Lãi Suất 5.2%/Năm Cố Định',
-      'desc': 'Vay mua chung cư, nhà phố Vinhomes, Masterise, Novaland với ân hạn nợ gốc 36 tháng.',
+      'desc':
+          'Vay mua chung cư, nhà phố Vinhomes, Masterise, Novaland với ân hạn nợ gốc 36 tháng.',
       'discount': 'LÃI 5.2%',
       'code': 'HOMELOAN52',
       'expiry': 'HSD: 31/12/2026',
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF056676)],
+      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
       'icon': CupertinoIcons.house_fill,
       'route': '/bills/quick-loan',
-      'condition': 'Hạn mức vay lên đến 30 tỷ VNĐ, thời hạn linh hoạt tới 35 năm.',
+      'condition':
+          'Hạn mức vay lên đến 30 tỷ VNĐ, thời hạn linh hoạt tới 35 năm.',
       'rating': 4.9,
       'used': '2.800',
     },
@@ -316,14 +348,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'FPT Shop & Thế Giới Di Động',
       'category': 'Trả góp & Vay',
       'title': 'Trả Góp 0% iPhone 16 Pro Max & Laptop Gaming',
-      'desc': 'Trả trước 0 đồng, kỳ hạn 6-12 tháng qua thẻ tín dụng SenBank, tặng voucher 1 triệu.',
+      'desc':
+          'Trả trước 0 đồng, kỳ hạn 6-12 tháng qua thẻ tín dụng SenBank, tặng voucher 1 triệu.',
       'discount': 'TRẢ GÓP 0%',
       'code': 'TECH0PERCENT',
       'expiry': 'HSD: 31/10/2026',
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF056676)],
+      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
       'icon': CupertinoIcons.device_phone_portrait,
       'route': '/cards',
-      'condition': 'Áp dụng cho đơn hàng từ 3.000.000đ tại chuỗi cửa hàng đối tác.',
+      'condition':
+          'Áp dụng cho đơn hàng từ 3.000.000đ tại chuỗi cửa hàng đối tác.',
       'rating': 4.7,
       'used': '15.900',
     },
@@ -332,11 +366,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Shopee Mall & Lazada',
       'category': 'Mua sắm',
       'title': 'Hoàn Tiền 100.000đ Trực Tiếp Vào Tài Khoản',
-      'desc': 'Tự động hoàn 100k vào tài khoản thanh toán cho đơn hàng từ 300k liên kết thẻ SenBank.',
+      'desc':
+          'Tự động hoàn 100k vào tài khoản thanh toán cho đơn hàng từ 300k liên kết thẻ SenBank.',
       'discount': 'HOÀN 100K',
       'code': 'SENSHOPEE100',
       'expiry': 'HSD: 30/09/2026',
-      'gradient': [Color(0xFF0A2540), Color(0xFF0077B6)],
+      'gradient': [Color(0xFF0A2540), AppColors.brandBlue],
       'icon': CupertinoIcons.bag_fill,
       'route': '/cards',
       'condition': 'Tiền hoàn sẽ vào tài khoản trong vòng 24 giờ.',
@@ -348,11 +383,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Vietnam Airlines',
       'category': 'Du lịch',
       'title': 'Giảm 300.000đ Vé Máy Bay Khứ Hồi Toàn Quốc',
-      'desc': 'Ưu đãi dành riêng cho khách hàng SenBank khi đặt vé máy bay đi Phú Quốc, Đà Nẵng, Nha Trang.',
+      'desc':
+          'Ưu đãi dành riêng cho khách hàng SenBank khi đặt vé máy bay đi Phú Quốc, Đà Nẵng, Nha Trang.',
       'discount': 'GIẢM 300K',
       'code': 'VIVUHE300',
       'expiry': 'HSD: 31/10/2026',
-      'gradient': [Color(0xFF0288D1), Color(0xFF0077B6)],
+      'gradient': [AppColors.oceanBlue, AppColors.brandBlue],
       'icon': CupertinoIcons.airplane,
       'route': '/bills/input?service=Vé máy bay',
       'condition': 'Áp dụng cho hạng vé từ Phổ thông tiêu chuẩn trở lên.',
@@ -364,11 +400,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Phúc Long Tea & Coffee',
       'category': 'Ẩm thực & Cafe',
       'title': 'Giảm 25% Toàn Bộ Hóa Đơn Trà & Bánh Mì',
-      'desc': 'Tận hưởng trà Ô Long đậm vị cùng bánh tươi với ưu đãi giảm trực tiếp 25% khi quét QR SenBank.',
+      'desc':
+          'Tận hưởng trà Ô Long đậm vị cùng bánh tươi với ưu đãi giảm trực tiếp 25% khi quét QR SenBank.',
       'discount': 'GIẢM 25%',
       'code': 'PHUCLONG25',
       'expiry': 'HSD: 15/10/2026',
-      'gradient': [Color(0xFF056676), Color(0xFF0288D1)],
+      'gradient': [AppColors.tealNavy, AppColors.oceanBlue],
       'icon': CupertinoIcons.cart_fill,
       'route': '/scan-qr',
       'condition': 'Áp dụng hóa đơn từ 80.000đ, không giới hạn số lần.',
@@ -380,11 +417,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'VinFast Xe Máy Điện',
       'category': 'Di chuyển & Xe',
       'title': 'Trả Góp Xe Máy Điện Feliz S, Evo200 - 390K/Tháng',
-      'desc': 'Không cần trả trước, hỗ trợ hồ sơ online qua app SenBank, nhận xe ngay tại showroom.',
+      'desc':
+          'Không cần trả trước, hỗ trợ hồ sơ online qua app SenBank, nhận xe ngay tại showroom.',
       'discount': 'GÓP 390K',
       'code': 'EVO390K',
       'expiry': 'HSD: 30/11/2026',
-      'gradient': [Color(0xFF056676), Color(0xFF0288D1)],
+      'gradient': [AppColors.tealNavy, AppColors.oceanBlue],
       'icon': CupertinoIcons.battery_charging,
       'route': '/bills/quick-loan',
       'condition': 'Áp dụng cho dòng xe Evo200 và Feliz S thế hệ mới.',
@@ -396,11 +434,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Golden Gate - Gogi & Kichi',
       'category': 'Ẩm thực & Cafe',
       'title': 'Tặng 1 Suất Buffet Miễn Phí Cho Nhóm 4 Người',
-      'desc': 'Áp dụng tại chuỗi nhà hàng Gogi House, Kichi-Kichi, Manwah, Isushi toàn quốc.',
+      'desc':
+          'Áp dụng tại chuỗi nhà hàng Gogi House, Kichi-Kichi, Manwah, Isushi toàn quốc.',
       'discount': 'ĐI 4 TẶNG 1',
       'code': 'GOLDENGATE4',
       'expiry': 'HSD: 20/10/2026',
-      'gradient': [Color(0xFF0077B6), Color(0xFF26E5DC)],
+      'gradient': [AppColors.brandBlue, AppColors.bottomBarCyan],
       'icon': CupertinoIcons.rosette,
       'route': '/scan-qr',
       'condition': 'Áp dụng vào tất cả các ngày trong tuần (trừ ngày Lễ).',
@@ -412,14 +451,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Điện Lực EVN & Nước Sinh Hoạt',
       'category': 'Hóa đơn',
       'title': 'Hoàn Tiền 50.000đ Khi Đặt Lịch Tự Động Trừ Cước',
-      'desc': 'Cài đặt tự động thanh toán hóa đơn tiền điện EVN và tiền nước qua ví SenBank.',
+      'desc':
+          'Cài đặt tự động thanh toán hóa đơn tiền điện EVN và tiền nước qua ví SenBank.',
       'discount': 'HOÀN 50K',
       'code': 'AUTOBILL50',
       'expiry': 'HSD: 31/10/2026',
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF0288D1)],
+      'gradient': [AppColors.brandNavy, AppColors.oceanBlue],
       'icon': CupertinoIcons.doc_text_fill,
       'route': '/bills/input?service=ELECTRICITY',
-      'condition': 'Hoàn tiền sau khi chu kỳ cước đầu tiên được trích nợ thành công.',
+      'condition':
+          'Hoàn tiền sau khi chu kỳ cước đầu tiên được trích nợ thành công.',
       'rating': 4.5,
       'used': '28.900',
     },
@@ -428,14 +469,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'SenBank Visa Platinum',
       'category': 'Hoàn tiền',
       'title': 'Hoàn Tiền 10% Mọi Chi Tiêu Quốc Tế & Ăn Uống',
-      'desc': 'Tối đa 1.500.000đ/tháng, tích lũy điểm SenPoint đổi dặm bay Bông Sen Vàng.',
+      'desc':
+          'Tối đa 1.500.000đ/tháng, tích lũy điểm SenPoint đổi dặm bay Bông Sen Vàng.',
       'discount': 'HOÀN 10%',
       'code': 'PLATINUM2026',
       'expiry': 'HSD: 31/12/2026',
-      'gradient': [Color(0xFF00B4D8), Color(0xFF0077B6)],
+      'gradient': [AppColors.bottomBarOcean, AppColors.brandBlue],
       'icon': CupertinoIcons.creditcard_fill,
       'route': '/cards',
-      'condition': 'Chi tiêu tối thiểu 1.000.000đ trong 30 ngày kể từ khi kích hoạt.',
+      'condition':
+          'Chi tiêu tối thiểu 1.000.000đ trong 30 ngày kể từ khi kích hoạt.',
       'rating': 4.9,
       'used': '5.200',
     },
@@ -444,11 +487,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Booking.com & Agoda',
       'category': 'Du lịch',
       'title': 'Đặt Khách Sạn Resort 5 Sao Hoàn 15% Không Giới Hạn',
-      'desc': 'Đặt phòng khách sạn qua SenBank Travel Hub, hoàn tiền 15% không giới hạn.',
+      'desc':
+          'Đặt phòng khách sạn qua SenBank Travel Hub, hoàn tiền 15% không giới hạn.',
       'discount': 'HOÀN 15%',
       'code': 'HOTEL15',
       'expiry': 'HSD: 30/10/2026',
-      'gradient': [Color(0xFF03045E), Color(0xFF0077B6)],
+      'gradient': [Color(0xFF03045E), AppColors.brandBlue],
       'icon': CupertinoIcons.building_2_fill,
       'route': '/bills/input?service=Khách sạn',
       'condition': 'Đặt phòng tối thiểu 1 đêm, giá trị phòng từ 500.000đ/đêm.',
@@ -460,11 +504,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Petrolimex & Xăng Dầu',
       'category': 'Di chuyển & Xe',
       'title': 'Hoàn 5% Khi Đổ Xăng Quét VietQR SenBank',
-      'desc': 'Áp dụng tại hơn 3.000 cây xăng Petrolimex và PVOIL trên toàn quốc.',
+      'desc':
+          'Áp dụng tại hơn 3.000 cây xăng Petrolimex và PVOIL trên toàn quốc.',
       'discount': 'HOÀN 5%',
       'code': 'XANGDAU5',
       'expiry': 'HSD: 31/10/2026',
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF0288D1)],
+      'gradient': [AppColors.brandNavy, AppColors.oceanBlue],
       'icon': CupertinoIcons.gauge,
       'route': '/scan-qr',
       'condition': 'Tối đa hoàn 50.000đ mỗi lần giao dịch, 4 lần/tháng.',
@@ -476,7 +521,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'The Coffee House',
       'category': 'Ẩm thực & Cafe',
       'title': 'Giảm 30% Toàn Bộ Menu Cà Phê Buổi Sáng',
-      'desc': 'Áp dụng từ 6h-10h hàng ngày khi thanh toán qua ứng dụng SenBank.',
+      'desc':
+          'Áp dụng từ 6h-10h hàng ngày khi thanh toán qua ứng dụng SenBank.',
       'discount': 'GIẢM 30%',
       'code': 'COFFEE30',
       'expiry': 'HSD: 31/10/2026',
@@ -492,11 +538,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'brand': 'Pizza Hut & KFC',
       'category': 'Ẩm thực & Cafe',
       'title': 'Combo Đôi Pizza + Gà Rán Giảm 35%',
-      'desc': 'Thưởng thức combo 2 pizza + 2 phần gà với giá cực ưu đãi khi quét VietQR.',
+      'desc':
+          'Thưởng thức combo 2 pizza + 2 phần gà với giá cực ưu đãi khi quét VietQR.',
       'discount': 'GIẢM 35%',
       'code': 'PIZZA35',
       'expiry': 'HSD: 15/10/2026',
-      'gradient': [Color(0xFF023E8A), Color(0xFF0096C7)],
+      'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
       'icon': CupertinoIcons.smiley_fill,
       'route': '/scan-qr',
       'condition': 'Áp dụng tại tất cả cửa hàng Pizza Hut và KFC toàn quốc.',
@@ -514,8 +561,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'date': '15/09 - 30/09/2026',
       'reward': 'Vòng quay may mắn trúng iPhone 16 Pro & Vàng 9999',
       'badge': 'SIÊU HOT',
-      'badgeColor': Color(0xFF00B4D8),
-      'gradient': [Color(0xFF00B4D8), Color(0xFF0077B6)],
+      'badgeColor': AppColors.bottomBarOcean,
+      'gradient': [AppColors.bottomBarOcean, AppColors.brandBlue],
       'icon': CupertinoIcons.rosette,
       'participants': '24.450 người tham gia',
     },
@@ -524,8 +571,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'date': '01/09 - 30/09/2026',
       'reward': 'Tặng thêm 1.5% lãi suất và voucher 5.000.000đ khi giải ngân',
       'badge': 'MỚI',
-      'badgeColor': Color(0xFF00B4D8),
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF056676)],
+      'badgeColor': AppColors.bottomBarOcean,
+      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
       'icon': CupertinoIcons.chart_bar_alt_fill,
       'participants': '18.320 người tham gia',
     },
@@ -534,8 +581,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'date': 'Không giới hạn thời gian',
       'reward': '50.000đ tiền tươi vào ví cho mỗi lượt mở tài khoản',
       'badge': 'THƯỜNG XUYÊN',
-      'badgeColor': Color(0xFF0077B6),
-      'gradient': [Color(0xFF023E8A), Color(0xFF0288D1)],
+      'badgeColor': AppColors.brandBlue,
+      'gradient': [AppColors.royalBlue, AppColors.oceanBlue],
       'icon': CupertinoIcons.person_2_fill,
       'participants': '65.200 người tham gia',
     },
@@ -544,8 +591,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'date': '10/09 - 25/09/2026',
       'reward': 'Tặng gói phụ kiện cao cấp 15 triệu & miễn phí bảo hiểm',
       'badge': 'ĐẶC QUYỀN',
-      'badgeColor': Color(0xFF26E5DC),
-      'gradient': [Color(0xFF0F3E6D), Color(0xFF0288D1)],
+      'badgeColor': AppColors.bottomBarCyan,
+      'gradient': [AppColors.brandNavy, AppColors.oceanBlue],
       'icon': CupertinoIcons.car_fill,
       'participants': '12.100 người tham gia',
     },
@@ -554,7 +601,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   @override
   void initState() {
     super.initState();
-    final isTest = WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final isTest =
+        WidgetsBinding.instance.runtimeType.toString().contains('Test');
     if (!isTest) {
       _startBannerTimer();
       _loadApiVouchers();
@@ -582,6 +630,20 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final enabled = TickerMode.of(context);
+    if (enabled == _bannerAutoScrollEnabled) return;
+    _bannerAutoScrollEnabled = enabled;
+    if (enabled) {
+      _startBannerTimer();
+    } else {
+      _bannerTimer?.cancel();
+      _bannerTimer = null;
+    }
+  }
+
+  @override
   void dispose() {
     _bannerTimer?.cancel();
     _bannerController.dispose();
@@ -600,13 +662,15 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     }
     setState(() => _isApplyingVoucher = true);
     try {
-      final res = await PromotionRemoteDataSource().apply(code: code, orderAmount: 100000);
+      final res = await PromotionRemoteDataSource()
+          .apply(code: code, orderAmount: 100000);
       final discount = res['discountAmount'] ?? 50000;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: AppColors.emeraldGreen,
-            content: Text('Áp dụng thành công mã $code! Giảm: ${CurrencyFormatter.formatVND((discount as num).toDouble())}'),
+            content: Text(
+                'Áp dụng thành công mã $code! Giảm: ${CurrencyFormatter.formatVND((discount as num).toDouble())}'),
           ),
         );
       }
@@ -636,12 +700,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Row(
           children: [
-            const Icon(CupertinoIcons.checkmark_circle_fill, color: Colors.white, size: 22),
+            const Icon(CupertinoIcons.checkmark_circle_fill,
+                color: Colors.white, size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'Đã sao chép mã "$code" vào bộ nhớ tạm!',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13),
               ),
             ),
           ],
@@ -672,9 +740,15 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       final matchesCategory = _selectedCategoryIndex == 0 ||
           p['category'] == _categories[_selectedCategoryIndex];
       final matchesSearch = _searchQuery.isEmpty ||
-          (p['title'] as String).toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (p['brand'] as String).toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          (p['code'] as String).toLowerCase().contains(_searchQuery.toLowerCase());
+          (p['title'] as String)
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          (p['brand'] as String)
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          (p['code'] as String)
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;
     }).toList();
   }
@@ -686,7 +760,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       appBar: AppBar(
         title: const Text(
           'Ưu Đãi & Quà Tặng',
-          style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+              color: AppColors.textPrimaryLight,
+              fontWeight: FontWeight.bold,
+              fontSize: 18),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -697,7 +774,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(CupertinoIcons.star_circle_fill, color: AppColors.primary, size: 24),
+                const Icon(CupertinoIcons.star_circle_fill,
+                    color: AppColors.primary, size: 24),
                 Positioned(
                   top: -3,
                   right: -3,
@@ -708,7 +786,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                       shape: BoxShape.circle,
                     ),
                     child: const Text('3',
-                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -781,7 +862,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 decoration: BoxDecoration(
                   gradient: isSelected
                       ? const LinearGradient(
-                          colors: [AppColors.bottomBarCyan, AppColors.primaryDark],
+                          colors: [AppColors.primary, AppColors.primaryDark],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         )
@@ -804,8 +885,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : AppColors.textSecondaryLight,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.textSecondaryLight,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w600,
                       fontSize: 11.5,
                       letterSpacing: 0.2,
                     ),
@@ -840,7 +924,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   Widget _buildUuDaiTab() {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics:
+          const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.only(bottom: 110),
       children: [
         // Search Bar
@@ -877,20 +962,34 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(CupertinoIcons.house_fill, color: AppColors.primary, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    'Ưu Đãi Trả Góp Xe & Nhà Hot',
-                    style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(CupertinoIcons.house_fill,
+                        color: AppColors.primary, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Ưu Đãi Trả Góp Xe & Nhà Hot',
+                        style: TextStyle(
+                            color: AppColors.textPrimaryLight,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () => setState(() => _selectedTab = 1),
                 child: const Text('Xem tất cả →',
-                    style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 12.5, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        color: AppColors.primaryDark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -909,12 +1008,23 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Ưu đãi hấp dẫn (${_filteredPromotions.length})',
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold),
+              Expanded(
+                child: Text(
+                  'Ưu đãi hấp dẫn (${_filteredPromotions.length})',
+                  style: const TextStyle(
+                      color: AppColors.textPrimaryLight,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               const Text('Mới nhất',
-                  style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 13, fontWeight: FontWeight.w600)),
+                  style: TextStyle(
+                      color: AppColors.primaryDark,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600)),
             ],
           ),
         ),
@@ -925,13 +1035,18 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             child: Center(
               child: Column(
                 children: [
-                  Icon(CupertinoIcons.tag_fill, size: 64, color: AppColors.textMutedLight),
+                  Icon(CupertinoIcons.tag_fill,
+                      size: 64, color: AppColors.textMutedLight),
                   SizedBox(height: 12),
                   Text('Không tìm thấy ưu đãi phù hợp',
-                      style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                          color: AppColors.textPrimaryLight,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                   SizedBox(height: 6),
                   Text('Hãy thử tìm từ khóa khác hoặc đổi danh mục',
-                      style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
+                      style: TextStyle(
+                          color: AppColors.textSecondaryLight, fontSize: 13)),
                 ],
               ),
             ),
@@ -951,18 +1066,22 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   Widget _buildTraGopTab() {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics:
+          const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
       children: [
         // Highlight Intro Banner
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: const Color(0x380C1E36),
+            color: const Color(0xF20C1E36),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withOpacity(0.18)),
             boxShadow: [
-              BoxShadow(color: const Color(0xFF0077B6).withOpacity(0.20), blurRadius: 16, offset: const Offset(0, 6)),
+              BoxShadow(
+                  color: AppColors.brandBlue.withOpacity(0.20),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6)),
             ],
           ),
           child: Row(
@@ -974,7 +1093,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   color: Colors.white.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(CupertinoIcons.graph_square_fill, color: Colors.white, size: 28),
+                child: const Icon(CupertinoIcons.graph_square_fill,
+                    color: Colors.white, size: 28),
               ),
               const SizedBox(width: 14),
               const Expanded(
@@ -983,7 +1103,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   children: [
                     Text(
                       'Gói Vay An Cư & Lăn Bánh',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16),
                     ),
                     SizedBox(height: 4),
                     Text(
@@ -999,13 +1122,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
         const SizedBox(height: 20),
         const Text('Danh Mục Gói Vay Trả Góp Ưu Đãi',
-            style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 17, fontWeight: FontWeight.bold)),
+            style: TextStyle(
+                color: AppColors.textPrimaryLight,
+                fontSize: 17,
+                fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
 
         ..._installmentDeals.map((deal) => Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _buildFullInstallmentCard(deal),
-        )),
+              padding: const EdgeInsets.only(bottom: 16),
+              child: _buildFullInstallmentCard(deal),
+            )),
       ],
     );
   }
@@ -1016,7 +1142,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   Widget _buildSuKienTab() {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics:
+          const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
       children: [
         _buildEventBannerStrip(),
@@ -1028,13 +1155,18 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               decoration: BoxDecoration(
                 color: AppColors.primary.withOpacity(0.14),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.primary.withOpacity(0.25), width: 1),
+                border: Border.all(
+                    color: AppColors.primary.withOpacity(0.25), width: 1),
               ),
-              child: const Icon(CupertinoIcons.sparkles, color: AppColors.primary, size: 18),
+              child: const Icon(CupertinoIcons.sparkles,
+                  color: AppColors.primary, size: 18),
             ),
             const SizedBox(width: 8),
             const Text('Sự kiện đang diễn ra',
-                style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold)),
+                style: TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -1043,7 +1175,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text('LIVE',
-                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -1062,18 +1197,22 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   Widget _buildVoucherTab() {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+      physics:
+          const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
       children: [
         // Redeem Gift Code Box
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: const Color(0x380C1E36),
+            color: const Color(0xF20C1E36),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withOpacity(0.18)),
             boxShadow: [
-              BoxShadow(color: const Color(0xFF0077B6).withOpacity(0.15), blurRadius: 14, offset: const Offset(0, 4)),
+              BoxShadow(
+                  color: AppColors.brandBlue.withOpacity(0.15),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4)),
             ],
           ),
           child: Column(
@@ -1081,14 +1220,19 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             children: [
               const Row(
                 children: [
-                  Icon(CupertinoIcons.gift_fill, color: AppColors.bottomBarCyan, size: 24),
+                  Icon(CupertinoIcons.gift_fill,
+                      color: AppColors.bottomBarCyan, size: 24),
                   SizedBox(width: 10),
                   Text('Nhập Mã Ưu Đãi Độc Quyền',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 6),
-              const Text('Bạn có mã quà tặng từ đối tác hoặc chương trình tri ân?',
+              const Text(
+                  'Bạn có mã quà tặng từ đối tác hoặc chương trình tri ân?',
                   style: TextStyle(color: Colors.white70, fontSize: 12)),
               const SizedBox(height: 14),
               Container(
@@ -1097,18 +1241,24 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(color: Colors.white.withOpacity(0.2)),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 child: Row(
                   children: [
-                    const Icon(CupertinoIcons.tickets_fill, color: AppColors.bottomBarCyan, size: 20),
+                    const Icon(CupertinoIcons.tickets_fill,
+                        color: AppColors.bottomBarCyan, size: 20),
                     const SizedBox(width: 10),
                     Expanded(
                       child: TextField(
                         controller: _voucherInputController,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1),
                         decoration: const InputDecoration(
                           hintText: 'Nhập mã: SENBANK2026...',
-                          hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                          hintStyle:
+                              TextStyle(color: Colors.white38, fontSize: 13),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(vertical: 12),
@@ -1122,16 +1272,22 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                         foregroundColor: AppColors.textPrimaryLight,
                         elevation: 0,
                         minimumSize: Size.zero,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
                       ),
                       child: _isApplyingVoucher
                           ? const SizedBox(
                               width: 14,
                               height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textPrimaryLight),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.textPrimaryLight),
                             )
-                          : const Text('Áp dụng', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          : const Text('Áp dụng',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 13)),
                     ),
                   ],
                 ),
@@ -1143,13 +1299,19 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
         // Popular voucher codes
         const Text('Mã phổ biến hôm nay',
-            style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold)),
+            style: TextStyle(
+                color: AppColors.textPrimaryLight,
+                fontSize: 16,
+                fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         ..._buildPopularVoucherList(),
 
         const SizedBox(height: 24),
         const Text('Cách nhận mã ưu đãi',
-            style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold)),
+            style: TextStyle(
+                color: AppColors.textPrimaryLight,
+                fontSize: 16,
+                fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         _buildHowToGetVoucher(),
       ],
@@ -1177,16 +1339,19 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Row(
         children: [
-          const Icon(CupertinoIcons.search, color: AppColors.bottomBarCyan, size: 20),
+          const Icon(CupertinoIcons.search,
+              color: AppColors.primary, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: _searchController,
               onChanged: (val) => setState(() => _searchQuery = val),
-              style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 13.5),
+              style: const TextStyle(
+                  color: AppColors.textPrimaryLight, fontSize: 13.5),
               decoration: const InputDecoration(
                 hintText: 'Tìm ưu đãi Highlands, Be, Shopee...',
-                hintStyle: TextStyle(color: AppColors.textMutedLight, fontSize: 13),
+                hintStyle:
+                    TextStyle(color: AppColors.textMutedLight, fontSize: 13),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.symmetric(vertical: 14),
@@ -1195,7 +1360,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           ),
           if (_searchQuery.isNotEmpty)
             IconButton(
-              icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textSecondaryLight, size: 18),
+              icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                  color: AppColors.textSecondaryLight, size: 18),
               onPressed: () {
                 _searchController.clear();
                 setState(() => _searchQuery = '');
@@ -1206,15 +1372,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             child: ElevatedButton(
               onPressed: () => _showRedeemDialog(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.bottomBarCyan.withOpacity(0.25),
-                foregroundColor: AppColors.bottomBarCyan,
+                backgroundColor: AppColors.infoBg,
+                foregroundColor: AppColors.primary,
                 elevation: 0,
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: AppColors.bottomBarCyan, width: 1),
+                  side: const BorderSide(color: AppColors.primary, width: 1),
                 ),
               ),
               child: const Row(
@@ -1222,7 +1389,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 children: [
                   Icon(CupertinoIcons.gift_fill, size: 14),
                   SizedBox(width: 5),
-                  Text('Nhập mã', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text('Nhập mã',
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -1268,7 +1437,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                       child: Stack(
                         children: [
                           Positioned.fill(
-                            child: CustomPaint(painter: _CirclePatternPainter()),
+                            child:
+                                CustomPaint(painter: _CirclePatternPainter()),
+                          ),
+                          const Positioned.fill(
+                            child: ColoredBox(color: Color(0x66030B17)),
                           ),
                           Padding(
                             padding: const EdgeInsets.all(18),
@@ -1277,27 +1450,41 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.25),
+                                    color: AppColors.deepNavy.withOpacity(0.72),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(banner['tag'] as String,
-                                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w900)),
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w900)),
                                 ),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(banner['title'] as String,
-                                        style: const TextStyle(color: Colors.white, fontSize: 16.5, fontWeight: FontWeight.bold, height: 1.2),
-                                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16.5,
+                                            fontWeight: FontWeight.bold,
+                                            height: 1.2),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis),
                                     const SizedBox(height: 4),
                                     Text(banner['subtitle'] as String,
-                                        style: const TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.3),
-                                        maxLines: 2, overflow: TextOverflow.ellipsis),
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11.5,
+                                            height: 1.3),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis),
                                     const SizedBox(height: 10),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 14, vertical: 6),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(10),
@@ -1320,7 +1507,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                             child: Icon(
                               banner['icon'] as IconData,
                               size: 78,
-                              color: Colors.white.withOpacity(0.14),
+                              color: Colors.white.withOpacity(0.60),
                             ),
                           ),
                         ],
@@ -1343,7 +1530,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               height: 4,
               width: _currentBannerIndex == idx ? 22 : 6,
               decoration: BoxDecoration(
-                color: _currentBannerIndex == idx ? AppColors.bottomBarCyan : Colors.white24,
+                color: _currentBannerIndex == idx
+                    ? AppColors.bottomBarCyan
+                    : Colors.white24,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1358,7 +1547,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.85),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.2),
+        border:
+            Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withOpacity(0.08),
@@ -1374,10 +1564,12 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [AppColors.primary, AppColors.bottomBarCyan]),
+              gradient: const LinearGradient(
+                  colors: [AppColors.primary, AppColors.bottomBarCyan]),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(CupertinoIcons.star_circle_fill, color: Colors.white, size: 24),
+            child: const Icon(CupertinoIcons.star_circle_fill,
+                color: Colors.white, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1386,30 +1578,46 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               children: [
                 Row(
                   children: [
-                    const Text('SenPoint Club',
-                        style: TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.bold)),
+                    const Flexible(
+                      child: Text(
+                        'SenPoint Club',
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Text('Hạng Vàng',
-                          style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold)),
+                          style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 2),
                 const Text('Bạn đang có 2.450 điểm thưởng tích lũy',
-                    style: TextStyle(color: Color(0xFF475569), fontSize: 11.5, fontWeight: FontWeight.w500)),
+                    style: TextStyle(
+                        color: Color(0xFF475569),
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500)),
               ],
             ),
           ),
           ElevatedButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đang tải danh mục đổi quà SenPoint...')),
+                const SnackBar(
+                    content: Text('Đang tải danh mục đổi quà SenPoint...')),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -1419,9 +1627,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Đổi quà', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
+            child: const Text('Đổi quà',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5)),
           ),
         ],
       ),
@@ -1430,14 +1640,46 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
   Widget _buildQuickActions() {
     final items = [
-      {'icon': CupertinoIcons.car_fill, 'label': 'Vay xe 0%', 'action': () => setState(() => _selectedTab = 1)},
-      {'icon': CupertinoIcons.house_fill, 'label': 'Mua nhà', 'action': () => setState(() => _selectedTab = 1)},
-      {'icon': CupertinoIcons.device_phone_portrait, 'label': 'Điện máy', 'action': () => setState(() => _selectedTab = 1)},
-      {'icon': CupertinoIcons.cart_fill, 'label': 'Highlands', 'action': () => _filterQuick('Ẩm thực & Cafe')},
-      {'icon': CupertinoIcons.airplane, 'label': 'Vé bay', 'action': () => _filterQuick('Du lịch')},
-      {'icon': CupertinoIcons.bag_fill, 'label': 'Shopee', 'action': () => _filterQuick('Mua sắm')},
-      {'icon': CupertinoIcons.creditcard_fill, 'label': 'Thẻ hoàn tiền', 'action': () => context.push('/cards')},
-      {'icon': CupertinoIcons.gift_fill, 'label': 'Vòng quay', 'action': () => setState(() => _selectedTab = 2)},
+      {
+        'icon': CupertinoIcons.car_fill,
+        'label': 'Vay xe 0%',
+        'action': () => setState(() => _selectedTab = 1)
+      },
+      {
+        'icon': CupertinoIcons.house_fill,
+        'label': 'Mua nhà',
+        'action': () => setState(() => _selectedTab = 1)
+      },
+      {
+        'icon': CupertinoIcons.device_phone_portrait,
+        'label': 'Điện máy',
+        'action': () => setState(() => _selectedTab = 1)
+      },
+      {
+        'icon': CupertinoIcons.cart_fill,
+        'label': 'Highlands',
+        'action': () => _filterQuick('Ẩm thực & Cafe')
+      },
+      {
+        'icon': CupertinoIcons.airplane,
+        'label': 'Vé bay',
+        'action': () => _filterQuick('Du lịch')
+      },
+      {
+        'icon': CupertinoIcons.bag_fill,
+        'label': 'Shopee',
+        'action': () => _filterQuick('Mua sắm')
+      },
+      {
+        'icon': CupertinoIcons.creditcard_fill,
+        'label': 'Thẻ hoàn tiền',
+        'action': () => context.push('/cards')
+      },
+      {
+        'icon': CupertinoIcons.gift_fill,
+        'label': 'Vòng quay',
+        'action': () => setState(() => _selectedTab = 2)
+      },
     ];
 
     Widget buildItem(Map<String, dynamic> item) {
@@ -1528,39 +1770,49 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           decoration: BoxDecoration(
             color: AppColors.primary.withOpacity(0.14),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.primary.withOpacity(0.25), width: 1),
+            border: Border.all(
+                color: AppColors.primary.withOpacity(0.25), width: 1),
           ),
-          child: const Icon(CupertinoIcons.gift_fill, color: AppColors.primary, size: 18),
+          child: const Icon(CupertinoIcons.gift_fill,
+              color: AppColors.primary, size: 18),
         ),
         const SizedBox(width: 8),
-        const Text(
-          'Giờ Vàng Săn Deal',
-          style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 16, fontWeight: FontWeight.bold),
+        const Expanded(
+          child: Text(
+            'Giờ Vàng Săn Deal',
+            style: TextStyle(
+                color: AppColors.textPrimaryLight,
+                fontSize: 16,
+                fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0077B6), Color(0xFF00B4D8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: AppColors.deepNavy,
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF00B4D8).withOpacity(0.35),
+                color: AppColors.bottomBarOcean.withOpacity(0.35),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
           child: const Text('02:45:18',
-              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5)),
         ),
-        const Spacer(),
+        const SizedBox(width: 8),
         const Text('Cập nhật liên tục',
-            style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
+            style:
+                TextStyle(color: AppColors.textSecondaryLight, fontSize: 11)),
       ],
     );
   }
@@ -1581,7 +1833,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [gradient[0].withOpacity(0.8), gradient[1].withOpacity(0.9)],
+                colors: [gradient[0], gradient[1]],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -1591,65 +1843,94 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             child: InkWell(
               onTap: () => _copyVoucherCode(deal['code'] as String),
               borderRadius: BorderRadius.circular(18),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Stack(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.35),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(deal['discount'] as String,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(deal['icon'] as IconData, color: Colors.white70, size: 16),
-                      ],
+                    const Positioned.fill(
+                      child: ColoredBox(color: Color(0x66030B17)),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(deal['brand'] as String,
-                            style: const TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 2),
-                        Text(deal['title'] as String,
-                            style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold, height: 1.2),
-                            maxLines: 2, overflow: TextOverflow.ellipsis),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: deal['progress'] as double,
-                            backgroundColor: Colors.white24,
-                            valueColor: const AlwaysStoppedAnimation(Colors.white),
-                            minHeight: 4,
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.35),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(deal['discount'] as String,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold)),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(deal['icon'] as IconData,
+                                  color: Colors.white70, size: 16),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(deal['left'] as String,
-                                style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w500)),
-                            const Icon(CupertinoIcons.doc_on_doc_fill, size: 14, color: Colors.white),
-                          ],
-                        ),
-                      ],
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(deal['brand'] as String,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600)),
+                              const SizedBox(height: 2),
+                              Text(deal['title'] as String,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.2),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: deal['progress'] as double,
+                                  backgroundColor: Colors.white24,
+                                  valueColor: const AlwaysStoppedAnimation(
+                                      Colors.white),
+                                  minHeight: 4,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(deal['left'] as String,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500)),
+                                  const Icon(CupertinoIcons.doc_on_doc_fill,
+                                      size: 14, color: Colors.white),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1673,12 +1954,14 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
         itemBuilder: (context, index) {
           final deal = _installmentDeals[index];
           final gradient = _safeGradient(deal['gradient']);
-          final badgeColor = _safeColor(deal['badgeColor']);
           return Container(
             width: 250,
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: gradient, begin: Alignment.topLeft, end: Alignment.bottomRight),
+              gradient: LinearGradient(
+                  colors: gradient,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
@@ -1696,38 +1979,57 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                       children: [
                         Flexible(
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: badgeColor.withOpacity(0.3),
+                              color: const Color(0xF20C1E36),
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: badgeColor, width: 0.8),
+                              border:
+                                  Border.all(color: Colors.white54, width: 0.8),
                             ),
                             child: Text(
                               (deal['tag'] ?? '').toString(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Icon((deal['icon'] as IconData?) ?? CupertinoIcons.tickets_fill, color: Colors.white70, size: 20),
+                        Icon(
+                            (deal['icon'] as IconData?) ??
+                                CupertinoIcons.tickets_fill,
+                            color: Colors.white70,
+                            size: 20),
                       ],
                     ),
                     Text(deal['title'] as String,
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
                     Row(
                       children: [
                         Flexible(
                           child: Text.rich(
+                            style: const TextStyle(color: Colors.white, fontSize: 11),
                             TextSpan(
                               text: 'Lãi suất: ',
-                              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11),
+                              style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 11),
                               children: [
                                 TextSpan(
                                   text: deal['interest'] as String,
-                                  style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 12, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -1737,7 +2039,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                         ),
                         const SizedBox(width: 6),
                         const Text('Xem ngay →',
-                            style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold)),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],
@@ -1767,20 +2072,24 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               borderRadius: BorderRadius.circular(12),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: isSelected
-                      ? const LinearGradient(colors: [Color(0xFF26E5DC), Color(0xFF0077B6)])
+                      ? const LinearGradient(
+                          colors: [AppColors.primary, AppColors.primaryDark])
                       : null,
                   color: isSelected ? null : Colors.white.withOpacity(0.85),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFF26E5DC) : AppColors.borderLight,
+                    color: isSelected
+                        ? AppColors.bottomBarCyan
+                        : AppColors.borderLight,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: const Color(0xFF00B4D8).withOpacity(0.35),
+                            color: AppColors.bottomBarOcean.withOpacity(0.35),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -1791,8 +2100,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   child: Text(
                     _categories[index],
                     style: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xFF475569),
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color:
+                          isSelected ? Colors.white : const Color(0xFF475569),
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w500,
                       fontSize: 12,
                     ),
                   ),
@@ -1808,7 +2119,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   Widget _buildPromotionCard(Map<String, dynamic> item) {
     final gradient = _safeGradient(item['gradient']);
     final discountStr = (item['discount'] as String? ?? '');
-    final isHot = discountStr.contains('50%') || discountStr.contains('100%') || discountStr.contains('2TR');
+    final isHot = discountStr.contains('50%') ||
+        discountStr.contains('100%') ||
+        discountStr.contains('2TR');
 
     const double bottomBarHeight = 54.0;
     const double notchRadius = 9.0;
@@ -1823,7 +2136,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             offset: const Offset(0, 5),
           ),
           BoxShadow(
-            color: (isHot ? const Color(0xFFE11D48) : const Color(0xFF00B4D8)).withOpacity(0.08),
+            color: (isHot ? const Color(0xFFE11D48) : AppColors.bottomBarOcean)
+                .withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 2),
           ),
@@ -1844,7 +2158,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             cornerRadius: cornerRadius,
           ),
           child: Container(
-            color: const Color(0x380C1E36),
+            color: const Color(0xF20C1E36),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
@@ -1875,7 +2189,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                 ),
                               ],
                             ),
-                            child: Icon(item['icon'] as IconData, color: Colors.white, size: 24),
+                            child: Icon(item['icon'] as IconData,
+                                color: Colors.white, size: 24),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1883,36 +2198,47 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      item['brand'] as String,
-                                      style: const TextStyle(
-                                        color: AppColors.bottomBarCyan,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.3,
+                                    Expanded(
+                                      child: Text(
+                                        item['brand'] as String,
+                                        style: const TextStyle(
+                                          color: AppColors.bottomBarCyan,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.3,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
+                                    const SizedBox(width: 6),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: isHot
-                                              ? const [Color(0xFFE11D48), Color(0xFFBE123C)]
-                                              : [const Color(0xFF00B4D8), const Color(0xFF0077B6)],
-                                        ),
+                                        color: isHot
+                                            ? const Color(0xFF9F1239)
+                                            : AppColors.deepNavy,
                                         borderRadius: BorderRadius.circular(8),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: (isHot ? const Color(0xFFE11D48) : const Color(0xFF00B4D8)).withOpacity(0.35),
+                                            color: (isHot
+                                                    ? const Color(0xFFE11D48)
+                                                    : AppColors.bottomBarOcean)
+                                                .withOpacity(0.35),
                                             blurRadius: 6,
                                           ),
                                         ],
                                       ),
                                       child: Text(
                                         item['discount'] as String,
-                                        style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w800),
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10.5,
+                                            fontWeight: FontWeight.w800),
                                       ),
                                     ),
                                   ],
@@ -1937,7 +2263,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                       const SizedBox(height: 10),
                       Text(
                         item['desc'] as String,
-                        style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 12, height: 1.35),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1949,68 +2276,94 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                           (i) => Expanded(
                             child: Container(
                               height: 1,
-                              color: i.isEven ? Colors.white.withOpacity(0.22) : Colors.transparent,
+                              color: i.isEven
+                                  ? Colors.white.withOpacity(0.22)
+                                  : Colors.transparent,
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(CupertinoIcons.clock_fill, size: 14, color: AppColors.textSecondaryDark),
-                              const SizedBox(width: 5),
-                              Text(
-                                item['expiry'] as String,
-                                style: const TextStyle(color: AppColors.textSecondaryDark, fontSize: 11.5),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              OutlinedButton(
-                                onPressed: () => _copyVoucherCode(item['code'] as String),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  side: BorderSide(color: Colors.white.withOpacity(0.25)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                  minimumSize: const Size(60, 36),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(CupertinoIcons.clock_fill,
+                                    size: 14, color: AppColors.textSecondaryDark),
+                                const SizedBox(width: 5),
+                                Text(
+                                  item['expiry'] as String,
+                                  style: const TextStyle(
+                                      color: AppColors.textSecondaryDark,
+                                      fontSize: 11.5),
                                 ),
-                                child: const Row(
-                                  children: [
-                                    Icon(CupertinoIcons.doc_on_doc_fill, size: 14, color: Colors.white70),
-                                    SizedBox(width: 4),
-                                    Text('Lưu mã', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                  ],
+                              ],
+                            ),
+                            const SizedBox(width: 12),
+                            Row(
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () =>
+                                      _copyVoucherCode(item['code'] as String),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.white,
+                                    side: BorderSide(
+                                        color: Colors.white.withOpacity(0.25)),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    minimumSize: const Size(60, 36),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Icon(CupertinoIcons.doc_on_doc_fill,
+                                          size: 14, color: Colors.white70),
+                                      SizedBox(width: 4),
+                                      Text('Lưu mã',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () => _onUseVoucher(item),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.bottomBarCyan,
-                                  foregroundColor: Colors.black,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                  minimumSize: const Size(64, 38),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () => _onUseVoucher(item),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.bottomBarCyan,
+                                    foregroundColor: Colors.black,
+                                    elevation: 0,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 8),
+                                    minimumSize: const Size(64, 38),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Row(
+                                    children: [
+                                      Text('Dùng ngay',
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold)),
+                                      SizedBox(width: 4),
+                                      Icon(CupertinoIcons.chevron_forward,
+                                          size: 14,
+                                          color: AppColors.textPrimaryLight),
+                                    ],
+                                  ),
                                 ),
-                                child: const Row(
-                                  children: [
-                                    Text('Dùng ngay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                    SizedBox(width: 4),
-                                    Icon(CupertinoIcons.chevron_forward, size: 14, color: AppColors.textPrimaryLight),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -2030,11 +2383,14 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0x380C1E36),
+        color: const Color(0xF20C1E36),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.white.withOpacity(0.18)),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF001B3A).withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6)),
+          BoxShadow(
+              color: const Color(0xFF001B3A).withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
         ],
       ),
       child: Padding(
@@ -2051,7 +2407,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     gradient: LinearGradient(colors: gradient),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(deal['icon'] as IconData, color: Colors.white, size: 24),
+                  child: Icon(deal['icon'] as IconData,
+                      color: Colors.white, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -2059,28 +2416,37 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(deal['title'] as String,
-                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
                       Text('Đối tác: ${deal['partner']}',
-                          style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
+                          style: const TextStyle(
+                              color: Colors.white60, fontSize: 11.5)),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: badgeColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: badgeColor),
                   ),
                   child: Text(deal['tag'] as String,
-                      style: TextStyle(color: badgeColor, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                          color: badgeColor,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
             const SizedBox(height: 14),
             Text(deal['desc'] as String,
-                style: const TextStyle(color: Colors.white70, fontSize: 12.5, height: 1.35)),
+                style: const TextStyle(
+                    color: Colors.white70, fontSize: 12.5, height: 1.35)),
             const SizedBox(height: 14),
 
             // 3 thông số vàng
@@ -2096,28 +2462,43 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 children: [
                   Column(
                     children: [
-                      const Text('LÃI SUẤT', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                      const Text('LÃI SUẤT',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 10)),
                       const SizedBox(height: 2),
                       Text(deal['interest'] as String,
-                          style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 13, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(
+                              color: AppColors.bottomBarCyan,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Container(width: 1, height: 24, color: Colors.white12),
                   Column(
                     children: [
-                      const Text('HẠN MỨC', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                      const Text('HẠN MỨC',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 10)),
                       const SizedBox(height: 2),
                       Text(deal['maxLimit'] as String,
-                          style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 13, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(
+                              color: AppColors.bottomBarCyan,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   Container(width: 1, height: 24, color: Colors.white12),
                   Column(
                     children: [
-                      const Text('THỜI HẠN', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                      const Text('THỜI HẠN',
+                          style:
+                              TextStyle(color: Colors.white54, fontSize: 10)),
                       const SizedBox(height: 2),
                       Text(deal['duration'] as String,
-                          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ],
@@ -2131,16 +2512,21 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   child: OutlinedButton(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Đang tải công cụ tính gốc lãi cho gói ${deal['title']}')),
+                        SnackBar(
+                            content: Text(
+                                'Đang tải công cụ tính gốc lãi cho gói ${deal['title']}')),
                       );
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.white,
                       side: BorderSide(color: Colors.white.withOpacity(0.3)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: const Text('Tính tiền góp', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: const Text('Tính tiền góp',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -2150,10 +2536,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.bottomBarCyan,
                       foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
-                    child: const Text('Đăng ký vay', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    child: const Text('Đăng ký vay',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -2169,7 +2558,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF0077B6), Color(0xFF00B4D8)],
+          colors: [AppColors.brandBlue, AppColors.bottomBarOcean],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -2183,7 +2572,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: const Icon(CupertinoIcons.rosette, color: Colors.white, size: 26),
+            child: const Icon(CupertinoIcons.rosette,
+                color: Colors.white, size: 26),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -2191,7 +2581,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Sự Kiện Lễ Hội SenBank 2026',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
                 SizedBox(height: 2),
                 Text('Quay thưởng mỗi ngày - Nhận vàng 9999 và quà tặng',
                     style: TextStyle(color: Colors.white70, fontSize: 12)),
@@ -2209,11 +2602,14 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0x380C1E36),
+        color: const Color(0xF20C1E36),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.18)),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF001B3A).withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6)),
+          BoxShadow(
+              color: const Color(0xFF001B3A).withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
         ],
       ),
       padding: const EdgeInsets.all(16),
@@ -2229,7 +2625,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   gradient: LinearGradient(colors: gradient),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(event['icon'] as IconData, color: Colors.white, size: 22),
+                child: Icon(event['icon'] as IconData,
+                    color: Colors.white, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -2237,10 +2634,14 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(event['title'] as String,
-                        style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
                     Text(event['date'] as String,
-                        style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
+                        style: const TextStyle(
+                            color: Colors.white60, fontSize: 11.5)),
                   ],
                 ),
               ),
@@ -2252,7 +2653,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   border: Border.all(color: badgeColor),
                 ),
                 child: Text(event['badge'] as String,
-                    style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        color: badgeColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -2265,11 +2669,15 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             ),
             child: Row(
               children: [
-                const Icon(CupertinoIcons.gift_fill, color: AppColors.bottomBarCyan, size: 16),
+                const Icon(CupertinoIcons.gift_fill,
+                    color: AppColors.bottomBarCyan, size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text('Phần thưởng: ${event['reward']}',
-                      style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 12, fontWeight: FontWeight.w600)),
+                      style: const TextStyle(
+                          color: AppColors.bottomBarCyan,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
@@ -2283,18 +2691,23 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               ElevatedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Đã tham gia sự kiện thành công!')),
+                    const SnackBar(
+                        content: Text('Đã tham gia sự kiện thành công!')),
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.bottomBarCyan,
                   foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Tham gia ngay', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                child: const Text('Tham gia ngay',
+                    style:
+                        TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
@@ -2309,105 +2722,163 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       for (final v in _apiVouchers) {
         codes.add({
           'code': (v['code'] ?? 'SENBANK').toString(),
-          'desc': (v['title'] ?? v['description'] ?? 'Ưu đãi tài khoản').toString(),
-          'color': const Color(0xFF00B4D8),
+          'desc':
+              (v['title'] ?? v['description'] ?? 'Ưu đãi tài khoản').toString(),
+          'color': AppColors.bottomBarOcean,
         });
       }
     }
     codes.addAll([
-      {'code': 'WELCOME100K', 'desc': 'Tặng 100.000đ cho tài khoản mới', 'color': AppColors.bottomBarCyan},
-      {'code': 'VAYXE0PERCENT', 'desc': 'Gói vay ô tô điện VinFast - Lãi suất 0%', 'color': const Color(0xFF00B4D8)},
-      {'code': 'NHAPHO52', 'desc': 'Vay mua nhà phố & căn hộ - Lãi suất 5.2%', 'color': AppColors.primary},
-      {'code': 'SENBANK9', 'desc': 'Ưu đãi tháng 9 - Giảm 5% mọi giao dịch', 'color': const Color(0xFF0077B6)},
-      {'code': 'FRIEND50K', 'desc': 'Giới thiệu bạn bè - Nhận 50.000đ', 'color': AppColors.bottomBarCyan},
+      {
+        'code': 'WELCOME100K',
+        'desc': 'Tặng 100.000đ cho tài khoản mới',
+        'color': AppColors.bottomBarCyan
+      },
+      {
+        'code': 'VAYXE0PERCENT',
+        'desc': 'Gói vay ô tô điện VinFast - Lãi suất 0%',
+        'color': AppColors.bottomBarOcean
+      },
+      {
+        'code': 'NHAPHO52',
+        'desc': 'Vay mua nhà phố & căn hộ - Lãi suất 5.2%',
+        'color': AppColors.primary
+      },
+      {
+        'code': 'SENBANK9',
+        'desc': 'Ưu đãi tháng 9 - Giảm 5% mọi giao dịch',
+        'color': AppColors.brandBlue
+      },
+      {
+        'code': 'FRIEND50K',
+        'desc': 'Giới thiệu bạn bè - Nhận 50.000đ',
+        'color': AppColors.bottomBarCyan
+      },
     ]);
-    return codes.map((c) => Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0x380C1E36),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.18)),
-          boxShadow: [
-            BoxShadow(color: const Color(0xFF001B3A).withOpacity(0.20), blurRadius: 10, offset: const Offset(0, 3)),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: _safeColor(c['color']), shape: BoxShape.circle),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(c['code'] as String,
-                      style: const TextStyle(color: AppColors.bottomBarCyan, fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 13.5)),
-                  const SizedBox(height: 2),
-                  Text(c['desc'] as String,
-                      style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
-                ],
+    return codes
+        .map((c) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xF20C1E36),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.18)),
+                  boxShadow: [
+                    BoxShadow(
+                        color: const Color(0xFF001B3A).withOpacity(0.20),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3)),
+                  ],
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                          color: _safeColor(c['color']),
+                          shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(c['code'] as String,
+                              style: const TextStyle(
+                                  color: AppColors.bottomBarCyan,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                  fontSize: 13.5)),
+                          const SizedBox(height: 2),
+                          Text(c['desc'] as String,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 11.5)),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(CupertinoIcons.doc_on_doc_fill,
+                          size: 18, color: AppColors.bottomBarCyan),
+                      onPressed: () => _copyVoucherCode(c['code'] as String),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(CupertinoIcons.doc_on_doc_fill, size: 18, color: AppColors.bottomBarCyan),
-              onPressed: () => _copyVoucherCode(c['code'] as String),
-            ),
-          ],
-        ),
-      ),
-    )).toList();
+            ))
+        .toList();
   }
 
   Widget _buildHowToGetVoucher() {
     final steps = [
-      {'icon': CupertinoIcons.creditcard_fill, 'title': 'Mở thẻ tín dụng SenBank', 'desc': 'Nhận ngay gói voucher 2.000.000đ'},
-      {'icon': CupertinoIcons.car_fill, 'title': 'Đăng ký vay xe & mua nhà', 'desc': 'Tặng bảo hiểm và phí trước bạ'},
-      {'icon': CupertinoIcons.person_2_fill, 'title': 'Giới thiệu bạn bè', 'desc': 'Mỗi lượt đăng ký nhận 50.000đ tiền mặt'},
-      {'icon': CupertinoIcons.waveform_path_ecg, 'title': 'Tham gia vòng quay may mắn', 'desc': 'Cơ hội trúng iPhone 16 Pro'},
+      {
+        'icon': CupertinoIcons.creditcard_fill,
+        'title': 'Mở thẻ tín dụng SenBank',
+        'desc': 'Nhận ngay gói voucher 2.000.000đ'
+      },
+      {
+        'icon': CupertinoIcons.car_fill,
+        'title': 'Đăng ký vay xe & mua nhà',
+        'desc': 'Tặng bảo hiểm và phí trước bạ'
+      },
+      {
+        'icon': CupertinoIcons.person_2_fill,
+        'title': 'Giới thiệu bạn bè',
+        'desc': 'Mỗi lượt đăng ký nhận 50.000đ tiền mặt'
+      },
+      {
+        'icon': CupertinoIcons.waveform_path_ecg,
+        'title': 'Tham gia vòng quay may mắn',
+        'desc': 'Cơ hội trúng iPhone 16 Pro'
+      },
     ];
     return Column(
-      children: steps.map((s) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0x2E0C1E36),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.14)),
-          ),
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.bottomBarCyan.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(12),
+      children: steps
+          .map((s) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xF20C1E36),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.14)),
+                  ),
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.bottomBarCyan.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(s['icon'] as IconData,
+                            color: AppColors.bottomBarCyan, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(s['title'] as String,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13)),
+                            const SizedBox(height: 2),
+                            Text(s['desc'] as String,
+                                style: const TextStyle(
+                                    color: Colors.white60, fontSize: 11.5)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Icon(s['icon'] as IconData, color: AppColors.bottomBarCyan, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(s['title'] as String,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(height: 2),
-                    Text(s['desc'] as String,
-                        style: const TextStyle(color: Colors.white60, fontSize: 11.5)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      )).toList(),
+              ))
+          .toList(),
     );
   }
 
@@ -2436,7 +2907,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             child: Container(
               width: 44,
               height: 4,
-              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2)),
             ),
           ),
           const SizedBox(height: 20),
@@ -2449,7 +2922,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   gradient: LinearGradient(colors: gradient),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(item['icon'] as IconData, color: Colors.white, size: 26),
+                child: Icon(item['icon'] as IconData,
+                    color: Colors.white, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -2457,10 +2931,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(item['brand'] as String,
-                        style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 13, fontWeight: FontWeight.bold)),
+                        style: const TextStyle(
+                            color: AppColors.bottomBarCyan,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
                     Text(item['title'] as String,
-                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -2468,7 +2948,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           ),
           const SizedBox(height: 16),
           Text(item['desc'] as String,
-              style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
+              style: const TextStyle(
+                  color: Colors.white70, fontSize: 13, height: 1.4)),
           const SizedBox(height: 16),
 
           // Voucher Code Box
@@ -2477,7 +2958,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.3),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.bottomBarCyan.withOpacity(0.4)),
+              border:
+                  Border.all(color: AppColors.bottomBarCyan.withOpacity(0.4)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2485,10 +2967,15 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('MÃ VOUCHER', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                    const Text('MÃ VOUCHER',
+                        style: TextStyle(color: Colors.white54, fontSize: 10)),
                     const SizedBox(height: 2),
                     Text(item['code'] as String,
-                        style: const TextStyle(color: AppColors.bottomBarCyan, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        style: const TextStyle(
+                            color: AppColors.bottomBarCyan,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1)),
                   ],
                 ),
                 ElevatedButton(
@@ -2498,17 +2985,24 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     foregroundColor: Colors.black,
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Sao chép', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  child: const Text('Sao chép',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
           const Text('Điều kiện sử dụng:',
-              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           Text('• ${item['condition']}',
               style: const TextStyle(color: Colors.white70, fontSize: 12.5)),
@@ -2528,7 +3022,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 backgroundColor: AppColors.bottomBarCyan,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
               child: const Text('Sử Dụng Ưu Đãi Ngay',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
@@ -2547,7 +3042,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
         backgroundColor: const Color(0xF20B1C32),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
-          side: BorderSide(color: AppColors.bottomBarCyan.withOpacity(0.5), width: 1.2),
+          side: BorderSide(
+              color: AppColors.bottomBarCyan.withOpacity(0.5), width: 1.2),
         ),
         title: const Row(
           children: [
@@ -2555,7 +3051,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             SizedBox(width: 8),
             Expanded(
               child: Text('Nhập Mã Quà Tặng',
-                  style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -2563,21 +3062,29 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Nhập mã voucher hoặc mã quà tặng từ SenBank và đối tác.',
+            const Text(
+                'Nhập mã voucher hoặc mã quà tặng từ SenBank và đối tác.',
                 style: TextStyle(color: Colors.white70, fontSize: 12.5)),
             const SizedBox(height: 14),
             TextField(
               controller: codeCtrl,
               autofocus: true,
               textCapitalization: TextCapitalization.characters,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1),
               decoration: InputDecoration(
                 hintText: 'Ví dụ: VINFAST0, HOMELOAN52...',
-                hintStyle: const TextStyle(color: Colors.white30, fontSize: 12.5, letterSpacing: 0),
+                hintStyle: const TextStyle(
+                    color: Colors.white30, fontSize: 12.5, letterSpacing: 0),
                 filled: true,
                 fillColor: Colors.black.withOpacity(0.3),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
               ),
             ),
           ],
@@ -2606,9 +3113,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Áp dụng', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Áp dụng',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -2668,11 +3177,13 @@ class TicketCardClipper extends CustomClipper<Path> {
     // Cạnh phải xuống đến vết khuyết bán nguyệt
     path.lineTo(size.width, notchY - r);
     // Vết khuyết bên phải (uốn cong vào trong thân thẻ)
-    path.arcToPoint(Offset(size.width, notchY + r), radius: Radius.circular(r), clockwise: false);
+    path.arcToPoint(Offset(size.width, notchY + r),
+        radius: Radius.circular(r), clockwise: false);
 
     // Cạnh phải xuống đến góc dưới bên phải
     path.lineTo(size.width, size.height - cr);
-    path.arcToPoint(Offset(size.width - cr, size.height), radius: Radius.circular(cr));
+    path.arcToPoint(Offset(size.width - cr, size.height),
+        radius: Radius.circular(cr));
 
     // Cạnh đáy
     path.lineTo(cr, size.height);
@@ -2682,7 +3193,8 @@ class TicketCardClipper extends CustomClipper<Path> {
     // Cạnh trái lên đến vết khuyết bán nguyệt
     path.lineTo(0, notchY + r);
     // Vết khuyết bên trái (uốn cong vào trong thân thẻ)
-    path.arcToPoint(Offset(0, notchY - r), radius: Radius.circular(r), clockwise: false);
+    path.arcToPoint(Offset(0, notchY - r),
+        radius: Radius.circular(r), clockwise: false);
 
     // Cạnh trái lên đến góc trên bên trái
     path.lineTo(0, cr);

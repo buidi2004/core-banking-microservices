@@ -1,7 +1,5 @@
 package com.fintech.payment.outbox;
 
-import com.fintech.payment.domain.entity.OutboxEvent;
-import com.fintech.payment.repository.OutboxEventRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,9 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 
-import java.time.Instant;
 
 /**
  * Cấu hình RabbitMQ Topology cho Payment Service.

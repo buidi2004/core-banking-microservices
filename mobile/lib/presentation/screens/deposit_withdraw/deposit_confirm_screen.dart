@@ -45,7 +45,9 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
       const storage = FlutterSecureStorage();
       final phone = await storage.read(key: AppConstants.keyPhoneNumber);
       if (phone != null && phone.isNotEmpty && mounted) {
-        final masked = phone.length > 4 ? '(*${phone.substring(phone.length - 4)})' : phone;
+        final masked = phone.length > 4
+            ? '(*${phone.substring(phone.length - 4)})'
+            : phone;
         setState(() {
           _targetAccount = 'Ví Sen Hồng chính $masked';
         });
@@ -124,7 +126,9 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text('Hủy', style: TextStyle(color: AppColors.errorText, fontWeight: FontWeight.bold)),
+            child: const Text('Hủy',
+                style: TextStyle(
+                    color: AppColors.errorText, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -139,7 +143,8 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                   children: [
                     const InlineWarningBanner(
                       title: 'Lưu ý nạp tiền an toàn',
-                      message: 'Vui lòng kiểm tra nguồn thanh toán chính chủ. Tiền nạp sẽ được cộng trực tiếp vào số dư khả dụng ngay khi giao dịch thành công.',
+                      message:
+                          'Vui lòng kiểm tra nguồn thanh toán chính chủ. Tiền nạp sẽ được cộng trực tiếp vào số dư khả dụng ngay khi giao dịch thành công.',
                       type: AlertType.info,
                     ),
                     const SizedBox(height: 14),
@@ -151,33 +156,44 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                         padding: const EdgeInsets.all(20),
                         child: Column(
                           children: [
-                            Text('Số tiền nạp vào ví', style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
+                            Text('Số tiền nạp vào ví',
+                                style: AppTypography.bodyMedium(
+                                    color: AppColors.textSecondaryLight)),
                             const SizedBox(height: 6),
                             Text(
                               CurrencyFormatter.formatVND(widget.amount),
-                              style: AppTypography.displayMedium(color: AppColors.emeraldGreenLight),
+                              style: AppTypography.displayMedium(
+                                  color: AppColors.successTextLight),
                             ),
-                            if (CurrencyFormatter.toVietnameseWords(widget.amount).isNotEmpty) ...[
+                            if (CurrencyFormatter.toVietnameseWords(
+                                    widget.amount)
+                                .isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Text(
                                 'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(widget.amount)} đồng',
                                 textAlign: TextAlign.center,
-                                style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(
+                                style: AppTypography.bodySmall(
+                                        color: AppColors.textSecondaryLight)
+                                    .copyWith(
                                   fontStyle: FontStyle.italic,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
-                            const Divider(height: 28, color: AppColors.cardBorderLight),
+                            const Divider(
+                                height: 28, color: AppColors.cardBorderLight),
                             _buildRow('Nguồn nạp', widget.source),
                             const SizedBox(height: 10),
                             _buildRow('Tài khoản nhận', _targetAccount),
                             const SizedBox(height: 10),
-                            _buildRow('Phí giao dịch', 'Miễn phí (0đ)', isHighlight: true),
+                            _buildRow('Phí giao dịch', 'Miễn phí (0đ)',
+                                isHighlight: true),
                             const SizedBox(height: 10),
-                            _buildRow('Thời gian xử lý', 'Tức thì 24/7 (Realtime)'),
+                            _buildRow(
+                                'Thời gian xử lý', 'Tức thì 24/7 (Realtime)'),
                             const SizedBox(height: 10),
-                            _buildRow('Tổng tiền trừ', CurrencyFormatter.formatVND(widget.amount)),
+                            _buildRow('Tổng tiền trừ',
+                                CurrencyFormatter.formatVND(widget.amount)),
                           ],
                         ),
                       ),
@@ -193,34 +209,66 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: [
-                                    Icon(CupertinoIcons.arrow_down_circle_fill, color: AppColors.successTextLight, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('Hạn mức nạp tiền trong ngày', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
-                                  ],
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Icon(CupertinoIcons.arrow_down_circle_fill,
+                                          color: AppColors.successTextLight,
+                                          size: 18),
+                                      SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text('Hạn mức nạp tiền trong ngày',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 13,
+                                                color: AppColors.textPrimaryLight)),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                Text('50.000.000 đ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryText)),
+                                SizedBox(width: 8),
+                                Text('50.000.000 đ',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: AppColors.primaryText)),
                               ],
                             ),
                             const SizedBox(height: 10),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(6),
                               child: LinearProgressIndicator(
-                                value: (widget.amount / 50000000).clamp(0.05, 1.0),
+                                value:
+                                    (widget.amount / 50000000).clamp(0.05, 1.0),
                                 backgroundColor: AppColors.dividerLight,
-                                valueColor: const AlwaysStoppedAnimation<Color>(AppColors.bottomBarCyan),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                    AppColors.bottomBarCyan),
                                 minHeight: 6,
                               ),
                             ),
                             const SizedBox(height: 8),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Nạp giao dịch này: ${CurrencyFormatter.formatVND(widget.amount)}', style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
-                                Text('Hạn mức còn lại: ${CurrencyFormatter.formatVND(50000000 - widget.amount)}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.successTextLight)),
+                                Expanded(
+                                  child: Text(
+                                      'Nạp giao dịch này: ${CurrencyFormatter.formatVND(widget.amount)}',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondaryLight)),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                      'Hạn mức còn lại: ${CurrencyFormatter.formatVND(50000000 - widget.amount)}',
+                                      textAlign: TextAlign.right,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.successTextLight)),
+                                ),
                               ],
                             ),
                           ],
@@ -231,7 +279,8 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
 
                     // Security & Limit notice
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(14),
@@ -241,12 +290,15 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                         children: [
                           Row(
                             children: [
-                              Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.successTextLight, size: 16),
+                              Icon(CupertinoIcons.shield_lefthalf_fill,
+                                  color: AppColors.successTextLight, size: 16),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Giao dịch được bảo vệ bởi chuẩn an toàn thanh toán PCI-DSS Quốc Tế & QĐ 2345/QĐ-NHNN.',
-                                  style: TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
+                                  style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppColors.textSecondaryLight),
                                 ),
                               ),
                             ],
@@ -254,12 +306,15 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                           SizedBox(height: 6),
                           Row(
                             children: [
-                              Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.primaryText, size: 16),
+                              Icon(CupertinoIcons.checkmark_seal_fill,
+                                  color: AppColors.primaryText, size: 16),
                               SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Miễn phí 100% nạp tiền từ tài khoản ngân hàng liên kết chính chủ.',
-                                  style: TextStyle(fontSize: 11, color: AppColors.textMutedLight),
+                                  style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textMutedLight),
                                 ),
                               ),
                             ],
@@ -269,7 +324,10 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    Text('Nhập mã PIN để hoàn tất nạp tiền', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600)),
+                    Text('Nhập mã PIN để hoàn tất nạp tiền',
+                        style: AppTypography.titleMedium(
+                                color: AppColors.textPrimaryLight)
+                            .copyWith(fontWeight: FontWeight.w600)),
                     const SizedBox(height: 12),
 
                     // 6 Dots PIN
@@ -283,42 +341,62 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                           height: 16,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: isFilled ? AppColors.emeraldGreen : Colors.transparent,
-                            border: Border.all(color: isFilled ? AppColors.emeraldGreen : AppColors.textMutedLight, width: 2),
+                            color: isFilled
+                                ? AppColors.emeraldGreen
+                                : Colors.transparent,
+                            border: Border.all(
+                                color: isFilled
+                                    ? AppColors.emeraldGreen
+                                    : AppColors.textMutedLight,
+                                width: 2),
                           ),
                         );
                       }),
                     ),
                     const SizedBox(height: 12),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: _handleBiometric,
-                          icon: const Icon(CupertinoIcons.viewfinder_circle_fill, color: Colors.white, size: 18),
-                          label: const Text('Sinh trắc học', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold, fontSize: 12)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.emeraldGreen,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _handleBiometric,
+                            icon: const Icon(
+                                CupertinoIcons.viewfinder_circle_fill,
+                                color: Colors.white,
+                                size: 18),
+                            label: const Text('Sinh trắc học',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.successTextLight,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        TextButton(
-                          onPressed: () => context.push('/auth/forgot-pin'),
-                          child: const Text(
-                            'Quên mã PIN?',
-                            style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold, fontSize: 13),
+                          const SizedBox(width: 12),
+                          TextButton(
+                            onPressed: () => context.push('/auth/forgot-pin'),
+                            child: const Text(
+                              'Quên mã PIN?',
+                              style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-
             if (_isLoading)
               const Padding(
                 padding: EdgeInsets.all(32),
@@ -349,10 +427,14 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                             decoration: BoxDecoration(
                               color: AppColors.emeraldGreen.withOpacity(0.12),
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.4), width: 1.2),
+                              border: Border.all(
+                                  color:
+                                      AppColors.emeraldGreen.withOpacity(0.4),
+                                  width: 1.2),
                             ),
                             child: const Center(
-                              child: Icon(CupertinoIcons.viewfinder_circle_fill, color: AppColors.successTextLight, size: 26),
+                              child: Icon(CupertinoIcons.viewfinder_circle_fill,
+                                  color: AppColors.successTextLight, size: 26),
                             ),
                           ),
                         ),
@@ -361,7 +443,8 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                           width: 68,
                           height: 68,
                           child: IconButton(
-                            icon: const Icon(CupertinoIcons.delete_left_fill, color: AppColors.primaryText, size: 26),
+                            icon: const Icon(CupertinoIcons.delete_left_fill,
+                                color: AppColors.primaryText, size: 26),
                             onPressed: _handleBackspace,
                           ),
                         ),
@@ -380,16 +463,24 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
+        Expanded(
+          flex: 5,
+          child: Text(label,
+              style: AppTypography.bodyMedium(
+                  color: AppColors.textSecondaryLight)),
+        ),
         const SizedBox(width: 12),
-        Flexible(
+        Expanded(
+          flex: 6,
           child: Text(
             value,
             textAlign: TextAlign.right,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.titleMedium(
-              color: isHighlight ? AppColors.successTextLight : AppColors.textPrimaryLight,
+              color: isHighlight
+                  ? AppColors.successTextLight
+                  : AppColors.textPrimaryLight,
             ),
           ),
         ),
@@ -426,7 +517,10 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
         child: Center(
           child: Text(
             digit,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryText),
+            style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryText),
           ),
         ),
       ),

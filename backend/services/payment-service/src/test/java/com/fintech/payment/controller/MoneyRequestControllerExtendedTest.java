@@ -1,6 +1,5 @@
 package com.fintech.payment.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.payment.domain.entity.MoneyRequest;
 import com.fintech.payment.repository.MoneyRequestRepository;
 import org.junit.jupiter.api.DisplayName;

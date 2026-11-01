@@ -56,7 +56,8 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
       const storage = FlutterSecureStorage();
       final phone = await storage.read(key: AppConstants.keyPhoneNumber);
       if (phone != null && mounted) {
-        setState(() => _myPhoneNumber = phone.replaceAll(RegExp(r'[\s\.\-]'), ''));
+        setState(
+            () => _myPhoneNumber = phone.replaceAll(RegExp(r'[\s\.\-]'), ''));
       }
     } catch (_) {}
   }
@@ -74,13 +75,21 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
       final items = await BeneficiaryRemoteDataSource().getAll();
       if (!mounted) return;
       setState(() {
-        _beneficiaries = items.map((item) => {
-          'name': (item['name'] ?? item['fullName'] ?? item['nickname'] ?? '').toString(),
-          'account': (item['accountNumber'] ?? item['phoneNumber'] ?? '').toString(),
-          'bank': (item['bankCode'] ?? 'Ví Sen Hồng').toString(),
-          'phone': (item['phoneNumber'] ?? '').toString(),
-          'walletId': (item['walletId'] ?? '').toString(),
-        }).toList();
+        _beneficiaries = items
+            .map((item) => {
+                  'name': (item['name'] ??
+                          item['fullName'] ??
+                          item['nickname'] ??
+                          '')
+                      .toString(),
+                  'account':
+                      (item['accountNumber'] ?? item['phoneNumber'] ?? '')
+                          .toString(),
+                  'bank': (item['bankCode'] ?? 'Ví Sen Hồng').toString(),
+                  'phone': (item['phoneNumber'] ?? '').toString(),
+                  'walletId': (item['walletId'] ?? '').toString(),
+                })
+            .toList();
         _isLoadingBeneficiaries = false;
       });
     } catch (_) {
@@ -166,7 +175,9 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
     final clean = text.replaceAll(RegExp(r'[\s\.\-]'), '');
     if (clean.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập SĐT, mã ví hoặc số tài khoản người nhận')),
+        const SnackBar(
+            content:
+                Text('Vui lòng nhập SĐT, mã ví hoặc số tài khoản người nhận')),
       );
       return;
     }
@@ -201,7 +212,9 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
           _lookupError = 'Không tìm thấy tài khoản SenBank với SĐT/STK này';
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không tìm thấy tài khoản người nhận trên hệ thống Sen Hồng')),
+          const SnackBar(
+              content: Text(
+                  'Không tìm thấy tài khoản người nhận trên hệ thống Sen Hồng')),
         );
       }
     } else {
@@ -209,7 +222,8 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
     }
   }
 
-  void _navigateToAmount({required String recipient, String? phone, String? walletId}) {
+  void _navigateToAmount(
+      {required String recipient, String? phone, String? walletId}) {
     final uri = Uri(
       path: '/transfer/amount',
       queryParameters: {
@@ -231,12 +245,14 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
         actions: [
           IconButton(
             tooltip: 'Quét mã QR',
-            icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryText),
+            icon: const Icon(CupertinoIcons.qrcode_viewfinder,
+                color: AppColors.primaryText),
             onPressed: () => context.push('/scan-qr'),
           ),
           IconButton(
             tooltip: 'Danh bạ',
-            icon: const Icon(CupertinoIcons.person_2_fill, color: AppColors.primaryText),
+            icon: const Icon(CupertinoIcons.person_2_fill,
+                color: AppColors.primaryText),
             onPressed: () => context.push('/beneficiaries'),
           ),
         ],
@@ -255,89 +271,446 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              // Tabs selector
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.borderLight),
+                // Tabs selector
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.borderLight),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _selectedTab = 0;
+                              _lookedUpRecipient = null;
+                              _lookupError = null;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              // primaryDark (#0077B6) để chữ trắng đạt 4.87:1.
+                              // Gradient cyan (#26E5DC→#00B4D8) chỉ đạt ~1.96:1.
+                              color: _selectedTab == 0
+                                  ? AppColors.primaryDark
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: _selectedTab == 0
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.bottomBarGlow
+                                            .withOpacity(0.35),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      )
+                                    ]
+                                  : null,
+                            ),
+                            child: Text(
+                              'Ví tới Ví (Nội bộ)',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _selectedTab == 0
+                                    ? Colors.white
+                                    : AppColors.textSecondaryLight,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _selectedTab = 1;
+                              _lookedUpRecipient = null;
+                              _lookupError = null;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: _selectedTab == 1
+                                  ? AppColors.primaryDark
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: _selectedTab == 1
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.bottomBarGlow
+                                            .withOpacity(0.35),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      )
+                                    ]
+                                  : null,
+                            ),
+                            child: Text(
+                              'Liên ngân hàng (Napas)',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _selectedTab == 1
+                                    ? AppColors.textPrimaryLight
+                                    : AppColors.textSecondaryLight,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
+
+                const SizedBox(height: 14),
+
+                // Input field
+                TextField(
+                  controller: _searchController,
+                  keyboardType: _selectedTab == 0
+                      ? TextInputType.phone
+                      : TextInputType.number,
+                  style: const TextStyle(
+                      color: AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    hintText: _selectedTab == 0
+                        ? 'Nhập SĐT hoặc STK Sen Hồng...'
+                        : 'Nhập số tài khoản ngân hàng...',
+                    hintStyle: const TextStyle(color: AppColors.textMutedLight),
+                    prefixIcon: const Icon(CupertinoIcons.search,
+                        color: AppColors.primaryText),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_searchController.text.isNotEmpty)
+                          IconButton(
+                            tooltip: 'Xóa',
+                            icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                                color: AppColors.textMutedLight, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {});
+                            },
+                          )
+                        else
+                          IconButton(
+                            tooltip: 'Dán từ bộ nhớ tạm',
+                            icon: const Icon(CupertinoIcons.doc_on_clipboard,
+                                color: AppColors.primaryText, size: 18),
+                            onPressed: () async {
+                              final data =
+                                  await Clipboard.getData(Clipboard.kTextPlain);
+                              final text = data?.text?.trim() ?? '';
+                              if (text.isNotEmpty) {
+                                HapticFeedback.selectionClick();
+                                _searchController.text = text;
+                                _lookupRecipient(text);
+                              }
+                            },
+                          ),
+                        IconButton(
+                          tooltip: 'Quét QR',
+                          icon: const Icon(CupertinoIcons.qrcode_viewfinder,
+                              color: AppColors.primaryText),
+                          onPressed: () => context.push('/scan-qr'),
+                        ),
+                      ],
+                    ),
+                    filled: true,
+                    fillColor: AppColors.surfaceLight,
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: AppColors.borderLight)),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide:
+                            const BorderSide(color: AppColors.borderLight)),
+                  ),
+                  onSubmitted: (_) => _continueToAmount(),
+                ),
+
+                // Realtime Recipient Auto-Identification Result Card / Indicator
+                if (_selectedTab == 0) ...[
+                  if (_isLookingUp) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Row(
+                        children: [
+                          SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryText)),
+                          SizedBox(width: 10),
+                          Text(
+                            'Đang tự động nhận diện tên chủ tài khoản...',
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.primaryText,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (_lookedUpRecipient != null) ...[
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.emeraldGreen.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                            color: AppColors.emeraldGreen.withOpacity(0.3),
+                            width: 1.2),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.emeraldGreen.withOpacity(0.12),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.emeraldGreen.withOpacity(0.15),
+                            ),
+                            child: const Icon(
+                                CupertinoIcons.checkmark_seal_fill,
+                                color: AppColors.successTextLight,
+                                size: 24),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  (_lookedUpRecipient!['fullName'] ??
+                                          _lookedUpRecipient!['maskedName'] ??
+                                          '')
+                                      .toString()
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.successTextLight,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'SĐT/STK: ${_lookedUpRecipient!['phoneNumber'] ?? ''} • Ví Sen Hồng',
+                                  style: const TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppColors.textSecondaryLight),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: _continueToAmount,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryDark,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('Chọn',
+                                style: TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (_lookupError != null) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: AppColors.error.withOpacity(0.25)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(CupertinoIcons.info_circle_fill,
+                              color: AppColors.errorText, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _lookupError!,
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.errorText,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 10),
+
+                // Continue Button
+                ElevatedButton.icon(
+                  onPressed: _continueToAmount,
+                  icon: const Icon(CupertinoIcons.chevron_forward, size: 18),
+                  label: const Text('Tiếp tục nhập số tiền'),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Quick Actions: Quét QR, Danh bạ, Yêu cầu chia tiền, QR của tôi
+                Row(
                   children: [
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selectedTab = 0;
-                            _lookedUpRecipient = null;
-                            _lookupError = null;
-                          });
-                        },
+                      child: InkWell(
+                        onTap: () => context.push('/scan-qr'),
+                        borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            // primaryDark (#0077B6) để chữ trắng đạt 4.87:1.
-                            // Gradient cyan (#26E5DC→#00B4D8) chỉ đạt ~1.96:1.
-                            color: _selectedTab == 0
-                                ? AppColors.primaryDark
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _selectedTab == 0
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.bottomBarGlow.withOpacity(0.35),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ]
-                                : null,
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderLight),
                           ),
-                          child: Text(
-                            'Ví tới Ví (Nội bộ)',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _selectedTab == 0 ? AppColors.textPrimaryLight : AppColors.textSecondaryLight,
-                              fontWeight: FontWeight.w600,
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(CupertinoIcons.qrcode_viewfinder,
+                                    size: 16, color: AppColors.primaryText),
+                                SizedBox(width: 4),
+                                Text('Quét QR',
+                                    style: TextStyle(
+                                        color: AppColors.textPrimaryLight,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600)),
+                              ],
                             ),
                           ),
                         ),
                       ),
                     ),
+                    const SizedBox(width: 6),
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selectedTab = 1;
-                            _lookedUpRecipient = null;
-                            _lookupError = null;
-                          });
-                        },
+                      child: InkWell(
+                        onTap: () => context.push('/beneficiaries'),
+                        borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: _selectedTab == 1
-                                ? AppColors.primaryDark
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: _selectedTab == 1
-                                ? [
-                                    BoxShadow(
-                                      color: AppColors.bottomBarGlow.withOpacity(0.35),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    )
-                                  ]
-                                : null,
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderLight),
                           ),
-                          child: Text(
-                            'Liên ngân hàng (Napas)',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: _selectedTab == 1 ? AppColors.textPrimaryLight : AppColors.textSecondaryLight,
-                              fontWeight: FontWeight.w600,
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(CupertinoIcons.person_2_fill,
+                                    size: 16, color: AppColors.primaryText),
+                                SizedBox(width: 4),
+                                Text('Danh bạ',
+                                    style: TextStyle(
+                                        color: AppColors.textPrimaryLight,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => context.push('/transfer/request'),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(CupertinoIcons.person_2_fill,
+                                    size: 16, color: AppColors.warningTextLight),
+                                SizedBox(width: 4),
+                                Text('Chia tiền',
+                                    style: TextStyle(
+                                        color: AppColors.textPrimaryLight,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => context.push('/my-qr'),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.borderLight),
+                          ),
+                          child: const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(CupertinoIcons.qrcode,
+                                    size: 16, color: AppColors.successTextLight),
+                                SizedBox(width: 4),
+                                Text('Mã QR',
+                                    style: TextStyle(
+                                        color: AppColors.textPrimaryLight,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600)),
+                              ],
                             ),
                           ),
                         ),
@@ -345,440 +718,211 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
                     ),
                   ],
                 ),
-              ),
 
-              const SizedBox(height: 14),
-
-              // Input field
-              TextField(
-                controller: _searchController,
-                keyboardType: _selectedTab == 0 ? TextInputType.phone : TextInputType.number,
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  hintText: _selectedTab == 0 ? 'Nhập SĐT hoặc STK Sen Hồng...' : 'Nhập số tài khoản ngân hàng...',
-                  hintStyle: const TextStyle(color: AppColors.textMutedLight),
-                  prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.primaryText),
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_searchController.text.isNotEmpty)
-                        IconButton(
-                          tooltip: 'Xóa',
-                          icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textMutedLight, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                        )
-                      else
-                        IconButton(
-                          tooltip: 'Dán từ bộ nhớ tạm',
-                          icon: const Icon(CupertinoIcons.doc_on_clipboard, color: AppColors.primaryText, size: 18),
-                          onPressed: () async {
-                            final data = await Clipboard.getData(Clipboard.kTextPlain);
-                            final text = data?.text?.trim() ?? '';
-                            if (text.isNotEmpty) {
-                              HapticFeedback.selectionClick();
-                              _searchController.text = text;
-                              _lookupRecipient(text);
-                            }
-                          },
-                        ),
-                      IconButton(
-                        tooltip: 'Quét QR',
-                        icon: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryText),
-                        onPressed: () => context.push('/scan-qr'),
-                      ),
-                    ],
-                  ),
-                  filled: true,
-                  fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                ),
-                onSubmitted: (_) => _continueToAmount(),
-              ),
-
-              // Realtime Recipient Auto-Identification Result Card / Indicator
-              if (_selectedTab == 0) ...[
-                if (_isLookingUp) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Row(
-                      children: [
-                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryText)),
-                        SizedBox(width: 10),
-                        Text(
-                          'Đang tự động nhận diện tên chủ tài khoản...',
-                          style: TextStyle(fontSize: 12, color: AppColors.primaryText, fontWeight: FontWeight.w500),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                if (_lookedUpRecipient != null) ...[
+                if (_selectedTab == 1) ...[
+                  const SizedBox(height: 20),
+                  Text('Ngân hàng thụ hưởng phổ biến',
+                      style: AppTypography.titleMedium(
+                          color: AppColors.textPrimaryLight)),
                   const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.emeraldGreen.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.3), width: 1.2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.emeraldGreen.withOpacity(0.12),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _popularBanks.map((bank) {
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            _searchController.text = '${bank['short']} - ';
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.emeraldGreen.withOpacity(0.15),
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.borderLight),
                           ),
-                          child: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight, size: 24),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                (_lookedUpRecipient!['fullName'] ?? _lookedUpRecipient!['maskedName'] ?? '').toString().toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.successTextLight,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'SĐT/STK: ${_lookedUpRecipient!['phoneNumber'] ?? ''} • Ví Sen Hồng',
-                                style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight),
-                              ),
-                            ],
-                          ),
-                        ),
-                        ElevatedButton(
-                          onPressed: _continueToAmount,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryDark,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: const Text('Chọn', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                if (_lookupError != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.error.withOpacity(0.25)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(CupertinoIcons.info_circle_fill, color: AppColors.errorText, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
                           child: Text(
-                            _lookupError!,
-                            style: const TextStyle(fontSize: 12, color: AppColors.errorText, fontWeight: FontWeight.w500),
+                            bank['short']!,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: AppColors.primaryText),
                           ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+
+                const SizedBox(height: 20),
+                Text('Người thụ hưởng gần đây',
+                    style: AppTypography.titleMedium(
+                        color: AppColors.textPrimaryLight)),
+                const SizedBox(height: 10),
+
+                // Real Beneficiaries List
+                if (_isLoadingBeneficiaries) ...[
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: CircularProgressIndicator(
+                          color: AppColors.primaryLight, strokeWidth: 2),
+                    ),
+                  ),
+                ] else if (_beneficiaries.isEmpty) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 24, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.borderLight),
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(
+                            CupertinoIcons.person_crop_circle_badge_exclam,
+                            size: 40,
+                            color: AppColors.textSecondaryLight),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Chưa có người thụ hưởng đã lưu',
+                          style: AppTypography.bodyMedium(
+                              color: AppColors.textSecondaryLight),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Nhập SĐT hoặc STK ở trên để tự động nhận diện và chuyển tiền',
+                          style: AppTypography.bodySmall(
+                              color: AppColors.textSecondaryLight),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-                ],
-              ],
-
-              const SizedBox(height: 10),
-
-              // Continue Button
-              ElevatedButton.icon(
-                onPressed: _continueToAmount,
-                icon: const Icon(CupertinoIcons.chevron_forward, size: 18),
-                label: const Text('Tiếp tục nhập số tiền'),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Quick Actions: Quét QR, Danh bạ, Yêu cầu chia tiền, QR của tôi
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => context.push('/scan-qr'),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderLight),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(CupertinoIcons.qrcode_viewfinder, size: 16, color: AppColors.primaryText),
-                            SizedBox(width: 6),
-                            Text('Quét QR', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => context.push('/beneficiaries'),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderLight),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(CupertinoIcons.person_2_fill, size: 16, color: AppColors.primaryText),
-                            SizedBox(width: 6),
-                            Text('Danh bạ', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => context.push('/transfer/request'),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderLight),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(CupertinoIcons.person_2_fill, size: 16, color: AppColors.warningTextLight),
-                            SizedBox(width: 6),
-                            Text('Chia tiền', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => context.push('/my-qr'),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderLight),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(CupertinoIcons.qrcode, size: 16, color: AppColors.successTextLight),
-                            SizedBox(width: 4),
-                            Text('Mã QR', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              if (_selectedTab == 1) ...[
-                const SizedBox(height: 20),
-                Text('Ngân hàng thụ hưởng phổ biến', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _popularBanks.map((bank) {
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          _searchController.text = '${bank['short']} - ';
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.borderLight),
-                        ),
-                        child: Text(
-                          bank['short']!,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryText),
+                ] else ...[
+                  ..._beneficiaries.take(5).map((b) {
+                    final name = b['name'] ?? '';
+                    final phone = b['phone'] ?? b['account'] ?? '';
+                    final bank = b['bank'] ?? 'Ví Sen Hồng';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: GlassCard(
+                        quality: GlassQuality.minimal,
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: ListTile(
+                            onTap: () {
+                              _searchController.text = phone;
+                              _lookupRecipient(phone);
+                            },
+                            leading: CircleAvatar(
+                              backgroundColor:
+                                  AppColors.primary.withOpacity(0.15),
+                              child: Text(
+                                name.isNotEmpty ? name[0].toUpperCase() : 'S',
+                                style: const TextStyle(
+                                    color: AppColors.primaryText,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            title: Text(name.toUpperCase(),
+                                style: AppTypography.titleMedium(
+                                    color: AppColors.textPrimaryLight)),
+                            subtitle: Text('$bank • $phone',
+                                style: AppTypography.bodySmall(
+                                    color: AppColors.textSecondaryLight)),
+                            trailing: const Icon(CupertinoIcons.chevron_forward,
+                                color: AppColors.textMutedLight, size: 16),
+                          ),
                         ),
                       ),
                     );
-                  }).toList(),
-                ),
-              ],
+                  }),
+                ],
 
-              const SizedBox(height: 20),
-              Text('Người thụ hưởng gần đây', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
-              const SizedBox(height: 10),
+                const SizedBox(height: 16),
 
-              // Real Beneficiaries List
-              if (_isLoadingBeneficiaries) ...[
-                const Center(
+                // Transfer & Utilities Navigation Router Hub Card
+                GlassCard(
+                  quality: GlassQuality.minimal,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: CircularProgressIndicator(color: AppColors.primaryLight, strokeWidth: 2),
-                  ),
-                ),
-              ] else if (_beneficiaries.isEmpty) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(CupertinoIcons.person_crop_circle_badge_exclam, size: 40, color: AppColors.textSecondaryLight),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Chưa có người thụ hưởng đã lưu',
-                        style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Nhập SĐT hoặc STK ở trên để tự động nhận diện và chuyển tiền',
-                        style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                ..._beneficiaries.take(5).map((b) {
-                  final name = b['name'] ?? '';
-                  final phone = b['phone'] ?? b['account'] ?? '';
-                  final bank = b['bank'] ?? 'Ví Sen Hồng';
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: GlassCard(
-                      quality: GlassQuality.minimal,
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: ListTile(
-                          onTap: () {
-                            _searchController.text = phone;
-                            _lookupRecipient(phone);
-                          },
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.primary.withOpacity(0.15),
-                            child: Text(
-                              name.isNotEmpty ? name[0].toUpperCase() : 'S',
-                              style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          title: Text(name.toUpperCase(), style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
-                          subtitle: Text('$bank • $phone', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                          trailing: const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 16),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(
+                      children: [
+                        _buildRouterTile(
+                          icon: CupertinoIcons.qrcode_viewfinder,
+                          label: 'Quét mã VietQR chuyển tiền tức thì 24/7',
+                          onTap: () => context.push('/scan-qr'),
                         ),
-                      ),
+                        const Divider(
+                            height: 1,
+                            indent: 40,
+                            color: AppColors.cardBorderLight),
+                        _buildRouterTile(
+                          icon: CupertinoIcons.qrcode,
+                          label: 'Mã QR nhận tiền cá nhân của tôi',
+                          onTap: () => context.push('/my-qr'),
+                        ),
+                        const Divider(
+                            height: 1,
+                            indent: 40,
+                            color: AppColors.cardBorderLight),
+                        _buildRouterTile(
+                          icon:
+                              CupertinoIcons.arrow_right_arrow_left_circle_fill,
+                          label: 'Tạo yêu cầu chuyển tiền / Chia hóa đơn nhóm',
+                          onTap: () => context.push('/transfer/request'),
+                        ),
+                        const Divider(
+                            height: 1,
+                            indent: 40,
+                            color: AppColors.cardBorderLight),
+                        _buildRouterTile(
+                          icon: CupertinoIcons.person_2_fill,
+                          label: 'Quản lý toàn bộ danh bạ người thụ hưởng',
+                          onTap: () => context.push('/beneficiaries'),
+                        ),
+                        const Divider(
+                            height: 1,
+                            indent: 40,
+                            color: AppColors.cardBorderLight),
+                        _buildRouterTile(
+                          icon: CupertinoIcons.clock_fill,
+                          label: 'Xem lịch sử giao dịch chuyển khoản',
+                          onTap: () => context.push('/history'),
+                        ),
+                        const Divider(
+                            height: 1,
+                            indent: 40,
+                            color: AppColors.cardBorderLight),
+                        _buildRouterTile(
+                          icon: CupertinoIcons.creditcard_fill,
+                          label: 'Nạp thêm tiền vào ví Sen Hồng',
+                          onTap: () => context.push('/deposit'),
+                        ),
+                      ],
                     ),
-                  );
-                }),
-              ],
-
-              const SizedBox(height: 16),
-
-              // Transfer & Utilities Navigation Router Hub Card
-              GlassCard(
-                quality: GlassQuality.minimal,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Column(
-                    children: [
-                      _buildRouterTile(
-                        icon: CupertinoIcons.qrcode_viewfinder,
-                        label: 'Quét mã VietQR chuyển tiền tức thì 24/7',
-                        onTap: () => context.push('/scan-qr'),
-                      ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
-                      _buildRouterTile(
-                        icon: CupertinoIcons.qrcode,
-                        label: 'Mã QR nhận tiền cá nhân của tôi',
-                        onTap: () => context.push('/my-qr'),
-                      ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
-                      _buildRouterTile(
-                        icon: CupertinoIcons.arrow_right_arrow_left_circle_fill,
-                        label: 'Tạo yêu cầu chuyển tiền / Chia hóa đơn nhóm',
-                        onTap: () => context.push('/transfer/request'),
-                      ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
-                      _buildRouterTile(
-                        icon: CupertinoIcons.person_2_fill,
-                        label: 'Quản lý toàn bộ danh bạ người thụ hưởng',
-                        onTap: () => context.push('/beneficiaries'),
-                      ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
-                      _buildRouterTile(
-                        icon: CupertinoIcons.clock_fill,
-                        label: 'Xem lịch sử giao dịch chuyển khoản',
-                        onTap: () => context.push('/history'),
-                      ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
-                      _buildRouterTile(
-                        icon: CupertinoIcons.creditcard_fill,
-                        label: 'Nạp thêm tiền vào ví Sen Hồng',
-                        onTap: () => context.push('/deposit'),
-                      ),
-                    ],
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -790,10 +934,13 @@ class _ChooseRecipientScreenState extends State<ChooseRecipientScreen> {
             Expanded(
               child: Text(
                 label,
-                style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+                style:
+                    AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                        .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),

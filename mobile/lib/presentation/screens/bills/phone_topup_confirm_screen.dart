@@ -29,7 +29,8 @@ class PhoneTopupConfirmScreen extends StatefulWidget {
   });
 
   @override
-  State<PhoneTopupConfirmScreen> createState() => _PhoneTopupConfirmScreenState();
+  State<PhoneTopupConfirmScreen> createState() =>
+      _PhoneTopupConfirmScreenState();
 }
 
 class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
@@ -69,13 +70,17 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
       final isSupported = await _localAuth.isDeviceSupported();
       if (!canCheck && !isSupported) {
         if (!mounted) return;
-        AppAlerts.showWarning(context, 'Thiết bị chưa cài đặt hoặc không hỗ trợ sinh trắc học', title: 'Sinh trắc học');
+        AppAlerts.showWarning(
+            context, 'Thiết bị chưa cài đặt hoặc không hỗ trợ sinh trắc học',
+            title: 'Sinh trắc học');
         return;
       }
 
       final authenticated = await _localAuth.authenticate(
-        localizedReason: 'Xác thực khuôn mặt / vân tay để nạp ${CurrencyFormatter.formatVND(widget.amount)}',
-        options: const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
+        localizedReason:
+            'Xác thực khuôn mặt / vân tay để nạp ${CurrencyFormatter.formatVND(widget.amount)}',
+        options:
+            const AuthenticationOptions(biometricOnly: true, stickyAuth: true),
       );
 
       if (authenticated) {
@@ -95,7 +100,8 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppAlerts.showError(context, 'Lỗi xác thực sinh trắc học: $e', title: 'Xác thực thất bại');
+        AppAlerts.showError(context, 'Lỗi xác thực sinh trắc học: $e',
+            title: 'Xác thực thất bại');
       }
     }
   }
@@ -228,7 +234,11 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [AppColors.primaryDark, AppColors.primary, AppColors.bottomBarCyan],
+                    colors: [
+                      AppColors.primaryDark,
+                      AppColors.brandBlue,
+                      AppColors.tealNavy
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -272,26 +282,36 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                widget.telco.toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  letterSpacing: 0.5,
+                              Flexible(
+                                child: Text(
+                                  widget.telco.toUpperCase(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: AppColors.bottomBarCyan.withOpacity(0.15),
+                                  color: AppColors.deepNavy.withOpacity(0.48),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: AppColors.bottomBarCyan.withOpacity(0.6), width: 0.8),
+                                  border: Border.all(
+                                      color: Colors.white.withOpacity(0.45),
+                                      width: 0.8),
                                 ),
                                 child: const Text(
                                   '-3% HOÀN TIỀN',
-                                  style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
@@ -320,7 +340,9 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                                   setState(() => _maskPhone = !_maskPhone);
                                 },
                                 child: Icon(
-                                  _maskPhone ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
+                                  _maskPhone
+                                      ? CupertinoIcons.eye_slash_fill
+                                      : CupertinoIcons.eye_fill,
                                   color: Colors.white70,
                                   size: 18,
                                 ),
@@ -343,34 +365,52 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                   padding: const EdgeInsets.all(18),
                   child: Column(
                     children: [
-                      _buildDetailRow('Mệnh giá nạp thẻ', CurrencyFormatter.formatVND(widget.amount)),
+                      _buildDetailRow('Mệnh giá nạp thẻ',
+                          CurrencyFormatter.formatVND(widget.amount)),
                       const SizedBox(height: 10),
                       _buildDetailRow(
                         'Chiết khấu ưu đãi Sen Hồng (3%)',
                         '-${CurrencyFormatter.formatVND(_discount)}',
-                        valueColor: AppColors.emeraldGreen,
+                        valueColor: AppColors.successTextLight,
                         isBold: true,
                       ),
                       const SizedBox(height: 10),
-                      _buildDetailRow('Phí dịch vụ', '0 đ (Miễn phí)', valueColor: AppColors.emeraldGreen),
-                      const Divider(height: 24, color: AppColors.cardBorderLight),
+                      _buildDetailRow('Phí dịch vụ', '0 đ (Miễn phí)',
+                          valueColor: AppColors.successTextLight),
+                      const Divider(
+                          height: 24, color: AppColors.cardBorderLight),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Thực thu thanh toán', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
-                          Text(
-                            CurrencyFormatter.formatVND(_finalAmount),
-                            style: AppTypography.displayMedium(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.w900),
+                          Expanded(
+                            child: Text('Thực thu thanh toán',
+                                style: AppTypography.titleMedium(
+                                        color: AppColors.textPrimaryLight)
+                                    .copyWith(fontWeight: FontWeight.bold)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              CurrencyFormatter.formatVND(_finalAmount),
+                              textAlign: TextAlign.right,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTypography.displayMedium(
+                                      color: AppColors.primaryDark)
+                                  .copyWith(fontWeight: FontWeight.w900),
+                            ),
                           ),
                         ],
                       ),
-                      if (CurrencyFormatter.toVietnameseWords(_finalAmount).isNotEmpty) ...[
+                      if (CurrencyFormatter.toVietnameseWords(_finalAmount)
+                          .isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Align(
                           alignment: Alignment.centerRight,
                           child: Text(
                             'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(_finalAmount)} đồng',
-                            style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                            style: AppTypography.bodySmall(
+                                    color: AppColors.primaryDark)
+                                .copyWith(
                               fontStyle: FontStyle.italic,
                               fontWeight: FontWeight.w600,
                               fontSize: 11,
@@ -399,16 +439,22 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                           color: AppColors.primary.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(CupertinoIcons.creditcard_fill, color: AppColors.primary, size: 22),
+                        child: const Icon(CupertinoIcons.creditcard_fill,
+                            color: AppColors.primary, size: 22),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Nguồn tiền thanh toán', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                            Text('Nguồn tiền thanh toán',
+                                style: AppTypography.bodySmall(
+                                    color: AppColors.textSecondaryLight)),
                             const SizedBox(height: 2),
-                            Text('Ví Sen Hồng Chính Chủ', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
+                            Text('Ví Sen Hồng Chính Chủ',
+                                style: AppTypography.titleSmall(
+                                        color: AppColors.textPrimaryLight)
+                                    .copyWith(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 2),
                             Text(
                               _isLoadingBalance
@@ -416,7 +462,9 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                                   : 'Khả dụng: ${CurrencyFormatter.formatVND(_walletBalance)}',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: hasEnoughBalance ? AppColors.emeraldGreen : AppColors.error,
+                                color: hasEnoughBalance
+                                    ? AppColors.successTextLight
+                                    : AppColors.errorText,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -427,15 +475,20 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            minimumSize: const Size(0, 32),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            minimumSize: const Size(0, 44),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
                           ),
                           onPressed: () => context.push('/deposit'),
-                          child: const Text('Nạp thêm', style: TextStyle(fontSize: 11, color: Colors.white)),
+                          child: const Text('Nạp thêm',
+                              style:
+                                  TextStyle(fontSize: 11, color: Colors.white)),
                         )
                       else
-                        const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen, size: 20),
+                        const Icon(CupertinoIcons.checkmark_circle_fill,
+                            color: AppColors.successTextLight, size: 20),
                     ],
                   ),
                 ),
@@ -448,13 +501,18 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                 child: Column(
                   children: [
                     Text(
-                      _loading ? 'Đang xác thực giao dịch an toàn...' : 'Nhập mã PIN 6 số để xác nhận',
-                      style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                      _loading
+                          ? 'Đang xác thực giao dịch an toàn...'
+                          : 'Nhập mã PIN 6 số để xác nhận',
+                      style: AppTypography.titleMedium(
+                              color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Bảo mật 2 lớp PCI-DSS • Chữ ký số Smart OTP',
-                      style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight),
                     ),
                   ],
                 ),
@@ -464,7 +522,9 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
               if (_loading)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 40),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  child: Center(
+                      child:
+                          CircularProgressIndicator(color: AppColors.primary)),
                 )
               else
                 CustomPinNumpad(
@@ -486,16 +546,21 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.06),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+                  border:
+                      Border.all(color: AppColors.primary.withOpacity(0.15)),
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.shield_lefthalf_fill, color: AppColors.primary, size: 18),
+                    Icon(CupertinoIcons.shield_lefthalf_fill,
+                        color: AppColors.primary, size: 18),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Giao dịch nạp tiền điện thoại được mã hóa đầu cuối và bảo vệ bởi Liên minh Napas 247 & SenBank.',
-                        style: TextStyle(color: AppColors.textSecondaryLight, fontSize: 11, height: 1.35),
+                        style: TextStyle(
+                            color: AppColors.textSecondaryLight,
+                            fontSize: 11,
+                            height: 1.35),
                       ),
                     ),
                   ],
@@ -510,19 +575,28 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {Color? valueColor, bool isBold = false}) {
+  Widget _buildDetailRow(String label, String value,
+      {Color? valueColor, bool isBold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight)),
+        Expanded(
+          flex: 5,
+          child: Text(label,
+              style: AppTypography.bodyMedium(
+                  color: AppColors.textSecondaryLight)),
+        ),
         const SizedBox(width: 12),
-        Flexible(
+        Expanded(
+          flex: 6,
           child: Text(
             value,
             textAlign: TextAlign.right,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.titleSmall(color: valueColor ?? AppColors.textPrimaryLight).copyWith(
+            style: AppTypography.titleSmall(
+                    color: valueColor ?? AppColors.textPrimaryLight)
+                .copyWith(
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
             ),
           ),

@@ -200,8 +200,8 @@ class _EKycScreenState extends State<EKycScreen> {
                         ? AppColors.emeraldGreen
                         : (isCurrent ? AppColors.primary : AppColors.borderLight),
                     child: isDone
-                        ? const Icon(CupertinoIcons.checkmark, size: 14, color: AppColors.textPrimaryLight)
-                        : Text('$stepNum', style: TextStyle(fontSize: 12, color: isCurrent ? AppColors.textPrimaryLight : AppColors.textSecondaryLight, fontWeight: FontWeight.bold)),
+                        ? const Icon(CupertinoIcons.checkmark, size: 14, color: Colors.white)
+                        : Text('$stepNum', style: TextStyle(fontSize: 12, color: isCurrent ? Colors.white : AppColors.textSecondaryLight, fontWeight: FontWeight.bold)),
                   ),
                   if (idx < 2)
                     Container(
@@ -243,7 +243,7 @@ class _EKycScreenState extends State<EKycScreen> {
                         border: Border.all(color: AppColors.emeraldGreen, width: 2.5),
                       ),
                       child: const Center(
-                        child: Icon(CupertinoIcons.person_alt, size: 100, color: AppColors.textMutedLight),
+                        child: Icon(CupertinoIcons.person_alt, size: 100, color: Colors.white70),
                       ),
                     ),
                   if (_step != 3)
@@ -255,7 +255,7 @@ class _EKycScreenState extends State<EKycScreen> {
                         border: Border.all(color: AppColors.primary, width: 2),
                       ),
                       child: Center(
-                        child: Icon(stepIcon, size: 64, color: AppColors.textMutedLight),
+                        child: Icon(stepIcon, size: 64, color: Colors.white70),
                       ),
                     ),
 

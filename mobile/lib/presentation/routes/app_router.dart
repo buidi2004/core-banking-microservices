@@ -86,7 +86,8 @@ import '../screens/support/live_chat_screen.dart';
 import '../screens/splash/splash_screen.dart';
 import '../widgets/animated_branch_container.dart';
 
-final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
+final GlobalKey<NavigatorState> _rootNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'root');
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -105,7 +106,8 @@ final GoRouter appRouter = GoRouter(
     final isPublicRoute = isAuthRoute || isPublicSupport;
 
     // 3. Kiểm tra Access Token trong SecureStorage an toàn
-    final token = await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyAccessToken);
+    final token = await AppSecureStorage.safeRead(AppSecureStorage.instance,
+        key: AppConstants.keyAccessToken);
     final isLoggedIn = token != null && token.isNotEmpty;
 
     // Chưa đăng nhập hoặc chưa mở khóa trong lần mở app này -> chuyển về Đăng nhập (FaceID / mật khẩu)
@@ -163,7 +165,7 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
 
-    // 4 Main Tabs (StatefulShellRoute with FloatingGlassBottomBar & Smooth Animated Transitions)
+    // 4 main tabs with a native-style iOS tab bar and retained branch state.
     StatefulShellRoute(
       builder: (context, state, navigationShell) {
         return MainTabsScreen(navigationShell: navigationShell);
@@ -226,7 +228,8 @@ final GoRouter appRouter = GoRouter(
       path: '/auth/login',
       name: 'login',
       builder: (context, state) {
-        final sessionExpired = state.uri.queryParameters['sessionExpired'] == 'true';
+        final sessionExpired =
+            state.uri.queryParameters['sessionExpired'] == 'true';
         final message = state.uri.queryParameters['message'];
         return LoginScreen(
           sessionExpired: sessionExpired,
@@ -301,10 +304,12 @@ final GoRouter appRouter = GoRouter(
       path: '/transfer/amount',
       name: 'transfer-amount',
       builder: (context, state) {
-        final recipient = state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
+        final recipient =
+            state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
         final phoneNumber = state.uri.queryParameters['phoneNumber'];
         final walletId = state.uri.queryParameters['walletId'];
-        final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '');
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '');
         final note = state.uri.queryParameters['note'];
         return EnterAmountScreen(
           recipient: recipient,
@@ -320,10 +325,12 @@ final GoRouter appRouter = GoRouter(
       path: '/transfer/confirm',
       name: 'transfer-confirm',
       builder: (context, state) {
-        final recipient = state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
+        final recipient =
+            state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
         final phoneNumber = state.uri.queryParameters['phoneNumber'];
         final walletId = state.uri.queryParameters['walletId'];
-        final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
         final note = state.uri.queryParameters['note'] ?? 'Chuyen tien';
         return ConfirmTransferScreen(
           recipient: recipient,
@@ -341,10 +348,12 @@ final GoRouter appRouter = GoRouter(
       path: '/transfer/2fa-otp',
       name: 'transfer-2fa-otp',
       builder: (context, state) {
-        final recipient = state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
+        final recipient =
+            state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
         final phoneNumber = state.uri.queryParameters['phoneNumber'];
         final walletId = state.uri.queryParameters['walletId'];
-        final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
         final note = state.uri.queryParameters['note'] ?? 'Chuyen tien';
         return ConfirmTransferScreen(
           recipient: recipient,
@@ -360,9 +369,11 @@ final GoRouter appRouter = GoRouter(
       path: '/transfer/result',
       name: 'transfer-result',
       pageBuilder: (context, state) {
-        final recipient = state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
+        final recipient =
+            state.uri.queryParameters['recipient'] ?? 'Ví Sen Hồng';
         final phoneNumber = state.uri.queryParameters['phoneNumber'];
-        final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
         final note = state.uri.queryParameters['note'] ?? 'Chuyen tien';
         final transactionId = state.uri.queryParameters['transactionId'];
         final status = state.uri.queryParameters['status'] ?? 'SUCCESS';
@@ -433,8 +444,11 @@ final GoRouter appRouter = GoRouter(
       path: '/deposit/confirm',
       name: 'deposit-confirm',
       builder: (context, state) {
-        final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '500000') ?? 500000;
-        final source = state.uri.queryParameters['source'] ?? 'Vietcombank (*8899)';
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '500000') ??
+                500000;
+        final source =
+            state.uri.queryParameters['source'] ?? 'Vietcombank (*8899)';
         return DepositConfirmScreen(amount: amount, source: source);
       },
     ),
@@ -449,11 +463,13 @@ final GoRouter appRouter = GoRouter(
       path: '/withdraw/confirm',
       name: 'withdraw-confirm',
       builder: (context, state) {
-        final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0;
         final bank = state.uri.queryParameters['bank'] ?? '';
         final acc = state.uri.queryParameters['acc'] ?? '';
         final bankAccountId = state.uri.queryParameters['bankAccountId'] ?? '';
-        return WithdrawConfirmScreen(amount: amount, bank: bank, acc: acc, bankAccountId: bankAccountId);
+        return WithdrawConfirmScreen(
+            amount: amount, bank: bank, acc: acc, bankAccountId: bankAccountId);
       },
     ),
 
@@ -467,7 +483,8 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final id = state.uri.queryParameters['id'];
         final title = state.uri.queryParameters['title'];
-        final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '');
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '');
         final time = state.uri.queryParameters['time'];
         final note = state.uri.queryParameters['note'];
         final recipient = state.uri.queryParameters['recipient'];
@@ -509,8 +526,14 @@ final GoRouter appRouter = GoRouter(
         final provider = state.uri.queryParameters['provider'];
         final code = state.uri.queryParameters['code'];
         final billId = state.uri.queryParameters['billId'];
-        final amount = double.tryParse(state.uri.queryParameters['amount'] ?? '0');
-        return BillConfirmScreen(service: service, provider: provider, code: code, billId: billId, amount: amount);
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '0');
+        return BillConfirmScreen(
+            service: service,
+            provider: provider,
+            code: code,
+            billId: billId,
+            amount: amount);
       },
     ),
     GoRoute(
@@ -519,7 +542,8 @@ final GoRouter appRouter = GoRouter(
       name: 'bills-payment-confirm',
       builder: (context, state) => BillPaymentConfirmScreen(
         billId: state.uri.queryParameters['billId'] ?? '',
-        amount: double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0,
+        amount:
+            double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0,
         provider: state.uri.queryParameters['provider'] ?? 'Hóa đơn',
         customerCode: state.uri.queryParameters['code'] ?? '',
       ),
@@ -530,7 +554,8 @@ final GoRouter appRouter = GoRouter(
       name: 'bills-topup-confirm',
       builder: (context, state) => PhoneTopupConfirmScreen(
         phoneNumber: state.uri.queryParameters['phone'] ?? '',
-        amount: double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0,
+        amount:
+            double.tryParse(state.uri.queryParameters['amount'] ?? '0') ?? 0,
         telco: state.uri.queryParameters['telco'] ?? 'Nhà mạng',
       ),
     ),

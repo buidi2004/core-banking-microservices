@@ -408,17 +408,8 @@ spring:
             - name: JwtAuthenticationFilter
 
         # ----------------------------------------------------------------------------
-        # FALLBACK: TOÀN BỘ CÁC API CÒN LẠI -> MONOLITH CŨ (monolith:8080)
-        # (Wallet Core, Payment, Transaction, Ledger query, QR, ...)
+        # Đã hoàn tất di trú 6/6 Microservices - Loại bỏ route rác Monolith Fallback
         # ----------------------------------------------------------------------------
-
-        - id: monolith-fallback
-          uri: ${MONOLITH_URI:http://monolith:8080}
-          predicates:
-            - Path=/api/v1/**
-          filters:
-            - name: JwtAuthenticationFilter
-            - StripPrefix=0
 
 # ------------------------------------------------------------------------------
 # CIRCUIT BREAKER (Resilience4j): Nếu microservice downstream sập, chuyển về fallback
@@ -436,3 +427,11 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 5
+  timelimiter:
+    instances:
+      default:
+        timeoutDuration: 15s
+      notificationServiceCb:
+        timeoutDuration: 15s
+      identityServiceCb:
+        timeoutDuration: 15s

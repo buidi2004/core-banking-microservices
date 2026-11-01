@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Wallet Service — 4 tầng (Số dư · gRPC · Pessimistic Lock)",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 6,
+    "cellW": 222,
+    "cellH": 100,
+    "gapX": 176,
+    "gapY": 96
+  },
+  "components": [
+    {
+      "id": "entry",
+      "type": "external",
+      "label": "API Gateway + Payment Service",
+      "sublabel": "REST :8082 · gRPC :9090",
+      "tag": "REST / gRPC",
+      "row": 1,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "presentation",
+      "type": "backend",
+      "label": "Presentation",
+      "sublabel": "2 class · 4 endpoint",
+      "tag": "Controller · DTO · Exception",
+      "row": 1,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "application",
+      "type": "backend",
+      "label": "Application",
+      "sublabel": "2 class · 33 method",
+      "tag": "Use case · Saga · Outbox",
+      "row": 1,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "Domain",
+      "sublabel": "12 class · 11 method",
+      "tag": "Entity · Port · Rule",
+      "row": 1,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "type": "backend",
+      "label": "Infrastructure",
+      "sublabel": "13 class · 16 method",
+      "tag": "Adapter · Repository · Consumer",
+      "row": 1,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL :5434",
+      "sublabel": "ewallet_wallet_db · wallets",
+      "tag": "JPA",
+      "row": 0,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis :6379",
+      "sublabel": "DistributedLockPort",
+      "tag": "SETNX",
+      "row": 2,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka :9092",
+      "sublabel": "banking.wallet.balance-changed.v1",
+      "tag": "producer",
+      "row": 3,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "mq",
+      "type": "messagebus",
+      "label": "RabbitMQ :5672",
+      "sublabel": "wallet.user.registered.queue",
+      "tag": "consumer",
+      "row": 4,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "entry-presentation",
+      "from": "entry",
+      "to": "presentation",
+      "variant": "emphasis",
+      "label": "REST + gRPC"
+    },
+    {
+      "id": "presentation-application",
+      "from": "presentation",
+      "to": "application",
+      "variant": "default",
+      "label": "gRPC / REST"
+    },
+    {
+      "id": "application-domain",
+      "from": "application",
+      "to": "domain",
+      "variant": "default",
+      "label": "Wallet · Money"
+    },
+    {
+      "id": "infra-domain",
+      "from": "infrastructure",
+      "to": "domain",
+      "variant": "default",
+      "label": "persistence port"
+    },
+    {
+      "id": "infra-db",
+      "from": "infrastructure",
+      "to": "db",
+      "variant": "default"
+    },
+    {
+      "id": "infra-redis",
+      "from": "infrastructure",
+      "to": "redis",
+      "variant": "default"
+    },
+    {
+      "id": "infra-kafka",
+      "from": "infrastructure",
+      "to": "kafka",
+      "variant": "dashed"
+    },
+    {
+      "id": "mq-infra",
+      "from": "mq",
+      "to": "infrastructure",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Tầng 1 · Presentation (2 class)",
+      "items": [
+        "WalletInternalGrpcService: debitWallet(com.fintech.wallet.grpc.DebitRequest request, StreamObserver<com.fintech.wallet.grpc.DebitRes...), creditWallet(com.fintech.wallet.grpc.CreditRequest request, StreamObserver<com.fintech.wallet.grpc.CreditR..…",
+        "WalletRestController: GET /api/v1/wallets/me · GET /api/v1/wallets/{walletId} · GET /api/v1/wallets/recipient-info · GET /api/v1/wallets/fees/estimate"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Tầng 2 · Application (2 class)",
+      "items": [
+        "WalletInternalApplicationService: debitWallet(String walletId, long amount, String transactionId, String idempotencyKey), creditWallet(String walletId, long amount, String transactionId, String idempotencyKey), reserveBalance(String walletId, long amoun…",
+        "WalletGrpcService: debitWallet(String walletId, Long amount, String transactionId, String idempotencyKey), creditWallet(String walletId, Long amount, String transactionId, String idempotencyKey), reserveBalance(String walletId, Long amoun…"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Tầng 3 · Domain (12 class)",
+      "items": [
+        "Wallet: prePersist(), availableBalance()",
+        "AccountLockedException",
+        "InsufficientBalanceException",
+        "InvalidMoneyException",
+        "LockAcquisitionException",
+        "WalletNotFoundException",
+        "Money: zero(String currency), of(BigDecimal amount, String currency), of(double amount, String currency), of(String amount, String currency), add(Money money), subtract(Money money)",
+        "Wallet: createNew(String ownerId, String currency), deposit(Money amount), withdraw(Money amount)",
+        "WalletStatus",
+        "DistributedLockPort (interface): interface",
+        "WalletPersistencePort (interface): interface",
+        "WalletJpaEntity: id: String, ownerId: String, balance: BigDecimal, reservedBalance: BigDecimal, currency: String, status: String, dailyLimit: Long, dailySpent: Long, createdAt: Instant, updatedAt: Instant, version: Long"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Tầng 4 · Infrastructure (13 class)",
+      "items": [
+        "WalletCoreApplication",
+        "RabbitMqConfig: messageConverter()",
+        "UserRegisteredWalletConsumer: handleUserRegistered(UserRegisteredEvent event)",
+        "RedisLockAdapter: executeWithLock(String lockKey, long timeoutSeconds, Supplier<T> supplier)",
+        "GrpcServerConfig",
+        "WalletHealthIndicator: health()",
+        "WalletBalanceChangedKafkaProducer: publishBalanceChanged(WalletBalanceChangedPayload payload)",
+        "WalletKafkaProducerConfig: walletProducerFactory(), walletKafkaTemplate(ProducerFactory<String, Object> walletProducerFactory)",
+        "WalletMetrics: incrementSuccess(), incrementFailure()",
+        "WalletPersistenceAdapter: saveWallet(Wallet wallet), findWalletById(String walletId), findWalletByIdForUpdate(String walletId), findWalletByOwnerId(String ownerId), sumAllBalances()",
+        "WalletMapper: toDomain(WalletJpaEntity entity), toJpaEntity(Wallet domain)",
+        "SpringDataWalletRepository (interface): interface",
+        "WalletRepository (interface): interface"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Phụ thuộc & luồng nghiệp vụ",
+      "items": [
+        "Hai đường code song song: WalletInternalGrpcService → WalletGrpcService (legacy, đang chạy) và WalletInternalApplicationService (hexagonal, REST dùng port)",
+        "WalletGrpcService: debitWallet, creditWallet, reserveBalance, releaseBalance, checkLimit, getWalletByUserId",
+        "Redis idempotency key: wallet:tx:processed:<key> (TTL 24h) + pessimistic lock DB",
+        "Mọi biến động số dư → Kafka balance-changed; Ledger/Notification tiêu thụ"
+      ]
+    }
+  ]
+}

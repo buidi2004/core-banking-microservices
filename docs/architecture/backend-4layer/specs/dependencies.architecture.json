@@ -1,0 +1,411 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Backend — Bản đồ phụ thuộc giữa các service & hạ tầng",
+    "quality_profile": "standard",
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "Clients",
+      "sublabel": "Mobile · Teller Portal",
+      "pos": [
+        40,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "HTTPS"
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "API Gateway",
+      "sublabel": "JWT · blacklist · rate limit",
+      "brand": "spring",
+      "pos": [
+        240,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": ":8080"
+    },
+    {
+      "id": "identity",
+      "type": "backend",
+      "label": "Identity",
+      "sublabel": "Auth · KYC · OTP · Session",
+      "pos": [
+        520,
+        40
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": ":8081"
+    },
+    {
+      "id": "wallet",
+      "type": "backend",
+      "label": "Wallet",
+      "sublabel": "Balance · gRPC · Lock",
+      "pos": [
+        520,
+        170
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": ":8082 / :9090"
+    },
+    {
+      "id": "payment",
+      "type": "backend",
+      "label": "Payment",
+      "sublabel": "Saga · Outbox · Cash",
+      "pos": [
+        520,
+        300
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": ":8083"
+    },
+    {
+      "id": "ledger",
+      "type": "backend",
+      "label": "Ledger",
+      "sublabel": "Double-entry · Consumer",
+      "pos": [
+        520,
+        430
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": ":8084"
+    },
+    {
+      "id": "notification",
+      "type": "backend",
+      "label": "Notification",
+      "sublabel": "WS · FCM · SMS",
+      "pos": [
+        520,
+        560
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": ":8085"
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "lock · blacklist · OTP",
+      "pos": [
+        980,
+        40
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": ":6379"
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka KRaft",
+      "sublabel": "balance-changed · lifecycle",
+      "pos": [
+        980,
+        170
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": ":9092"
+    },
+    {
+      "id": "rabbit",
+      "type": "messagebus",
+      "label": "RabbitMQ",
+      "sublabel": "wallet.transaction.events",
+      "pos": [
+        980,
+        300
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": ":5672"
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL ×5",
+      "sublabel": "database-per-service",
+      "pos": [
+        980,
+        430
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": ":5433–:5437"
+    },
+    {
+      "id": "fcm",
+      "type": "cloud",
+      "label": "Firebase FCM",
+      "sublabel": "push notification",
+      "pos": [
+        980,
+        560
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "HTTPS"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Core Banking — Database-per-Service",
+      "wraps": [
+        "identity",
+        "wallet",
+        "payment",
+        "ledger",
+        "notification",
+        "redis",
+        "kafka",
+        "rabbit",
+        "postgres"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "c-g",
+      "from": "client",
+      "to": "gateway",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "g-id",
+      "from": "gateway",
+      "to": "identity",
+      "label": "/auth"
+    },
+    {
+      "id": "g-wa",
+      "from": "gateway",
+      "to": "wallet",
+      "label": "/wallets"
+    },
+    {
+      "id": "g-pa",
+      "from": "gateway",
+      "to": "payment",
+      "label": "/payments",
+      "variant": "emphasis"
+    },
+    {
+      "id": "g-le",
+      "from": "gateway",
+      "to": "ledger",
+      "label": "/ledger"
+    },
+    {
+      "id": "g-no",
+      "from": "gateway",
+      "to": "notification",
+      "label": "/notify"
+    },
+    {
+      "id": "pa-wa",
+      "from": "payment",
+      "to": "wallet",
+      "label": "gRPC :9090",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "id-r",
+      "labelDx": 70,
+      "from": "identity",
+      "to": "redis",
+      "label": "OTP · session"
+    },
+    {
+      "id": "wa-r",
+      "labelDx": 70,
+      "from": "wallet",
+      "to": "redis",
+      "label": "lock",
+      "variant": "dashed"
+    },
+    {
+      "id": "g-r",
+      "from": "gateway",
+      "to": "redis",
+      "label": "blacklist",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "wa-k",
+      "labelDx": 70,
+      "from": "wallet",
+      "to": "kafka",
+      "label": "balance-changed",
+      "variant": "dashed"
+    },
+    {
+      "id": "pa-k",
+      "from": "payment",
+      "to": "kafka",
+      "label": "lifecycle",
+      "variant": "dashed"
+    },
+    {
+      "id": "pa-q",
+      "labelDx": 70,
+      "from": "payment",
+      "to": "rabbit",
+      "label": "transaction.*",
+      "variant": "dashed"
+    },
+    {
+      "id": "le-pg",
+      "from": "ledger",
+      "to": "postgres",
+      "label": "JPA"
+    },
+    {
+      "id": "no-f",
+      "from": "notification",
+      "to": "fcm",
+      "label": "push",
+      "variant": "dashed"
+    },
+    {
+      "id": "id-q",
+      "from": "identity",
+      "to": "rabbit",
+      "label": "user.registered",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "q-wa",
+      "from": "rabbit",
+      "to": "wallet",
+      "label": "auto-create",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "k-le",
+      "from": "kafka",
+      "to": "ledger",
+      "label": "consume",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "k-no",
+      "from": "kafka",
+      "to": "notification",
+      "label": "consume",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "right"
+    },
+    {
+      "id": "q-le",
+      "from": "rabbit",
+      "to": "ledger",
+      "label": "consume",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "right"
+    },
+    {
+      "id": "q-no",
+      "from": "rabbit",
+      "to": "notification",
+      "label": "consume",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "right"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Đồng bộ",
+      "items": [
+        "Client → Gateway :8080 (JWT filter, Redis blacklist, rate limit)",
+        "Payment → Wallet gRPC :9090 (Reserve / Debit / Credit / Release / CheckLimit)"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Bất đồng bộ",
+      "items": [
+        "Identity → RabbitMQ user.registered → Wallet auto-create ví",
+        "Payment Outbox Relay → RabbitMQ transaction.* + Kafka lifecycle",
+        "Wallet → Kafka balance-changed",
+        "Ledger + Notification consume cả RabbitMQ và Kafka (at-least-once, idempotent)"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Lưu trữ & hạ tầng",
+      "items": [
+        "5 PostgreSQL độc lập :5433–:5437, Flyway mỗi service",
+        "Redis: JWT blacklist, OTP TTL, distributed lock",
+        "Firebase FCM cho push, STOMP /topic/notifications cho WebSocket"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "Hợp đồng dữ liệu",
+      "items": [
+        "common-library: wallet.proto (gRPC stubs), KafkaEventEnvelope, topic constants, BaseKafkaProducer",
+        "Mọi event mang eventId → consumer chống trùng (idempotency)"
+      ]
+    }
+  ]
+}

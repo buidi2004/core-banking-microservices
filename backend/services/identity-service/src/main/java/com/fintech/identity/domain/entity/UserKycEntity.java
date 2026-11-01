@@ -3,6 +3,8 @@ package com.fintech.identity.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
@@ -43,7 +45,8 @@ public class UserKycEntity {
     @Column(name = "face_image_url", length = 255, nullable = false)
     private String faceImageUrl;
 
-    @Column(name = "ocr_extracted_data", columnDefinition = "JSONB")
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "ocr_extracted_data", columnDefinition = "jsonb")
     private String ocrExtractedData;
 
     @Column(name = "verification_status", length = 20, nullable = false)

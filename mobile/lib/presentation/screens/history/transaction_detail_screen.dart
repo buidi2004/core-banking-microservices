@@ -35,7 +35,8 @@ class TransactionDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<TransactionDetailScreen> createState() => _TransactionDetailScreenState();
+  State<TransactionDetailScreen> createState() =>
+      _TransactionDetailScreenState();
 }
 
 class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
@@ -89,7 +90,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
     if (widget.id != null && widget.id!.isNotEmpty) {
       try {
-        final detail = await TransactionRemoteDataSource().getTransaction(widget.id!, walletId: walletId);
+        final detail = await TransactionRemoteDataSource()
+            .getTransaction(widget.id!, walletId: walletId);
         if (mounted) {
           setState(() {
             _fetchedDetail = detail;
@@ -152,36 +154,51 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                 child: Container(
                   width: 40,
                   height: 4,
-                  decoration: BoxDecoration(color: AppColors.textMutedLight.withOpacity(0.3), borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                      color: AppColors.textMutedLight.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 16),
               const Row(
                 children: [
-                  Icon(CupertinoIcons.exclamationmark_shield_fill, color: AppColors.errorText, size: 28),
+                  Icon(CupertinoIcons.exclamationmark_shield_fill,
+                      color: AppColors.errorText, size: 28),
                   SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Yêu Cầu Tra Soát Giao Dịch', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
-                        Text('Quy trình xử lý theo Thông tư 28/2019/TT-NHNN', style: TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
+                        Text('Yêu Cầu Tra Soát Giao Dịch',
+                            style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryText)),
+                        Text('Quy trình xử lý theo Thông tư 28/2019/TT-NHNN',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondaryLight)),
                       ],
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              Text('Mã giao dịch tra soát: $txId', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text('Mã giao dịch tra soát: $txId',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13)),
               const SizedBox(height: 12),
               const Text(
                 'Chọn lý do tra soát / khiếu nại:',
-                style: TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.textSecondaryLight),
               ),
               const SizedBox(height: 8),
-              _buildDisputeOption(ctx, 'Chuyển tiền thành công nhưng người nhận chưa nhận được'),
+              _buildDisputeOption(ctx,
+                  'Chuyển tiền thành công nhưng người nhận chưa nhận được'),
               _buildDisputeOption(ctx, 'Chuyển nhầm số tài khoản hoặc số tiền'),
-              _buildDisputeOption(ctx, 'Tài khoản bị trừ tiền nhiều lần cho 1 giao dịch'),
+              _buildDisputeOption(
+                  ctx, 'Tài khoản bị trừ tiền nhiều lần cho 1 giao dịch'),
               _buildDisputeOption(ctx, 'Nghi ngờ giao dịch giả mạo / lừa đảo'),
               const SizedBox(height: 12),
               SizedBox(
@@ -221,9 +238,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           ),
           child: Row(
             children: [
-              const Icon(CupertinoIcons.arrow_right_circle, size: 16, color: AppColors.primaryText),
+              const Icon(CupertinoIcons.arrow_right_circle,
+                  size: 16, color: AppColors.primaryText),
               const SizedBox(width: 10),
-              Expanded(child: Text(text, style: const TextStyle(fontSize: 12.5, color: AppColors.textPrimaryLight))),
+              Expanded(
+                  child: Text(text,
+                      style: const TextStyle(
+                          fontSize: 12.5, color: AppColors.textPrimaryLight))),
             ],
           ),
         ),
@@ -245,17 +266,33 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final txId = _fetchedDetail?['id']?.toString().isNotEmpty == true ? _fetchedDetail!['id'].toString() : (widget.id ?? '');
-    final txTitle = _fetchedDetail?['title'] ?? widget.title ?? 'Giao dịch Sen Hồng';
-    final txAmount = (_fetchedDetail?['amount'] as num?)?.toDouble() ?? widget.amount ?? 0.0;
+    final txId = _fetchedDetail?['id']?.toString().isNotEmpty == true
+        ? _fetchedDetail!['id'].toString()
+        : (widget.id ?? '');
+    final txTitle =
+        _fetchedDetail?['title'] ?? widget.title ?? 'Giao dịch Sen Hồng';
+    final txAmount =
+        (_fetchedDetail?['amount'] as num?)?.toDouble() ?? widget.amount ?? 0.0;
     final txTime = _fetchedDetail?['date'] ?? widget.time ?? '';
-    final txNote = (_fetchedDetail?['note'] ?? widget.note ?? txTitle).toString();
-    final txRecipient = (_fetchedDetail?['counterpartyName'] ?? widget.recipient ?? txTitle).toString();
-    final recipAccount = (_fetchedDetail?['counterpartyAccount'] ?? _fetchedDetail?['recipientAccount'] ?? '').toString();
-    final recipBank = (_fetchedDetail?['counterpartyBankName'] ?? _fetchedDetail?['bankCode'] ?? '').toString();
+    final txNote =
+        (_fetchedDetail?['note'] ?? widget.note ?? txTitle).toString();
+    final txRecipient =
+        (_fetchedDetail?['counterpartyName'] ?? widget.recipient ?? txTitle)
+            .toString();
+    final recipAccount = (_fetchedDetail?['counterpartyAccount'] ??
+            _fetchedDetail?['recipientAccount'] ??
+            '')
+        .toString();
+    final recipBank = (_fetchedDetail?['counterpartyBankName'] ??
+            _fetchedDetail?['bankCode'] ??
+            '')
+        .toString();
     final isPositive = txAmount > 0;
-    final napasTrace = txId.length > 6 ? txId.substring(txId.length - 6) : (txId.isNotEmpty ? txId : '000000');
-    final coreRef = txId.isNotEmpty ? txId : 'SHB${DateTime.now().millisecondsSinceEpoch}';
+    final napasTrace = txId.length > 6
+        ? txId.substring(txId.length - 6)
+        : (txId.isNotEmpty ? txId : '000000');
+    final coreRef =
+        txId.isNotEmpty ? txId : 'SHB${DateTime.now().millisecondsSinceEpoch}';
     final sourceDisplay = (_sourceAccount != null && _sourceAccount!.isNotEmpty)
         ? '$_sourceAccount (${(_sourceName ?? 'SEN HỒNG USER').toUpperCase()})'
         : 'Tài khoản thanh toán Sen Hồng';
@@ -271,7 +308,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
             tooltip: 'Chia sẻ biên lai',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Đã tạo ảnh biên lai giao dịch chuẩn và sẵn sàng chia sẻ.')),
+                const SnackBar(
+                    content: Text(
+                        'Đã tạo ảnh biên lai giao dịch chuẩn và sẵn sàng chia sẻ.')),
               );
             },
           ),
@@ -294,39 +333,64 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 28,
-                                height: 28,
-                                padding: const EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.bottomBarCyan.withOpacity(0.5)),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 28,
+                                  height: 28,
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: AppColors.bottomBarCyan
+                                            .withOpacity(0.5)),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(5),
+                                    child: Image.asset(
+                                        'assets/icons/senbank_lotus_isolated.png',
+                                        fit: BoxFit.contain),
+                                  ),
                                 ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(5),
-                                  child: Image.asset('assets/icons/senbank_lotus_isolated.png', fit: BoxFit.contain),
+                                const SizedBox(width: 8),
+                                const Flexible(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('SENBANK',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                              color: AppColors.primaryText,
+                                              letterSpacing: 0.5)),
+                                      Text('NGÂN HÀNG SỐ VIỆT NAM',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                              fontSize: 8.5,
+                                              color: AppColors.textSecondaryLight,
+                                              letterSpacing: 0.3)),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('SENBANK', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryText, letterSpacing: 0.5)),
-                                  Text('NGÂN HÀNG SỐ VIỆT NAM', style: TextStyle(fontSize: 8.5, color: AppColors.textSecondaryLight, letterSpacing: 0.3)),
-                                ],
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: AppColors.bottomBarCyan.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text('NAPAS 24/7', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
+                            child: const Text('NAPAS 24/7',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primaryText)),
                           ),
                         ],
                       ),
@@ -340,84 +404,128 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           color: AppColors.emeraldGreen.withOpacity(0.12),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.successTextLight, size: 40),
+                        child: const Icon(CupertinoIcons.checkmark_circle_fill,
+                            color: AppColors.successTextLight, size: 40),
                       ),
                       const SizedBox(height: 12),
                       const Text(
                         'GIAO DỊCH THÀNH CÔNG',
-                        style: TextStyle(color: AppColors.successTextLight, fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.6),
+                        style: TextStyle(
+                            color: AppColors.successTextLight,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            letterSpacing: 0.6),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         '${isPositive ? '+' : ''}${CurrencyFormatter.formatVND(txAmount)}',
                         style: AppTypography.displayMedium(
-                          color: isPositive ? AppColors.successTextLight : AppColors.textPrimaryLight,
+                          color: isPositive
+                              ? AppColors.successTextLight
+                              : AppColors.textPrimaryLight,
                         ).copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
-                      Text(txTitle, style: const TextStyle(color: AppColors.textSecondaryLight, fontSize: 13)),
-                      const Divider(height: 32, color: AppColors.cardBorderLight),
+                      Text(txTitle,
+                          style: const TextStyle(
+                              color: AppColors.textSecondaryLight,
+                              fontSize: 13)),
+                      const Divider(
+                          height: 32, color: AppColors.cardBorderLight),
 
                       // Core Details
-                      _buildReceiptRow('Mã giao dịch (TxID)', txId, isCopyable: true),
+                      _buildReceiptRow('Mã giao dịch (TxID)', txId,
+                          isCopyable: true),
                       const SizedBox(height: 10),
-                      _buildReceiptRow('Mã tham chiếu Core Banking', coreRef, isCopyable: true),
+                      _buildReceiptRow('Mã tham chiếu Core Banking', coreRef,
+                          isCopyable: true),
                       const SizedBox(height: 10),
-                      _buildReceiptRow('Số tham chiếu Napas (Trace)', napasTrace),
+                      _buildReceiptRow(
+                          'Số tham chiếu Napas (Trace)', napasTrace),
                       const SizedBox(height: 10),
-                      _buildReceiptRow('Thời gian thực hiện', _formatTxDetailTime(txTime)),
-                      const Divider(height: 24, color: AppColors.cardBorderLight),
+                      _buildReceiptRow(
+                          'Thời gian thực hiện', _formatTxDetailTime(txTime)),
+                      const Divider(
+                          height: 24, color: AppColors.cardBorderLight),
 
                       // Accounts
                       _buildReceiptRow('Tài khoản trích tiền', sourceDisplay),
                       const SizedBox(height: 10),
-                      _buildReceiptRow('Người thụ hưởng / đối tác', txRecipient, isBold: true),
+                      _buildReceiptRow('Người thụ hưởng / đối tác', txRecipient,
+                          isBold: true),
                       if (recipAccount.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        _buildReceiptRow('Số tài khoản thụ hưởng', recipAccount, isCopyable: true),
+                        _buildReceiptRow('Số tài khoản thụ hưởng', recipAccount,
+                            isCopyable: true),
                       ],
                       if (recipBank.isNotEmpty) ...[
                         const SizedBox(height: 10),
-                        _buildReceiptRow('Ngân hàng thụ hưởng', recipBank == 'SenHong' ? 'Ngân Hàng Số Sen Hồng' : recipBank),
+                        _buildReceiptRow(
+                            'Ngân hàng thụ hưởng',
+                            recipBank == 'SenHong'
+                                ? 'Ngân Hàng Số Sen Hồng'
+                                : recipBank),
                       ],
                       const SizedBox(height: 10),
                       _buildReceiptRow('Nội dung giao dịch', txNote),
                       const SizedBox(height: 10),
-                      _buildReceiptRow('Kênh giao dịch', 'Sen Mobile App (Napas IBFT)'),
+                      _buildReceiptRow(
+                          'Kênh giao dịch', 'Sen Mobile App (Napas IBFT)'),
                       const SizedBox(height: 10),
-                      _buildReceiptRow('Phí giao dịch', '0 VND (Miễn phí 100%)', isHighlight: true),
-                      const Divider(height: 24, color: AppColors.cardBorderLight),
+                      _buildReceiptRow('Phí giao dịch', '0 VND (Miễn phí 100%)',
+                          isHighlight: true),
+                      const Divider(
+                          height: 24, color: AppColors.cardBorderLight),
 
                       // Closing Balance with toggle
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Row(
-                            children: [
-                              Text('Số dư khả dụng sau GD:', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight)),
-                            ],
+                          const Expanded(
+                            flex: 5,
+                            child: Text('Số dư khả dụng sau GD:',
+                                style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: AppColors.textSecondaryLight)),
                           ),
-                          Row(
-                            children: [
-                              Text(
-                                _isBalanceVisible
-                                    ? (_runningBalance != null
-                                        ? CurrencyFormatter.formatVND(_runningBalance!)
-                                        : 'Đang cập nhật')
-                                    : '•••••••• đ',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primaryText),
-                              ),
-                              IconButton(
-                                constraints: const BoxConstraints(),
-                                padding: const EdgeInsets.only(left: 6),
-                                icon: Icon(
-                                  _isBalanceVisible ? CupertinoIcons.eye_slash_fill : CupertinoIcons.eye_fill,
-                                  size: 16,
-                                  color: AppColors.textSecondaryLight,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 6,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    _isBalanceVisible
+                                        ? (_runningBalance != null
+                                            ? CurrencyFormatter.formatVND(
+                                                _runningBalance!)
+                                            : 'Đang cập nhật')
+                                        : '•••••••• đ',
+                                    textAlign: TextAlign.end,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        color: AppColors.primaryText),
+                                  ),
                                 ),
-                                onPressed: () => setState(() => _isBalanceVisible = !_isBalanceVisible),
-                              ),
-                            ],
+                                IconButton(
+                                  constraints: const BoxConstraints(),
+                                  padding: const EdgeInsets.only(left: 6),
+                                  icon: Icon(
+                                    _isBalanceVisible
+                                        ? CupertinoIcons.eye_slash_fill
+                                        : CupertinoIcons.eye_fill,
+                                    size: 16,
+                                    color: AppColors.textSecondaryLight,
+                                  ),
+                                  onPressed: () => setState(() =>
+                                      _isBalanceVisible = !_isBalanceVisible),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -439,9 +547,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: AppColors.borderSubtle),
+                                border:
+                                    Border.all(color: AppColors.borderSubtle),
                               ),
-                              child: const Icon(CupertinoIcons.qrcode, size: 38, color: AppColors.primaryText),
+                              child: const Icon(CupertinoIcons.qrcode,
+                                  size: 38, color: AppColors.primaryText),
                             ),
                             const SizedBox(width: 12),
                             const Expanded(
@@ -450,12 +560,18 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                 children: [
                                   Text(
                                     'SEN HỒNG BANK • DIGITAL VERIFIED',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.successTextLight),
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                        color: AppColors.successTextLight),
                                   ),
                                   SizedBox(height: 2),
                                   Text(
                                     'Chứng từ điện tử hợp lệ theo Luật Giao dịch điện tử số 20/2023/QH15. Quét mã QR để đối soát trực tuyến.',
-                                    style: TextStyle(fontSize: 10, color: AppColors.textSecondaryLight, height: 1.3),
+                                    style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.textSecondaryLight,
+                                        height: 1.3),
                                   ),
                                 ],
                               ),
@@ -476,24 +592,40 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   child: OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: _isBeneficiarySaved ? AppColors.emeraldGreen : AppColors.borderSubtle),
+                      side: BorderSide(
+                          color: _isBeneficiarySaved
+                              ? AppColors.emeraldGreen
+                              : AppColors.borderSubtle),
                     ),
                     onPressed: () {
-                      setState(() => _isBeneficiarySaved = !_isBeneficiarySaved);
+                      setState(
+                          () => _isBeneficiarySaved = !_isBeneficiarySaved);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(_isBeneficiarySaved ? 'Đã lưu người nhận vào Danh bạ thụ hưởng!' : 'Đã bỏ lưu khỏi danh bạ.'),
+                          content: Text(_isBeneficiarySaved
+                              ? 'Đã lưu người nhận vào Danh bạ thụ hưởng!'
+                              : 'Đã bỏ lưu khỏi danh bạ.'),
                         ),
                       );
                     },
                     icon: Icon(
-                      _isBeneficiarySaved ? CupertinoIcons.bookmark_fill : CupertinoIcons.bookmark,
+                      _isBeneficiarySaved
+                          ? CupertinoIcons.bookmark_fill
+                          : CupertinoIcons.bookmark,
                       size: 16,
-                      color: _isBeneficiarySaved ? AppColors.emeraldGreenLight : AppColors.primaryLight,
+                      color: _isBeneficiarySaved
+                          ? AppColors.emeraldGreenLight
+                          : AppColors.primaryLight,
                     ),
                     label: Text(
-                      _isBeneficiarySaved ? 'Đã lưu trong danh bạ thụ hưởng' : 'Lưu người nhận vào danh bạ',
-                      style: TextStyle(fontSize: 13, color: _isBeneficiarySaved ? AppColors.emeraldGreenLight : AppColors.primaryLight),
+                      _isBeneficiarySaved
+                          ? 'Đã lưu trong danh bạ thụ hưởng'
+                          : 'Lưu người nhận vào danh bạ',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: _isBeneficiarySaved
+                              ? AppColors.emeraldGreenLight
+                              : AppColors.primaryLight),
                     ),
                   ),
                 ),
@@ -508,8 +640,11 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         side: const BorderSide(color: AppColors.borderSubtle),
                       ),
                       onPressed: () => _downloadReceipt(txId),
-                      icon: const Icon(CupertinoIcons.arrow_down_doc_fill, size: 18, color: AppColors.primaryLight),
-                      label: const Text('Tải file PDF', style: TextStyle(color: AppColors.primaryText, fontSize: 13)),
+                      icon: const Icon(CupertinoIcons.arrow_down_doc_fill,
+                          size: 18, color: AppColors.primaryLight),
+                      label: const Text('Tải file PDF',
+                          style: TextStyle(
+                              color: AppColors.primaryText, fontSize: 13)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -524,8 +659,9 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                           await showFeatureUnavailable(
                             context,
                             feature: 'Thực hiện lại giao dịch',
-                            reason: 'Backend chưa cung cấp API xác thực PIN/OTP (B-02/B-03). '
-                                    'Giao dịch sẽ tạm khóa để tránh rủi ro mất tiền.',
+                            reason:
+                                'Backend chưa cung cấp API xác thực PIN/OTP (B-02/B-03). '
+                                'Giao dịch sẽ tạm khóa để tránh rủi ro mất tiền.',
                           );
                           return;
                         }
@@ -540,8 +676,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                         );
                         context.push(uri.toString());
                       },
-                      icon: const Icon(CupertinoIcons.arrow_2_squarepath, size: 18),
-                      label: const Text('Thực hiện lại', style: TextStyle(fontSize: 13)),
+                      icon: const Icon(CupertinoIcons.arrow_2_squarepath,
+                          size: 18),
+                      label: const Text('Thực hiện lại',
+                          style: TextStyle(fontSize: 13)),
                     ),
                   ),
                 ],
@@ -554,15 +692,26 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   Expanded(
                     child: TextButton.icon(
                       onPressed: () => _showDisputeModal(txId),
-                      icon: const Icon(CupertinoIcons.exclamationmark_bubble_fill, size: 16, color: AppColors.textSecondaryLight),
-                      label: const Text('Tra soát / Khiếu nại', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+                      icon: const Icon(
+                          CupertinoIcons.exclamationmark_bubble_fill,
+                          size: 16,
+                          color: AppColors.textSecondaryLight),
+                      label: const Text('Tra soát / Khiếu nại',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondaryLight)),
                     ),
                   ),
                   Expanded(
                     child: TextButton.icon(
                       onPressed: () => context.go('/'),
-                      icon: const Icon(CupertinoIcons.house_fill, size: 16, color: AppColors.primaryLight),
-                      label: const Text('Về Trang Chủ', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
+                      icon: const Icon(CupertinoIcons.house_fill,
+                          size: 16, color: AppColors.primaryLight),
+                      label: const Text('Về Trang Chủ',
+                          style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryText)),
                     ),
                   ),
                 ],
@@ -574,15 +723,27 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
   }
 
-  Widget _buildReceiptRow(String label, String value, {bool isHighlight = false, bool isBold = false, bool isCopyable = false}) {
+  Widget _buildReceiptRow(String label, String value,
+      {bool isHighlight = false,
+      bool isBold = false,
+      bool isCopyable = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight)),
-        const SizedBox(width: 16),
-        Flexible(
+        Expanded(
+          flex: 5,
+          child: Text(
+            label,
+            style: const TextStyle(
+                fontSize: 12.5, color: AppColors.textSecondaryLight),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          flex: 6,
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
@@ -593,8 +754,14 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 12.5,
-                    fontWeight: isBold || isHighlight ? FontWeight.bold : FontWeight.w600,
-                    color: isHighlight ? AppColors.successTextLight : (isBold ? AppColors.primaryDark : AppColors.textPrimaryLight),
+                    fontWeight: isBold || isHighlight
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                    color: isHighlight
+                        ? AppColors.successTextLight
+                        : (isBold
+                            ? AppColors.primaryDark
+                            : AppColors.textPrimaryLight),
                   ),
                 ),
               ),
@@ -606,7 +773,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                       SnackBar(content: Text('Đã sao chép: $value')),
                     );
                   },
-                  child: const Icon(CupertinoIcons.doc_on_doc, size: 14, color: AppColors.primaryText),
+                  child: const Icon(CupertinoIcons.doc_on_doc,
+                      size: 14, color: AppColors.primaryText),
                 ),
               ],
             ],
@@ -616,4 +784,3 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
   }
 }
-

@@ -47,12 +47,17 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
   final TextEditingController _vatEmailCtrl = TextEditingController();
 
   List<Map<String, String>> _sources = [
-    {'name': 'Ví Sen Hồng (Đang tải số dư...)', 'type': 'Miễn phí giao dịch', 'logo': 'SHB'},
+    {
+      'name': 'Ví Sen Hồng (Đang tải số dư...)',
+      'type': 'Miễn phí giao dịch',
+      'logo': 'SHB'
+    },
   ];
 
   List<Map<String, dynamic>> _vouchers = [];
 
-  double get _finalAmount => (_billAmount - _discountAmount).clamp(0, double.infinity);
+  double get _finalAmount =>
+      (_billAmount - _discountAmount).clamp(0, double.infinity);
 
   @override
   void initState() {
@@ -68,7 +73,8 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
 
       final updatedSources = <Map<String, String>>[
         {
-          'name': 'Ví Sen Hồng (Số dư: ${CurrencyFormatter.formatVND(wallet.balance)})',
+          'name':
+              'Ví Sen Hồng (Số dư: ${CurrencyFormatter.formatVND(wallet.balance)})',
           'type': 'Thanh toán tức thời • Miễn phí 100%',
           'logo': 'SHB',
         }
@@ -80,11 +86,15 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
         for (final acc in accounts) {
           final bankCode = acc['bankCode']?.toString() ?? 'NGANHANG';
           final accNum = acc['accountNumber']?.toString() ?? '';
-          final masked = accNum.length > 4 ? '(*${accNum.substring(accNum.length - 4)})' : accNum;
+          final masked = accNum.length > 4
+              ? '(*${accNum.substring(accNum.length - 4)})'
+              : accNum;
           updatedSources.add({
             'name': '$bankCode $masked',
             'type': 'Tài khoản ngân hàng liên kết',
-            'logo': bankCode.length > 4 ? bankCode.substring(0, 4).toUpperCase() : bankCode.toUpperCase(),
+            'logo': bankCode.length > 4
+                ? bankCode.substring(0, 4).toUpperCase()
+                : bankCode.toUpperCase(),
           });
         }
       } catch (_) {}
@@ -101,9 +111,12 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
         final mappedVouchers = <Map<String, dynamic>>[];
         for (final p in promos) {
           final code = p['code']?.toString() ?? '';
-          final discount = (p['discountAmount'] ?? p['discount'] as num?)?.toDouble() ?? 10000.0;
+          final discount =
+              (p['discountAmount'] ?? p['discount'] as num?)?.toDouble() ??
+                  10000.0;
           final title = p['title']?.toString() ?? 'Khuyến mãi Sen Hồng';
-          final minAmount = (p['minAmount'] ?? p['minOrder'] as num?)?.toDouble() ?? 0.0;
+          final minAmount =
+              (p['minAmount'] ?? p['minOrder'] as num?)?.toDouble() ?? 0.0;
           mappedVouchers.add({
             'code': code,
             'discount': discount,
@@ -128,9 +141,24 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
         if (mounted && _vouchers.isEmpty) {
           setState(() {
             _vouchers = [
-              {'code': 'SENHONG5', 'discount': 15000.0, 'title': 'Giảm 15.000đ hóa đơn điện nước', 'min': 300000.0},
-              {'code': 'EVN2026', 'discount': 25000.0, 'title': 'Giảm 25.000đ hóa đơn EVN trên 400k', 'min': 400000.0},
-              {'code': 'HOAN5K', 'discount': 5000.0, 'title': 'Hoàn 5.000đ cho mọi hóa đơn', 'min': 100000.0},
+              {
+                'code': 'SENHONG5',
+                'discount': 15000.0,
+                'title': 'Giảm 15.000đ hóa đơn điện nước',
+                'min': 300000.0
+              },
+              {
+                'code': 'EVN2026',
+                'discount': 25000.0,
+                'title': 'Giảm 25.000đ hóa đơn EVN trên 400k',
+                'min': 400000.0
+              },
+              {
+                'code': 'HOAN5K',
+                'discount': 5000.0,
+                'title': 'Hoàn 5.000đ cho mọi hóa đơn',
+                'min': 100000.0
+              },
             ];
             _selectedVoucherCode = 'SENHONG5';
             _discountAmount = 15000;
@@ -152,7 +180,8 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -162,15 +191,22 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Mã Giảm Giá / Voucher Sen Hồng', style: AppTypography.titleLarge(color: AppColors.primaryDark)),
-                IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textMutedLight)),
+                Text('Mã Giảm Giá / Voucher Sen Hồng',
+                    style:
+                        AppTypography.titleLarge(color: AppColors.primaryDark)),
+                IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                        color: AppColors.textMutedLight)),
               ],
             ),
             const SizedBox(height: 12),
             if (_vouchers.isEmpty)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(child: Text('Hiện chưa có voucher khả dụng cho hóa đơn này.')),
+                child: Center(
+                    child:
+                        Text('Hiện chưa có voucher khả dụng cho hóa đơn này.')),
               )
             else
               ..._vouchers.map((v) {
@@ -180,20 +216,37 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                   margin: const EdgeInsets.only(bottom: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: isApplied ? AppColors.bottomBarCyan : AppColors.borderLight, width: isApplied ? 2 : 1),
-                    color: isApplied ? AppColors.bottomBarCyan.withOpacity(0.08) : Colors.white,
+                    border: Border.all(
+                        color: isApplied
+                            ? AppColors.bottomBarCyan
+                            : AppColors.borderLight,
+                        width: isApplied ? 2 : 1),
+                    color: isApplied
+                        ? AppColors.bottomBarCyan.withOpacity(0.08)
+                        : Colors.white,
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.bottomBarCyan.withOpacity(0.15),
-                      child: const Icon(CupertinoIcons.tickets_fill, color: AppColors.bottomBarCyan, size: 20),
+                      backgroundColor:
+                          AppColors.bottomBarCyan.withOpacity(0.15),
+                      child: const Icon(CupertinoIcons.tickets_fill,
+                          color: AppColors.bottomBarCyan, size: 20),
                     ),
-                    title: Text(v['code'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimaryLight)),
-                    subtitle: Text(v['title'] as String, style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight)),
+                    title: Text(v['code'] as String,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: AppColors.textPrimaryLight)),
+                    subtitle: Text(v['title'] as String,
+                        style: const TextStyle(
+                            fontSize: 11, color: AppColors.textSecondaryLight)),
                     trailing: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isApplied ? AppColors.bottomBarCyan : AppColors.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        backgroundColor: isApplied
+                            ? AppColors.bottomBarCyan
+                            : AppColors.primary,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                       ),
                       onPressed: () {
                         setState(() {
@@ -206,11 +259,13 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             backgroundColor: AppColors.emeraldGreen,
-                            content: Text('Đã áp dụng mã ${v['code']}! Tiết kiệm ${CurrencyFormatter.formatVND(discount)}'),
+                            content: Text(
+                                'Đã áp dụng mã ${v['code']}! Tiết kiệm ${CurrencyFormatter.formatVND(discount)}'),
                           ),
                         );
                       },
-                      child: Text(isApplied ? 'Đang dùng' : 'Dùng mã', style: const TextStyle(fontSize: 12)),
+                      child: Text(isApplied ? 'Đang dùng' : 'Dùng mã',
+                          style: const TextStyle(fontSize: 12)),
                     ),
                   ),
                 );
@@ -241,24 +296,32 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.surfaceLight,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [
-              Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.warningText),
+              Icon(CupertinoIcons.exclamationmark_triangle_fill,
+                  color: AppColors.warningText),
               SizedBox(width: 8),
               Expanded(
-                child: Text('Số Dư Ví Không Đủ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17, color: AppColors.textPrimaryLight)),
+                child: Text('Số Dư Ví Không Đủ',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                        color: AppColors.textPrimaryLight)),
               ),
             ],
           ),
           content: Text(
             'Số dư Ví Sen Hồng của bạn hiện có ${CurrencyFormatter.formatVND(_walletBalance)}, không đủ để thanh toán hóa đơn ${CurrencyFormatter.formatVND(_finalAmount)}.\n\nBạn có muốn nạp thêm tiền vào ví ngay bây giờ?',
-            style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight, height: 1.4),
+            style: const TextStyle(
+                fontSize: 13, color: AppColors.textSecondaryLight, height: 1.4),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy', style: TextStyle(color: AppColors.textMutedLight)),
+              child: const Text('Hủy',
+                  style: TextStyle(color: AppColors.textMutedLight)),
             ),
             ElevatedButton(
               onPressed: () {
@@ -306,18 +369,26 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      Text('Số tiền cước cần thanh toán', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                      Text('Số tiền cước cần thanh toán',
+                          style: AppTypography.bodySmall(
+                              color: AppColors.textSecondaryLight)),
                       const SizedBox(height: 6),
                       Text(
                         CurrencyFormatter.formatVND(_finalAmount),
-                        style: const TextStyle(color: AppColors.primaryDark, fontSize: 32, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                            color: AppColors.primaryDark,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900),
                       ),
-                      if (CurrencyFormatter.toVietnameseWords(_finalAmount).isNotEmpty) ...[
+                      if (CurrencyFormatter.toVietnameseWords(_finalAmount)
+                          .isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(
                           'Bằng chữ: ${CurrencyFormatter.toVietnameseWords(_finalAmount)} đồng',
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodySmall(color: AppColors.primaryDark).copyWith(
+                          style: AppTypography.bodySmall(
+                                  color: AppColors.primaryDark)
+                              .copyWith(
                             fontStyle: FontStyle.italic,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
@@ -326,27 +397,36 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                       ],
                       const SizedBox(height: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text('Chờ thanh toán', style: TextStyle(color: AppColors.primaryDark, fontSize: 12, fontWeight: FontWeight.bold)),
+                        child: const Text('Chờ thanh toán',
+                            style: TextStyle(
+                                color: AppColors.primaryDark,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold)),
                       ),
-                      const Divider(height: 28, color: AppColors.cardBorderLight),
-
+                      const Divider(
+                          height: 28, color: AppColors.cardBorderLight),
                       _buildRow('Dịch vụ', widget.service ?? 'Hóa đơn dịch vụ'),
                       const SizedBox(height: 10),
-                      _buildRow('Đơn vị cung cấp', widget.provider ?? 'Nhà cung cấp'),
+                      _buildRow(
+                          'Đơn vị cung cấp', widget.provider ?? 'Nhà cung cấp'),
                       const SizedBox(height: 10),
                       _buildRow('Mã khách hàng', widget.code ?? ''),
                       const SizedBox(height: 10),
                       _buildRow('Kỳ cước hóa đơn', 'Kỳ gần nhất'),
                       const SizedBox(height: 10),
-                      _buildRow('Tiền cước gốc', CurrencyFormatter.formatVND(_billAmount)),
+                      _buildRow('Tiền cước gốc',
+                          CurrencyFormatter.formatVND(_billAmount)),
                       if (_discountAmount > 0) ...[
                         const SizedBox(height: 10),
-                        _buildRow('Ưu đãi Sen Hồng ($_selectedVoucherCode)', '-${CurrencyFormatter.formatVND(_discountAmount)}', isHighlight: true),
+                        _buildRow('Ưu đãi Sen Hồng ($_selectedVoucherCode)',
+                            '-${CurrencyFormatter.formatVND(_discountAmount)}',
+                            isHighlight: true),
                       ],
                     ],
                   ),
@@ -359,24 +439,36 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                 quality: GlassQuality.minimal,
                 child: ListTile(
                   onTap: _showVoucherPicker,
-                  leading: const Icon(CupertinoIcons.tickets_fill, color: AppColors.bottomBarCyan, size: 24),
-                  title: const Text('Mã giảm giá / Voucher', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimaryLight)),
+                  leading: const Icon(CupertinoIcons.tickets_fill,
+                      color: AppColors.bottomBarCyan, size: 24),
+                  title: const Text('Mã giảm giá / Voucher',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: AppColors.textPrimaryLight)),
                   subtitle: Text(
                     _discountAmount > 0
                         ? 'Đang dùng: $_selectedVoucherCode (-${CurrencyFormatter.formatVND(_discountAmount)})'
                         : 'Chọn mã giảm giá để tiết kiệm thêm',
                     style: TextStyle(
                       fontSize: 11,
-                      color: _discountAmount > 0 ? AppColors.emeraldGreen : AppColors.textSecondaryLight,
+                      color: _discountAmount > 0
+                          ? AppColors.emeraldGreen
+                          : AppColors.textSecondaryLight,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   trailing: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Chọn mã', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('Chọn mã',
+                          style: TextStyle(
+                              color: AppColors.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold)),
                       SizedBox(width: 4),
-                      Icon(CupertinoIcons.chevron_forward, color: AppColors.primary, size: 14),
+                      Icon(CupertinoIcons.chevron_forward,
+                          color: AppColors.primary, size: 14),
                     ],
                   ),
                 ),
@@ -384,7 +476,9 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
               const SizedBox(height: 20),
 
               // Payment Source Selection
-              Text('Nguồn tiền thanh toán', style: AppTypography.titleLarge(color: AppColors.textPrimaryLight)),
+              Text('Nguồn tiền thanh toán',
+                  style: AppTypography.titleLarge(
+                      color: AppColors.textPrimaryLight)),
               const SizedBox(height: 10),
 
               GlassCard(
@@ -399,19 +493,38 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                         Material(
                           type: MaterialType.transparency,
                           child: ListTile(
-                            onTap: () => setState(() => _selectedSourceIdx = idx),
+                            onTap: () =>
+                                setState(() => _selectedSourceIdx = idx),
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(0.12),
-                              child: Text(s['logo']!, style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 11)),
+                              backgroundColor:
+                                  AppColors.primary.withOpacity(0.12),
+                              child: Text(s['logo']!,
+                                  style: const TextStyle(
+                                      color: AppColors.primaryDark,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11)),
                             ),
-                            title: Text(s['name']!, style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
-                            subtitle: Text(s['type']!, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
+                            title: Text(s['name']!,
+                                style: AppTypography.titleSmall(
+                                        color: AppColors.textPrimaryLight)
+                                    .copyWith(fontWeight: FontWeight.bold)),
+                            subtitle: Text(s['type']!,
+                                style: AppTypography.bodySmall(
+                                        color: AppColors.textSecondaryLight)
+                                    .copyWith(fontSize: 11)),
                             trailing: isSelected
-                                ? const Icon(CupertinoIcons.checkmark_circle_fill, color: AppColors.emeraldGreen)
-                                : const Icon(CupertinoIcons.circle, color: AppColors.textMutedLight),
+                                ? const Icon(
+                                    CupertinoIcons.checkmark_circle_fill,
+                                    color: AppColors.emeraldGreen)
+                                : const Icon(CupertinoIcons.circle,
+                                    color: AppColors.textMutedLight),
                           ),
                         ),
-                        if (!isLast) const Divider(height: 1, indent: 56, color: AppColors.cardBorderLight),
+                        if (!isLast)
+                          const Divider(
+                              height: 1,
+                              indent: 56,
+                              color: AppColors.cardBorderLight),
                       ],
                     );
                   }),
@@ -425,8 +538,15 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                 child: SwitchListTile.adaptive(
                   value: _autoPayNextMonth,
                   activeTrackColor: AppColors.primary,
-                  title: Text('Tự động thanh toán các kỳ sau', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Hệ thống tự động trừ cước khi có hóa đơn mới, thông báo biến động tức thời', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
+                  title: Text('Tự động thanh toán các kỳ sau',
+                      style: AppTypography.titleSmall(
+                              color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.bold)),
+                  subtitle: Text(
+                      'Hệ thống tự động trừ cước khi có hóa đơn mới, thông báo biến động tức thời',
+                      style: AppTypography.bodySmall(
+                              color: AppColors.textSecondaryLight)
+                          .copyWith(fontSize: 11)),
                   onChanged: (val) => setState(() => _autoPayNextMonth = val),
                 ),
               ),
@@ -440,49 +560,80 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                     SwitchListTile.adaptive(
                       value: _requestVatInvoice,
                       activeTrackColor: AppColors.primary,
-                      title: Text('Yêu cầu xuất hóa đơn điện tử GTGT', style: AppTypography.titleSmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
-                      subtitle: Text('Hóa đơn VAT hợp pháp theo quy định Tổng Cục Thuế', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight).copyWith(fontSize: 11)),
-                      onChanged: (val) => setState(() => _requestVatInvoice = val),
+                      title: Text('Yêu cầu xuất hóa đơn điện tử GTGT',
+                          style: AppTypography.titleSmall(
+                                  color: AppColors.textPrimaryLight)
+                              .copyWith(fontWeight: FontWeight.bold)),
+                      subtitle: Text(
+                          'Hóa đơn VAT hợp pháp theo quy định Tổng Cục Thuế',
+                          style: AppTypography.bodySmall(
+                                  color: AppColors.textSecondaryLight)
+                              .copyWith(fontSize: 11)),
+                      onChanged: (val) =>
+                          setState(() => _requestVatInvoice = val),
                     ),
                     if (_requestVatInvoice) ...[
-                      const Divider(height: 1, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1, color: AppColors.cardBorderLight),
                       Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           children: [
                             TextField(
                               controller: _taxCodeCtrl,
-                              style: const TextStyle(fontSize: 13, color: AppColors.textPrimaryLight),
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textPrimaryLight),
                               decoration: InputDecoration(
                                 labelText: 'Mã số thuế doanh nghiệp (MST)',
-                                prefixIcon: const Icon(CupertinoIcons.number, size: 16, color: AppColors.primary),
+                                prefixIcon: const Icon(CupertinoIcons.number,
+                                    size: 16, color: AppColors.primary),
                                 filled: true,
                                 fillColor: AppColors.surfaceLight,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.borderLight)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.borderLight)),
                               ),
                             ),
                             const SizedBox(height: 10),
                             TextField(
                               controller: _companyNameCtrl,
-                              style: const TextStyle(fontSize: 13, color: AppColors.textPrimaryLight),
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textPrimaryLight),
                               decoration: InputDecoration(
                                 labelText: 'Tên cơ quan / Doanh nghiệp',
-                                prefixIcon: const Icon(CupertinoIcons.building_2_fill, size: 16, color: AppColors.primary),
+                                prefixIcon: const Icon(
+                                    CupertinoIcons.building_2_fill,
+                                    size: 16,
+                                    color: AppColors.primary),
                                 filled: true,
                                 fillColor: AppColors.surfaceLight,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.borderLight)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.borderLight)),
                               ),
                             ),
                             const SizedBox(height: 10),
                             TextField(
                               controller: _vatEmailCtrl,
-                              style: const TextStyle(fontSize: 13, color: AppColors.textPrimaryLight),
+                              style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textPrimaryLight),
                               decoration: InputDecoration(
                                 labelText: 'Email nhận hóa đơn điện tử',
-                                prefixIcon: const Icon(CupertinoIcons.mail_solid, size: 16, color: AppColors.primary),
+                                prefixIcon: const Icon(
+                                    CupertinoIcons.mail_solid,
+                                    size: 16,
+                                    color: AppColors.primary),
                                 filled: true,
                                 fillColor: AppColors.surfaceLight,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.borderLight)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: const BorderSide(
+                                        color: AppColors.borderLight)),
                               ),
                             ),
                           ],
@@ -501,11 +652,20 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _isSubmitting ? null : _proceedPayment,
                   icon: _isSubmitting
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Icon(CupertinoIcons.checkmark_shield_fill, color: Colors.white),
-                  label: Text('Xác nhận & Tiếp tục (${CurrencyFormatter.formatVND(_finalAmount)})', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Icon(CupertinoIcons.checkmark_shield_fill,
+                          color: Colors.white),
+                  label: Text(
+                      'Xác nhận & Tiếp tục (${CurrencyFormatter.formatVND(_finalAmount)})',
+                      style: const TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
                 ),
               ),
@@ -514,9 +674,12 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(CupertinoIcons.lock_shield_fill, size: 14, color: AppColors.emeraldGreen),
+                    Icon(CupertinoIcons.lock_shield_fill,
+                        size: 14, color: AppColors.emeraldGreen),
                     SizedBox(width: 6),
-                    Text('Giao dịch mã hóa chuẩn PCI-DSS & Smart OTP bảo mật', style: TextStyle(fontSize: 11, color: AppColors.textMutedLight)),
+                    Text('Giao dịch mã hóa chuẩn PCI-DSS & Smart OTP bảo mật',
+                        style: TextStyle(
+                            fontSize: 11, color: AppColors.textMutedLight)),
                   ],
                 ),
               ),
@@ -532,14 +695,24 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+        Expanded(
+          flex: 5,
+          child: Text(label,
+              style: AppTypography.bodySmall(
+                  color: AppColors.textSecondaryLight)),
+        ),
         const SizedBox(width: 8),
         Expanded(
+          flex: 6,
           child: Text(
             value,
             textAlign: TextAlign.right,
             overflow: TextOverflow.ellipsis,
-            style: AppTypography.titleSmall(color: isHighlight ? AppColors.emeraldGreen : AppColors.textPrimaryLight).copyWith(
+            style: AppTypography.titleSmall(
+                    color: isHighlight
+                        ? AppColors.emeraldGreen
+                        : AppColors.textPrimaryLight)
+                .copyWith(
               fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
             ),
           ),

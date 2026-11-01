@@ -50,7 +50,7 @@ import static org.mockito.Mockito.when;
  *   TC-E2E-02: REVERSED   (debit OK + credit thất bại -> auto-reversal hoan tien)
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("E2E Saga P2P Transfer - Postgres 5435 + Kafka lifecycle")
 public class SagaP2pE2eTest {

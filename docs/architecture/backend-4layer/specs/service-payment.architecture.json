@@ -1,0 +1,347 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Payment Service — 4 tầng (Saga P2P · Outbox · Maker-Checker)",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto"
+    }
+  },
+  "layout": {
+    "mode": "grid",
+    "cols": 6,
+    "cellW": 222,
+    "cellH": 100,
+    "gapX": 176,
+    "gapY": 96
+  },
+  "components": [
+    {
+      "id": "entry",
+      "type": "external",
+      "label": "API Gateway :8080",
+      "sublabel": "18 controller · 59 endpoint",
+      "tag": "HTTP + JWT",
+      "row": 1,
+      "col": 0,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "presentation",
+      "type": "backend",
+      "label": "Presentation",
+      "sublabel": "69 class · 59 endpoint",
+      "tag": "Controller · DTO · Exception",
+      "row": 1,
+      "col": 1,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "application",
+      "type": "backend",
+      "label": "Application",
+      "sublabel": "14 class · 33 method",
+      "tag": "Use case · Saga · Outbox",
+      "row": 1,
+      "col": 2,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "Domain",
+      "sublabel": "17 class · 32 method",
+      "tag": "Entity · Port · Rule",
+      "row": 1,
+      "col": 3,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "type": "backend",
+      "label": "Infrastructure",
+      "sublabel": "23 class · 17 method",
+      "tag": "Adapter · Repository · Consumer",
+      "row": 1,
+      "col": 4,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "PostgreSQL :5435",
+      "sublabel": "ewallet_payment_db · outbox_events",
+      "tag": "JPA",
+      "row": 0,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "wallet",
+      "type": "external",
+      "label": "Wallet gRPC :9090",
+      "sublabel": "RESERVE / DEBIT / CREDIT",
+      "tag": "gRPC",
+      "row": 2,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "mq",
+      "type": "messagebus",
+      "label": "RabbitMQ :5672",
+      "sublabel": "wallet.transaction.events",
+      "tag": "transaction.*",
+      "row": 3,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka :9092",
+      "sublabel": "banking.payment.transaction-lifecycle.v1",
+      "tag": "producer",
+      "row": 4,
+      "col": 5,
+      "size": [
+        206,
+        96
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "entry-presentation",
+      "from": "entry",
+      "to": "presentation",
+      "variant": "emphasis",
+      "label": "HTTPS · JWT"
+    },
+    {
+      "id": "presentation-application",
+      "from": "presentation",
+      "to": "application",
+      "variant": "default",
+      "label": "saga"
+    },
+    {
+      "id": "application-domain",
+      "from": "application",
+      "to": "domain",
+      "variant": "default",
+      "label": "entity + rule"
+    },
+    {
+      "id": "infra-domain",
+      "from": "infrastructure",
+      "to": "domain",
+      "variant": "default",
+      "label": "JPA repo"
+    },
+    {
+      "id": "infra-db",
+      "from": "infrastructure",
+      "to": "db",
+      "variant": "default"
+    },
+    {
+      "id": "infra-wallet",
+      "from": "infrastructure",
+      "to": "wallet",
+      "variant": "emphasis"
+    },
+    {
+      "id": "infra-mq",
+      "from": "infrastructure",
+      "to": "mq",
+      "variant": "dashed"
+    },
+    {
+      "id": "infra-kafka",
+      "from": "infrastructure",
+      "to": "kafka",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Tầng 1 · Presentation (69 class)",
+      "items": [
+        "DTO (51): ApiResponse, BankAccountDto, BeneficiaryDto, BillLookupResponse, BillPaymentRequest, BillPaymentResponse, CardDto, CardIssueRequest, CardSettingsRequest, CardStatusRequest, CashDepositApproveRequest, CashDepositRejectRequest, CashDepositRequest, CashDepositRe…",
+        "BankAccountController: GET /api/v1/bank-accounts · POST /api/v1/bank-accounts/link · DELETE /api/v1/bank-accounts/{id} · PATCH /api/v1/bank-accounts/{id}/default",
+        "BankController: GET /api/v1/payments/banks",
+        "BeneficiaryController: GET /api/v1/beneficiaries · POST /api/v1/beneficiaries · DELETE /api/v1/beneficiaries/{id}",
+        "BillController: GET /api/v1/bills/lookup · POST /api/v1/bills/pay · POST /api/v1/bills/topup",
+        "CardController: GET /api/v1/cards · POST /api/v1/cards/issue · PATCH /api/v1/cards/{id}/status · PUT /api/v1/cards/{id}/settings",
+        "CashDepositController: POST /api/v1/cash/deposits · POST /api/v1/cash/deposits/{id}/approve · POST /api/v1/cash/deposits/{id}/reject · GET /api/v1/cash/deposits · GET /api/v1/cash/vault/summary",
+        "ConfigLimitController: GET /api/v1/config/limits · GET /api/v1/config/limits/status",
+        "DepositWithdrawController: POST /api/v1/payments/deposit · POST /api/v1/payments/withdraw",
+        "FundingSourceController: GET /api/v1/funding-sources",
+        "LoanController: GET /api/v1/loans/products · POST /api/v1/loans/apply · GET /api/v1/loans · GET /api/v1/loans/{id} · GET /api/v1/loans/{id}/schedule · POST /api/v1/loans/{id}/repay",
+        "LotteryController: GET /api/v1/lottery/results · GET /api/v1/lottery/my-tickets · POST /api/v1/lottery/buy",
+        "MoneyRequestController: POST /api/v1/payments/money-requests · POST /api/v1/payments/money-requests/{id}/accept · POST /api/v1/payments/money-requests/{id}/reject · GET /api/v1/payments/money-requests/{id} · POST /api/v1/payments/money-request…",
+        "SavingsController: GET /api/v1/savings/products · POST /api/v1/savings/accounts · GET /api/v1/savings/accounts · GET /api/v1/savings/accounts/{id} · POST /api/v1/savings/accounts/{id}/settle",
+        "TransactionHistoryController: ANY /api/v1/transactions/api/v1/transactions · GET /api/v1/transactions/{id}/receipt.pdf · GET /api/v1/transactions/export/{format} · GET /api/v1/transactions · GET /api/v1/transactions/{id}",
+        "TransferController: POST /api/v1/payments/transfer · GET /api/v1/payments/transfer/{transactionId}",
+        "UserQrController: GET /api/v1/users/me/qrcode",
+        "VietQrController: POST /api/v1/payments/vietqr/generate · POST /api/v1/payments/vietqr/decode",
+        "WalletMutationController: POST /api/v1/wallets/deposit · POST /api/v1/wallets/withdraw",
+        "BankAccountDto",
+        "BeneficiaryDto",
+        "BillLookupResponse",
+        "BillPaymentRequest",
+        "BillPaymentResponse",
+        "CardDto",
+        "CardIssueRequest",
+        "CardSettingsRequest",
+        "CardStatusRequest",
+        "CashDepositApproveRequest",
+        "CashDepositRejectRequest",
+        "CashDepositRequest",
+        "CreateBeneficiaryRequest",
+        "DepositResponse",
+        "FundingSourceDto",
+        "LinkBankAccountRequest",
+        "LoanApplicationRequest",
+        "LoanApplicationResponse",
+        "LoanProductDto",
+        "LoanRepaymentRequest",
+        "LoanRepaymentResponse",
+        "LoanScheduleResponse",
+        "LotteryBuyRequest",
+        "LotteryBuyResponse",
+        "LotteryResultDto",
+        "LotteryTicketDto",
+        "MoneyRequestRequest",
+        "MoneyRequestResponse",
+        "OpenSavingsRequest",
+        "PhoneTopupRequest",
+        "PhoneTopupResponse",
+        "SavingsAccountResponse",
+        "SavingsProductDto",
+        "SettleSavingsRequest",
+        "SettleSavingsResponse",
+        "TransferRequest",
+        "VaultSummaryResponse",
+        "VietQrDecodeRequest",
+        "VietQrDecodeResponse",
+        "VietQrGenerateRequest",
+        "VietQrResponse",
+        "WithdrawResponse",
+        "WalletBalanceResult",
+        "WalletInfoResult",
+        "WalletLimitResult",
+        "WalletReservationResult"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Tầng 2 · Application (14 class)",
+      "items": [
+        "OutboxRelay: relayPendingEvents(), saveEvent(String aggregateType, String aggregateId, String eventType, String payload)",
+        "OutboxRelayConfig: jsonMessageConverter(com.fasterxml.jackson.databind.ObjectMapper objectMapper)",
+        "PaymentSagaOrchestrator: transferP2p(String sourceUserId, String targetUserId, Long amount, String currency, String note, String i...), deposit(String userId, String walletId, Long amount, String currency, String idempotencyKey), withdraw(Strin…",
+        "SagaContext: sourceDebited(String balanceAfter), targetCredited(String balanceAfter), succeeded(), failed(String reason), reversed()",
+        "BankAccountService: linkBankAccount(String userId, LinkBankAccountRequest request), unlinkBankAccount(String userId, String bankAccountId)",
+        "BeneficiaryService: addBeneficiary(String userId, CreateBeneficiaryRequest request), deleteBeneficiary(String userId, String id)",
+        "BillService: lookupBill(String type, String customerCode), payBill(String userId, BillPaymentRequest request), topupPhone(String userId, PhoneTopupRequest request)",
+        "CardService: generateCardNumber(String prefix), maskCardNumber(String cardNumber), issueCard(String userId, String cardHolderName, CardIssueRequest request), updateCardStatus(String userId, String cardId, CardStatusRequest request),…",
+        "FundingSourceService",
+        "LoanService: applyLoan(String userId, LoanApplicationRequest request), repayTerm(String loanId, String userId, LoanRepaymentRequest request)",
+        "LotteryService: buyTicket(String userId, LotteryBuyRequest req)",
+        "ReceiptExportService: generateReceiptPdf(String transactionId), exportTransactions(String walletId, String format)",
+        "SavingsService: openSavings(String userId, OpenSavingsRequest request), settleSavings(String id, String userId, SettleSavingsRequest request)",
+        "VietQrService: generateVietQr(VietQrGenerateRequest request), decodeVietQr(String qrString), calculateCrc16(String input)"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Tầng 3 · Domain (17 class)",
+      "items": [
+        "Bank: prePersist()",
+        "BankAccount: prePersist()",
+        "Beneficiary: prePersist()",
+        "Bill: prePersist()",
+        "Card: prePersist()",
+        "CashDeposit: prePersist(), approve(String checkerId), reject(String checkerId, String reason), complete()",
+        "FundingSource: prePersist()",
+        "LoanContract: id: UUID, userId: String, walletId: String, contractNumber: String, productType: String, productName: String, principalAmount: BigDecimal, annualInterestRate: BigDecimal, termMonths: Integer, totalInterest: BigDecimal, …",
+        "LoanScheduleItem: id: UUID, loanContractId: UUID, loanContract: LoanContract, termNumber: Integer, dueDate: LocalDate, principalAmount: BigDecimal, interestAmount: BigDecimal, totalAmount: BigDecimal, remainingBalance: BigDecimal, status…",
+        "LotteryDraw: id: String, gameName: String, drawPeriod: String, drawDate: String, winningNumbers: String, specialNumber: Integer, jackpot1Amount: Long, jackpot2Amount: Long, winnersJ1: Integer, winnersJ2: Integer, createdAt: Instant",
+        "LotteryTicket: id: String, userId: String, ticketCode: String, gameName: String, drawPeriod: String, selectedNumbers: String, amount: Long, quantity: Integer, status: String, winningAmount: Long, createdAt: Instant",
+        "MoneyRequest: prePersist(), create(String requesterId, String targetUserId, Long amount, Instant expiresAt, String note), accept(), reject(), expire()",
+        "OutboxEvent: prePersist(), pending(String aggregateType, String aggregateId, String eventType, String payload), markPublished(), markFailed(), incrementRetry()",
+        "SavingsAccount: id: UUID, userId: String, walletId: String, accountNumber: String, productType: String, productName: String, principal: BigDecimal, interestRate: BigDecimal, termMonths: Integer, expectedInterest: BigDecimal, accruedInt…",
+        "TelcoTopup: prePersist()",
+        "Transaction: prePersist(), initiate(String transactionCode, String sourceWalletId, String targetWalletId, String senderId, String...), markDebited(), markCreditPending(), markSuccess(), markFailed(String reason), markReversed()",
+        "MakerCheckerRule: validateDifferentActors(String makerId, String checkerId), requiresCheckerApproval(long amount), approveDeposit(CashDeposit deposit, String checkerId), rejectDeposit(CashDeposit deposit, String checkerId, String reason)"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Tầng 4 · Infrastructure (23 class)",
+      "items": [
+        "PaymentApplication",
+        "GlobalExceptionHandler: handleMakerCheckerViolation(MakerCheckerViolationException ex), handleIllegalArgument(IllegalArgumentException ex), handleIllegalState(IllegalStateException ex), handleValidation(MethodArgumentNotValidException ex), han…",
+        "MakerCheckerViolationException",
+        "WalletGrpcClient: debit(String walletId, Long amount, String transactionId, String idempotencyKey), credit(String walletId, Long amount, String transactionId, String idempotencyKey), reserve(String walletId, Long amount, String transacti…",
+        "KafkaConfig: paymentProducerFactory(), paymentKafkaTemplate(ProducerFactory<String, Object> producerFactory), paymentTransactionLifecycleTopic()",
+        "PaymentKafkaProducer: sendLifecycleEvent(String transactionId, String eventType, Object payload), sendCashDepositCompleted(String depositCode, String accountNumber, String customerName, Long amount, String branchId)",
+        "BankAccountRepository (interface): interface",
+        "BankRepository (interface): interface",
+        "BeneficiaryRepository (interface): interface",
+        "BillRepository (interface): interface",
+        "CardRepository (interface): interface",
+        "CashDepositRepository (interface): interface",
+        "FundingSourceRepository (interface): interface",
+        "LoanContractRepository (interface): interface",
+        "LoanScheduleItemRepository (interface): interface",
+        "LotteryDrawRepository (interface): interface",
+        "LotteryTicketRepository (interface): interface",
+        "MoneyRequestRepository (interface): interface",
+        "OutboxEventRepository (interface): interface",
+        "SavingsAccountRepository (interface): interface",
+        "TelcoTopupRepository (interface): interface",
+        "TransactionRepository (interface): interface",
+        "PinTokenValidator: validatePinToken(String pinToken, String expectedUserId), validate(String userId, String pinToken)"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Phụ thuộc & luồng nghiệp vụ",
+      "items": [
+        "PaymentSagaOrchestrator: reserveBalance → debitWallet → creditWallet; lỗi bước 3 → releaseBalance/hoàn tiền",
+        "OutboxRelay: poll 500ms, batch 50, ghi outbox_events cùng transaction DB rồi phát RabbitMQ + Kafka",
+        "MakerCheckerRule + CashDepositController: Maker tạo lệnh, Manager duyệt; hạn mức 50tr tự duyệt, >50tr PENDING_APPROVAL",
+        "PinTokenValidator: xác thực X-Pin-Token trước khi transfer"
+      ]
+    }
+  ]
+}

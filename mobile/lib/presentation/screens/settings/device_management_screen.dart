@@ -42,7 +42,9 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
               : (isCurrent ? 'Thiết bị này' : 'Thiết bị di động');
           final os = s['deviceOs']?.toString() ?? 'SenBank Mobile App';
           final ip = s['ipAddress']?.toString() ?? 'N/A';
-          final lastActive = s['lastAccessedAt']?.toString() ?? s['createdAt']?.toString() ?? 'Đang hoạt động';
+          final lastActive = s['lastAccessedAt']?.toString() ??
+              s['createdAt']?.toString() ??
+              'Đang hoạt động';
 
           return {
             'id': s['id']?.toString() ?? '',
@@ -69,7 +71,8 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
     } catch (e) {
       debugPrint('[DeviceManagementScreen] Error loading sessions: $e');
       setState(() {
-        _errorMessage = 'Không thể tải danh sách phiên đăng nhập. Vui lòng kiểm tra kết nối mạng.';
+        _errorMessage =
+            'Không thể tải danh sách phiên đăng nhập. Vui lòng kiểm tra kết nối mạng.';
         _isLoading = false;
       });
     }
@@ -113,7 +116,8 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: AppColors.emeraldGreen,
-          content: Text('Đã đăng xuất khỏi tất cả các thiết bị khác thành công!'),
+          content:
+              Text('Đã đăng xuất khỏi tất cả các thiết bị khác thành công!'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -123,7 +127,8 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: AppColors.error,
-          content: Text('Có lỗi khi đăng xuất các thiết bị khác, vui lòng thử lại'),
+          content:
+              Text('Có lỗi khi đăng xuất các thiết bị khác, vui lòng thử lại'),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -189,7 +194,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFF030B17).withValues(alpha: 0.75),
+        color: AppColors.inkNavy.withValues(alpha: 0.75),
         border: Border(
           bottom: BorderSide(
             color: Colors.white.withValues(alpha: 0.08),
@@ -247,14 +252,20 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
             decoration: BoxDecoration(
               color: AppColors.emeraldGreen.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.emeraldGreen.withValues(alpha: 0.4)),
+              border: Border.all(
+                  color: AppColors.emeraldGreen.withValues(alpha: 0.4)),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(CupertinoIcons.shield_fill, color: AppColors.emeraldGreen, size: 14),
+                Icon(CupertinoIcons.shield_fill,
+                    color: AppColors.emeraldGreen, size: 14),
                 SizedBox(width: 4),
-                Text('AN TOÀN', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 11, fontWeight: FontWeight.bold)),
+                Text('AN TOÀN',
+                    style: TextStyle(
+                        color: AppColors.emeraldGreen,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -277,7 +288,8 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(CupertinoIcons.exclamationmark_triangle, color: AppColors.bottomBarCyan, size: 48),
+              const Icon(CupertinoIcons.exclamationmark_triangle,
+                  color: AppColors.bottomBarCyan, size: 48),
               const SizedBox(height: 16),
               Text(
                 _errorMessage!,
@@ -303,13 +315,14 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
       children: [
         _buildHardwareSecurityCard(),
         const SizedBox(height: 20),
-        _buildSectionHeader('PHIÊN THIẾT BỊ ĐANG HOẠT ĐỘNG (${_devices.length})'),
+        _buildSectionHeader(
+            'PHIÊN THIẾT BỊ ĐANG HOẠT ĐỘNG (${_devices.length})'),
         const SizedBox(height: 10),
         if (_devices.isEmpty)
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF0C1929).withValues(alpha: 0.8),
+              color: AppColors.deepNavy.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
@@ -368,37 +381,51 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
             children: [
               Row(
                 children: [
-                  Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.emeraldGreen, size: 22),
+                  Icon(CupertinoIcons.checkmark_shield_fill,
+                      color: AppColors.emeraldGreen, size: 22),
                   SizedBox(width: 10),
                   Text(
                     'Bảo Mật Phần Cứng Thiết Bị',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.5),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.5),
                   ),
                 ],
               ),
               Text(
                 'TIÊU CHUẨN FIPS 140-2',
-                style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10.5, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: AppColors.bottomBarCyan,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          _buildHardwareDetail('Mã hóa phần cứng:', 'Secure Enclave / Android Keystore'),
-          _buildHardwareDetail('Cấp độ mật mã:', 'AES-256 GCM + Khóa bất đối xứng RSA-4096'),
-          _buildHardwareDetail('Trạng thái hệ điều hành:', 'Nguyên bản (Không Root / Jailbreak)', isGreen: true),
-          _buildHardwareDetail('Chứng chỉ bảo mật Smart OTP:', 'SENBANK-HARDWARE-TOKEN-VALID'),
+          _buildHardwareDetail(
+              'Mã hóa phần cứng:', 'Secure Enclave / Android Keystore'),
+          _buildHardwareDetail(
+              'Cấp độ mật mã:', 'AES-256 GCM + Khóa bất đối xứng RSA-4096'),
+          _buildHardwareDetail(
+              'Trạng thái hệ điều hành:', 'Nguyên bản (Không Root / Jailbreak)',
+              isGreen: true),
+          _buildHardwareDetail(
+              'Chứng chỉ bảo mật Smart OTP:', 'SENBANK-HARDWARE-TOKEN-VALID'),
         ],
       ),
     );
   }
 
-  Widget _buildHardwareDetail(String label, String value, {bool isGreen = false}) {
+  Widget _buildHardwareDetail(String label, String value,
+      {bool isGreen = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+          Text(label,
+              style: const TextStyle(color: Colors.white60, fontSize: 12)),
           Flexible(
             child: Text(
               value,
@@ -440,7 +467,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
           decoration: BoxDecoration(
             color: isCurrent
                 ? const Color(0xFF132845)
-                : const Color(0xFF0C1929).withValues(alpha: 0.8),
+                : AppColors.deepNavy.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: isCurrent
@@ -464,8 +491,11 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      isCurrent ? CupertinoIcons.device_phone_portrait : CupertinoIcons.device_laptop,
-                      color: isCurrent ? AppColors.bottomBarCyan : Colors.white70,
+                      isCurrent
+                          ? CupertinoIcons.device_phone_portrait
+                          : CupertinoIcons.device_laptop,
+                      color:
+                          isCurrent ? AppColors.bottomBarCyan : Colors.white70,
                       size: 22,
                     ),
                   ),
@@ -476,35 +506,46 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                       children: [
                         Text(
                           d['model'] as String,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14),
                         ),
                         const SizedBox(height: 2),
                         Text(
                           d['os'] as String,
-                          style: const TextStyle(color: Colors.white54, fontSize: 11),
+                          style: const TextStyle(
+                              color: Colors.white54, fontSize: 11),
                         ),
                       ],
                     ),
                   ),
                   if (!isCurrent)
                     IconButton(
-                      icon: const Icon(CupertinoIcons.square_arrow_right, color: Colors.redAccent, size: 20),
+                      icon: const Icon(CupertinoIcons.square_arrow_right,
+                          color: Colors.redAccent, size: 20),
                       onPressed: () => _logoutDevice(d['id'] as String),
                     )
                   else
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.emeraldGreen.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('HIỆN TẠI', style: TextStyle(color: AppColors.emeraldGreen, fontSize: 10, fontWeight: FontWeight.bold)),
+                      child: const Text('HIỆN TẠI',
+                          style: TextStyle(
+                              color: AppColors.emeraldGreen,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold)),
                     ),
                 ],
               ),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(10),
@@ -514,15 +555,20 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(CupertinoIcons.location_solid, color: AppColors.textSecondaryDark, size: 14),
+                        const Icon(CupertinoIcons.location_solid,
+                            color: AppColors.textSecondaryDark, size: 14),
                         const SizedBox(width: 4),
-                        Text(d['ip'] as String, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                        Text(d['ip'] as String,
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 11)),
                       ],
                     ),
                     Text(
                       d['lastActive'] as String,
                       style: TextStyle(
-                        color: isCurrent ? AppColors.bottomBarCyan : Colors.white70,
+                        color: isCurrent
+                            ? AppColors.bottomBarCyan
+                            : Colors.white70,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -534,11 +580,15 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                 const SizedBox(height: 8),
                 const Row(
                   children: [
-                    Icon(CupertinoIcons.lock_shield_fill, color: AppColors.bottomBarCyan, size: 14),
+                    Icon(CupertinoIcons.lock_shield_fill,
+                        color: AppColors.bottomBarCyan, size: 14),
                     SizedBox(width: 5),
                     Text(
                       'Đã liên kết Smart OTP • Khóa bảo mật phần cứng duy nhất',
-                      style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: AppColors.bottomBarCyan,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -557,13 +607,18 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.5)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         onPressed: _logoutAllOtherDevices,
-        icon: const Icon(CupertinoIcons.xmark_shield_fill, color: Colors.redAccent, size: 18),
+        icon: const Icon(CupertinoIcons.xmark_shield_fill,
+            color: Colors.redAccent, size: 18),
         label: const Text(
           'Đăng xuất khỏi tất cả các thiết bị khác',
-          style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13),
+          style: TextStyle(
+              color: Colors.redAccent,
+              fontWeight: FontWeight.bold,
+              fontSize: 13),
         ),
       ),
     );
@@ -582,18 +637,23 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
         children: [
           Row(
             children: [
-              Icon(CupertinoIcons.info_circle_fill, color: AppColors.bottomBarCyan, size: 18),
+              Icon(CupertinoIcons.info_circle_fill,
+                  color: AppColors.bottomBarCyan, size: 18),
               SizedBox(width: 8),
               Text(
                 'Chính sách tuân thủ Thông tư 50/TT-NHNN',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13),
               ),
             ],
           ),
           SizedBox(height: 8),
           Text(
             '• Mỗi tài khoản SenBank chỉ được cấp quyền sinh mã Smart OTP trên duy nhất 01 thiết bị di động chính chủ tại cùng một thời điểm.',
-            style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
+            style:
+                TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.35),
           ),
         ],
       ),
@@ -613,11 +673,15 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
         children: [
           const Row(
             children: [
-              Icon(CupertinoIcons.lock_shield_fill, color: Colors.redAccent, size: 20),
+              Icon(CupertinoIcons.lock_shield_fill,
+                  color: Colors.redAccent, size: 20),
               SizedBox(width: 8),
               Text(
                 'Quy trình khẩn cấp khi thất lạc thiết bị',
-                style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 14),
+                style: TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14),
               ),
             ],
           ),
@@ -634,17 +698,21 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.redAccent,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Vui lòng liên hệ hotline 1900 6868 để thực hiện khóa khẩn cấp tài khoản.'),
+                    content: Text(
+                        'Vui lòng liên hệ hotline 1900 6868 để thực hiện khóa khẩn cấp tài khoản.'),
                   ),
                 );
               },
-              icon: const Icon(CupertinoIcons.exclamationmark_shield_fill, size: 18),
-              label: const Text('Kích hoạt khóa khẩn cấp 1-chạm', style: TextStyle(fontWeight: FontWeight.bold)),
+              icon: const Icon(CupertinoIcons.exclamationmark_shield_fill,
+                  size: 18),
+              label: const Text('Kích hoạt khóa khẩn cấp 1-chạm',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],

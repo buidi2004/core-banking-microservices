@@ -1,14 +1,14 @@
 class ApiConstants {
   ApiConstants._();
 
-  // Base URLs - Mặc định kết nối trực tiếp Cloud Codespaces (:8080), có thể override qua --dart-define hoặc ConfigScreen
+  // Base URLs - Mặc định kết nối ngrok public tunnel (:8080), có thể override qua --dart-define hoặc ConfigScreen
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/api/v1',
+    defaultValue: 'https://mutation-tubby-overstock.ngrok-free.dev/api/v1',
   );
   static const String wsUrl = String.fromEnvironment(
     'API_WS_URL',
-    defaultValue: 'wss://solid-eureka-695rvv97vwjjh5wjq-8080.app.github.dev/ws-native',
+    defaultValue: 'wss://mutation-tubby-overstock.ngrok-free.dev/ws-native',
   );
   static const String wsTopicPrefix = '/topic/wallets';
   static String walletNotificationTopic(String walletId) => '/topic/wallets/$walletId/notifications';
@@ -30,6 +30,7 @@ class ApiConstants {
   static const String resetPassword = '/auth/reset-password';
   static const String changePassword = '/auth/change-password';
   static const String changePasswordOtp = '/auth/change-password/otp';
+  static const String changePinOtp = '/auth/change-pin/otp';
   static const String logout = '/auth/logout';
   // BE-GAP (BE-REQ-03): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String setPin = '/users/pin/set';

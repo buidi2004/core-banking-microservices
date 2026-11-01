@@ -96,7 +96,8 @@ class GlassNavBackground extends StatelessWidget {
           blur: 4.0,
           glassColor: Color(0x14FFFFFF),
           lightIntensity: 0.78,
-          refractiveIndex: 1.28, // Tăng thêm 1 xíu độ bẻ cong hình ảnh nền (từ 1.22 lên 1.28)
+          refractiveIndex:
+              1.28, // Tăng thêm 1 xíu độ bẻ cong hình ảnh nền (từ 1.22 lên 1.28)
           chromaticAberration: 0.0,
           ambientStrength: 0.16,
           fresnelStrength: 1.05,
@@ -112,7 +113,8 @@ class GlassNavBackground extends StatelessWidget {
 /// Thanh điều hướng nổi sử dụng kiến trúc 2 Layer Sibling trong Stack:
 /// - Layer 1: [GlassNavBackground] CHỈ vẽ nền kính mờ và viền vát quang học (không chứa nội dung)
 /// - Layer 2: Nội dung (4 tab icons, active cyan pill, 3D quick action button) nằm ĐÈ LÊN TRÊN, sắc nét 100%
-class FloatingGlassBottomBar extends StatelessWidget implements PreferredSizeWidget {
+class FloatingGlassBottomBar extends StatelessWidget
+    implements PreferredSizeWidget {
   final int selectedIndex;
   final ValueChanged<int> onTabSelected;
   final VoidCallback onQuickActionPressed;
@@ -130,7 +132,10 @@ class FloatingGlassBottomBar extends StatelessWidget implements PreferredSizeWid
   static const List<({IconData active, IconData inactive})> _tabIcons = [
     (active: Icons.home_rounded, inactive: Icons.home_outlined),
     (active: Icons.receipt_long_rounded, inactive: Icons.receipt_long_outlined),
-    (active: Icons.card_giftcard_rounded, inactive: Icons.card_giftcard_outlined),
+    (
+      active: Icons.card_giftcard_rounded,
+      inactive: Icons.card_giftcard_outlined
+    ),
     (active: Icons.person_rounded, inactive: Icons.person_outline_rounded),
   ];
 
@@ -249,8 +254,8 @@ class FloatingGlassBottomBar extends StatelessWidget implements PreferredSizeWid
               ? BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [
-                      Color(0xFF26E5DC),
-                      Color(0xFF00B4D8),
+                      AppColors.bottomBarCyan,
+                      AppColors.bottomBarOcean,
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -360,10 +365,12 @@ class _DarkGlassBevelRimPainter extends CustomPainter {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xB0FFFFFF), // Specular highlight trắng ánh kim sắc nét mép trên-trái
+          Color(
+              0xB0FFFFFF), // Specular highlight trắng ánh kim sắc nét mép trên-trái
           Color(0x35FFFFFF), // Ánh kính chuyển tiếp
           Color(0x2564748B), // Slate xám thanh mảnh hông
-          Color(0x481E293B), // Xám than thanh nhã mép dưới (siêu mảnh, không bị đen dày)
+          Color(
+              0x481E293B), // Xám than thanh nhã mép dưới (siêu mảnh, không bị đen dày)
         ],
         stops: [0.0, 0.20, 0.55, 1.0],
       ).createShader(rect);
@@ -383,4 +390,3 @@ class _DarkGlassBevelRimPainter extends CustomPainter {
   bool shouldRepaint(covariant _DarkGlassBevelRimPainter oldDelegate) =>
       oldDelegate.borderRadius != borderRadius || oldDelegate.isOval != isOval;
 }
-

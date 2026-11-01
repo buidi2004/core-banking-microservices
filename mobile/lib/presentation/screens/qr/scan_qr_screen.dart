@@ -21,13 +21,15 @@ class ScanQRScreen extends StatefulWidget {
   State<ScanQRScreen> createState() => _ScanQRScreenState();
 }
 
-class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderStateMixin {
+class _ScanQRScreenState extends State<ScanQRScreen>
+    with SingleTickerProviderStateMixin {
   final MobileScannerController _controller = MobileScannerController();
   late final AnimationController _laserAnimController;
   late final Animation<double> _laserAnimation;
 
   bool _isTorchOn = false;
-  int _selectedModeIndex = 0; // 0: VietQR 24/7, 1: VNPAY / Hoá đơn, 2: Đăng nhập Web
+  int _selectedModeIndex =
+      0; // 0: VietQR 24/7, 1: VNPAY / Hoá đơn, 2: Đăng nhập Web
   bool _isDecoding = false;
   bool _cameraPermissionGranted = false; // Trạng thái quyền camera
 
@@ -65,11 +67,19 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
       final items = await BeneficiaryRemoteDataSource().getAll();
       if (!mounted) return;
       setState(() {
-        _recentBeneficiaries = items.map((item) => {
-          'name': (item['name'] ?? item['fullName'] ?? item['nickname'] ?? '').toString(),
-          'bank': (item['bankCode'] ?? 'SENHONG').toString(),
-          'acc': (item['phoneNumber'] ?? item['accountNumber'] ?? '').toString(),
-        }).where((b) => b['acc']!.isNotEmpty).toList();
+        _recentBeneficiaries = items
+            .map((item) => {
+                  'name': (item['name'] ??
+                          item['fullName'] ??
+                          item['nickname'] ??
+                          '')
+                      .toString(),
+                  'bank': (item['bankCode'] ?? 'SENHONG').toString(),
+                  'acc': (item['phoneNumber'] ?? item['accountNumber'] ?? '')
+                      .toString(),
+                })
+            .where((b) => b['acc']!.isNotEmpty)
+            .toList();
       });
     } catch (_) {}
   }
@@ -131,7 +141,8 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                 queryParameters: {
                   'recipient': recipientName,
                   'phoneNumber': phoneNumber,
-                  if (walletId != null && walletId.isNotEmpty) 'walletId': walletId,
+                  if (walletId != null && walletId.isNotEmpty)
+                    'walletId': walletId,
                   'amount': amount.toString(),
                   'note': note.isNotEmpty ? note : 'Chuyen tien QR',
                 },
@@ -143,7 +154,8 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                 queryParameters: {
                   'recipient': recipientName,
                   'phoneNumber': phoneNumber,
-                  if (walletId != null && walletId.isNotEmpty) 'walletId': walletId,
+                  if (walletId != null && walletId.isNotEmpty)
+                    'walletId': walletId,
                   if (note.isNotEmpty) 'note': note,
                 },
               );
@@ -183,18 +195,22 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                 color: AppColors.emeraldGreen.withOpacity(0.12),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(CupertinoIcons.desktopcomputer, color: AppColors.emeraldGreen, size: 36),
+              child: const Icon(CupertinoIcons.desktopcomputer,
+                  color: AppColors.emeraldGreen, size: 36),
             ),
             const SizedBox(height: 14),
             Text(
               'Xác nhận đăng nhập Web Banking',
-              style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+              style:
+                  AppTypography.titleMedium(color: AppColors.textPrimaryLight)
+                      .copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               'Thiết bị: Windows PC - Chrome Browser\nPhiên xác thực: ${sessionCode.length > 18 ? sessionCode.substring(0, 18) : sessionCode}...',
               textAlign: TextAlign.center,
-              style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+              style:
+                  AppTypography.bodySmall(color: AppColors.textSecondaryLight),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -202,7 +218,8 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                 Navigator.of(ctx).pop();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Đã xác thực đăng nhập phiên Web Banking thành công!'),
+                    content: Text(
+                        'Đã xác thực đăng nhập phiên Web Banking thành công!'),
                     backgroundColor: AppColors.emeraldGreen,
                   ),
                 );
@@ -211,14 +228,18 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
-              child: const Text('Đồng ý đăng nhập', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Đồng ý đăng nhập',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
             const SizedBox(height: 10),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Từ chối giao dịch', style: TextStyle(color: AppColors.error)),
+              child: const Text('Từ chối giao dịch',
+                  style: TextStyle(color: AppColors.error)),
             ),
           ],
         ),
@@ -247,17 +268,23 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(CupertinoIcons.camera, color: Colors.orangeAccent, size: 48),
+                              const Icon(CupertinoIcons.camera,
+                                  color: Colors.orangeAccent, size: 48),
                               const SizedBox(height: 12),
                               const Text(
                                 'Máy ảnh không khả dụng trên thiết bị',
-                                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                error.errorDetails?.message ?? error.errorCode.name,
-                                style: const TextStyle(color: Colors.white54, fontSize: 12),
+                                error.errorDetails?.message ??
+                                    error.errorCode.name,
+                                style: const TextStyle(
+                                    color: Colors.white54, fontSize: 12),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -272,17 +299,22 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(CupertinoIcons.camera_fill, color: Colors.white54, size: 64),
+                          const Icon(CupertinoIcons.camera_fill,
+                              color: Colors.white54, size: 64),
                           const SizedBox(height: 20),
                           const Text(
                             'Cần quyền Camera',
-                            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 10),
                           const Text(
                             'Ứng dụng cần quyền Camera để quét mã QR.\nVui lòng cấp quyền và mở lại màn hình này.',
-                            style: TextStyle(color: Colors.white70, fontSize: 14),
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 14),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
@@ -293,8 +325,10 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 28, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
                             ),
                           ),
                         ],
@@ -356,14 +390,16 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                 context.go('/');
               }
             },
-            icon: const Icon(CupertinoIcons.xmark_circle_fill, color: Colors.white, size: 32),
+            icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                color: Colors.white, size: 32),
           ),
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 'Quét mã QR',
-                style: AppTypography.titleLarge(color: Colors.white).copyWith(fontWeight: FontWeight.bold),
+                style: AppTypography.titleLarge(color: Colors.white)
+                    .copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 2),
               Container(
@@ -374,14 +410,19 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                 ),
                 child: const Text(
                   'Chuẩn Napas 24/7 & EMVCo',
-                  style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 10, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                      color: AppColors.bottomBarCyan,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600),
                 ),
               ),
             ],
           ),
           Container(
             decoration: BoxDecoration(
-              color: _isTorchOn ? AppColors.bottomBarCyan.withOpacity(0.3) : Colors.black.withOpacity(0.4),
+              color: _isTorchOn
+                  ? AppColors.bottomBarCyan.withOpacity(0.3)
+                  : Colors.black.withOpacity(0.4),
               shape: BoxShape.circle,
             ),
             child: IconButton(
@@ -390,7 +431,9 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                 setState(() => _isTorchOn = !_isTorchOn);
               },
               icon: Icon(
-                _isTorchOn ? CupertinoIcons.lightbulb_fill : CupertinoIcons.lightbulb_slash,
+                _isTorchOn
+                    ? CupertinoIcons.lightbulb_fill
+                    : CupertinoIcons.lightbulb_slash,
                 color: _isTorchOn ? AppColors.bottomBarCyan : Colors.white,
                 size: 26,
               ),
@@ -436,7 +479,9 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                   _scanModes[index],
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
+                    color: isSelected
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.7),
                     fontSize: 12,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   ),
@@ -456,10 +501,20 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
       child: Stack(
         children: [
           // 4 Corner Brackets
-          Positioned(top: 0, left: 0, child: _buildCorner(isTop: true, isLeft: true)),
-          Positioned(top: 0, right: 0, child: _buildCorner(isTop: true, isLeft: false)),
-          Positioned(bottom: 0, left: 0, child: _buildCorner(isTop: false, isLeft: true)),
-          Positioned(bottom: 0, right: 0, child: _buildCorner(isTop: false, isLeft: false)),
+          Positioned(
+              top: 0, left: 0, child: _buildCorner(isTop: true, isLeft: true)),
+          Positioned(
+              top: 0,
+              right: 0,
+              child: _buildCorner(isTop: true, isLeft: false)),
+          Positioned(
+              bottom: 0,
+              left: 0,
+              child: _buildCorner(isTop: false, isLeft: true)),
+          Positioned(
+              bottom: 0,
+              right: 0,
+              child: _buildCorner(isTop: false, isLeft: false)),
 
           // Animated Glowing Laser Bar
           AnimatedBuilder(
@@ -509,16 +564,28 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
       height: length,
       decoration: BoxDecoration(
         border: Border(
-          top: isTop ? const BorderSide(color: color, width: thickness) : BorderSide.none,
-          bottom: !isTop ? const BorderSide(color: color, width: thickness) : BorderSide.none,
-          left: isLeft ? const BorderSide(color: color, width: thickness) : BorderSide.none,
-          right: !isLeft ? const BorderSide(color: color, width: thickness) : BorderSide.none,
+          top: isTop
+              ? const BorderSide(color: color, width: thickness)
+              : BorderSide.none,
+          bottom: !isTop
+              ? const BorderSide(color: color, width: thickness)
+              : BorderSide.none,
+          left: isLeft
+              ? const BorderSide(color: color, width: thickness)
+              : BorderSide.none,
+          right: !isLeft
+              ? const BorderSide(color: color, width: thickness)
+              : BorderSide.none,
         ),
         borderRadius: BorderRadius.only(
-          topLeft: isTop && isLeft ? const Radius.circular(radius) : Radius.zero,
-          topRight: isTop && !isLeft ? const Radius.circular(radius) : Radius.zero,
-          bottomLeft: !isTop && isLeft ? const Radius.circular(radius) : Radius.zero,
-          bottomRight: !isTop && !isLeft ? const Radius.circular(radius) : Radius.zero,
+          topLeft:
+              isTop && isLeft ? const Radius.circular(radius) : Radius.zero,
+          topRight:
+              isTop && !isLeft ? const Radius.circular(radius) : Radius.zero,
+          bottomLeft:
+              !isTop && isLeft ? const Radius.circular(radius) : Radius.zero,
+          bottomRight:
+              !isTop && !isLeft ? const Radius.circular(radius) : Radius.zero,
         ),
       ),
     );
@@ -538,13 +605,22 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.bottomBarCyan, size: 16),
+                const Icon(CupertinoIcons.qrcode_viewfinder,
+                    color: AppColors.bottomBarCyan, size: 16),
                 const SizedBox(width: 8),
-                Text(
-                  _selectedModeIndex == 2
-                      ? 'Hướng camera vào mã QR hiển thị trên trình duyệt Web'
-                      : 'Căn chỉnh mã VietQR / VNPAY-QR vào chính giữa khung hình',
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                Flexible(
+                  child: Text(
+                    _selectedModeIndex == 2
+                        ? 'Hướng camera vào mã QR hiển thị trên trình duyệt Web'
+                        : 'Căn chỉnh mã VietQR / VNPAY-QR vào chính giữa khung hình',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -583,7 +659,11 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
             decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600)),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600)),
         ],
       ),
     );
@@ -600,7 +680,10 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(
               'Người thụ hưởng đã lưu:',
-              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600),
             ),
           ),
           SingleChildScrollView(
@@ -620,7 +703,8 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                   },
                   child: Container(
                     margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(14),
@@ -633,14 +717,22 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
                           radius: 10,
                           backgroundColor: AppColors.primary,
                           child: Text(
-                            (b['name'] != null && b['name']!.isNotEmpty) ? b['name']![0].toUpperCase() : 'S',
-                            style: const TextStyle(fontSize: 8, color: Colors.white, fontWeight: FontWeight.bold),
+                            (b['name'] != null && b['name']!.isNotEmpty)
+                                ? b['name']![0].toUpperCase()
+                                : 'S',
+                            style: const TextStyle(
+                                fontSize: 8,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(width: 6),
                         Text(
                           b['name'] ?? '',
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),
@@ -664,32 +756,53 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildToolItem(
-                icon: CupertinoIcons.photo_fill,
-                label: 'Thư viện ảnh',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Vui lòng hướng camera trực tiếp vào mã VietQR hoặc chọn "Nhập STK"'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildToolItem(
+                    icon: CupertinoIcons.photo_fill,
+                    label: 'Thư viện ảnh',
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Vui lòng hướng camera trực tiếp vào mã VietQR hoặc chọn "Nhập STK"'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
-              _buildToolItem(
-                icon: CupertinoIcons.pencil_ellipsis_rectangle,
-                label: 'Nhập STK',
-                onTap: () => context.push('/transfer'),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildToolItem(
+                    icon: CupertinoIcons.pencil_ellipsis_rectangle,
+                    label: 'Nhập STK',
+                    onTap: () => context.push('/transfer'),
+                  ),
+                ),
               ),
-              _buildToolItem(
-                icon: CupertinoIcons.qrcode,
-                label: 'QR của tôi',
-                onTap: () => context.push('/my-qr'),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildToolItem(
+                    icon: CupertinoIcons.qrcode,
+                    label: 'QR của tôi',
+                    onTap: () => context.push('/my-qr'),
+                  ),
+                ),
               ),
-              _buildToolItem(
-                icon: CupertinoIcons.arrow_right_arrow_left_circle_fill,
-                label: 'Chia tiền',
-                onTap: () => context.push('/transfer/request'),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: _buildToolItem(
+                    icon: CupertinoIcons.arrow_right_arrow_left_circle_fill,
+                    label: 'Chia tiền',
+                    onTap: () => context.push('/transfer/request'),
+                  ),
+                ),
               ),
             ],
           ),
@@ -698,7 +811,10 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildToolItem({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildToolItem(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -706,7 +822,11 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
         children: [
           Icon(icon, color: Colors.white, size: 24),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500)),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -717,7 +837,8 @@ class _ScanQRScreenState extends State<ScanQRScreen> with SingleTickerProviderSt
 class _ScannedQrVerificationSheet extends StatefulWidget {
   final String rawCode;
   final VoidCallback onDismiss;
-  final Function(String recipientName, String phoneNumber, String? walletId, double? amount, String note) onProceed;
+  final Function(String recipientName, String phoneNumber, String? walletId,
+      double? amount, String note) onProceed;
 
   const _ScannedQrVerificationSheet({
     required this.rawCode,
@@ -726,10 +847,12 @@ class _ScannedQrVerificationSheet extends StatefulWidget {
   });
 
   @override
-  State<_ScannedQrVerificationSheet> createState() => _ScannedQrVerificationSheetState();
+  State<_ScannedQrVerificationSheet> createState() =>
+      _ScannedQrVerificationSheetState();
 }
 
-class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet> {
+class _ScannedQrVerificationSheetState
+    extends State<_ScannedQrVerificationSheet> {
   bool _isLoading = true;
   String? _error;
 
@@ -761,7 +884,8 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
         // 2. Giải mã qua API Backend: scanQr hoặc decodeQr
         try {
           final payload = await QrRemoteDataSource().scanQr(code);
-          account = (payload['accountNumber'] ?? payload['walletId'])?.toString();
+          account =
+              (payload['accountNumber'] ?? payload['walletId'])?.toString();
           bank = (payload['bankName'] ?? payload['bankCode'])?.toString();
           if (payload['amount'] is num && (payload['amount'] as num) > 0) {
             amt = (payload['amount'] as num).toDouble();
@@ -785,19 +909,24 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
       }
 
       if (account == null || account.isEmpty) {
-        throw Exception('Không nhận diện được số tài khoản hoặc SĐT hợp lệ từ mã QR này');
+        throw Exception(
+            'Không nhận diện được số tài khoản hoặc SĐT hợp lệ từ mã QR này');
       }
 
       // 4. Kiểm tra chống tự chuyển tiền cho chính mình
       const storage = FlutterSecureStorage();
       final myPhone = await storage.read(key: AppConstants.keyPhoneNumber);
-      if (myPhone != null && myPhone.replaceAll(RegExp(r'[\s\.\-]'), '') == account.replaceAll(RegExp(r'[\s\.\-]'), '')) {
-        throw Exception('Mã QR này là của chính bạn! Không thể chuyển tiền cho chính mình.');
+      if (myPhone != null &&
+          myPhone.replaceAll(RegExp(r'[\s\.\-]'), '') ==
+              account.replaceAll(RegExp(r'[\s\.\-]'), '')) {
+        throw Exception(
+            'Mã QR này là của chính bạn! Không thể chuyển tiền cho chính mình.');
       }
 
       // 5. Truy vấn danh tính người nhận thực tế từ Backend qua GET /api/v1/wallets/recipient-info
       final info = await TransferRemoteDataSource().getRecipient(account);
-      final fullName = (info['fullName'] ?? info['maskedName'] ?? account).toString();
+      final fullName =
+          (info['fullName'] ?? info['maskedName'] ?? account).toString();
       final walletId = info['walletId']?.toString();
 
       if (!mounted) return;
@@ -857,13 +986,17 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                         color: AppColors.primary.withOpacity(0.12),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(CupertinoIcons.qrcode_viewfinder, color: AppColors.primaryDark, size: 20),
+                      child: const Icon(CupertinoIcons.qrcode_viewfinder,
+                          color: AppColors.primaryDark, size: 20),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Xác Nhận Thông Tin Mã QR',
-                        style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold, fontSize: 16),
+                        style: AppTypography.titleMedium(
+                                color: AppColors.textPrimaryLight)
+                            .copyWith(
+                                fontWeight: FontWeight.bold, fontSize: 16),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -872,7 +1005,8 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
               ),
               IconButton(
                 onPressed: widget.onDismiss,
-                icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textMutedLight, size: 22),
+                icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                    color: AppColors.textMutedLight, size: 22),
               ),
             ],
           ),
@@ -890,16 +1024,20 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
               ),
               child: Column(
                 children: [
-                  const CircularProgressIndicator(color: AppColors.primary, strokeWidth: 3),
+                  const CircularProgressIndicator(
+                      color: AppColors.primary, strokeWidth: 3),
                   const SizedBox(height: 18),
                   Text(
                     'Đang truy vấn danh tính người nhận...',
-                    style: AppTypography.titleSmall(color: AppColors.primaryDark).copyWith(fontWeight: FontWeight.bold),
+                    style:
+                        AppTypography.titleSmall(color: AppColors.primaryDark)
+                            .copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     'Kết nối máy chủ SenBank xác thực tài khoản...',
-                    style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                    style: AppTypography.bodySmall(
+                        color: AppColors.textSecondaryLight),
                   ),
                 ],
               ),
@@ -909,7 +1047,8 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
               onPressed: widget.onDismiss,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 48),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
               child: const Text('Hủy bỏ'),
             ),
@@ -925,7 +1064,8 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
               ),
               child: Row(
                 children: [
-                  const Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.error, size: 28),
+                  const Icon(CupertinoIcons.exclamationmark_triangle_fill,
+                      color: AppColors.error, size: 28),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -933,12 +1073,18 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                       children: [
                         const Text(
                           'Không thể thực hiện chuyển tiền',
-                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error, fontSize: 14),
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.error,
+                              fontSize: 14),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _error!,
-                          style: const TextStyle(color: AppColors.error, fontSize: 12.5, height: 1.3),
+                          style: const TextStyle(
+                              color: AppColors.error,
+                              fontSize: 12.5,
+                              height: 1.3),
                         ),
                       ],
                     ),
@@ -954,7 +1100,8 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
             ),
           ]
@@ -976,8 +1123,13 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                         radius: 24,
                         backgroundColor: AppColors.primary,
                         child: Text(
-                          _recipientName.isNotEmpty ? _recipientName[0].toUpperCase() : 'S',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                          _recipientName.isNotEmpty
+                              ? _recipientName[0].toUpperCase()
+                              : 'S',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -997,11 +1149,15 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                             const SizedBox(height: 4),
                             const Row(
                               children: [
-                                Icon(CupertinoIcons.checkmark_seal_fill, size: 14, color: AppColors.emeraldGreen),
+                                Icon(CupertinoIcons.checkmark_seal_fill,
+                                    size: 14, color: AppColors.emeraldGreen),
                                 SizedBox(width: 4),
                                 Text(
                                   'Đã xác thực tài khoản SenBank',
-                                  style: TextStyle(fontSize: 12, color: AppColors.emeraldGreen, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.emeraldGreen,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -1018,14 +1174,21 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Tài khoản nhận:', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight, fontWeight: FontWeight.w500)),
+                      const Text('Tài khoản nhận:',
+                          style: TextStyle(
+                              fontSize: 12.5,
+                              color: AppColors.textSecondaryLight,
+                              fontWeight: FontWeight.w500)),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           _accountNumber,
                           textAlign: TextAlign.end,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimaryLight),
                         ),
                       ),
                     ],
@@ -1034,14 +1197,21 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Ngân hàng / Ví:', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight, fontWeight: FontWeight.w500)),
+                      const Text('Ngân hàng / Ví:',
+                          style: TextStyle(
+                              fontSize: 12.5,
+                              color: AppColors.textSecondaryLight,
+                              fontWeight: FontWeight.w500)),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           _bankName,
                           textAlign: TextAlign.end,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight),
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimaryLight),
                         ),
                       ),
                     ],
@@ -1051,11 +1221,13 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                   if (_qrAmount != null && _qrAmount! > 0) ...[
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: AppColors.emeraldGreen.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.3)),
+                        border: Border.all(
+                            color: AppColors.emeraldGreen.withOpacity(0.3)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1063,21 +1235,33 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Số tiền thanh toán:', style: TextStyle(fontSize: 11.5, color: AppColors.textSecondaryLight, fontWeight: FontWeight.w500)),
+                              const Text('Số tiền thanh toán:',
+                                  style: TextStyle(
+                                      fontSize: 11.5,
+                                      color: AppColors.textSecondaryLight,
+                                      fontWeight: FontWeight.w500)),
                               const SizedBox(height: 2),
                               Text(
                                 CurrencyFormatter.formatVND(_qrAmount!),
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.emeraldGreen),
+                                style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.emeraldGreen),
                               ),
                             ],
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: AppColors.emeraldGreen,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text('Từ mã QR', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.bold)),
+                            child: const Text('Từ mã QR',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -1087,8 +1271,16 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Số tiền:', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight, fontWeight: FontWeight.w500)),
-                        Text('Người chuyển tự nhập', style: TextStyle(fontSize: 12.5, color: AppColors.primaryDark, fontStyle: FontStyle.italic)),
+                        Text('Số tiền:',
+                            style: TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.textSecondaryLight,
+                                fontWeight: FontWeight.w500)),
+                        Text('Người chuyển tự nhập',
+                            style: TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.primaryDark,
+                                fontStyle: FontStyle.italic)),
                       ],
                     ),
                   ],
@@ -1099,13 +1291,20 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Nội dung:', style: TextStyle(fontSize: 12.5, color: AppColors.textSecondaryLight, fontWeight: FontWeight.w500)),
+                      const Text('Nội dung:',
+                          style: TextStyle(
+                              fontSize: 12.5,
+                              color: AppColors.textSecondaryLight,
+                              fontWeight: FontWeight.w500)),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           _qrNote,
                           textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: AppColors.textPrimaryLight),
+                          style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimaryLight),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1119,21 +1318,29 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
 
             // Buttons
             ElevatedButton(
-              onPressed: () => widget.onProceed(_recipientName, _accountNumber, _walletId, _qrAmount, _qrNote),
+              onPressed: () => widget.onProceed(_recipientName, _accountNumber,
+                  _walletId, _qrAmount, _qrNote),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
                 backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    _qrAmount != null && _qrAmount! > 0 ? 'Xác nhận & Chuyển tiền' : 'Tiếp tục nhập số tiền',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                    _qrAmount != null && _qrAmount! > 0
+                        ? 'Xác nhận & Chuyển tiền'
+                        : 'Tiếp tục nhập số tiền',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15),
                   ),
                   const SizedBox(width: 8),
-                  const Icon(CupertinoIcons.chevron_forward, color: Colors.white, size: 16),
+                  const Icon(CupertinoIcons.chevron_forward,
+                      color: Colors.white, size: 16),
                 ],
               ),
             ),
@@ -1142,10 +1349,14 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
               onPressed: widget.onDismiss,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 46),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
                 side: const BorderSide(color: AppColors.borderSubtle),
               ),
-              child: const Text('Quét lại mã khác', style: TextStyle(color: AppColors.textSecondaryLight, fontWeight: FontWeight.w600)),
+              child: const Text('Quét lại mã khác',
+                  style: TextStyle(
+                      color: AppColors.textSecondaryLight,
+                      fontWeight: FontWeight.w600)),
             ),
           ],
         ],
@@ -1153,5 +1364,3 @@ class _ScannedQrVerificationSheetState extends State<_ScannedQrVerificationSheet
     );
   }
 }
-
-

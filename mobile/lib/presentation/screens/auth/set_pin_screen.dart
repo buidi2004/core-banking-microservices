@@ -113,12 +113,17 @@ class _SetPinScreenState extends State<SetPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.shield_fill, color: AppColors.primary, size: 20),
+                    Icon(CupertinoIcons.shield_fill,
+                        color: AppColors.primary, size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Mã PIN gồm 6 chữ số dùng để xác thực an toàn cho mọi giao dịch chuyển tiền và thanh toán.',
-                        style: TextStyle(color: AppColors.primary, fontSize: 12, height: 1.3, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 12,
+                            height: 1.3,
+                            fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -126,15 +131,21 @@ class _SetPinScreenState extends State<SetPinScreen> {
               ),
 
               // Registration Steps Tracker (3 Steps: 1 Thông tin -> 2 OTP Gmail -> 3 Tạo mã PIN)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildStepIndicator(1, 'Thông tin', isActive: false, isDone: true),
-                  _buildStepConnector(isDone: true),
-                  _buildStepIndicator(2, 'OTP Gmail', isActive: false, isDone: true),
-                  _buildStepConnector(isDone: true),
-                  _buildStepIndicator(3, 'Tạo mã PIN', isActive: true, isDone: false),
-                ],
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildStepIndicator(1, 'Thông tin',
+                        isActive: false, isDone: true),
+                    _buildStepConnector(isDone: true),
+                    _buildStepIndicator(2, 'OTP Gmail',
+                        isActive: false, isDone: true),
+                    _buildStepConnector(isDone: true),
+                    _buildStepIndicator(3, 'Tạo mã PIN',
+                        isActive: true, isDone: false),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               Center(
@@ -145,13 +156,16 @@ class _SetPinScreenState extends State<SetPinScreen> {
                     color: AppColors.primary.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.primary, size: 30),
+                  child: const Icon(CupertinoIcons.lock_shield_fill,
+                      color: AppColors.primary, size: 30),
                 ),
               ),
               const SizedBox(height: 14),
               Text(
                 _isConfirm ? 'Xác nhận lại mã PIN' : 'Tạo mã PIN giao dịch',
-                style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                style: AppTypography.displaySmall(
+                        color: AppColors.textPrimaryLight)
+                    .copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Text(
@@ -159,7 +173,8 @@ class _SetPinScreenState extends State<SetPinScreen> {
                     ? 'Nhập lại 6 chữ số vừa tạo để hoàn tất xác thực'
                     : 'Mã PIN gồm 6 số dùng để ký duyệt mọi giao dịch chuyển tiền & thanh toán',
                 textAlign: TextAlign.center,
-                style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
+                style: AppTypography.bodyMedium(
+                    color: AppColors.textSecondaryLight),
               ),
               const SizedBox(height: 20),
 
@@ -199,12 +214,16 @@ class _SetPinScreenState extends State<SetPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.info_circle_fill, color: AppColors.primary, size: 18),
+                    Icon(CupertinoIcons.info_circle_fill,
+                        color: AppColors.primary, size: 18),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Lưu ý: Không đặt mã PIN theo ngày sinh, số liên tiếp (123456) hoặc số trùng lặp để bảo vệ an toàn tài khoản.',
-                        style: TextStyle(color: AppColors.warningText, fontSize: 11, height: 1.35),
+                        style: TextStyle(
+                            color: AppColors.warningText,
+                            fontSize: 11,
+                            height: 1.35),
                       ),
                     ),
                   ],
@@ -216,7 +235,8 @@ class _SetPinScreenState extends State<SetPinScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     children: [
                       _buildRouterTile(
@@ -224,13 +244,19 @@ class _SetPinScreenState extends State<SetPinScreen> {
                         label: 'Quên mã PIN cũ? Lấy lại mã PIN',
                         onTap: () => context.push('/auth/forgot-pin'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.arrow_counterclockwise_circle_fill,
                         label: 'Quên mật khẩu đăng nhập? Khôi phục',
                         onTap: () => context.push('/auth/forgot-password'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.arrow_left_circle_fill,
                         label: 'Quay lại thông tin đăng ký',
@@ -242,31 +268,46 @@ class _SetPinScreenState extends State<SetPinScreen> {
                           }
                         },
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_crop_circle_fill,
                         label: 'Về màn hình Đăng nhập',
                         onTap: () => context.go('/auth/login'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_badge_plus_fill,
                         label: 'Chưa có tài khoản? Đăng ký ví mới',
                         onTap: () => context.push('/auth/register'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.doc_text_fill,
                         label: 'Điều khoản dịch vụ & Quy định bảo mật',
                         onTap: () => context.push('/auth/terms'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.home,
                         label: 'Bỏ qua, thiết lập mã PIN sau (Vào trang chủ)',
                         onTap: () => context.go('/'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.phone_circle_fill,
                         label: 'Trung tâm trợ giúp bảo mật & CSKH 24/7',
@@ -284,33 +325,48 @@ class _SetPinScreenState extends State<SetPinScreen> {
     );
   }
 
-  Widget _buildStepIndicator(int step, String label, {required bool isActive, required bool isDone}) {
-    final color = isDone ? AppColors.emeraldGreen : (isActive ? AppColors.primary : AppColors.textMutedLight);
+  Widget _buildStepIndicator(int step, String label,
+      {required bool isActive, required bool isDone}) {
+    final color = isDone
+        ? AppColors.successTextLight
+        : (isActive ? AppColors.primary : AppColors.textMutedLight);
     return Row(
       children: [
         CircleAvatar(
-          radius: 11,
+          radius: 10,
           backgroundColor: color,
           child: isDone
-              ? const Icon(CupertinoIcons.checkmark, size: 12, color: Colors.white)
-              : Text('$step', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+              ? const Icon(CupertinoIcons.checkmark,
+                  size: 12, color: Colors.white)
+              : Text('$step',
+                  style: const TextStyle(
+                      fontSize: 10,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 11, fontWeight: isActive ? FontWeight.bold : FontWeight.w500, color: color)),
+        Text(label,
+            style: TextStyle(
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                color: color)),
       ],
     );
   }
 
   Widget _buildStepConnector({required bool isDone}) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10),
-      width: 36,
+      margin: const EdgeInsets.symmetric(horizontal: 5),
+      width: 18,
       height: 2,
       color: isDone ? AppColors.emeraldGreen : AppColors.borderSubtle,
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -320,9 +376,13 @@ class _SetPinScreenState extends State<SetPinScreen> {
             Icon(icon, color: AppColors.primary, size: 18),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
+              child: Text(label,
+                  style:
+                      AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),

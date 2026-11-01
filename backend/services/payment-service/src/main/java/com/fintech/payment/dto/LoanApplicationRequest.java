@@ -33,5 +33,7 @@ public class LoanApplicationRequest {
     private String purpose;
 
     private String pinToken;
+
+    private String otpToken;
 }
 

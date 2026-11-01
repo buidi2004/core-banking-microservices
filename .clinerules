@@ -1,0 +1,9 @@
+# Cline rules — Sen Hồng Core Banking
+
+> **ĐỌC `AGENTS.md` TRƯỚC** — điểm vào chung: bản đồ repo, luồng nghiệp vụ, cổng dịch vụ, quy ước code.
+
+- Knowledge graph cục bộ tại `graphify-out/graph.json`: chạy `graphify query "<câu hỏi>"` trước khi
+  grep/đọc source; `graphify path` / `graphify explain` / `graphify affected` cho quan hệ.
+- Chưa có graph: `bash scripts/graphify-bootstrap.sh` (offline, ~2 phút, 0 token).
+- Sau khi sửa code: `graphify update .`.
+- Chi tiết: `docs/GRAPHIFY.md`.

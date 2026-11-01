@@ -6,6 +6,7 @@ import com.fintech.payment.dto.TransferResponse;
 import com.fintech.payment.saga.PaymentSagaOrchestrator;
 import com.fintech.payment.saga.SagaContext;
 import com.fintech.payment.security.PinTokenValidator;
+import com.fintech.payment.repository.TransactionRepository;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,10 +20,14 @@ public class TransferController {
 
     private final PaymentSagaOrchestrator sagaOrchestrator;
     private final PinTokenValidator pinTokenValidator;
+    private final TransactionRepository transactionRepository;
 
-    public TransferController(PaymentSagaOrchestrator sagaOrchestrator, PinTokenValidator pinTokenValidator) {
+    public TransferController(PaymentSagaOrchestrator sagaOrchestrator,
+                              PinTokenValidator pinTokenValidator,
+                              TransactionRepository transactionRepository) {
         this.sagaOrchestrator = sagaOrchestrator;
         this.pinTokenValidator = pinTokenValidator;
+        this.transactionRepository = transactionRepository;
     }
 
     @PostMapping
@@ -89,6 +94,18 @@ public class TransferController {
 
     @GetMapping("/{transactionId}")
     public ResponseEntity<ApiResponse<TransferResponse>> getTransaction(@PathVariable String transactionId) {
-        return ResponseEntity.ok(ApiResponse.error("Transaction query not implemented"));
+        return transactionRepository.findById(transactionId)
+                .or(() -> transactionRepository.findByTransactionCode(transactionId))
+                .map(tx -> ResponseEntity.ok(ApiResponse.success("Transaction retrieved", TransferResponse.builder()
+                        .transactionId(tx.getId())
+                        .transactionCode(tx.getTransactionCode())
+                        .sourceWalletId(tx.getSourceWalletId())
+                        .targetWalletId(tx.getTargetWalletId())
+                        .status(tx.getStatus())
+                        .amount(tx.getAmount())
+                        .currency(tx.getCurrency())
+                        .build())))
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.error("TRANSACTION_NOT_FOUND", "Không tìm thấy giao dịch: " + transactionId)));
     }
 }

@@ -46,13 +46,22 @@ public class EmailService {
                     : "buidi7170@gmail.com";
             helper.setFrom(effectiveFrom, "Sen Hồng Bank");
             helper.setTo(recipientEmail);
-            helper.setSubject("[Sen Hồng Bank] Mã xác thực OTP của Quý khách");
+
+            String subject = switch (purpose != null ? purpose.toUpperCase() : "") {
+                case "REGISTER" -> "[Sen Hồng Bank] Mã xác thực OTP đăng ký tài khoản mới";
+                case "FORGOT_PASSWORD", "RESET_PASSWORD" -> "[Sen Hồng Bank] Mã xác thực OTP khôi phục mật khẩu";
+                case "CHANGE_PASSWORD" -> "[Sen Hồng Bank] Mã xác thực OTP đổi mật khẩu tài khoản";
+                case "RESET_PIN", "CHANGE_PIN" -> "[Sen Hồng Bank] Mã xác thực OTP đổi/cấp lại mã PIN giao dịch";
+                case "LOAN", "LOAN_APPLY" -> "[Sen Hồng Bank] Mã xác thực OTP đề nghị vay tiêu dùng";
+                default -> "[Sen Hồng Bank] Mã xác thực OTP của Quý khách";
+            };
+            helper.setSubject(subject);
 
             String html = buildOtpHtml(otpCode, purpose);
             helper.setText(html, true);
 
             mailSender.send(mimeMessage);
-            log.info("[EmailService] Gửi email OTP tới {} thành công!", recipientEmail);
+            log.info("[EmailService] Gửi email OTP tới {} thành công (purpose={})!", recipientEmail, purpose);
         } catch (Exception e) {
             log.error("[EmailService] Lỗi khi gửi email OTP tới {}: {}", recipientEmail, e.getMessage(), e);
         }
@@ -60,10 +69,11 @@ public class EmailService {
 
     private String buildOtpHtml(String otpCode, String purpose) {
         String purposeDescription = switch (purpose != null ? purpose.toUpperCase() : "") {
-            case "RESET_PIN" -> "Cấp lại mã PIN giao dịch";
-            case "FORGOT_PASSWORD" -> "Khôi phục mật khẩu tài khoản ví";
             case "REGISTER" -> "Đăng ký mở tài khoản ví Sen Hồng Bank";
-            case "TRANSACTION" -> "Xác thực giao dịch chuyển tiền";
+            case "FORGOT_PASSWORD", "RESET_PASSWORD" -> "Khôi phục mật khẩu tài khoản ví";
+            case "CHANGE_PASSWORD" -> "Đổi mật khẩu tài khoản ví";
+            case "RESET_PIN", "CHANGE_PIN" -> "Đổi / Cấp lại mã PIN giao dịch";
+            case "LOAN", "LOAN_APPLY" -> "Xác nhận đề nghị vay tiêu dùng tín chấp";
             default -> "Xác minh bảo mật tài khoản";
         };
 

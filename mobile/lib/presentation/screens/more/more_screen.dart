@@ -49,8 +49,12 @@ class _MoreScreenState extends State<MoreScreen> {
       final savedName = await storage.read(key: AppConstants.keyFullName);
       if (mounted && (savedPhone != null || savedName != null)) {
         setState(() {
-          if (savedPhone != null && savedPhone.isNotEmpty) _accountNumber = savedPhone;
-          if (savedName != null && savedName.isNotEmpty) _displayName = savedName.toUpperCase();
+          if (savedPhone != null && savedPhone.isNotEmpty) {
+            _accountNumber = savedPhone;
+          }
+          if (savedName != null && savedName.isNotEmpty) {
+            _displayName = savedName.toUpperCase();
+          }
         });
       }
 
@@ -79,7 +83,8 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 
   List<Map<String, dynamic>> _getAllCatalogItems(BuildContext context) {
-    const Color defaultIconBg = Color(0x1400A896); // AppColors.primary with 8% tint
+    const Color defaultIconBg =
+        Color(0x1400A896); // AppColors.primary with 8% tint
     const Color defaultIconColor = AppColors.primaryDark;
 
     return [
@@ -92,7 +97,16 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Tài chính & Nguồn tiền',
-        'keywords': ['the', 'thẻ', 'visa', 'napas', 'khoa the', 'pin the', 'the tin dung', 'the ghi no'],
+        'keywords': [
+          'the',
+          'thẻ',
+          'visa',
+          'napas',
+          'khoa the',
+          'pin the',
+          'the tin dung',
+          'the ghi no'
+        ],
         'onTap': () => context.push('/cards'),
       },
       // 2. Tiết kiệm
@@ -104,7 +118,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Tài chính & Nguồn tiền',
-        'keywords': ['tiet kiem', 'tiết kiệm', 'lai suat', 'lãi suất', 'sen loc phat', 'gui tien', 'so tiet kiem'],
+        'keywords': [
+          'tiet kiem',
+          'tiết kiệm',
+          'lai suat',
+          'lãi suất',
+          'sen loc phat',
+          'gui tien',
+          'so tiet kiem'
+        ],
         'onTap': () => context.push('/bills/savings'),
       },
       // 3. Hạn mức & KYC
@@ -116,7 +138,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Tài chính & Nguồn tiền',
-        'keywords': ['han muc', 'hạn mức', 'kyc', 'cap do', 'nang cap', 'dinh danh', 'level'],
+        'keywords': [
+          'han muc',
+          'hạn mức',
+          'kyc',
+          'cap do',
+          'nang cap',
+          'dinh danh',
+          'level'
+        ],
         'onTap': () => context.push('/profile/kyc-level'),
       },
       // 4. Hồ sơ CCCD
@@ -128,7 +158,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Tài chính & Nguồn tiền',
-        'keywords': ['cccd', 'can cuoc', 'sinh trac hoc', 'c06', 'qd 2345', 'khuon mat', 'khuôn mặt'],
+        'keywords': [
+          'cccd',
+          'can cuoc',
+          'sinh trac hoc',
+          'c06',
+          'qd 2345',
+          'khuon mat',
+          'khuôn mặt'
+        ],
         'onTap': () => context.push('/profile/identity-document'),
       },
       // 5. Vay tiêu dùng
@@ -140,7 +178,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Tài chính & Nguồn tiền',
-        'keywords': ['vay', 'vay tieu dung', 'tin chap', 'tin chấp', 'lai suat', 'muon tien', 'loan'],
+        'keywords': [
+          'vay',
+          'vay tieu dung',
+          'tin chap',
+          'tin chấp',
+          'lai suat',
+          'muon tien',
+          'loan'
+        ],
         'onTap': () => context.push('/bills/quick-loan'),
       },
       // 6. Ngân hàng liên kết
@@ -152,7 +198,16 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Tài chính & Nguồn tiền',
-        'keywords': ['ngan hang', 'ngân hàng', 'lien ket', 'nap', 'rut', 'tai khoan', 'napas', 'vietqr'],
+        'keywords': [
+          'ngan hang',
+          'ngân hàng',
+          'lien ket',
+          'nap',
+          'rut',
+          'tai khoan',
+          'napas',
+          'vietqr'
+        ],
         'onTap': () => context.push('/bank-cards'),
       },
       // 7. Danh bạ thụ hưởng
@@ -164,7 +219,14 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Tài chính & Nguồn tiền',
-        'keywords': ['danh ba', 'danh bạ', 'thu huong', 'thụ hưởng', 'nguoi quen', 'so tai khoan'],
+        'keywords': [
+          'danh ba',
+          'danh bạ',
+          'thu huong',
+          'thụ hưởng',
+          'nguoi quen',
+          'so tai khoan'
+        ],
         'onTap': () => context.push('/beneficiaries'),
       },
       // 8. Vé số Vietlott
@@ -176,7 +238,16 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Dịch vụ & Tiện ích đời sống',
-        'keywords': ['ve so', 'vé số', 'vietlott', 'mega', 'power', 'keno', 'so so', 'xổ số'],
+        'keywords': [
+          've so',
+          'vé số',
+          'vietlott',
+          'mega',
+          'power',
+          'keno',
+          'so so',
+          'xổ số'
+        ],
         'onTap': () => context.push('/bills/lottery'),
       },
       // 9. Nạp tiền điện thoại
@@ -188,7 +259,16 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Dịch vụ & Tiện ích đời sống',
-        'keywords': ['nap tien dien thoai', 'nạp tiền', 'the cao', 'topup', 'viettel', 'vinaphone', 'mobifone', 'data 4g'],
+        'keywords': [
+          'nap tien dien thoai',
+          'nạp tiền',
+          'the cao',
+          'topup',
+          'viettel',
+          'vinaphone',
+          'mobifone',
+          'data 4g'
+        ],
         'onTap': () => context.push('/bills/phone-recharge'),
       },
       // 10. Thanh toán hóa đơn
@@ -200,7 +280,17 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Dịch vụ & Tiện ích đời sống',
-        'keywords': ['hoa don', 'hóa đơn', 'dien', 'điện', 'nuoc', 'nước', 'internet', 'evn', 'truyen hinh'],
+        'keywords': [
+          'hoa don',
+          'hóa đơn',
+          'dien',
+          'điện',
+          'nuoc',
+          'nước',
+          'internet',
+          'evn',
+          'truyen hinh'
+        ],
         'onTap': () => context.push('/bills'),
       },
       // 11. Giới thiệu bạn bè
@@ -212,7 +302,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Dịch vụ & Tiện ích đời sống',
-        'keywords': ['gioi thieu', 'giới thiệu', 'ban be', 'hoa hong', 'thuong', 'qua tang', 'referral'],
+        'keywords': [
+          'gioi thieu',
+          'giới thiệu',
+          'ban be',
+          'hoa hong',
+          'thuong',
+          'qua tang',
+          'referral'
+        ],
         'onTap': () => context.push('/referral'),
       },
       // 12. Cài đặt bảo mật & Smart OTP
@@ -224,7 +322,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Bảo mật & Cấu hình ứng dụng',
-        'keywords': ['bao mat', 'bảo mật', 'smart otp', 'faceid', 'biometric', 'pki', 'chu ky so'],
+        'keywords': [
+          'bao mat',
+          'bảo mật',
+          'smart otp',
+          'faceid',
+          'biometric',
+          'pki',
+          'chu ky so'
+        ],
         'onTap': () => context.push('/settings/security'),
       },
       // 13. Đổi mã PIN giao dịch
@@ -236,7 +342,14 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Bảo mật & Cấu hình ứng dụng',
-        'keywords': ['doi pin', 'đổi pin', 'ma pin', 'mat khau', 'giao dich', 'passcode'],
+        'keywords': [
+          'doi pin',
+          'đổi pin',
+          'ma pin',
+          'mat khau',
+          'giao dich',
+          'passcode'
+        ],
         'onTap': () => context.push('/settings/change-pin'),
       },
       // 14. Xác thực Chip CCCD qua NFC
@@ -248,7 +361,13 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Bảo mật & Cấu hình ứng dụng',
-        'keywords': ['nfc', 'quet chip', 'cccd gắn chip', 'xac thuc chip', 'c06'],
+        'keywords': [
+          'nfc',
+          'quet chip',
+          'cccd gắn chip',
+          'xac thuc chip',
+          'c06'
+        ],
         'onTap': () => context.push('/profile/nfc-reader'),
       },
       // 15. Cài đặt thông báo
@@ -260,7 +379,14 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Bảo mật & Cấu hình ứng dụng',
-        'keywords': ['thong bao', 'thông báo', 'ting ting', 'sms', 'ott', 'bien dong so du'],
+        'keywords': [
+          'thong bao',
+          'thông báo',
+          'ting ting',
+          'sms',
+          'ott',
+          'bien dong so du'
+        ],
         'onTap': () => context.push('/notifications/settings'),
       },
       // 16. Quản lý thiết bị đăng nhập
@@ -272,7 +398,14 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Bảo mật & Cấu hình ứng dụng',
-        'keywords': ['thiet bi', 'thiết bị', 'dang nhap', 'dang xuat tu xa', 'phien', 'device'],
+        'keywords': [
+          'thiet bi',
+          'thiết bị',
+          'dang nhap',
+          'dang xuat tu xa',
+          'phien',
+          'device'
+        ],
         'onTap': () => context.push('/settings/devices'),
       },
       // 17. Tùy biến giao diện Liquid Glass
@@ -284,7 +417,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Bảo mật & Cấu hình ứng dụng',
-        'keywords': ['giao dien', 'giao diện', 'hinh nen', 'liquid glass', 'dark mode', 'theme', 'mau sac'],
+        'keywords': [
+          'giao dien',
+          'giao diện',
+          'hinh nen',
+          'liquid glass',
+          'dark mode',
+          'theme',
+          'mau sac'
+        ],
         'onTap': () => context.push('/settings'),
       },
       // 18. Hotline & Help Center
@@ -296,7 +437,16 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Trợ giúp & Pháp lý ngân hàng',
-        'keywords': ['tro giup', 'trợ giúp', 'hotline', 'tong dai', 'khoa the', 'khẩn cấp', 'support', 'cskh'],
+        'keywords': [
+          'tro giup',
+          'trợ giúp',
+          'hotline',
+          'tong dai',
+          'khoa the',
+          'khẩn cấp',
+          'support',
+          'cskh'
+        ],
         'onTap': () => context.push('/support/help-center'),
       },
       // 19. Live Chat
@@ -308,7 +458,14 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Trợ giúp & Pháp lý ngân hàng',
-        'keywords': ['live chat', 'chat', 'tu van', 'chuyen vien', 'ho tro', 'tin nhan'],
+        'keywords': [
+          'live chat',
+          'chat',
+          'tu van',
+          'chuyen vien',
+          'ho tro',
+          'tin nhan'
+        ],
         'onTap': () => context.push('/support/live-chat'),
       },
       // 20. Điều khoản dịch vụ
@@ -320,7 +477,15 @@ class _MoreScreenState extends State<MoreScreen> {
         'iconBg': defaultIconBg,
         'iconColor': defaultIconColor,
         'category': 'Trợ giúp & Pháp lý ngân hàng',
-        'keywords': ['dieu khoan', 'điều khoản', 'phap ly', 'giay phep', 'nhnn', 'chinh sach', 'nghi dinh 13'],
+        'keywords': [
+          'dieu khoan',
+          'điều khoản',
+          'phap ly',
+          'giay phep',
+          'nhnn',
+          'chinh sach',
+          'nghi dinh 13'
+        ],
         'onTap': () => context.push('/auth/terms'),
       },
     ];
@@ -330,8 +495,10 @@ class _MoreScreenState extends State<MoreScreen> {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext ctx) => CupertinoActionSheet(
-        title: const Text('Công Cụ Phát Triển & Chẩn Đoán Hệ Thống', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        message: const Text('Các tùy chọn dành cho kiểm thử viên và kỹ sư hệ thống Sen Hồng'),
+        title: const Text('Công Cụ Phát Triển & Chẩn Đoán Hệ Thống',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        message: const Text(
+            'Các tùy chọn dành cho kiểm thử viên và kỹ sư hệ thống Sen Hồng'),
         actions: <CupertinoActionSheetAction>[
           CupertinoActionSheetAction(
             onPressed: () {
@@ -341,7 +508,8 @@ class _MoreScreenState extends State<MoreScreen> {
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(CupertinoIcons.sparkles, color: AppColors.primary, size: 20),
+                Icon(CupertinoIcons.sparkles,
+                    color: AppColors.primary, size: 20),
                 SizedBox(width: 8),
                 Text('Trải nghiệm màn mở đầu Hoa Sen Nở (/splash)'),
               ],
@@ -355,7 +523,8 @@ class _MoreScreenState extends State<MoreScreen> {
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(CupertinoIcons.antenna_radiowaves_left_right, color: AppColors.primary, size: 20),
+                Icon(CupertinoIcons.antenna_radiowaves_left_right,
+                    color: AppColors.primary, size: 20),
                 SizedBox(width: 8),
                 Text('Cấu hình Gateway & Server Backend (/settings/config)'),
               ],
@@ -365,7 +534,10 @@ class _MoreScreenState extends State<MoreScreen> {
         cancelButton: CupertinoActionSheetAction(
           isDefaultAction: true,
           onPressed: () => Navigator.pop(ctx),
-          child: const Text('Đóng', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
+          child: const Text('Đóng',
+              style: TextStyle(
+                  color: AppColors.textPrimaryLight,
+                  fontWeight: FontWeight.bold)),
         ),
       ),
     );
@@ -378,7 +550,10 @@ class _MoreScreenState extends State<MoreScreen> {
       builder: (ctx) => CupertinoActionSheet(
         title: const Text(
           'Đăng Xuất Tài Khoản?',
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+          style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimaryLight),
         ),
         message: const Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Sen Hồng Bank trên thiết bị này?',
@@ -404,7 +579,8 @@ class _MoreScreenState extends State<MoreScreen> {
                 }
               }
             },
-            child: const Text('Đăng Xuất', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Đăng Xuất',
+                style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
@@ -425,7 +601,9 @@ class _MoreScreenState extends State<MoreScreen> {
             final title = (item['title'] as String).toLowerCase();
             final sub = (item['sub'] as String).toLowerCase();
             final keywords = (item['keywords'] as List<String>);
-            if (title.contains(_searchQuery) || sub.contains(_searchQuery)) return true;
+            if (title.contains(_searchQuery) || sub.contains(_searchQuery)) {
+              return true;
+            }
             return keywords.any((k) => k.contains(_searchQuery));
           }).toList();
 
@@ -437,7 +615,8 @@ class _MoreScreenState extends State<MoreScreen> {
         actions: [
           IconButton(
             tooltip: 'Thông báo',
-            icon: const Icon(LucideIcons.bell, color: AppColors.textPrimaryLight, size: 20),
+            icon: const Icon(LucideIcons.bell,
+                color: AppColors.textPrimaryLight, size: 20),
             onPressed: () {
               HapticFeedback.selectionClick();
               context.push('/notifications');
@@ -478,28 +657,39 @@ class _MoreScreenState extends State<MoreScreen> {
                   // Group 1: Tài chính, Thẻ & Tiết kiệm
                   _buildGroupedSection(
                     sectionTitle: 'TÀI CHÍNH & NGUỒN TIỀN',
-                    items: catalog.where((i) => i['category'] == 'Tài chính & Nguồn tiền').toList(),
+                    items: catalog
+                        .where((i) => i['category'] == 'Tài chính & Nguồn tiền')
+                        .toList(),
                   ),
                   const SizedBox(height: 16),
 
                   // Group 2: Dịch vụ & Đời sống
                   _buildGroupedSection(
                     sectionTitle: 'TIỆN ÍCH ĐỜI SỐNG',
-                    items: catalog.where((i) => i['category'] == 'Dịch vụ & Tiện ích đời sống').toList(),
+                    items: catalog
+                        .where((i) =>
+                            i['category'] == 'Dịch vụ & Tiện ích đời sống')
+                        .toList(),
                   ),
                   const SizedBox(height: 16),
 
                   // Group 3: Bảo mật & Cài đặt
                   _buildGroupedSection(
                     sectionTitle: 'BẢO MẬT & HỆ THỐNG',
-                    items: catalog.where((i) => i['category'] == 'Bảo mật & Cấu hình ứng dụng').toList(),
+                    items: catalog
+                        .where((i) =>
+                            i['category'] == 'Bảo mật & Cấu hình ứng dụng')
+                        .toList(),
                   ),
                   const SizedBox(height: 16),
 
                   // Group 4: Chăm sóc khách hàng & Pháp lý
                   _buildGroupedSection(
                     sectionTitle: 'HỖ TRỢ & PHÁP LÝ',
-                    items: catalog.where((i) => i['category'] == 'Trợ giúp & Pháp lý ngân hàng').toList(),
+                    items: catalog
+                        .where((i) =>
+                            i['category'] == 'Trợ giúp & Pháp lý ngân hàng')
+                        .toList(),
                   ),
                   const SizedBox(height: 24),
 
@@ -536,7 +726,8 @@ class _MoreScreenState extends State<MoreScreen> {
         controller: _searchCtrl,
         placeholder: 'Tìm kiếm tiện ích, dịch vụ, hóa đơn, bảo mật...',
         style: const TextStyle(fontSize: 14, color: AppColors.textPrimaryLight),
-        placeholderStyle: const TextStyle(fontSize: 13, color: AppColors.textMutedLight),
+        placeholderStyle:
+            const TextStyle(fontSize: 13, color: AppColors.textMutedLight),
         backgroundColor: Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         onChanged: (val) {
@@ -568,18 +759,24 @@ class _MoreScreenState extends State<MoreScreen> {
                 color: AppColors.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(LucideIcons.search, size: 36, color: AppColors.primary),
+              child: const Icon(LucideIcons.search,
+                  size: 36, color: AppColors.primary),
             ),
             const SizedBox(height: 14),
             Text(
               'Không tìm thấy tiện ích',
-              style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+              style:
+                  AppTypography.titleMedium(color: AppColors.textPrimaryLight)
+                      .copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
             Text(
               'Không có dịch vụ nào khớp với từ khóa "$_searchQuery". Hãy thử tìm: thẻ, tiết kiệm, vay, hóa đơn, pin...',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondaryLight, height: 1.4),
+              style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondaryLight,
+                  height: 1.4),
             ),
           ],
         ),
@@ -613,7 +810,8 @@ class _MoreScreenState extends State<MoreScreen> {
                   Material(
                     type: MaterialType.transparency,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 2),
                       onTap: () {
                         HapticFeedback.selectionClick();
                         (item['onTap'] as VoidCallback)();
@@ -626,20 +824,28 @@ class _MoreScreenState extends State<MoreScreen> {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: const Color(0x1F00A896)),
                         ),
-                        child: Icon(item['icon'] as IconData, color: item['iconColor'] as Color, size: 19),
+                        child: Icon(item['icon'] as IconData,
+                            color: item['iconColor'] as Color, size: 19),
                       ),
                       title: Text(
                         item['title'] as String,
-                        style: AppTypography.bodyMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 13.5),
+                        style: AppTypography.bodyMedium(
+                                color: AppColors.textPrimaryLight)
+                            .copyWith(
+                                fontWeight: FontWeight.w600, fontSize: 13.5),
                       ),
                       subtitle: Text(
                         item['sub'] as String,
-                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+                        style: const TextStyle(
+                            fontSize: 11, color: AppColors.textSecondaryLight),
                       ),
-                      trailing: const Icon(LucideIcons.chevronRight, color: AppColors.textMutedLight, size: 16),
+                      trailing: const Icon(LucideIcons.chevronRight,
+                          color: AppColors.textMutedLight, size: 16),
                     ),
                   ),
-                  if (!isLast) const Divider(height: 1, indent: 64, color: AppColors.dividerLight),
+                  if (!isLast)
+                    const Divider(
+                        height: 1, indent: 64, color: AppColors.dividerLight),
                 ],
               );
             }).toList(),
@@ -679,41 +885,55 @@ class _MoreScreenState extends State<MoreScreen> {
                             _displayName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: AppTypography.titleMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                            style: AppTypography.titleMedium(
+                                    color: AppColors.textPrimaryLight)
+                                .copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(LucideIcons.badgeCheck, color: AppColors.emeraldGreen, size: 16),
+                        const Icon(LucideIcons.badgeCheck,
+                            color: AppColors.successTextLight, size: 16),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text(
-                          'STK: ${_accountNumber.isNotEmpty ? _accountNumber : "Chưa liên kết"}',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondaryLight),
+                        Flexible(
+                          child: Text(
+                            'STK: ${_accountNumber.isNotEmpty ? _accountNumber : "Chưa liên kết"}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondaryLight),
+                          ),
                         ),
                         const SizedBox(width: 6),
                         InkWell(
                           onTap: () {
-                            Clipboard.setData(ClipboardData(text: _accountNumber));
+                            Clipboard.setData(
+                                ClipboardData(text: _accountNumber));
                             HapticFeedback.lightImpact();
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 backgroundColor: AppColors.emeraldGreen,
-                                content: Text('Đã sao chép STK: $_accountNumber'),
+                                content:
+                                    Text('Đã sao chép STK: $_accountNumber'),
                                 duration: const Duration(seconds: 2),
                               ),
                             );
                           },
-                          child: const Icon(LucideIcons.copy, size: 13, color: AppColors.primary),
+                          child: const Icon(LucideIcons.copy,
+                              size: 13, color: AppColors.primary),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(6),
@@ -722,13 +942,17 @@ class _MoreScreenState extends State<MoreScreen> {
                         _kycStatus,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary),
+                        style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary),
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(LucideIcons.chevronRight, color: AppColors.textMutedLight, size: 18),
+              const Icon(LucideIcons.chevronRight,
+                  color: AppColors.textMutedLight, size: 18),
             ],
           ),
         ),
@@ -763,7 +987,8 @@ class _MoreScreenState extends State<MoreScreen> {
               color: AppColors.bottomBarCyan.withOpacity(0.18),
               shape: BoxShape.circle,
             ),
-            child: const Icon(LucideIcons.sparkles, color: AppColors.bottomBarCyan, size: 20),
+            child: const Icon(LucideIcons.sparkles,
+                color: AppColors.bottomBarCyan, size: 20),
           ),
           const SizedBox(width: 10),
           const Expanded(
@@ -772,7 +997,10 @@ class _MoreScreenState extends State<MoreScreen> {
               children: [
                 Text(
                   '12.450 SenPoints',
-                  style: TextStyle(color: AppColors.bottomBarCyan, fontSize: 15, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: AppColors.bottomBarCyan,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 2),
                 Text(
@@ -793,7 +1021,8 @@ class _MoreScreenState extends State<MoreScreen> {
               HapticFeedback.selectionClick();
               context.push('/promotions');
             },
-            child: const Text('Đổi quà', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            child: const Text('Đổi quà',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -896,7 +1125,8 @@ class _MoreScreenState extends State<MoreScreen> {
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: defaultBorder),
                         ),
-                        child: Icon(item['icon'] as IconData, color: defaultIconColor, size: 22),
+                        child: Icon(item['icon'] as IconData,
+                            color: defaultIconColor, size: 22),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -921,7 +1151,9 @@ class _MoreScreenState extends State<MoreScreen> {
     );
   }
 
-  Widget _buildGroupedSection({required String sectionTitle, required List<Map<String, dynamic>> items}) {
+  Widget _buildGroupedSection(
+      {required String sectionTitle,
+      required List<Map<String, dynamic>> items}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -949,7 +1181,8 @@ class _MoreScreenState extends State<MoreScreen> {
                   Material(
                     type: MaterialType.transparency,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 2),
                       onTap: () {
                         HapticFeedback.selectionClick();
                         (item['onTap'] as VoidCallback)();
@@ -962,22 +1195,31 @@ class _MoreScreenState extends State<MoreScreen> {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: const Color(0x1F00A896)),
                         ),
-                        child: Icon(item['icon'] as IconData, color: item['iconColor'] as Color, size: 18),
+                        child: Icon(item['icon'] as IconData,
+                            color: item['iconColor'] as Color, size: 18),
                       ),
                       title: Text(
                         item['title'] as String,
-                        style: AppTypography.bodyMedium(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 13.5),
+                        style: AppTypography.bodyMedium(
+                                color: AppColors.textPrimaryLight)
+                            .copyWith(
+                                fontWeight: FontWeight.w600, fontSize: 13.5),
                       ),
                       subtitle: item['sub'] != null
                           ? Text(
                               item['sub'] as String,
-                              style: const TextStyle(fontSize: 11, color: AppColors.textSecondaryLight),
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondaryLight),
                             )
                           : null,
-                      trailing: const Icon(LucideIcons.chevronRight, color: AppColors.textMutedLight, size: 16),
+                      trailing: const Icon(LucideIcons.chevronRight,
+                          color: AppColors.textMutedLight, size: 16),
                     ),
                   ),
-                  if (!isLast) const Divider(height: 1, indent: 62, color: AppColors.dividerLight),
+                  if (!isLast)
+                    const Divider(
+                        height: 1, indent: 62, color: AppColors.dividerLight),
                 ],
               );
             }).toList(),
@@ -993,15 +1235,18 @@ class _MoreScreenState extends State<MoreScreen> {
       height: 48,
       child: OutlinedButton.icon(
         onPressed: _handleLogout,
-        icon: const Icon(LucideIcons.logOut, color: AppColors.error, size: 18),
+        icon: const Icon(LucideIcons.logOut,
+            color: AppColors.errorText, size: 18),
         label: Text(
           'Đăng xuất tài khoản',
-          style: AppTypography.titleSmall(color: AppColors.error).copyWith(fontWeight: FontWeight.w600),
+          style: AppTypography.titleSmall(color: AppColors.errorText)
+              .copyWith(fontWeight: FontWeight.w600),
         ),
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.white.withOpacity(0.85),
-          side: BorderSide(color: AppColors.error.withOpacity(0.35)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          side: BorderSide(color: AppColors.errorText.withOpacity(0.35)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       ),
     );
@@ -1013,11 +1258,16 @@ class _MoreScreenState extends State<MoreScreen> {
         const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(CupertinoIcons.suit_diamond_fill, size: 13, color: AppColors.primary),
+            Icon(CupertinoIcons.suit_diamond_fill,
+                size: 13, color: AppColors.primary),
             SizedBox(width: 6),
             Text(
               'SEN HỒNG DIGITAL BANK',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: AppColors.textPrimaryLight, letterSpacing: 0.8),
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  color: AppColors.textPrimaryLight,
+                  letterSpacing: 0.8),
             ),
           ],
         ),
@@ -1027,7 +1277,8 @@ class _MoreScreenState extends State<MoreScreen> {
           'Bảo hiểm tiền gửi Việt Nam (DIV) bảo trợ theo Luật các TCTD\n'
           'Hotline 24/7: 1900 6688 • contact@senbank.vn',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 10, color: AppColors.textSecondaryLight, height: 1.4),
+          style: TextStyle(
+              fontSize: 10, color: AppColors.textSecondaryLight, height: 1.4),
         ),
         const SizedBox(height: 6),
         GestureDetector(
@@ -1050,7 +1301,10 @@ class _MoreScreenState extends State<MoreScreen> {
             ),
             child: const Text(
               'Phiên bản 2.4.0 (Build 2026.10.21)',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textMutedLight),
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textMutedLight),
             ),
           ),
         ),

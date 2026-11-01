@@ -2,7 +2,6 @@ package com.fintech.wallet.infrastructure.amqp.consumer;
 
 import com.fintech.wallet.domain.event.UserRegisteredEvent;
 import com.fintech.wallet.domain.model.Wallet;
-import com.fintech.wallet.domain.model.WalletStatus;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

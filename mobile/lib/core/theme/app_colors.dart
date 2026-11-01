@@ -3,18 +3,34 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Sen Hồng Brand Palette (Đồng bộ chuẩn xác với màu xanh của nút BottomBar)
-  // Màu nút BottomBar: Cyan Ngọc Lam Color(0xFF26E5DC) & Oceanic Turquoise Color(0xFF00B4D8)
-  static const Color primary = Color(0xFF00B4D8);
-  static const Color primaryDark = Color(0xFF0077B6);
-  static const Color primaryLight = Color(0xFF26E5DC);
-  static const Color primaryAccent = Color(0xFF26E5DC);
+  // Sen Hồng brand palette. Cyan remains dedicated to decorative accents and
+  // the bottom navigation gradient; semantic colors below are readable on
+  // the app's light glass surfaces.
+  // `primary` is also consumed directly by labels and icons throughout the
+  // app, so it must remain legible on light glass surfaces (WCAG AA).
+  static const Color primary = Color(0xFF075985);
+  static const Color primaryDark = Color(0xFF064E73);
+  static const Color primaryLight = Color(0xFF0E7490);
+  // Reused brand and surface colors that were previously duplicated as raw
+  // literals across screens. Keep these centralized so palette tuning stays
+  // consistent without changing their current appearance.
+  static const Color brandBlue = Color(0xFF0077B6);
+  static const Color brandNavy = Color(0xFF0F3E6D);
+  static const Color royalBlue = Color(0xFF023E8A);
+  static const Color oceanCyan = Color(0xFF0096C7);
+  static const Color tealNavy = Color(0xFF056676);
+  static const Color deepNavy = Color(0xFF0C1929);
+  static const Color inkNavy = Color(0xFF030B17);
+  static const Color cardNavy = Color(0xFF132A48);
+  static const Color primaryAccent = bottomBarCyan;
   static const Color bottomBarCyan = Color(0xFF26E5DC);
   static const Color bottomBarOcean = Color(0xFF00B4D8);
   static const Color bottomBarGlow = Color(0xFF00E5FF);
   static const Color accentGold = Color(0xFFFFB300);
 
   // Secondary & Accents
+  // Bright success green for dark surfaces and decorative fills. Use
+  // successTextLight for text on the app's light surfaces.
   static const Color emeraldGreen = Color(0xFF10B981);
   static const Color vividTeal = Color(0xFF00BFA5);
   static const Color softPurple = Color(0xFF8B5CF6);
@@ -43,15 +59,16 @@ class AppColors {
   static const Color glassBorderDark = Color(0x3DFFFFFF);
 
   // State & Status
-  static const Color success = Color(0xFF10B981);
+  static const Color success = emeraldGreen;
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF00B4D8);
+  static const Color info = primary;
 
   // Status Surfaces & Accents (Thông báo, Cảnh báo, Trạng thái chuẩn hệ thống)
   static const Color warningBg = Color(0xFFFFFBEB);
   static const Color warningBorder = Color(0xFFFDE68A);
-  static const Color warningText = Color(0xFF7C2D12); // 6.0:1 (nâng từ #B45309 — 3.86:1)
+  static const Color warningText =
+      Color(0xFF7C2D12); // 6.0:1 (nâng từ #B45309 — 3.86:1)
 
   static const Color errorBg = Color(0xFFFEF2F2);
   static const Color errorBorder = Color(0xFFFECACA);
@@ -59,7 +76,8 @@ class AppColors {
 
   static const Color successBg = Color(0xFFF0FDF4);
   static const Color successBorder = Color(0xFFBBF7D0);
-  static const Color successText = Color(0xFF166534); // 5.49:1 (nâng từ #15803D — 3.86:1)
+  static const Color successText =
+      Color(0xFF166534); // 5.49:1 (nâng từ #15803D — 3.86:1)
 
   static const Color infoBg = Color(0xFFEFF6FF);
   static const Color infoBorder = Color(0xFFBFDBFE);
@@ -81,26 +99,30 @@ class AppColors {
   static const Color textMutedLight = Color(0xFF55657A);
 
   // Màu nhấn dùng cho CHỮ trên nền sáng (WCAG AA ≥ 4.5:1).
-  // AppColors.primary #00B4D8 chỉ đạt 2.46:1 → không dùng làm màu chữ.
-  static const Color primaryText = Color(0xFF075985); // 5.8:1 (nền sáng) · 4.8:1 (nền xanh nhạt)
-  // Xanh lá dạng chữ (emeraldGreen #10B981 chỉ đạt 1.95:1).
-  static const Color successTextLight = Color(0xFF166534); // 5.49:1
+  // AppColors.primary is now a text-safe deep teal.
+  static const Color primaryText =
+      primary; // 5.8:1 (nền sáng) · 4.8:1 (nền xanh nhạt)
+  // Xanh lá dạng chữ đạt WCAG AA trên bề mặt sáng.
+  static const Color successTextLight = Color(0xFF14532D); // 8:1 on white
   // Cam dạng chữ (warningText #B45309 chỉ đạt 3.86:1).
-  static const Color warningTextLight = Color(0xFF7C2D12); // 6.0:1 (nền sáng) · 5.9:1 (nền cam nhạt)
+  static const Color warningTextLight =
+      warningText; // 6.0:1 (nền sáng) · 5.9:1 (nền cam nhạt)
   // Tím dạng chữ (softPurple #8B5CF6 chỉ đạt 3.25:1).
   static const Color softPurpleText = Color(0xFF6D28D9); // 6.32:1
 
   // Xanh lá sáng — dùng cho CHỮ/ICON trên nền TỐI (card công nghệ).
-  static const Color emeraldGreenLight = Color(0xFF34D399); // 5.4:1 trên nền #36414E
+  static const Color emeraldGreenLight =
+      Color(0xFF6EE7B7); // High contrast mint for dark surfaces.
 
   // Text Colors (Dark Mode)
   static const Color textPrimaryDark = Color(0xFFF8FAFC);
   static const Color textSecondaryDark = Color(0xFF94A3B8);
   static const Color textMutedDark = Color(0xFF64748B);
 
-  // Gradients chuẩn sắc màu nút BottomBar
+  // Primary gradient is used beneath white labels and icons; keep both stops
+  // dark enough for accessible contrast on selected controls and cards.
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF26E5DC), Color(0xFF00B4D8)],
+    colors: [primary, primaryDark],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

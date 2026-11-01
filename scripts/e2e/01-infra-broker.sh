@@ -68,7 +68,8 @@ done
 
 # Real Data Transmission on Kafka
 KAFKA_TEST_TOPIC="banking.infra.test.v1"
-docker exec ewallet-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic "$KAFKA_TEST_TOPIC" --partitions 3 --replication-factor 1 --if-not-exists > /dev/null 2>&1
+docker exec ewallet-kafka kafka-topics --bootstrap-server localhost:9092 --delete --topic "$KAFKA_TEST_TOPIC" > /dev/null 2>&1 || true
+docker exec ewallet-kafka kafka-topics --bootstrap-server localhost:9092 --create --topic "$KAFKA_TEST_TOPIC" --partitions 1 --replication-factor 1 --if-not-exists > /dev/null 2>&1
 
 KAFKA_TEST_TX="TX-INFRA-$(date +%s)"
 KAFKA_TEST_PAYLOAD="{\"eventId\":\"evt-infra-$KAFKA_TEST_TX\",\"transactionId\":\"$KAFKA_TEST_TX\",\"type\":\"INFRA_HEALTH_CHECK\",\"amount\":100000,\"currency\":\"VND\",\"status\":\"SUCCESS\",\"timestamp\":\"$(date -u +%FT%TZ)\"}"
