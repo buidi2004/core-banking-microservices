@@ -39,6 +39,7 @@ public class SecurityConfig {
                                 "/api/v1/kyc/**",
                                 "/api/v1/sessions/**",
                                 "/api/v1/staff/**",
+                                "/api/v1/legal/**",
                                 // Service-to-service nội bộ (không route qua API Gateway)
                                 "/api/v1/internal/**"
                         ).permitAll()
