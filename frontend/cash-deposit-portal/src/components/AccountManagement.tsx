@@ -4,7 +4,7 @@ import { ApiService } from '../api';
 import { formatCurrency } from '../utils';
 import { 
   Users, Search, Filter, ShieldAlert, ShieldCheck, Lock, Unlock, 
-  RefreshCw, DollarSign, CheckCircle2, AlertCircle
+  RefreshCw, DollarSign, CheckCircle2, AlertCircle, Download, Landmark
 } from 'lucide-react';
 
 interface AccountManagementProps {
@@ -75,6 +75,71 @@ export function AccountManagement({ staff }: AccountManagementProps) {
   const activeCount = accounts.filter(acc => acc.status === 'ACTIVE').length;
   const blockedCount = accounts.filter(acc => acc.status === 'BLOCKED').length;
 
+  const handleExportAccountsCsv = () => {
+    if (accounts.length === 0) {
+      alert('Không có dữ liệu tài khoản để xuất CSV');
+      return;
+    }
+    const bom = '\ufeff';
+    const header = 'STT,Họ và Tên,Số Điện Thoại,Số Tài Khoản,Mã Ví (WalletId),Số Dư (VND),Hạn Mức Thấu Chi (VND),Trạng Thái,Cấp Độ eKYC,Thời Gian Mở\n';
+    const rows = accounts.map((acc, idx) =>
+      `${idx + 1},"${acc.customerName}","${acc.phoneNumber}","${acc.accountNumber}","${acc.walletId}",${acc.balance},${acc.overdraftLimit || 0},"${acc.status}","${acc.kycTier}","${acc.createdAt || ''}"`
+    ).join('\n');
+    const blob = new Blob([bom + header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `danh_muc_tai_khoan_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  // Tính năng 4.1: Cấp / thu hồi hạn mức thấu chi cho ví khách hàng (0 - 200 triệu VND)
+  const handleSetOverdraftLimit = async (account: AdminAccount) => {
+    const input = window.prompt(
+      `Cấp hạn mức thấu chi cho ví của ${account.customerName} (${account.phoneNumber}).\n` +
+      `Số dư khả dụng = Số dư + Hạn mức thấu chi. Nhập 0 để thu hồi hạn mức (hiện tại: ${(account.overdraftLimit || 0).toLocaleString('vi-VN')} VND):`,
+      String(account.overdraftLimit || 20000000)
+    );
+    if (input === null) return;
+    const limit = Number(input);
+    if (!Number.isFinite(limit) || limit < 0 || limit > 200000000) {
+      alert('Hạn mức thấu chi phải nằm trong khoảng [0 - 200.000.000] VND');
+      return;
+    }
+
+    setLoading(true);
+    const result = await ApiService.setOverdraftLimit(staff, account.walletId, limit);
+    if (result.success) {
+      setActionMessage({ text: `✅ ${result.message || 'Cập nhật hạn mức thấu chi thành công'}`, type: 'success' });
+      fetchAccounts();
+    } else {
+      setActionMessage({ text: `❌ ${result.message || 'Cập nhật hạn mức thấu chi thất bại'}`, type: 'error' });
+      setLoading(false);
+    }
+  };
+
+  // Tính năng 4.1: Batch tính lãi vay thấu chi theo ngày trên phần dư nợ âm
+  const handleAccrueOverdraftInterest = async () => {
+    if (!window.confirm('Xác nhận tính lãi vay thấu chi trên phần dư nợ âm (16%/năm, tính theo ngày) của toàn bộ tài khoản ví?')) return;
+    setLoading(true);
+    try {
+      const res = await ApiService.accrueOverdraftInterest(staff, 16.0, 1);
+      if (res.success) {
+        alert(`✅ ${res.message}\nSố ví bị trừ lãi: ${res.data?.walletsCharged}\nTổng tiền lãi: ${formatCurrency(res.data?.totalInterestCharged || 0)}`);
+        fetchAccounts();
+      } else {
+        alert(`❌ Lỗi: ${res.message}`);
+      }
+    } catch (e: any) {
+      alert(`Lỗi: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Header & Thống Kê Tổng Quan */}
@@ -107,16 +172,39 @@ export function AccountManagement({ staff }: AccountManagementProps) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchAccounts}
-          disabled={loading}
-          className="btn btn-outline"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}
-        >
-          <RefreshCw size={14} className={loading ? 'spin' : ''} />
-          <span>Làm mới dữ liệu</span>
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={handleAccrueOverdraftInterest}
+            disabled={loading}
+            className="btn btn-outline"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', color: 'var(--primary-blue)' }}
+            title="Tính lãi vay thấu chi trên phần dư nợ âm (16%/năm theo ngày)"
+          >
+            <Landmark size={14} />
+            <span>Lãi Thấu Chi</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleExportAccountsCsv}
+            disabled={loading || accounts.length === 0}
+            className="btn btn-outline"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', color: 'var(--primary-blue)' }}
+          >
+            <Download size={14} />
+            <span>Xuất Danh Mục (CSV)</span>
+          </button>
+          <button
+            type="button"
+            onClick={fetchAccounts}
+            disabled={loading}
+            className="btn btn-outline"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}
+          >
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            <span>Làm mới dữ liệu</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -290,6 +378,7 @@ export function AccountManagement({ staff }: AccountManagementProps) {
               <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700 }}>SỐ ĐIỆN THOẠI</th>
               <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700 }}>MÃ TÀI KHOẢN VÍ</th>
               <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>SỐ DƯ KHẢ DỤNG</th>
+              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>THẤU CHI</th>
               <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>TIÊU CHUẨN KYC</th>
               <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>TRẠNG THÁI</th>
               <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>THAO TÁC</th>
@@ -298,13 +387,14 @@ export function AccountManagement({ staff }: AccountManagementProps) {
           <tbody>
             {accounts.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)', fontSize: '14px' }}>
                   Không tìm thấy tài khoản nào phù hợp với bộ lọc hiện tại.
                 </td>
               </tr>
             ) : (
               accounts.map(acc => {
                 const isBlocked = acc.status === 'BLOCKED';
+                const isOverdrawn = (acc.balance || 0) < 0;
                 return (
                   <tr key={acc.walletId} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '12px 16px' }}>
@@ -320,8 +410,18 @@ export function AccountManagement({ staff }: AccountManagementProps) {
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <span className="mono" style={{ fontWeight: 800, fontSize: '14px', color: 'var(--primary-navy)' }}>
-                        {formatCurrency(acc.balance)}
+                      <span className="mono" style={{ fontWeight: 800, fontSize: '14px', color: isOverdrawn ? 'var(--danger-red)' : 'var(--primary-navy)' }}>
+                        {formatCurrency((acc.balance || 0) + (acc.overdraftLimit || 0))}
+                      </span>
+                      {isOverdrawn && (
+                        <div className="mono" style={{ fontSize: '10.5px', color: 'var(--danger-red)', marginTop: '2px' }}>
+                          Số dư: {formatCurrency(acc.balance)}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                      <span className={`mono badge ${(acc.overdraftLimit || 0) > 0 ? 'badge-emerald' : ''}`} style={{ fontSize: '11px', padding: '3px 8px', color: (acc.overdraftLimit || 0) > 0 ? 'var(--success-green)' : 'var(--text-muted)' }}>
+                        {(acc.overdraftLimit || 0) > 0 ? formatCurrency(acc.overdraftLimit) : 'Không cấp'}
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>
@@ -335,23 +435,43 @@ export function AccountManagement({ staff }: AccountManagementProps) {
                       </span>
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleStatus(acc)}
-                        disabled={loading}
-                        className={`btn ${isBlocked ? 'btn-emerald' : 'btn-rose'}`}
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: '11.5px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
-                        title={isBlocked ? 'Mở khóa tài khoản ví' : 'Khóa tài khoản ví do nghi vấn rửa tiền'}
-                      >
-                        {isBlocked ? <Unlock size={13} /> : <Lock size={13} />}
-                        <span>{isBlocked ? 'Mở khóa ví' : 'Khóa tài khoản'}</span>
-                      </button>
+                      <div style={{ display: 'inline-flex', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleSetOverdraftLimit(acc)}
+                          disabled={loading}
+                          className="btn btn-outline"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '11.5px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            color: 'var(--primary-blue)'
+                          }}
+                          title={acc.overdraftLimit ? `Cấp/thu hồi hạn mức thấu chi (hiện tại: ${formatCurrency(acc.overdraftLimit)})` : 'Cấp hạn mức thấu chi'}
+                        >
+                          <Landmark size={13} />
+                          <span>Thấu chi</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(acc)}
+                          disabled={loading}
+                          className={`btn ${isBlocked ? 'btn-emerald' : 'btn-rose'}`}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '11.5px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                          title={isBlocked ? 'Mở khóa tài khoản ví' : 'Khóa tài khoản ví do nghi vấn rửa tiền'}
+                        >
+                          {isBlocked ? <Unlock size={13} /> : <Lock size={13} />}
+                          <span>{isBlocked ? 'Mở khóa ví' : 'Khóa tài khoản'}</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

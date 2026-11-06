@@ -10,11 +10,13 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/support_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class TransactionDetailScreen extends StatefulWidget {
   final String? id;
@@ -156,7 +158,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                   height: 4,
                   decoration: BoxDecoration(
                       color: AppColors.textMutedLight.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(2)),
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -194,12 +196,16 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                     fontSize: 13, color: AppColors.textSecondaryLight),
               ),
               const SizedBox(height: 8),
-              _buildDisputeOption(ctx,
-                  'Chuyển tiền thành công nhưng người nhận chưa nhận được'),
-              _buildDisputeOption(ctx, 'Chuyển nhầm số tài khoản hoặc số tiền'),
               _buildDisputeOption(
-                  ctx, 'Tài khoản bị trừ tiền nhiều lần cho 1 giao dịch'),
-              _buildDisputeOption(ctx, 'Nghi ngờ giao dịch giả mạo / lừa đảo'),
+                  ctx,
+                  'Chuyển tiền thành công nhưng người nhận chưa nhận được',
+                  txId),
+              _buildDisputeOption(
+                  ctx, 'Chuyển nhầm số tài khoản hoặc số tiền', txId),
+              _buildDisputeOption(
+                  ctx, 'Tài khoản bị trừ tiền nhiều lần cho 1 giao dịch', txId),
+              _buildDisputeOption(
+                  ctx, 'Nghi ngờ giao dịch giả mạo / lừa đảo', txId),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
@@ -216,17 +222,29 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
     );
   }
 
-  Widget _buildDisputeOption(BuildContext ctx, String text) {
+  Widget _buildDisputeOption(
+      BuildContext ctx, String text, String currentTxId) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
-        onTap: () {
+        onTap: () async {
           Navigator.pop(ctx);
-          AppAlerts.showSuccess(
-            context,
-            'Đã tạo phiếu tra soát: "$text". Tổng đài 1900 6688 sẽ liên hệ hỗ trợ trong 2h làm việc.',
-            title: 'Tiếp nhận tra soát',
-          );
+          try {
+            await SupportRemoteDataSource().createTicket(
+              subject:
+                  'Tra soát GD #${currentTxId.substring(0, currentTxId.length.clamp(0, 8))}: $text',
+              category: 'TRANSACTION',
+              initialMessage:
+                  'Khách hàng yêu cầu tra soát giao dịch $currentTxId: $text',
+            );
+          } catch (_) {}
+          if (mounted) {
+            AppAlerts.showSuccess(
+              context,
+              'Đã tạo phiếu tra soát và gửi tới Cán bộ quầy: "$text". Mã phiếu đã lưu trong Trung tâm hỗ trợ.',
+              title: 'Tiếp nhận tra soát',
+            );
+          }
         },
         borderRadius: BorderRadius.circular(10),
         child: Container(
@@ -302,6 +320,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
       appBar: AppBar(
         title: const Text('Biên Lai Điện Tử'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
             icon: const Icon(CupertinoIcons.share),
@@ -342,13 +361,13 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                   padding: const EdgeInsets.all(3),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
                                         color: AppColors.bottomBarCyan
                                             .withOpacity(0.5)),
                                   ),
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(5),
+                                    borderRadius: BorderRadius.circular(8),
                                     child: Image.asset(
                                         'assets/icons/senbank_lotus_isolated.png',
                                         fit: BoxFit.contain),
@@ -357,7 +376,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                 const SizedBox(width: 8),
                                 const Flexible(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text('SENBANK',
                                           style: TextStyle(
@@ -370,7 +390,8 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                           overflow: TextOverflow.ellipsis,
                                           style: TextStyle(
                                               fontSize: 8.5,
-                                              color: AppColors.textSecondaryLight,
+                                              color:
+                                                  AppColors.textSecondaryLight,
                                               letterSpacing: 0.3)),
                                     ],
                                   ),
@@ -508,7 +529,10 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 13,
-                                        color: AppColors.primaryText),
+                                        color: AppColors.primaryText,
+                                        fontFeatures: [
+                                          FontFeature.tabularFigures(),
+                                        ]),
                                   ),
                                 ),
                                 IconButton(

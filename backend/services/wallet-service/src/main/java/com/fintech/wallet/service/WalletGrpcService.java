@@ -39,11 +39,19 @@ public class WalletGrpcService {
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found: " + walletId));
 
         if (!wallet.isActive()) {
+            redisTemplate.delete(IDEMPOTENCY_PREFIX + opKey);
             return DebitResult.failure("DEBIT_WALLET_FROZEN", "Ví không hoạt động: " + walletId);
         }
 
         if (wallet.getBalance() == null || wallet.getBalance() < amount) {
-            return DebitResult.failure("DEBIT_INSUFFICIENT_BALANCE", "Không đủ số dư");
+            // Tính năng 4.1: Hạn mức thấu chi — cho phép số dư âm tới -overdraft_limit
+            long overdraft = wallet.getOverdraftLimit() != null ? wallet.getOverdraftLimit() : 0L;
+            long available = (wallet.getBalance() != null ? wallet.getBalance() : 0L) + overdraft;
+            if (available < amount) {
+                redisTemplate.delete(IDEMPOTENCY_PREFIX + opKey);
+                return DebitResult.failure("DEBIT_INSUFFICIENT_BALANCE",
+                        "Không đủ số dư khả dụng (kể cả hạn mức thấu chi " + overdraft + ")");
+            }
         }
 
         wallet.setBalance(wallet.getBalance() - amount);
@@ -85,9 +93,10 @@ public class WalletGrpcService {
             return ReserveResult.failure("RESERVE_WALLET_FROZEN", "Ví không hoạt động");
         }
 
-        Long available = wallet.availableBalance();
+        Long available = wallet.effectiveAvailableBalance();
         if (available == null || available < amount) {
-            return ReserveResult.failure("RESERVE_INSUFFICIENT", "Không đủ số dư khả dụng");
+            return ReserveResult.failure("RESERVE_INSUFFICIENT",
+                    "Không đủ số dư khả dụng (kể cả hạn mức thấu chi)");
         }
 
         wallet.setReservedBalance(wallet.getReservedBalance() + amount);
@@ -131,7 +140,7 @@ public class WalletGrpcService {
         Wallet wallet = walletRepository.findById(walletId)
                 .orElseThrow(() -> new IllegalArgumentException("Wallet not found: " + walletId));
 
-        Long available = wallet.availableBalance();
+        Long available = wallet.effectiveAvailableBalance();
         boolean allowed = wallet.isActive() && available != null && available >= amount;
 
         Long dailyRemaining = wallet.getDailyLimit() - (wallet.getDailySpent() != null ? wallet.getDailySpent() : 0L);
@@ -149,7 +158,12 @@ public class WalletGrpcService {
     /* ======================== GET WALLET BY USER ID ======================== */
 
     public GetWalletResult getWalletByUserId(String userId) {
-        Wallet wallet = walletRepository.findByUserId(userId)
+        if (userId == null || userId.isBlank()) {
+            return GetWalletResult.notFound();
+        }
+        String cleanId = userId.trim();
+        Wallet wallet = walletRepository.findByUserId(cleanId)
+                .or(() -> walletRepository.findById(cleanId))
                 .orElse(null);
         if (wallet == null) {
             return GetWalletResult.notFound();

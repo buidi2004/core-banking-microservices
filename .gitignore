@@ -35,6 +35,10 @@ tmp/
 *.pid
 .fe.pid
 .staff_tokens.env
+*.env
+.env
+.env.*
+!.env.example
 *:Zone.Identifier
 
 ### Node / Frontend ###

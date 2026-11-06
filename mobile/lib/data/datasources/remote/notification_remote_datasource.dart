@@ -15,6 +15,13 @@ class NotificationRemoteDataSource {
     return res['items'] as List<Map<String, dynamic>>;
   }
 
+  Future<int> getUnreadCount() async {
+    final response = await _dio.get('${ApiConstants.notifications}/unread-count');
+    final json = Map<String, dynamic>.from(response.data as Map);
+    final data = json['data'] as Map?;
+    return (data?['unread'] as num?)?.toInt() ?? 0;
+  }
+
   Future<Map<String, dynamic>> getNotificationsPage({
     required String type,
     int page = 0,

@@ -59,4 +59,19 @@ class SupportRemoteDataSource {
     if (json['success'] != true || json['data'] is! Map) throw apiException(json);
     return Map<String, dynamic>.from(json['data'] as Map);
   }
+
+  Future<Map<String, dynamic>> resolveTicket({
+    required String ticketId,
+    String? resolutionNotes,
+  }) async {
+    final response = await _dio.post(
+      '${ApiConstants.tickets}/$ticketId/resolve',
+      queryParameters: {
+        if (resolutionNotes != null) 'resolutionNotes': resolutionNotes,
+      },
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
+  }
 }

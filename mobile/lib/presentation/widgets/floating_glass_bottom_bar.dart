@@ -263,7 +263,7 @@ class FloatingGlassBottomBar extends StatelessWidget
                   borderRadius: BorderRadius.circular(21),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00E5FF).withOpacity(0.42),
+                      color: AppColors.bottomBarOcean.withOpacity(0.42), // Use token
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),

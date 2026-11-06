@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Role, CashDeposit, VaultSummary, LedgerBalance, CustomerAccount, LoggedInStaff, LoanApplication } from './types';
-import { INITIAL_DEPOSITS, CUSTOMER_ACCOUNTS, STAFF_ACCOUNTS, OPENING_VAULT_BALANCE, MAX_VAULT_LIMIT } from './data';
+import { INITIAL_DEPOSITS, CUSTOMER_ACCOUNTS, OPENING_VAULT_BALANCE, MAX_VAULT_LIMIT } from './data';
 import { generateReceiptHash } from './utils';
 import { ApiService } from './api';
-import { RoleSwitcher } from './components/RoleSwitcher';
 import { TellerForm } from './components/TellerForm';
 import { TransferForm } from './components/TransferForm';
 import { ManagerQueue } from './components/ManagerQueue';
@@ -15,7 +14,12 @@ import { LoginForm } from './components/LoginForm';
 import { LoanManagement } from './components/LoanManagement';
 import { AccountManagement } from './components/AccountManagement';
 import { LedgerManagement } from './components/LedgerManagement';
-import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut, Wallet, FileText, RefreshCw, CheckCircle2, Scale, Users } from 'lucide-react';
+import { KycManagement } from './components/KycManagement';
+import { SavingsManagement } from './components/SavingsManagement';
+import { SupportDeskManagement } from './components/SupportDeskManagement';
+import { AdminOperations } from './components/AdminOperations';
+import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut, Wallet, FileText, RefreshCw, CheckCircle2, Scale, Users, PiggyBank, Headphones } from 'lucide-react';
+import { realtimeNotificationManager, RealtimeNotification } from './realtime';
 import './styles.css';
 
 export default function App() {
@@ -33,7 +37,7 @@ export default function App() {
     }
   });
 
-  const [activeTab, setActiveTab] = useState<'DEPOSIT' | 'LOANS' | 'LEDGER' | 'ACCOUNTS'>('DEPOSIT');
+  const [activeTab, setActiveTab] = useState<'DEPOSIT' | 'LOANS' | 'LEDGER' | 'ACCOUNTS' | 'KYC' | 'SAVINGS' | 'SUPPORT' | 'OPERATIONS'>('DEPOSIT');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [accounts, setAccounts] = useState<CustomerAccount[]>(CUSTOMER_ACCOUNTS);
   const [deposits, setDeposits] = useState<CashDeposit[]>(INITIAL_DEPOSITS);
@@ -41,6 +45,7 @@ export default function App() {
   const [receiptDeposit, setReceiptDeposit] = useState<CashDeposit | null>(null);
   const [isOnlineBackend, setIsOnlineBackend] = useState<boolean>(false);
   const [backendVaultSummary, setBackendVaultSummary] = useState<VaultSummary | null>(null);
+  const [liveToast, setLiveToast] = useState<{ id: string; title: string; body: string; time: string } | null>(null);
 
   const role: Role = currentStaff?.role || 'TELLER';
 
@@ -55,17 +60,6 @@ export default function App() {
       localStorage.removeItem('senhong_staff_session');
     }
   };
-
-  // Tự động kết nối và xác thực cán bộ teller1 mặc định nếu chưa có phiên
-  useEffect(() => {
-    if (!currentStaff) {
-      ApiService.loginStaff('teller1', 'DemoPass#2026!').then(res => {
-        if (res.success && res.staff) {
-          handleSetStaff(res.staff);
-        }
-      });
-    }
-  }, []);
 
   // Tải dữ liệu thật từ Backend qua API Gateway
   const loadBackendData = useCallback(async () => {
@@ -116,9 +110,39 @@ export default function App() {
 
   useEffect(() => {
     loadBackendData();
-    // Polling tự động làm mới mỗi 15 giây
-    const timer = setInterval(loadBackendData, 15000);
-    return () => clearInterval(timer);
+
+    // 1. Lắng nghe sự kiện Realtime STOMP WebSocket (cập nhật tức thì 0s, không cần F5)
+    const unsubscribe = realtimeNotificationManager.subscribe((notif: RealtimeNotification) => {
+      console.log('⚡ [Realtime STOMP Web] Giao dịch mới phát sinh, làm mới giao diện ngay lập tức:', notif);
+      loadBackendData();
+      const title = notif.title || 'Biến động số dư mới';
+      const body = notif.body || `${notif.type || 'Giao dịch'}: ${notif.amount ? (notif.amount.toLocaleString('vi-VN') + ' đ') : ''}`;
+      const now = new Date().toLocaleTimeString('vi-VN');
+      setLiveToast({ id: `${Date.now()}`, title, body, time: now });
+      setTimeout(() => {
+        setLiveToast((prev) => (prev && prev.time === now ? null : prev));
+      }, 6000);
+    });
+
+    // 2. Polling dự phòng thông minh: chỉ poll khi tab đang hiển thị, chu kỳ 20s (thay vì 5s gây nghẽn)
+    const timer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadBackendData();
+      }
+    }, 20000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadBackendData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      unsubscribe();
+    };
   }, [loadBackendData]);
 
   const vaultSummary = useMemo<VaultSummary>(() => {
@@ -140,18 +164,6 @@ export default function App() {
     const total = vaultSummary.totalCashIn;
     return { debit1011: total, credit4211: total, delta: 0 };
   }, [vaultSummary.totalCashIn]);
-
-  // Chuyển đổi vai trò và tự động lấy JWT Token thật tương ứng
-  const handleRoleSwitch = async (newRole: Role) => {
-    const targetUser = newRole === 'TELLER' ? 'teller1' : 'manager1';
-    const authRes = await ApiService.loginStaff(targetUser, 'DemoPass#2026!');
-    if (authRes.success && authRes.staff) {
-      handleSetStaff(authRes.staff);
-    } else {
-      const targetStaff = STAFF_ACCOUNTS.find(s => s.role === newRole);
-      if (targetStaff) handleSetStaff(targetStaff);
-    }
-  };
 
   // Lập lệnh nạp tiền tại quầy (Maker)
   const handleCreateDeposit = async (data: {
@@ -296,6 +308,35 @@ export default function App() {
 
   return (
     <div className={`app ${isDarkMode ? 'theme-dark' : ''}`}>
+      {/* Toast thông báo Realtime 0s (Không cần F5) */}
+      {liveToast && (
+        <div style={{
+          position: 'fixed',
+          top: '36px',
+          right: '24px',
+          zIndex: 99999,
+          background: 'rgba(15, 23, 42, 0.96)',
+          color: '#ffffff',
+          padding: '14px 20px',
+          borderRadius: '12px',
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3)',
+          border: '1px solid #10b981',
+          backdropFilter: 'blur(12px)',
+          maxWidth: '440px',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease'
+        }} onClick={() => setLiveToast(null)}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', display: 'inline-block', boxShadow: '0 0 8px #10b981' }} />
+              ⚡ {liveToast.title}
+            </span>
+            <span style={{ fontSize: '11px', color: '#94a3b8' }}>{liveToast.time}</span>
+          </div>
+          <div style={{ fontSize: '12px', color: '#f1f5f9', lineHeight: 1.4 }}>{liveToast.body}</div>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="demo-banner" style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -350,9 +391,6 @@ export default function App() {
               {role === 'TELLER' ? 'TELLER' : 'MANAGER'}
             </span>
           </div>
-
-          {/* Nút chuyển đổi vai trò nhanh */}
-          <RoleSwitcher role={role} onSwitch={handleRoleSwitch} />
 
           {/* Nút Đăng Xuất */}
           <button
@@ -489,6 +527,93 @@ export default function App() {
           <Users size={16} />
           <span>Danh Mục &amp; Bộ Lọc Tài Khoản (Admin/Giám Đốc)</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('KYC')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'KYC' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'KYC' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'KYC' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <UserCheck size={16} />
+          <span>Duyệt Hồ Sơ eKYC</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('SAVINGS')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'SAVINGS' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'SAVINGS' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'SAVINGS' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <PiggyBank size={16} />
+          <span>Sổ Tiết Kiệm (Core Savings)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('SUPPORT')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'SUPPORT' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'SUPPORT' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'SUPPORT' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <Headphones size={16} />
+          <span>Hỗ Trợ &amp; CSKH (Tickets)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('OPERATIONS')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'OPERATIONS' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'OPERATIONS' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'OPERATIONS' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <Scale size={16} />
+          <span>Trung tâm vận hành</span>
+        </button>
       </div>
 
       {/* Main Container */}
@@ -512,7 +637,7 @@ export default function App() {
             </div>
             <div>
               <VaultSummaryWidget summary={vaultSummary} />
-              <TransactionHistory deposits={deposits} onReceipt={setReceiptDeposit} />
+              <TransactionHistory deposits={deposits} onReceipt={setReceiptDeposit} staff={currentStaff} />
               <DoubleEntryLedger ledger={ledgerBalance} />
             </div>
           </div>
@@ -535,6 +660,22 @@ export default function App() {
 
         {activeTab === 'ACCOUNTS' && (
           <AccountManagement staff={currentStaff} />
+        )}
+
+        {activeTab === 'KYC' && (
+          <KycManagement currentStaff={currentStaff} onRefresh={loadBackendData} />
+        )}
+
+        {activeTab === 'SAVINGS' && (
+          <SavingsManagement currentStaff={currentStaff} onRefresh={loadBackendData} />
+        )}
+
+        {activeTab === 'SUPPORT' && (
+          <SupportDeskManagement currentStaff={currentStaff} onRefresh={loadBackendData} />
+        )}
+
+        {activeTab === 'OPERATIONS' && (
+          <AdminOperations staff={currentStaff} />
         )}
       </div>
 

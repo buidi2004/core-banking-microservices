@@ -18,8 +18,8 @@ public class Money {
     private final String currency;
 
     public Money(BigDecimal amount, String currency) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new InvalidMoneyException("Money amount cannot be null or negative");
+        if (amount == null) {
+            throw new InvalidMoneyException("Money amount cannot be null");
         }
         if (currency == null || currency.isBlank()) {
             throw new InvalidMoneyException("Currency cannot be null or empty");
@@ -65,11 +65,13 @@ public class Money {
         return new Money(this.amount.add(money.getAmount()), this.currency);
     }
 
+    /**
+     * Trả về một giá trị Money mới có thể âm (dư nợ thấu chi — tính năng 4.1).
+     * Invariant "amount >= 0" không còn nằm ở Money mà chuyển về Wallet,
+     * nơi biết overdraft_limit để quyết định số dư khả dụng.
+     */
     public Money subtract(Money money) {
         validateSameCurrency(money);
-        if (isLessThan(money)) {
-            throw new InvalidMoneyException("Resulting money amount would be negative");
-        }
         return new Money(this.amount.subtract(money.getAmount()), this.currency);
     }
 

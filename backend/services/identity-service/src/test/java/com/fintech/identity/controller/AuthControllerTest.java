@@ -2,7 +2,9 @@ package com.fintech.identity.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.identity.dto.AuthResponse;
+import com.fintech.identity.dto.ForgotPasswordRequest;
 import com.fintech.identity.dto.LoginRequest;
+import com.fintech.identity.dto.OtpSendResponse;
 import com.fintech.identity.dto.RefreshTokenRequest;
 import com.fintech.identity.dto.RegisterRequest;
 import com.fintech.identity.service.AuthService;
@@ -39,6 +41,9 @@ class AuthControllerTest {
 
     @MockBean
     private com.fintech.identity.service.OtpService otpService;
+
+    @MockBean
+    private com.fintech.identity.repository.UserRepository userRepository;
 
     @Test
     @DisplayName("API POST /api/v1/auth/register - Đăng ký thành công trả về HTTP 201 Created")
@@ -192,5 +197,66 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message", is("Đăng xuất thành công")));
 
         verify(authService).logout("Bearer valid-token", "user-123", "device-xyz");
+    }
+
+    @Test
+    @DisplayName("API POST /api/v1/auth/forgot-password - Gửi OTP khôi phục mật khẩu thành công trả về HTTP 200")
+    void shouldReturn200WhenForgotPasswordSuccessfully() throws Exception {
+        ForgotPasswordRequest request = ForgotPasswordRequest.builder()
+                .phoneNumber("0901234567")
+                .build();
+
+        OtpSendResponse mockResponse = OtpSendResponse.builder()
+                .phoneNumber("0901234567")
+                .expiresInSeconds(180)
+                .referenceId("REF-1234567890")
+                .maskedEmail("al***e@banking.com")
+                .message("Mã xác thực OTP đã được gửi đến Gmail chính chủ của Quý khách")
+                .build();
+
+        when(otpService.forgotPassword("0901234567")).thenReturn(mockResponse);
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.phoneNumber", is("0901234567")))
+                .andExpect(jsonPath("$.data.expiresInSeconds", is(180)))
+                .andExpect(jsonPath("$.data.maskedEmail", is("al***e@banking.com")));
+
+        verify(otpService).forgotPassword("0901234567");
+    }
+
+    @Test
+    @DisplayName("API POST /api/v1/auth/forgot-password - Báo lỗi 400 khi thiếu số điện thoại")
+    void shouldReturn400WhenForgotPasswordPhoneIsBlank() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.error", is("BAD_REQUEST")));
+    }
+
+    @Test
+    @DisplayName("API POST /api/v1/auth/forgot-password - Báo lỗi 400 khi SĐT không tồn tại trong hệ thống")
+    void shouldReturn400WhenForgotPasswordUserNotFound() throws Exception {
+        ForgotPasswordRequest request = ForgotPasswordRequest.builder()
+                .phoneNumber("0999999999")
+                .build();
+
+        when(otpService.forgotPassword("0999999999"))
+                .thenThrow(new IllegalArgumentException("Số điện thoại không tồn tại trong hệ thống."));
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)))
+                .andExpect(jsonPath("$.error", is("BAD_REQUEST")))
+                .andExpect(jsonPath("$.message", is("Số điện thoại không tồn tại trong hệ thống.")));
+
+        verify(otpService).forgotPassword("0999999999");
     }
 }

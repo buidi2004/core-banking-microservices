@@ -10,6 +10,7 @@ import 'package:sen_hong_bank/data/datasources/remote/beneficiary_remote_datasou
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class BeneficiariesScreen extends StatefulWidget {
   const BeneficiariesScreen({super.key});
@@ -46,18 +47,23 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
         _beneficiaries
           ..clear()
           ..addAll(items.map((item) => {
-            'id': '${item['id'] ?? ''}',
-            'name': '${item['name'] ?? item['fullName'] ?? ''}',
-            'nickname': '${item['nickname'] ?? item['name'] ?? ''}',
-            'bank': '${item['bankCode'] ?? ''}',
-            'acc': '${item['accountNumber'] ?? item['phoneNumber'] ?? ''}',
-            'phone': '${item['phoneNumber'] ?? ''}',
-            'walletId': '${item['beneficiaryWalletId'] ?? item['walletId'] ?? ''}',
-          }));
+                'id': '${item['id'] ?? ''}',
+                'name': '${item['name'] ?? item['fullName'] ?? ''}',
+                'nickname': '${item['nickname'] ?? item['name'] ?? ''}',
+                'bank': '${item['bankCode'] ?? ''}',
+                'acc': '${item['accountNumber'] ?? item['phoneNumber'] ?? ''}',
+                'phone': '${item['phoneNumber'] ?? ''}',
+                'walletId':
+                    '${item['beneficiaryWalletId'] ?? item['walletId'] ?? ''}',
+              }));
         _loading = false;
       });
     } catch (error) {
-      if (mounted) setState(() { _error = extractErrorMessage(error); _loading = false; });
+      if (mounted)
+        setState(() {
+          _error = extractErrorMessage(error);
+          _loading = false;
+        });
     }
   }
 
@@ -83,12 +89,14 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
       useSafeArea: true,
       showDragHandle: true,
       backgroundColor: AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) {
         bool isSubmitting = false;
         return StatefulBuilder(
           builder: (ctx, setModalState) => Padding(
-            padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+            padding: EdgeInsets.fromLTRB(
+                24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
             child: SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
@@ -101,18 +109,23 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                       Expanded(
                         child: Text(
                           'Thêm Người Thụ Hưởng Mới',
-                          style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
+                          style: AppTypography.titleLarge(
+                              color: AppColors.textPrimaryLight),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       IconButton(
-                        onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
-                        icon: const Icon(CupertinoIcons.xmark, color: AppColors.textPrimaryLight),
+                        onPressed:
+                            isSubmitting ? null : () => Navigator.pop(ctx),
+                        icon: const Icon(CupertinoIcons.xmark,
+                            color: AppColors.textPrimaryLight),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text('Chọn ngân hàng / Ví', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                  Text('Chọn ngân hàng / Ví',
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight)),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -126,17 +139,31 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                         value: selectedBank,
                         dropdownColor: AppColors.surfaceLight,
                         isExpanded: true,
-                        style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 14),
+                        style: const TextStyle(
+                            color: AppColors.textPrimaryLight, fontSize: 14),
                         items: const [
-                          DropdownMenuItem(value: 'Ví Sen Hồng', child: Text('Ví Sen Hồng (Nội bộ 24/7)')),
-                          DropdownMenuItem(value: 'Vietcombank', child: Text('Vietcombank (VCB)')),
-                          DropdownMenuItem(value: 'MBBank', child: Text('MBBank (Quân Đội)')),
-                          DropdownMenuItem(value: 'Techcombank', child: Text('Techcombank (TCB)')),
-                          DropdownMenuItem(value: 'VietinBank', child: Text('VietinBank (CTG)')),
+                          DropdownMenuItem(
+                              value: 'Ví Sen Hồng',
+                              child: Text('Ví Sen Hồng (Nội bộ 24/7)')),
+                          DropdownMenuItem(
+                              value: 'Vietcombank',
+                              child: Text('Vietcombank (VCB)')),
+                          DropdownMenuItem(
+                              value: 'MBBank',
+                              child: Text('MBBank (Quân Đội)')),
+                          DropdownMenuItem(
+                              value: 'Techcombank',
+                              child: Text('Techcombank (TCB)')),
+                          DropdownMenuItem(
+                              value: 'VietinBank',
+                              child: Text('VietinBank (CTG)')),
                           DropdownMenuItem(value: 'BIDV', child: Text('BIDV')),
-                          DropdownMenuItem(value: 'VPBank', child: Text('VPBank')),
-                          DropdownMenuItem(value: 'ACB', child: Text('Á Châu (ACB)')),
-                          DropdownMenuItem(value: 'TPBank', child: Text('Tiên Phong (TPB)')),
+                          DropdownMenuItem(
+                              value: 'VPBank', child: Text('VPBank')),
+                          DropdownMenuItem(
+                              value: 'ACB', child: Text('Á Châu (ACB)')),
+                          DropdownMenuItem(
+                              value: 'TPBank', child: Text('Tiên Phong (TPB)')),
                         ],
                         onChanged: isSubmitting
                             ? null
@@ -150,7 +177,9 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text('Số tài khoản / Số điện thoại', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                  Text('Số tài khoản / Số điện thoại',
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: accCtrl,
@@ -158,34 +187,55 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                     enabled: !isSubmitting,
                     style: const TextStyle(color: AppColors.textPrimaryLight),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primary),
+                      prefixIcon: const Icon(CupertinoIcons.creditcard,
+                          color: AppColors.primary),
                       hintText: 'Nhập số tài khoản hoặc SĐT ví',
-                      hintStyle: const TextStyle(color: AppColors.textMutedLight),
+                      hintStyle:
+                          const TextStyle(color: AppColors.textMutedLight),
                       filled: true,
                       fillColor: AppColors.surfaceLight,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderLight)),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderLight)),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text('Họ và tên người nhận', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                  Text('Họ và tên người nhận',
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: nameCtrl,
                     textCapitalization: TextCapitalization.characters,
                     enabled: !isSubmitting,
-                    style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        color: AppColors.textPrimaryLight,
+                        fontWeight: FontWeight.bold),
                     decoration: InputDecoration(
                       hintText: 'Ví dụ: TRẦN VĂN A',
-                      hintStyle: const TextStyle(color: AppColors.textMutedLight),
+                      hintStyle:
+                          const TextStyle(color: AppColors.textMutedLight),
                       filled: true,
                       fillColor: AppColors.surfaceLight,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderLight)),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderLight)),
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Text('Biệt danh gợi nhớ (tùy chọn)', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                  Text('Biệt danh gợi nhớ (tùy chọn)',
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight)),
                   const SizedBox(height: 6),
                   TextField(
                     controller: nickCtrl,
@@ -193,11 +243,18 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                     style: const TextStyle(color: AppColors.textPrimaryLight),
                     decoration: InputDecoration(
                       hintText: 'Ví dụ: Bạn thân, Tiền nhà...',
-                      hintStyle: const TextStyle(color: AppColors.textMutedLight),
+                      hintStyle:
+                          const TextStyle(color: AppColors.textMutedLight),
                       filled: true,
                       fillColor: AppColors.surfaceLight,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.borderLight)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderLight)),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderLight)),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -213,7 +270,8 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                                 await showFeatureUnavailable(
                                   context,
                                   feature: 'Thêm người thụ hưởng',
-                                  reason: 'Backend chưa cung cấp API danh bạ thụ hưởng (BE-REQ-06).',
+                                  reason:
+                                      'Backend chưa cung cấp API danh bạ thụ hưởng (BE-REQ-06).',
                                 );
                                 return;
                               }
@@ -224,7 +282,8 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     backgroundColor: AppColors.error,
-                                    content: Text('Vui lòng nhập tên và số tài khoản'),
+                                    content: Text(
+                                        'Vui lòng nhập tên và số tài khoản'),
                                   ),
                                 );
                                 return;
@@ -233,7 +292,9 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                               try {
                                 await BeneficiaryRemoteDataSource().add({
                                   'beneficiaryWalletId': acc,
-                                  'nickname': nickCtrl.text.trim().isEmpty ? name : nickCtrl.text.trim(),
+                                  'nickname': nickCtrl.text.trim().isEmpty
+                                      ? name
+                                      : nickCtrl.text.trim(),
                                   'bankCode': selectedBank,
                                   'accountNumber': acc,
                                 });
@@ -259,7 +320,11 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                               }
                             },
                       child: isSubmitting
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
                           : const Text('Lưu người thụ hưởng'),
                     ),
                   ),
@@ -286,7 +351,10 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surfaceLight,
-        title: const Text('Đổi Biệt Danh', style: TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
+        title: const Text('Đổi Biệt Danh',
+            style: TextStyle(
+                color: AppColors.textPrimaryLight,
+                fontWeight: FontWeight.bold)),
         content: TextField(
           controller: nickCtrl,
           style: const TextStyle(color: AppColors.textPrimaryLight),
@@ -295,11 +363,16 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
             hintStyle: const TextStyle(color: AppColors.textMutedLight),
             filled: true,
             fillColor: AppColors.surfaceLight,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.borderLight)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.borderLight)),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy', style: TextStyle(color: AppColors.textMutedLight))),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Hủy',
+                  style: TextStyle(color: AppColors.textMutedLight))),
           ElevatedButton(
             onPressed: () {
               HapticFeedback.selectionClick();
@@ -329,21 +402,25 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: const Row(
           children: [
-            Icon(CupertinoIcons.exclamationmark_triangle_fill, color: AppColors.error),
+            Icon(CupertinoIcons.exclamationmark_triangle_fill,
+                color: AppColors.error),
             SizedBox(width: 8),
             Expanded(
-              child: Text('Xác nhận xóa thụ hưởng', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: Text('Xác nhận xóa thụ hưởng',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
         content: Text(
           'Bạn có chắc chắn muốn xóa "${b['name']}" (${b['acc']}) khỏi danh bạ người thụ hưởng?',
-          style: const TextStyle(fontSize: 13, color: AppColors.textSecondaryLight),
+          style: const TextStyle(
+              fontSize: 13, color: AppColors.textSecondaryLight),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Hủy bỏ', style: TextStyle(color: AppColors.textMutedLight)),
+            child: const Text('Hủy bỏ',
+                style: TextStyle(color: AppColors.textMutedLight)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -384,9 +461,11 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
       appBar: AppBar(
         title: const Text('Danh Bạ Thụ Hưởng'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.person_badge_plus_fill, color: AppColors.primary),
+            icon: const Icon(CupertinoIcons.person_badge_plus_fill,
+                color: AppColors.primary),
             tooltip: 'Thêm người thụ hưởng',
             onPressed: _showAddBeneficiaryModal,
           ),
@@ -404,10 +483,12 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                     onChanged: (val) => setState(() => _keyword = val),
                     style: const TextStyle(color: AppColors.textPrimaryLight),
                     decoration: InputDecoration(
-                      prefixIcon: const Icon(CupertinoIcons.search, color: AppColors.primary),
+                      prefixIcon: const Icon(CupertinoIcons.search,
+                          color: AppColors.primary),
                       suffixIcon: _keyword.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(CupertinoIcons.xmark_circle_fill, color: AppColors.textMutedLight, size: 18),
+                              icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                                  color: AppColors.textMutedLight, size: 18),
                               onPressed: () => setState(() {
                                 _searchCtrl.clear();
                                 _keyword = '';
@@ -415,11 +496,18 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
                             )
                           : null,
                       hintText: 'Tìm theo tên, SĐT, số tài khoản...',
-                      hintStyle: const TextStyle(color: AppColors.textMutedLight),
+                      hintStyle:
+                          const TextStyle(color: AppColors.textMutedLight),
                       filled: true,
                       fillColor: AppColors.surfaceLight,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderLight)),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide:
+                              const BorderSide(color: AppColors.borderLight)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -439,116 +527,174 @@ class _BeneficiariesScreenState extends State<BeneficiariesScreen> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
-                      ? Center(child: Text(_error!, style: const TextStyle(color: AppColors.error)))
+                      ? Center(
+                          child: Text(_error!,
+                              style: const TextStyle(color: AppColors.error)))
                       : _filtered.isEmpty
-                  ? Center(
-                      child: Text('Không tìm thấy người thụ hưởng phù hợp', style: AppTypography.bodyMedium(color: AppColors.textMutedLight)),
-                    )
-                  : ListView.builder(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-                      itemCount: _filtered.length,
-                      itemBuilder: (context, idx) {
-                        final b = _filtered[idx];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: GlassCard(
-                            quality: GlassQuality.minimal,
-                            child: Material(
-                              type: MaterialType.transparency,
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                                onTap: () {
-                                  final name = b['name'] ?? '';
-                                  final phone = (b['phone']?.isNotEmpty == true) ? b['phone']! : (b['acc'] ?? '');
-                                  final walletId = b['walletId'];
-                                  final uri = Uri(
-                                    path: '/transfer/amount',
-                                    queryParameters: {
-                                      'recipient': name,
-                                      if (phone.isNotEmpty) 'phoneNumber': phone,
-                                      if (walletId != null && walletId.isNotEmpty) 'walletId': walletId,
-                                      'note': 'Chuyen tien',
-                                    },
-                                  );
-                                  context.push(uri.toString());
-                                },
-                                leading: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: AppColors.primaryGradient,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.bottomBarGlow.withOpacity(0.35),
-                                        blurRadius: 6,
+                          ? Center(
+                              child: Text(
+                                  'Không tìm thấy người thụ hưởng phù hợp',
+                                  style: AppTypography.bodyMedium(
+                                      color: AppColors.textMutedLight)),
+                            )
+                          : ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              keyboardDismissBehavior:
+                                  ScrollViewKeyboardDismissBehavior.onDrag,
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                              itemCount: _filtered.length,
+                              itemBuilder: (context, idx) {
+                                final b = _filtered[idx];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: GlassCard(
+                                    quality: GlassQuality.minimal,
+                                    child: Material(
+                                      type: MaterialType.transparency,
+                                      child: ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 16, vertical: 6),
+                                        onTap: () {
+                                          final name = b['name'] ?? '';
+                                          final phone =
+                                              (b['phone']?.isNotEmpty == true)
+                                                  ? b['phone']!
+                                                  : (b['acc'] ?? '');
+                                          final walletId = b['walletId'];
+                                          final uri = Uri(
+                                            path: '/transfer/amount',
+                                            queryParameters: {
+                                              'recipient': name,
+                                              if (phone.isNotEmpty)
+                                                'phoneNumber': phone,
+                                              if (walletId != null &&
+                                                  walletId.isNotEmpty)
+                                                'walletId': walletId,
+                                              'note': 'Chuyen tien',
+                                            },
+                                          );
+                                          context.push(uri.toString());
+                                        },
+                                        leading: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: AppColors.primaryGradient,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: AppColors.bottomBarGlow
+                                                    .withOpacity(0.35),
+                                                blurRadius: 6,
+                                              ),
+                                            ],
+                                          ),
+                                          child: CircleAvatar(
+                                            radius: 20,
+                                            backgroundColor:
+                                                AppColors.surfaceLight,
+                                            child: Text(
+                                              (b['name'] != null &&
+                                                      b['name']!
+                                                          .trim()
+                                                          .isNotEmpty)
+                                                  ? b['name']!
+                                                      .trim()
+                                                      .split(' ')
+                                                      .last[0]
+                                                      .toUpperCase()
+                                                  : 'S',
+                                              style: const TextStyle(
+                                                  color: AppColors.primary,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                        title: Row(
+                                          children: [
+                                            Expanded(
+                                                child: Text(b['name']!,
+                                                    style: AppTypography
+                                                        .titleMedium(
+                                                            color: AppColors
+                                                                .textPrimaryLight))),
+                                            const Icon(
+                                                CupertinoIcons.paperplane_fill,
+                                                size: 16,
+                                                color: AppColors.primary),
+                                          ],
+                                        ),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 2),
+                                            Text(b['nickname']!,
+                                                style: const TextStyle(
+                                                    color: AppColors.primary,
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.w600)),
+                                            const SizedBox(height: 2),
+                                            Text('${b['bank']} • ${b['acc']}',
+                                                style: AppTypography.bodySmall(
+                                                    color: AppColors
+                                                        .textSecondaryLight)),
+                                          ],
+                                        ),
+                                        trailing: PopupMenuButton<String>(
+                                          icon: const Icon(
+                                              CupertinoIcons.ellipsis,
+                                              color: AppColors.textMutedLight),
+                                          color: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16)),
+                                          onSelected: (action) {
+                                            if (action == 'edit')
+                                              _editNickname(b);
+                                            if (action == 'delete')
+                                              _deleteBeneficiary(b);
+                                          },
+                                          itemBuilder: (ctx) => [
+                                            const PopupMenuItem(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(CupertinoIcons.pencil,
+                                                      size: 16,
+                                                      color: AppColors.primary),
+                                                  SizedBox(width: 8),
+                                                  Text('Sửa biệt danh',
+                                                      style: TextStyle(
+                                                          color: AppColors
+                                                              .textPrimaryLight)),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(CupertinoIcons.trash,
+                                                      size: 16,
+                                                      color: AppColors.error),
+                                                  SizedBox(width: 8),
+                                                  Text('Xóa người này',
+                                                      style: TextStyle(
+                                                          color:
+                                                              AppColors.error)),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ],
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: AppColors.surfaceLight,
-                                    child: Text(
-                                      (b['name'] != null && b['name']!.trim().isNotEmpty)
-                                          ? b['name']!.trim().split(' ').last[0].toUpperCase()
-                                          : 'S',
-                                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
                                     ),
                                   ),
-                                ),
-                                title: Row(
-                                  children: [
-                                    Expanded(child: Text(b['name']!, style: AppTypography.titleMedium(color: AppColors.textPrimaryLight))),
-                                    const Icon(CupertinoIcons.paperplane_fill, size: 16, color: AppColors.primary),
-                                  ],
-                                ),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const SizedBox(height: 2),
-                                    Text(b['nickname']!, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 2),
-                                    Text('${b['bank']} • ${b['acc']}', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-                                  ],
-                                ),
-                                trailing: PopupMenuButton<String>(
-                                  icon: const Icon(CupertinoIcons.ellipsis, color: AppColors.textMutedLight),
-                                  color: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                  onSelected: (action) {
-                                    if (action == 'edit') _editNickname(b);
-                                    if (action == 'delete') _deleteBeneficiary(b);
-                                  },
-                                  itemBuilder: (ctx) => [
-                                    const PopupMenuItem(
-                                      value: 'edit',
-                                      child: Row(
-                                        children: [
-                                          Icon(CupertinoIcons.pencil, size: 16, color: AppColors.primary),
-                                          SizedBox(width: 8),
-                                          Text('Sửa biệt danh', style: TextStyle(color: AppColors.textPrimaryLight)),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Row(
-                                        children: [
-                                          Icon(CupertinoIcons.trash, size: 16, color: AppColors.error),
-                                          SizedBox(width: 8),
-                                          Text('Xóa người này', style: TextStyle(color: AppColors.error)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                );
+                              },
                             ),
-                          ),
-                        );
-                      },
-                    ),
             ),
           ],
         ),

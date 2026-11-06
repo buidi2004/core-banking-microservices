@@ -10,6 +10,7 @@ import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class ChangePinScreen extends StatefulWidget {
   const ChangePinScreen({super.key});
@@ -195,6 +196,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
       appBar: AppBar(
         title: const Text('Đổi Mã PIN Giao Dịch'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: Column(

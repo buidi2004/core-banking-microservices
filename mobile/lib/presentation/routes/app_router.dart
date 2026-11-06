@@ -8,6 +8,7 @@ import '../screens/shell/main_tabs_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/history/transaction_history_screen.dart';
 import '../screens/promotions/promotions_screen.dart';
+import '../screens/promotions/promotion_category_screen.dart';
 import '../screens/more/more_screen.dart';
 
 // Auth
@@ -33,6 +34,19 @@ import '../screens/qr/my_qr_screen.dart';
 // Deposit & Withdraw
 import '../screens/deposit_withdraw/deposit_screen.dart';
 import '../screens/deposit_withdraw/deposit_confirm_screen.dart';
+import '../screens/deposit_withdraw/atm_withdrawal_screen.dart';
+import '../screens/cards/lucky_account_screen.dart';
+import '../screens/transfer/international_transfer_screen.dart';
+import '../screens/lifestyle/flight_booking_screen.dart';
+import '../screens/lifestyle/social_insurance_screen.dart';
+import '../screens/lifestyle/vua_xo_so_screen.dart';
+import '../screens/lifestyle/vietlott_screen.dart';
+import '../screens/lifestyle/data_topup_screen.dart';
+import '../screens/lifestyle/digital_flight_ticket_screen.dart';
+import '../screens/lifestyle/imedia_flight_screen.dart';
+import '../screens/lifestyle/game_card_data_screen.dart';
+import '../screens/lifestyle/van_so_screen.dart';
+import '../screens/lifestyle/all_services_screen.dart';
 import '../screens/deposit_withdraw/withdraw_screen.dart';
 import '../screens/deposit_withdraw/withdraw_confirm_screen.dart';
 
@@ -76,7 +90,7 @@ import '../screens/bills/loan_schedule_screen.dart';
 
 // Notifications, Search & Support
 import '../screens/home/notifications_screen.dart';
-import '../screens/home/search_screen.dart';
+import '../widgets/smart_search_modal_sheet.dart';
 import '../screens/more/referral_screen.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/storage/app_secure_storage.dart';
@@ -187,13 +201,13 @@ final GoRouter appRouter = GoRouter(
             ),
           ],
         ),
-        // Tab 2: History
+        // Tab 2: Cards
         StatefulShellBranch(
           routes: [
             GoRoute(
-              path: '/history',
-              name: 'history',
-              builder: (context, state) => const TransactionHistoryScreen(),
+              path: '/cards',
+              name: 'cards',
+              builder: (context, state) => const CardsScreen(),
             ),
           ],
         ),
@@ -204,6 +218,30 @@ final GoRouter appRouter = GoRouter(
               path: '/promotions',
               name: 'promotions',
               builder: (context, state) => const PromotionsScreen(),
+            ),
+            GoRoute(
+              path: '/promotions/category/:categoryKey',
+              name: 'promotion-category',
+              builder: (context, state) {
+                final extra = state.extra is Map<String, dynamic>
+                    ? state.extra as Map<String, dynamic>
+                    : const <String, dynamic>{};
+                List<Map<String, dynamic>> readItems(String key) {
+                  final value = extra[key];
+                  if (value is! List) return const [];
+                  return value
+                      .whereType<Map<String, dynamic>>()
+                      .toList(growable: false);
+                }
+
+                return PromotionCategoryScreen(
+                  categoryKey: state.pathParameters['categoryKey'] ?? 'car',
+                  promotions: readItems('promotions'),
+                  flashDeals: readItems('flashDeals'),
+                  installmentDeals: readItems('installmentDeals'),
+                  events: readItems('events'),
+                );
+              },
             ),
           ],
         ),
@@ -297,7 +335,12 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/transfer',
       name: 'transfer',
-      builder: (context, state) => const ChooseRecipientScreen(),
+      builder: (context, state) => ChooseRecipientScreen(
+        initialQuery: state.uri.queryParameters['recipient'] ??
+            state.uri.queryParameters['phoneNumber'] ??
+            state.uri.queryParameters['query'] ??
+            state.uri.queryParameters['account'],
+      ),
     ),
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
@@ -472,6 +515,84 @@ final GoRouter appRouter = GoRouter(
             amount: amount, bank: bank, acc: acc, bankAccountId: bankAccountId);
       },
     ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/atm-withdrawal',
+      name: 'atm-withdrawal',
+      builder: (context, state) => const AtmWithdrawalScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/lucky-account',
+      name: 'lucky-account',
+      builder: (context, state) => const LuckyAccountScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/international-transfer',
+      name: 'international-transfer',
+      builder: (context, state) => const InternationalTransferScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/flight-booking',
+      name: 'flight-booking',
+      builder: (context, state) => const FlightBookingScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/social-insurance',
+      name: 'social-insurance',
+      builder: (context, state) => const SocialInsuranceScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/vua-xo-so',
+      name: 'vua-xo-so',
+      builder: (context, state) => const VuaXoSoScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/vietlott',
+      name: 'vietlott',
+      builder: (context, state) => const VietlottScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/data-topup',
+      name: 'data-topup',
+      builder: (context, state) => const DataTopupScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/digital-flight',
+      name: 'digital-flight',
+      builder: (context, state) => const DigitalFlightTicketScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/imedia-flight',
+      name: 'imedia-flight',
+      builder: (context, state) => const ImediaFlightScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/game-cards',
+      name: 'game-cards',
+      builder: (context, state) => const GameCardDataScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/van-so',
+      name: 'van-so',
+      builder: (context, state) => const VanSoScreen(),
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/all-services',
+      name: 'all-services',
+      builder: (context, state) => const AllServicesScreen(),
+    ),
 
     // ==========================================
     // 4. HISTORY & STATEMENT
@@ -609,13 +730,13 @@ final GoRouter appRouter = GoRouter(
     ),
 
     // ==========================================
-    // 6. CARDS & PAYMENT METHODS
+    // 6. HISTORY & PAYMENT METHODS
     // ==========================================
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
-      path: '/cards',
-      name: 'cards',
-      builder: (context, state) => const CardsScreen(),
+      path: '/history',
+      name: 'history',
+      builder: (context, state) => const TransactionHistoryScreen(),
     ),
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
@@ -735,10 +856,12 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/search',
       name: 'search',
-      pageBuilder: (context, state) => AppPageTransitions.searchTransition(
-        key: state.pageKey,
-        child: const SearchScreen(),
-      ),
+      redirect: (context, state) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          showSmartSearchModalSheet(context);
+        });
+        return '/home';
+      },
     ),
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,

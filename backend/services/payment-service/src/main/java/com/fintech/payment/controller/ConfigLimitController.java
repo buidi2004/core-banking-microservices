@@ -2,10 +2,12 @@ package com.fintech.payment.controller;
 
 import com.fintech.payment.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
@@ -55,7 +57,10 @@ public class ConfigLimitController {
 
     @GetMapping("/status")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getLimitStatus(
-            @RequestHeader(value = "X-User-Id", defaultValue = "test-user") String userId) {
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing trusted header X-User-Id");
+        }
         // Mặc định khách hàng đã mở tài khoản thành công là VERIFIED tier
         BigDecimal maxPerTx = new BigDecimal("100000000");
         BigDecimal maxDaily = new BigDecimal("500000000");
@@ -82,4 +87,3 @@ public class ConfigLimitController {
         return ResponseEntity.ok(ApiResponse.success("Trạng thái hạn mức hiện tại", status));
     }
 }
-

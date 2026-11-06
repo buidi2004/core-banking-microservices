@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LoanApplication, LoggedInStaff } from '../types';
 import { ApiService } from '../api';
 import { formatCurrency } from '../utils';
-import { CheckCircle2, XCircle, RefreshCw, AlertCircle, FileText, DollarSign, Calendar, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, AlertCircle, FileText, DollarSign, Calendar, ShieldCheck, Download } from 'lucide-react';
 
 interface LoanManagementProps {
   currentStaff: LoggedInStaff;
@@ -58,6 +58,24 @@ export function LoanManagement({ currentStaff, loans, onRefresh, onLoanApproved 
     }
   };
 
+  const handleExportLoanReport = () => {
+    const now = new Date().toISOString().split('T')[0];
+    const headers = '\ufeffMã Hồ Sơ Vay,Mã Khách Hàng,Sản Phẩm Vay,Số Tiền Vay (VND),Kỳ Hạn (Tháng),Trạng Thái,Mục Đích Vay,Thời Gian Đăng Ký\n';
+    const rows = loans.map(l =>
+      `"${l.id}","${l.userId}","${l.productName || 'Vay Tiêu Dùng'}",${l.amount},${l.termMonths},"${l.status}","${(l.purpose || '').replace(/"/g, '""')}","${l.createdAt || ''}"`
+    ).join('\n');
+
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `danh-muc-tin-dung-vay-${now}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="card" style={{ padding: '24px' }}>
       {/* Header */}
@@ -71,15 +89,26 @@ export function LoanManagement({ currentStaff, loans, onRefresh, onLoanApproved 
             Quy chuẩn kiểm soát cấp tín dụng 2 cấp — Tự động giải ngân số dư ví sau khi duyệt
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-outline"
-          onClick={onRefresh}
-          style={{ padding: '6px 14px', fontSize: '12px', gap: '6px' }}
-        >
-          <RefreshCw size={14} />
-          <span>Làm mới danh sách</span>
-        </button>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={handleExportLoanReport}
+            style={{ padding: '6px 14px', fontSize: '12px', gap: '6px' }}
+          >
+            <Download size={14} />
+            <span>Xuất Danh Mục Vay (CSV)</span>
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={onRefresh}
+            style={{ padding: '6px 14px', fontSize: '12px', gap: '6px' }}
+          >
+            <RefreshCw size={14} />
+            <span>Làm mới danh sách</span>
+          </button>
+        </div>
       </div>
 
       {/* Summary KPI Cards */}

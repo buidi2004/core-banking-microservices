@@ -1,5 +1,7 @@
 package com.fintech.wallet.infrastructure.kafka;
 
+import com.fintech.common.audit.AuditEvent;
+import com.fintech.wallet.audit.AuditEventPublisher;
 import com.fintech.wallet.kafka.KafkaEventEnvelope;
 import com.fintech.wallet.kafka.KafkaTopicConstants;
 import com.fintech.wallet.kafka.WalletBalanceChangedPayload;
@@ -27,9 +29,14 @@ public class WalletBalanceChangedKafkaProducer {
     private static final String SERVICE_NAME = "wallet-service";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final AuditEventPublisher auditEventPublisher;
 
-    public WalletBalanceChangedKafkaProducer(KafkaTemplate<String, Object> kafkaTemplate) {
+    // Chỉ giữ 1 constructor duy nhất để Spring tự resolve bean
+    // (2 constructor không @Autowired gây "No default constructor found" khi boot context)
+    public WalletBalanceChangedKafkaProducer(KafkaTemplate<String, Object> kafkaTemplate,
+                                             AuditEventPublisher auditEventPublisher) {
         this.kafkaTemplate = kafkaTemplate;
+        this.auditEventPublisher = auditEventPublisher;
     }
 
     /**
@@ -58,6 +65,13 @@ public class WalletBalanceChangedKafkaProducer {
                         payload.walletId(),   // ← Partition Key = wallet_id
                         envelope
                 );
+        if (auditEventPublisher != null) {
+            auditEventPublisher.publish(new AuditEvent(
+                    java.util.UUID.randomUUID(), java.time.Instant.now(), SERVICE_NAME,
+                    "WALLET_BALANCE_CHANGED", "WALLET", payload.walletId(),
+                    null, null, null, payload.transactionId(), null, null,
+                    null, null, null));
+        }
 
         future.whenComplete((result, ex) -> {
             if (ex != null) {

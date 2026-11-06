@@ -248,80 +248,98 @@ List<BackendEndpoint> _extractBackendEndpoints() {
     final content = file.readAsStringSync();
     final controllerName = file.path.split('/').last.replaceAll('.java', '');
 
-    // Extract base @RequestMapping from class
-    String basePath = '';
-    final classMappingMatch = RegExp(r'''@RequestMapping\s*\(\s*(?:value\s*=\s*)?["']([^"']+)["']''').firstMatch(content);
+    // Extract base @RequestMapping from class (supports single string or array)
+    final basePaths = <String>[];
+    final classMappingMatch = RegExp(r'''@RequestMapping\s*\(\s*(?:value\s*=\s*|path\s*=\s*)?(\{[^}]+\}|["'][^"']+["'])''').firstMatch(content);
     int classBodyStart = 0;
     if (classMappingMatch != null) {
-      basePath = classMappingMatch.group(1)!;
-      if (!basePath.startsWith('/')) basePath = '/$basePath';
+      final raw = classMappingMatch.group(1)!;
+      final pathStrings = RegExp(r'''["']([^"']+)["']''').allMatches(raw).map((m) => m.group(1)!).toList();
+      for (final p in pathStrings) {
+        basePaths.add(p.startsWith('/') ? p : '/$p');
+      }
       classBodyStart = classMappingMatch.end;
+    }
+    if (basePaths.isEmpty) {
+      basePaths.add('');
     }
 
     final classContent = classBodyStart > 0 ? content.substring(classBodyStart) : content;
 
-    // Extract method-level mappings
-    final methodMatches = RegExp(
-      r'''@(GetMapping|PostMapping|PutMapping|PatchMapping|DeleteMapping|RequestMapping)(?:\s*\(\s*(?:value\s*=\s*|path\s*=\s*)?["']([^"']*)["'][^)]*\))?''',
+    // Extract method-level mappings (supports array paths and multiple RequestMethods)
+    final methodAnnotationMatches = RegExp(
+      r'''@(GetMapping|PostMapping|PutMapping|PatchMapping|DeleteMapping|RequestMapping)(?:\s*\(([^)]*)\))?''',
     ).allMatches(classContent);
 
-    for (final match in methodMatches) {
-      final methodAnnotation = match.group(1)!;
-      final methodPath = match.group(2) ?? '';
+    for (final match in methodAnnotationMatches) {
+      final annotation = match.group(1)!;
+      final args = match.group(2) ?? '';
 
-      String httpMethod;
-      switch (methodAnnotation) {
-        case 'GetMapping':
-          httpMethod = 'GET';
-          break;
-        case 'PostMapping':
-          httpMethod = 'POST';
-          break;
-        case 'PutMapping':
-          httpMethod = 'PUT';
-          break;
-        case 'PatchMapping':
-          httpMethod = 'PATCH';
-          break;
-        case 'DeleteMapping':
-          httpMethod = 'DELETE';
-          break;
-        case 'RequestMapping':
-          httpMethod = 'GET';
-          break;
-        default:
-          httpMethod = 'GET';
-      }
-
-      // For RequestMapping, try to get method from method attribute
-      if (methodAnnotation == 'RequestMapping') {
-        final contextSnippet = classContent.substring(match.start, (match.end + 200).clamp(0, classContent.length));
-        final methodAttrMatch = RegExp(r'method\s*=\s*RequestMethod\.(\w+)').firstMatch(contextSnippet);
-        if (methodAttrMatch != null) {
-          httpMethod = methodAttrMatch.group(1)!;
+      // Extract all path strings in args
+      final paths = <String>[];
+      final pathArgMatches = RegExp(r'''["']([^"']*)["']''').allMatches(args);
+      for (final pm in pathArgMatches) {
+        final p = pm.group(1)!;
+        if (p.startsWith('/') || p.isEmpty) {
+          paths.add(p);
         }
       }
+      if (paths.isEmpty) paths.add('');
 
-      // Normalize path
-      String fullPath = '$basePath$methodPath';
-      fullPath = fullPath.replaceAll(RegExp(r'/+'), '/');
-      if (fullPath.endsWith('/') && fullPath.length > 1) {
-        fullPath = fullPath.substring(0, fullPath.length - 1);
+      // Extract HTTP methods
+      final httpMethods = <String>[];
+      switch (annotation) {
+        case 'GetMapping':
+          httpMethods.add('GET');
+          break;
+        case 'PostMapping':
+          httpMethods.add('POST');
+          break;
+        case 'PutMapping':
+          httpMethods.add('PUT');
+          break;
+        case 'PatchMapping':
+          httpMethods.add('PATCH');
+          break;
+        case 'DeleteMapping':
+          httpMethods.add('DELETE');
+          break;
+        case 'RequestMapping':
+          final methodMatches = RegExp(r'RequestMethod\.(\w+)').allMatches(args);
+          for (final mm in methodMatches) {
+            httpMethods.add(mm.group(1)!);
+          }
+          if (httpMethods.isEmpty) httpMethods.add('GET');
+          break;
+        default:
+          httpMethods.add('GET');
       }
-      if (!fullPath.startsWith('/')) fullPath = '/$fullPath';
 
-      // Normalize by stripping /api/v1 so it matches mobile endpoints list
-      String normalizedPath = fullPath;
-      if (normalizedPath.startsWith('/api/v1')) {
-        normalizedPath = normalizedPath.substring(7);
+      for (final basePath in basePaths) {
+        for (final methodPath in paths) {
+          for (final httpMethod in httpMethods) {
+            String fullPath = '$basePath$methodPath';
+            fullPath = fullPath.replaceAll(RegExp(r'/+'), '/');
+            if (fullPath.endsWith('/') && fullPath.length > 1) {
+              fullPath = fullPath.substring(0, fullPath.length - 1);
+            }
+            if (!fullPath.startsWith('/')) fullPath = '/$fullPath';
+
+            // Normalize by stripping /api/v1 so it matches mobile endpoints list
+            String normalizedPath = fullPath;
+            if (normalizedPath.startsWith('/api/v1')) {
+              normalizedPath = normalizedPath.substring(7);
+            }
+            if (!normalizedPath.startsWith('/')) normalizedPath = '/$normalizedPath';
+
+            endpoints.add(BackendEndpoint(
+              method: httpMethod,
+              path: normalizedPath,
+              controller: controllerName,
+            ));
+          }
+        }
       }
-      if (!normalizedPath.startsWith('/')) normalizedPath = '/$normalizedPath';
-
-      endpoints.add(BackendEndpoint(
-        method: httpMethod,
-        path: normalizedPath,
-        controller: controllerName,
-      ));
     }
   }
 

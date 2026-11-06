@@ -3,6 +3,12 @@
     "codebase-memory": {
       "command": "/home/buidi/.local/bin/codebase-memory-mcp",
       "args": []
+    },
+    "graphify": {
+      "command": "/home/buidi/.gemini/antigravity/bin/graphify-mcp",
+      "args": [
+        "/home/buidi/Tài liệu/core-banking-microservices/graphify-out/graph.json"
+      ]
     }
   }
 }

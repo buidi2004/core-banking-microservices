@@ -24,6 +24,7 @@ import org.springframework.util.backoff.FixedBackOff;
 @Configuration
 @EnableKafka
 public class KafkaTopicConfig {
+    public static final String TOPIC_AUDIT_EVENTS = "banking.audit.events.v1";
 
     public static final String LEDGER_POSTING_GROUP = "ledger-posting-group";
     public static final String TOPIC_WALLET_BALANCE_CHANGED =

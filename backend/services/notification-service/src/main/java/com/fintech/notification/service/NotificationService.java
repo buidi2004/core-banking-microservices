@@ -66,6 +66,15 @@ public class NotificationService {
         return notificationRepository.countByUserIdAndReadFalse(userId);
     }
 
+    public Map<String, Boolean> getSettings(String userId) {
+        return settingsStore.computeIfAbsent(userId, k -> {
+            Map<String, Boolean> defaults = new ConcurrentHashMap<>();
+            defaults.put("TRANSACTION", true);
+            defaults.put("PROMO", true);
+            return defaults;
+        });
+    }
+
     public void updateSettings(String userId, boolean transactionEnabled, boolean promoEnabled) {
         Map<String, Boolean> userSettings = settingsStore.computeIfAbsent(userId, k -> new ConcurrentHashMap<>());
         userSettings.put("TRANSACTION", transactionEnabled);

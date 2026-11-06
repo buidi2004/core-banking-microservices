@@ -19,6 +19,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final com.fintech.identity.service.OtpService otpService;
+    private final com.fintech.identity.repository.UserRepository userRepository;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
@@ -57,12 +58,19 @@ public class AuthController {
     @PostMapping("/otp/send")
     public ResponseEntity<ApiResponse<OtpSendResponse>> sendOtp(
             @RequestBody(required = false) OtpSendRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String headerUserId,
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(required = false) String purpose,
             @RequestParam(required = false) String email) {
         String phone = (request != null && request.getPhoneNumber() != null) ? request.getPhoneNumber() : phoneNumber;
         String mail = (request != null && request.getEmail() != null) ? request.getEmail() : email;
         String purp = (request != null && request.getPurpose() != null) ? request.getPurpose() : purpose;
+        if ((phone == null || phone.isBlank()) && headerUserId != null && !headerUserId.isBlank()) {
+            phone = userRepository.findById(headerUserId).map(com.fintech.identity.domain.entity.UserEntity::getPhoneNumber).orElse(null);
+            if (mail == null) {
+                mail = userRepository.findById(headerUserId).map(com.fintech.identity.domain.entity.UserEntity::getEmail).orElse(null);
+            }
+        }
         if (phone == null || phone.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Số điện thoại không được để trống"));
         }
@@ -73,6 +81,7 @@ public class AuthController {
     @PostMapping("/otp/verify")
     public ResponseEntity<ApiResponse<OtpVerifyResponse>> verifyOtp(
             @RequestBody(required = false) OtpVerifyRequest request,
+            @RequestHeader(value = "X-User-Id", required = false) String headerUserId,
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(required = false) String otp,
             @RequestParam(required = false) String code,
@@ -80,6 +89,9 @@ public class AuthController {
         String phone = (request != null && request.getPhoneNumber() != null) ? request.getPhoneNumber() : phoneNumber;
         String otpCode = (request != null && request.getCode() != null) ? request.getCode() : (otp != null ? otp : code);
         String purp = (request != null && request.getPurpose() != null) ? request.getPurpose() : purpose;
+        if ((phone == null || phone.isBlank()) && headerUserId != null && !headerUserId.isBlank()) {
+            phone = userRepository.findById(headerUserId).map(com.fintech.identity.domain.entity.UserEntity::getPhoneNumber).orElse(null);
+        }
         if (phone == null || otpCode == null) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Thiếu số điện thoại hoặc mã OTP"));
         }
@@ -144,6 +156,45 @@ public class AuthController {
                     .body(ApiResponse.error("Không xác định được danh tính người dùng"));
         }
         OtpSendResponse response = otpService.sendOtpForUser(userId, "CHANGE_PIN");
+        return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
+    }
+
+    /**
+     * Yêu cầu gửi mã OTP tới Gmail chính chủ của người dùng đang đăng nhập
+     * để ký hợp đồng vay vốn (purpose=LOAN_APPLY).
+     */
+    @PostMapping("/loan/otp")
+    public ResponseEntity<ApiResponse<OtpSendResponse>> requestLoanOtp(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Không xác định được danh tính người dùng"));
+        }
+        OtpSendResponse response = otpService.sendOtpForUser(userId, "LOAN_APPLY");
+        return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
+    }
+
+    /**
+     * Xác thực mã OTP ký hợp đồng vay vốn, cấp mã JWT otpToken (purpose=LOAN_APPLY).
+     */
+    @PostMapping("/loan/otp/verify")
+    public ResponseEntity<ApiResponse<OtpVerifyResponse>> verifyLoanOtp(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestBody(required = false) OtpVerifyRequest request,
+            @RequestParam(required = false) String otp,
+            @RequestParam(required = false) String code) {
+        if (userId == null || userId.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("Không xác định được danh tính người dùng"));
+        }
+        String otpCode = (request != null && request.getCode() != null) ? request.getCode() : (otp != null ? otp : code);
+        if (otpCode == null || otpCode.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Mã OTP không được để trống"));
+        }
+        String phone = userRepository.findById(userId)
+                .map(com.fintech.identity.domain.entity.UserEntity::getPhoneNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + userId));
+        OtpVerifyResponse response = otpService.verifyOtp(phone, otpCode, "LOAN_APPLY");
         return ResponseEntity.ok(ApiResponse.ok(response, response.getMessage()));
     }
 

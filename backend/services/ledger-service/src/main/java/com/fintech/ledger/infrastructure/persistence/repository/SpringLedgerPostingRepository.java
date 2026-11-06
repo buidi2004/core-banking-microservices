@@ -37,4 +37,10 @@ public interface SpringLedgerPostingRepository extends JpaRepository<LedgerPosti
             WHERE p.accountId = :accountId AND p.side = :side
             """)
     BigDecimal sumAmountByAccountIdAndSide(@Param("accountId") UUID accountId, @Param("side") String side);
+
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0) FROM LedgerPostingJpaEntity p, LedgerAccountJpaEntity a
+            WHERE p.accountId = a.id AND a.code LIKE CONCAT(:codePrefix, '%') AND p.side = :side
+            """)
+    BigDecimal sumAmountByAccountCodePrefixAndSide(@Param("codePrefix") String codePrefix, @Param("side") String side);
 }

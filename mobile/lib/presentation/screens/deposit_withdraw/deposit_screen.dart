@@ -10,6 +10,7 @@ import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_dataso
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class DepositScreen extends StatefulWidget {
   const DepositScreen({super.key});
@@ -134,6 +135,7 @@ class _DepositScreenState extends State<DepositScreen> {
       appBar: AppBar(
         title: const Text('Nạp Tiền Vào Ví'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: GestureDetector(
@@ -244,7 +246,7 @@ class _DepositScreenState extends State<DepositScreen> {
           ),
           const SizedBox(height: 10),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.white.withValues(alpha: 0.08),
@@ -328,9 +330,7 @@ class _DepositScreenState extends State<DepositScreen> {
               ),
               child: Column(
                 children: [
-                  Icon(m['icon'] as IconData,
-                      color: Colors.white,
-                      size: 22),
+                  Icon(m['icon'] as IconData, color: Colors.white, size: 22),
                   const SizedBox(height: 6),
                   Text(
                     m['title'] as String,
@@ -451,8 +451,7 @@ class _DepositScreenState extends State<DepositScreen> {
                     ),
                   ),
                   backgroundColor: Colors.white,
-                  side: const BorderSide(
-                      color: AppColors.borderSubtle),
+                  side: const BorderSide(color: AppColors.borderSubtle),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                   onPressed: () {
@@ -1077,8 +1076,8 @@ class _DepositScreenState extends State<DepositScreen> {
           Expanded(
             child: Text(
               'Nạp tiền từ tài khoản ngân hàng liên kết hoàn toàn miễn phí. Chỉ áp dụng nạp từ tài khoản ngân hàng chính chủ trùng khớp họ tên với CCCD đã xác thực eKYC.',
-              style:
-                  TextStyle(color: AppColors.infoText, fontSize: 11, height: 1.35),
+              style: TextStyle(
+                  color: AppColors.infoText, fontSize: 11, height: 1.35),
             ),
           ),
         ],

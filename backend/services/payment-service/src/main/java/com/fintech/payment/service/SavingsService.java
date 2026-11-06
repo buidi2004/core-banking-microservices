@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -87,6 +88,16 @@ public class SavingsService {
 
         BigDecimal rate = getRateForMonths(request.getTermMonths());
 
+        String effectiveWalletId = request.getWalletId();
+        if (effectiveWalletId == null || effectiveWalletId.isBlank()) {
+            var userWallet = walletGrpcClient.getWalletByUserId(userId);
+            if (userWallet != null && userWallet.isFound()) {
+                effectiveWalletId = userWallet.getWalletId();
+            } else {
+                throw new IllegalArgumentException("Không tìm thấy ví cho người dùng " + userId);
+            }
+        }
+
         // Interest = principal * (rate / 100) * (termMonths / 12)
         BigDecimal expectedInterest = request.getDepositAmount()
                 .multiply(rate)
@@ -98,7 +109,7 @@ public class SavingsService {
         String debitTxId = "SAV_OPN_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
         String debitIdemKey = "idem:sav:open:" + UUID.randomUUID();
         var debitRes = walletGrpcClient.debit(
-                request.getWalletId(),
+                effectiveWalletId,
                 request.getDepositAmount().longValue(),
                 debitTxId,
                 debitIdemKey
@@ -119,7 +130,7 @@ public class SavingsService {
 
         SavingsAccount entity = SavingsAccount.builder()
                 .userId(userId)
-                .walletId(request.getWalletId())
+                .walletId(effectiveWalletId)
                 .accountNumber(accountNumber)
                 .productType(request.getProductType())
                 .productName(getProductName(request.getProductType()))
@@ -152,9 +163,8 @@ public class SavingsService {
     }
 
     public SavingsAccountResponse getSavingsDetail(String id, String userId) {
-        UUID uuid = UUID.fromString(id);
-        SavingsAccount entity = savingsRepository.findByIdAndUserId(uuid, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sổ tiết kiệm"));
+        SavingsAccount entity = findSavingsAccount(id, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sổ tiết kiệm: " + id));
         return toResponse(entity);
     }
 
@@ -164,9 +174,8 @@ public class SavingsService {
             pinTokenValidator.validate(userId, request.getPinToken());
         }
 
-        UUID uuid = UUID.fromString(id);
-        SavingsAccount entity = savingsRepository.findByIdAndUserId(uuid, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sổ tiết kiệm"));
+        SavingsAccount entity = findSavingsAccount(id, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sổ tiết kiệm: " + id));
 
         if (!"ACTIVE".equals(entity.getStatus())) {
             throw new IllegalStateException("Sổ tiết kiệm đã tất toán hoặc không ở trạng thái hiệu lực");
@@ -224,6 +233,84 @@ public class SavingsService {
                 .build();
     }
 
+    /**
+     * Rút gốc từng phần sổ tiết kiệm có kỳ hạn theo Thông tư 04/2022/TT-NHNN.
+     * Phần rút trước hạn áp dụng lãi không kỳ hạn 0.2%/năm theo số ngày thực gửi.
+     * Phần gốc còn lại giữ nguyên kỳ hạn và lãi suất ban đầu cho đến ngày đáo hạn.
+     */
+    @Transactional
+    public SettleSavingsResponse withdrawPartial(String id, String userId, PartialWithdrawSavingsRequest request) {
+        if (request != null && request.getPinToken() != null && !request.getPinToken().isBlank()) {
+            pinTokenValidator.validate(userId, request.getPinToken());
+        }
+
+        SavingsAccount entity = findSavingsAccount(id, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sổ tiết kiệm: " + id));
+
+        if (!"ACTIVE".equals(entity.getStatus())) {
+            throw new IllegalStateException("Sổ tiết kiệm không ở trạng thái hiệu lực (ACTIVE)");
+        }
+
+        BigDecimal withdrawAmount = request != null ? request.getWithdrawAmount() : null;
+        if (withdrawAmount == null || withdrawAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Số tiền rút phải lớn hơn 0");
+        }
+
+        BigDecimal minDeposit = new BigDecimal("500000"); // 500k VND mức tối thiểu duy trì sổ
+        BigDecimal remainingPrincipal = entity.getPrincipal().subtract(withdrawAmount);
+        if (remainingPrincipal.compareTo(minDeposit) < 0) {
+            throw new IllegalArgumentException("Số dư gốc còn lại sau khi rút (" + remainingPrincipal.toPlainString() + " VND) phải tối thiểu " + minDeposit.toPlainString() + " VND. Nếu muốn rút toàn bộ, vui lòng chọn Tất Toán Sổ.");
+        }
+
+        LocalDate today = LocalDate.now();
+        long daysHeld = Math.max(1, ChronoUnit.DAYS.between(entity.getStartDate(), today));
+        // Lãi không kỳ hạn cho phần tiền rút ra
+        BigDecimal nonTermRate = new BigDecimal("0.2");
+        BigDecimal withdrawInterest = withdrawAmount
+                .multiply(nonTermRate)
+                .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(daysHeld))
+                .divide(BigDecimal.valueOf(365), 0, RoundingMode.HALF_UP);
+
+        BigDecimal totalWithdrawPayout = withdrawAmount.add(withdrawInterest);
+
+        // Credit về ví
+        String txId = "SAV_WDP_" + UUID.randomUUID().toString().replace("-", "").substring(0, 20);
+        String idemKey = "idem:sav:wdp:" + entity.getAccountNumber() + ":" + System.currentTimeMillis();
+        var creditRes = walletGrpcClient.credit(
+                entity.getWalletId(),
+                totalWithdrawPayout.longValue(),
+                txId,
+                idemKey
+        );
+        if (creditRes != null && !creditRes.isSuccess()) {
+            throw new IllegalStateException("Cộng tiền ví thất bại: " + creditRes.getErrorMessage());
+        }
+
+        // Cập nhật lại số tiền gốc của sổ và tính lại expectedInterest cho phần gốc còn lại
+        entity.setPrincipal(remainingPrincipal);
+        BigDecimal newExpectedInterest = remainingPrincipal
+                .multiply(entity.getInterestRate())
+                .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(entity.getTermMonths()))
+                .divide(BigDecimal.valueOf(12), 0, RoundingMode.HALF_UP);
+        entity.setExpectedInterest(newExpectedInterest);
+        savingsRepository.save(entity);
+
+        log.info("Partial withdrawal from savings passbook {}: withdrawn {}, remaining {}, user {}",
+                entity.getAccountNumber(), withdrawAmount, remainingPrincipal, userId);
+
+        return SettleSavingsResponse.builder()
+                .accountNumber(entity.getAccountNumber())
+                .earlySettlement(true)
+                .principalReturned(withdrawAmount)
+                .interestEarned(withdrawInterest)
+                .totalPayout(totalWithdrawPayout)
+                .creditedToWallet(entity.getWalletId())
+                .message("Rút gốc từng phần thành công theo Thông tư 04/2022/TT-NHNN. Phần gốc còn lại (" + remainingPrincipal.toPlainString() + " VND) giữ nguyên lãi suất " + entity.getInterestRate() + "%/năm đến ngày đáo hạn.")
+                .build();
+    }
+
     private BigDecimal getRateForMonths(int months) {
         return STANDARD_TERMS.stream()
                 .filter(t -> t.getMonths() == months)
@@ -238,6 +325,17 @@ public class SavingsService {
             case "TICH_LUY_GUI_GOP" -> "Tích Lũy Gửi Góp V-Plus";
             default -> "Tiết Kiệm Phát Lộc";
         };
+    }
+
+    private Optional<SavingsAccount> findSavingsAccount(String idOrAccountNumber, String userId) {
+        if (idOrAccountNumber == null || idOrAccountNumber.isBlank()) return Optional.empty();
+        try {
+            UUID uuid = UUID.fromString(idOrAccountNumber.trim());
+            Optional<SavingsAccount> byId = savingsRepository.findByIdAndUserId(uuid, userId);
+            if (byId.isPresent()) return byId;
+        } catch (IllegalArgumentException ignored) {}
+        return savingsRepository.findByAccountNumber(idOrAccountNumber.trim())
+                .filter(acc -> userId.equals(acc.getUserId()));
     }
 
     private SavingsAccountResponse toResponse(SavingsAccount e) {

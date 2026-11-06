@@ -14,6 +14,7 @@ import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dar
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:sen_hong_bank/core/storage/app_session.dart';
 import '../../widgets/user_avatar_widget.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -449,16 +450,19 @@ class _MoreScreenState extends State<MoreScreen> {
         ],
         'onTap': () => context.push('/support/help-center'),
       },
-      // 19. Live Chat
+      // 19. Live Chat & Trợ lý AI
       {
         'id': 'live-chat',
-        'title': 'Live Chat với chuyên viên hỗ trợ',
-        'sub': 'Tư vấn trực tuyến phản hồi ngay trong 30 giây',
-        'icon': LucideIcons.messageSquare,
-        'iconBg': defaultIconBg,
-        'iconColor': defaultIconColor,
+        'title': 'Trợ lý AI & Hỗ trợ trực tuyến',
+        'sub': 'Tư vấn tài chính 24/7, tra cứu số dư & biểu phí tức thì',
+        'iconAsset': 'assets/icons/ai_assistant_ghost.png',
+        'icon': LucideIcons.bot,
+        'iconBg': const Color(0xFFF0FDF4),
+        'iconColor': const Color(0xFF16A34A),
         'category': 'Trợ giúp & Pháp lý ngân hàng',
         'keywords': [
+          'ai',
+          'tro ly',
           'live chat',
           'chat',
           'tu van',
@@ -612,6 +616,7 @@ class _MoreScreenState extends State<MoreScreen> {
       appBar: AppBar(
         title: const Text('Tiện Ích & Dịch Vụ'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
             tooltip: 'Thông báo',
@@ -824,8 +829,16 @@ class _MoreScreenState extends State<MoreScreen> {
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: const Color(0x1F00A896)),
                         ),
-                        child: Icon(item['icon'] as IconData,
-                            color: item['iconColor'] as Color, size: 19),
+                        child: item['iconAsset'] != null
+                            ? Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Image.asset(
+                                  item['iconAsset'] as String,
+                                  fit: BoxFit.contain,
+                                ),
+                              )
+                            : Icon(item['icon'] as IconData,
+                                color: item['iconColor'] as Color, size: 19),
                       ),
                       title: Text(
                         item['title'] as String,
@@ -933,10 +946,10 @@ class _MoreScreenState extends State<MoreScreen> {
                     const SizedBox(height: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         _kycStatus,
@@ -1296,8 +1309,9 @@ class _MoreScreenState extends State<MoreScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.55),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.white.withOpacity(0.4)),
+              borderRadius: BorderRadius.circular(12),
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.4), width: 0.5),
             ),
             child: const Text(
               'Phiên bản 2.4.0 (Build 2026.10.21)',

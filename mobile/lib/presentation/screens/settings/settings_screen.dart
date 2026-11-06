@@ -2,9 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -215,6 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       appBar: AppBar(
         title: const Text('Cài Đặt Ứng Dụng'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: ListView(
@@ -272,12 +275,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Typography chuẩn theo design system:
+  /// - Header nhóm: fontSize: 16, fontWeight: w700, màu #1A1A1A
+  /// - Tiêu đề dòng: fontSize: 14.5, fontWeight: w600, màu #222222
+  /// - Phụ đề: fontSize: 12.5, fontWeight: w400, màu #757575
+  /// - Icon: Lucide outline stroke 1.5-1.75px, màu #6B6E70
+  /// - Chevron phải: size 18, màu #8E8E93
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(left: 4),
       child: Text(
         title,
-        style: const TextStyle(
+        style: GoogleFonts.beVietnamPro(
           color: AppColors.primary,
           fontWeight: FontWeight.w700,
           letterSpacing: 1.1,
@@ -434,17 +444,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.textPrimaryLight,
+                style: GoogleFonts.beVietnamPro(
+                  color: const Color(0xFF222222),
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontSize: 14.5,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 sub,
-                style: const TextStyle(
-                    color: AppColors.textSecondaryLight, fontSize: 12),
+                style: GoogleFonts.beVietnamPro(
+                  color: const Color(0xFF757575),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ],
           ),
@@ -452,24 +465,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(width: 8),
         InkWell(
           onTap: onTapEdit,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border:
-                  Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.25), width: 0.5),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   CurrencyFormatter.formatVND(val),
-                  style: const TextStyle(
+                  style: GoogleFonts.beVietnamPro(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
+                    fontFeatures: const [FontFeature.tabularFigures()],
                   ),
                 ),
                 const SizedBox(width: 4),

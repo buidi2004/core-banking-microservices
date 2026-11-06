@@ -24,6 +24,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
     show-sql: false
     properties:
       hibernate:
@@ -39,6 +40,8 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 3000ms
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}

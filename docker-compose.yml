@@ -140,6 +140,31 @@ services:
       - microservices-network
 
   # ----------------------------------------------------------------------------
+  # 6. DATABASE 6: AI CHATBOT & KNOWLEDGE VECTOR DB (pgvector)
+  # ----------------------------------------------------------------------------
+  postgres-chatbot:
+    image: pgvector/pgvector:pg16
+    container_name: ewallet-postgres-chatbot
+    restart: unless-stopped
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "work_mem=8MB", "-c", "max_connections=100"]
+    mem_limit: 200m
+    ports:
+      - "5438:5432"
+    environment:
+      POSTGRES_DB: ewallet_chatbot_db
+      POSTGRES_USER: chatbot_db_user
+      POSTGRES_PASSWORD: ChatbotDb#Secure2025!
+    volumes:
+      - postgres-chatbot-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot_db_user -d ewallet_chatbot_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - microservices-network
+
+  # ----------------------------------------------------------------------------
   # REDIS DISTRIBUTED CACHE & LOCK
   # ----------------------------------------------------------------------------
   redis:
@@ -265,6 +290,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    volumes:
+      - ./backend/services/api-gateway/src/main/resources/application.yml:/app/application.yml:ro
     networks:
       - microservices-network
 
@@ -384,12 +411,49 @@ services:
     networks:
       - microservices-network
 
+  # ----------------------------------------------------------------------------
+  # 6. AI CHATBOT SERVICE (Python FastAPI + PostgreSQL pgvector + multilingual-e5 RAG)
+  # ----------------------------------------------------------------------------
+  chatbot-service:
+    build: ./backend/services/chatbot-service
+    container_name: ewallet-chatbot-service
+    restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    mem_limit: 1024m
+    env_file:
+      - ./backend/services/chatbot-service/.env
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://chatbot_db_user:ChatbotDb#Secure2025!@postgres-chatbot:5432/ewallet_chatbot_db
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BACKUP_API_KEY: ${LLM_BACKUP_API_KEY:-}
+      LLM_TERTIARY_API_KEY: ${LLM_TERTIARY_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash-lite}
+      EMBED_MODEL: intfloat/multilingual-e5-small
+      DATA_DIR: /app/data
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-senhong-internal-chatbot-key-2026}
+    volumes:
+      - ./backend/services/chatbot-service/app:/app/app
+      - ./backend/services/chatbot-service/data:/app/data
+      - chatbot-cache:/root/.cache
+    depends_on:
+      postgres-chatbot:
+        condition: service_healthy
+    networks:
+      - microservices-network
+
 volumes:
+  chatbot-cache:
   postgres-identity-data:
   postgres-wallet-data:
   postgres-payment-data:
   postgres-ledger-data:
   postgres-notification-data:
+  postgres-chatbot-data:
   redis-microservices-data:
   rabbitmq-microservices-data:
   kafka-data:

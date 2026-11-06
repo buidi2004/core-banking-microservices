@@ -7,6 +7,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/constants/backend_capabilities.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
+import 'package:sen_hong_bank/data/datasources/remote/lottery_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 
@@ -81,6 +82,36 @@ class _LotteryScreenState extends State<LotteryScreen> {
       'winnersJ2': 0,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLotteryData();
+  }
+
+  Future<void> _loadLotteryData() async {
+    try {
+      final tickets = await LotteryRemoteDataSource().getMyTickets();
+      if (tickets.isNotEmpty && mounted) {
+        setState(() {
+          _myTickets
+            ..clear()
+            ..addAll(tickets);
+        });
+      }
+    } catch (_) {}
+
+    try {
+      final results = await LotteryRemoteDataSource().getResults();
+      if (results.isNotEmpty && mounted) {
+        setState(() {
+          _recentDrawResults
+            ..clear()
+            ..addAll(results);
+        });
+      }
+    } catch (_) {}
+  }
 
   void _generateRandomNumbers() {
     HapticFeedback.mediumImpact();
@@ -976,27 +1007,33 @@ class _LotteryScreenState extends State<LotteryScreen> {
 
   // ================= TAB 1: VÉ CỦA TÔI =================
   Widget _buildMyTicketsTab() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 32),
-      children: [
-        const Text(
-          'Danh sách vé đã mua & Chờ kết quả',
-          style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          'Hệ thống tự động dò số và thông báo ngay khi có kết quả',
-          style: TextStyle(color: Colors.white54, fontSize: 12),
-        ),
-        const SizedBox(height: 14),
-        ..._myTickets.map((t) => _buildMyTicketCard(t)),
-      ],
+    return RefreshIndicator(
+      onRefresh: _loadLotteryData,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 32),
+        children: [
+          const Text(
+            'Danh sách vé đã mua & Chờ kết quả',
+            style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Hệ thống tự động dò số và thông báo ngay khi có kết quả',
+            style: TextStyle(color: Colors.white54, fontSize: 12),
+          ),
+          const SizedBox(height: 14),
+          ..._myTickets.map((t) => _buildMyTicketCard(t)),
+        ],
+      ),
     );
   }
 
   Widget _buildMyTicketCard(Map<String, dynamic> t) {
-    final nums = t['numbers'] as List<int>;
+    final rawNums = t['numbers'];
+    final nums = (rawNums is List)
+        ? rawNums.map((e) => (e as num).toInt()).toList()
+        : <int>[];
     final isWaiting = t['status'].toString().contains('CHỜ');
 
     return Container(
@@ -1094,23 +1131,29 @@ class _LotteryScreenState extends State<LotteryScreen> {
 
   // ================= TAB 2: KẾT QUẢ KỲ TRƯỚC =================
   Widget _buildDrawResultsTab() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 32),
-      children: [
-        const Text(
-          'Kết quả quay thưởng gần nhất',
-          style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-        ),
-        const SizedBox(height: 14),
-        ..._recentDrawResults.map((r) => _buildResultCard(r)),
-      ],
+    return RefreshIndicator(
+      onRefresh: _loadLotteryData,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 32),
+        children: [
+          const Text(
+            'Kết quả quay thưởng gần nhất',
+            style: TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 14),
+          ..._recentDrawResults.map((r) => _buildResultCard(r)),
+        ],
+      ),
     );
   }
 
   Widget _buildResultCard(Map<String, dynamic> r) {
-    final nums = r['numbers'] as List<int>;
-    final special = r['special'] as int?;
+    final rawNums = r['numbers'];
+    final nums = (rawNums is List)
+        ? rawNums.map((e) => (e as num).toInt()).toList()
+        : <int>[];
+    final special = r['special'] != null ? (r['special'] as num).toInt() : null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),

@@ -7,6 +7,7 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/referral_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class ReferralScreen extends StatefulWidget {
   const ReferralScreen({super.key});
@@ -170,6 +171,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
       appBar: AppBar(
         title: const Text('Giới Thiệu Bạn Bè'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: _isLoading

@@ -20,6 +20,7 @@ import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/floating_notification_hud.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -363,6 +364,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         title: const Text('Thông Báo'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shadowColor: Colors.transparent,
+        forceMaterialTransparency: true,
         actions: [
           IconButton(
             tooltip: 'Thử thông báo nổi',
@@ -634,45 +641,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       context.push('/settings/security');
                     }
                   },
-                  leading: Stack(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: isBalance
-                            ? (isPositive
-                                ? AppColors.emeraldGreen.withOpacity(0.18)
-                                : AppColors.primary.withOpacity(0.18))
-                            : AppColors.primary.withOpacity(0.18),
-                        child: Icon(
-                          isBalance
-                              ? (isPositive
-                                  ? CupertinoIcons.arrow_down_circle_fill
-                                  : CupertinoIcons.arrow_up_circle_fill)
-                              : (_selectedTab == 1
-                                  ? CupertinoIcons.gift_fill
-                                  : CupertinoIcons.bell_fill),
-                          color: isBalance
-                              ? (isPositive
-                                  ? AppColors.emeraldGreen
-                                  : AppColors.primary)
-                              : AppColors.primary,
-                          size: 20,
-                        ),
-                      ),
-                      if (!isRead)
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
-                              shape: BoxShape.circle,
+                  leading: isBalance
+                      ? null
+                      : Stack(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor:
+                                  AppColors.primary.withOpacity(0.18),
+                              child: Icon(
+                                _selectedTab == 1
+                                    ? CupertinoIcons.gift_fill
+                                    : CupertinoIcons.bell_fill,
+                                color: AppColors.primary,
+                                size: 20,
+                              ),
                             ),
-                          ),
+                            if (!isRead)
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
                   title: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -725,7 +723,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                                 color: AppColors.primary.withOpacity(0.15)),
                           ),
@@ -735,6 +733,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: AppColors.primaryText,
+                              fontFeatures: [
+                                FontFeature.tabularFigures(),
+                              ],
                             ),
                           ),
                         ),

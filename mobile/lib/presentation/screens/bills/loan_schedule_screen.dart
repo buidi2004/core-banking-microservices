@@ -22,15 +22,17 @@ class LoanScheduleScreen extends StatefulWidget {
 class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
   bool _autoDebit = true;
   bool _isPaying = false;
+  bool _isLoading = false;
+  String? _effectiveLoanId;
 
-  final String _contractNumber = 'HDTD-2026-88391';
-  final String _productName = 'Vay Tiêu Dùng Nhanh SenBank';
-  final double _totalLoan = 15000000;
-  final int _totalTerms = 6;
+  String _contractNumber = 'HDTD-2026-88391';
+  String _productName = 'Vay Tiêu Dùng Nhanh SenBank';
+  double _totalLoan = 15000000;
+  int _totalTerms = 6;
   final double _interestRatePerMonth = 1.2; // 1.2%/thang
 
   // 6 ky tra no theo du no giam dan
-  final List<Map<String, dynamic>> _schedule = [
+  List<Map<String, dynamic>> _schedule = [
     {
       'term': 1,
       'dueDate': '15/08/2026',
@@ -92,6 +94,85 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
       'paidDate': null,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchedule();
+  }
+
+  Future<void> _loadSchedule() async {
+    setState(() => _isLoading = true);
+    try {
+      String? loanId = widget.loanData?['id']?.toString() ??
+          widget.loanData?['loanId']?.toString();
+      if (loanId == null || loanId.isEmpty) {
+        final loans = await LoanRemoteDataSource().getUserLoans();
+        if (loans.isNotEmpty) {
+          final active = loans.firstWhere(
+            (l) => l['status'] == 'DISBURSED' || l['status'] == 'ACTIVE',
+            orElse: () => loans.first,
+          );
+          loanId = active['id']?.toString() ?? active['loanId']?.toString();
+          if (active['contractNumber'] != null) {
+            _contractNumber = active['contractNumber'].toString();
+          }
+          if (active['productType'] != null) {
+            _productName = active['productType'] == 'VAY_TIEU_DUNG_NHANH'
+                ? 'Vay Tiêu Dùng Nhanh SenBank'
+                : active['productType'].toString();
+          }
+        }
+      }
+
+      if (loanId != null && loanId.isNotEmpty) {
+        _effectiveLoanId = loanId;
+        final res = await LoanRemoteDataSource().getLoanSchedule(loanId);
+        if (mounted) {
+          setState(() {
+            if (res['contractNumber'] != null) {
+              _contractNumber = res['contractNumber'].toString();
+            }
+            if (res['principalAmount'] != null) {
+              _totalLoan = (res['principalAmount'] as num).toDouble();
+            }
+            if (res['termMonths'] != null) {
+              _totalTerms = (res['termMonths'] as num).toInt();
+            }
+            final rawItems = res['schedule'] as List?;
+            if (rawItems != null && rawItems.isNotEmpty) {
+              _schedule = rawItems.map((item) {
+                final m = Map<String, dynamic>.from(item as Map);
+                return {
+                  'term': (m['termNumber'] ?? m['term'] as num?)?.toInt() ?? 1,
+                  'dueDate': m['dueDate']?.toString() ?? '',
+                  'principal': (m['principalAmount'] ?? m['principal'] as num?)
+                          ?.toDouble() ??
+                      0.0,
+                  'interest': (m['interestAmount'] ?? m['interest'] as num?)
+                          ?.toDouble() ??
+                      0.0,
+                  'total':
+                      (m['totalAmount'] ?? m['total'] as num?)?.toDouble() ??
+                          0.0,
+                  'remaining': (m['remainingBalance'] ?? m['remaining'] as num?)
+                          ?.toDouble() ??
+                      0.0,
+                  'status': m['status']?.toString() ?? 'UPCOMING',
+                  'paidDate': m['paidDate']?.toString(),
+                };
+              }).toList();
+            }
+            _isLoading = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {
+      // Keep existing default preview schedule on error or offline
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
 
   void _payCurrentTerm() {
     HapticFeedback.heavyImpact();
@@ -215,7 +296,8 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
               }
               setState(() => _isPaying = true);
               try {
-                final loanId = widget.loanData?['id']?.toString() ??
+                final loanId = _effectiveLoanId ??
+                    widget.loanData?['id']?.toString() ??
                     widget.loanData?['loanId']?.toString();
                 final termNum = (dueTerm['term'] as num?)?.toInt() ?? 1;
                 final payAmount = (dueTerm['total'] as num?)?.toDouble();
@@ -225,15 +307,17 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                     termNumber: termNum,
                     amount: payAmount,
                   );
+                  await _loadSchedule();
+                } else {
+                  setState(() {
+                    dueTerm['status'] = 'PAID';
+                    dueTerm['paidDate'] = 'Hôm nay';
+                    if (_schedule.length > 3) {
+                      _schedule[3]['status'] = 'DUE';
+                    }
+                  });
                 }
                 if (!mounted) return;
-                setState(() {
-                  dueTerm['status'] = 'PAID';
-                  dueTerm['paidDate'] = 'Hôm nay';
-                  if (_schedule.length > 3) {
-                    _schedule[3]['status'] = 'DUE';
-                  }
-                });
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Row(
@@ -270,6 +354,196 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSettleEarlyDialog() {
+    HapticFeedback.heavyImpact();
+    double unpaidPrincipal = _schedule
+        .where((item) => item['status'] != 'PAID')
+        .fold(
+            0.0,
+            (sum, item) =>
+                sum + ((item['principal'] as num?)?.toDouble() ?? 0.0));
+    if (unpaidPrincipal <= 0) unpaidPrincipal = _totalLoan;
+    final double earlyFee = unpaidPrincipal * 0.01;
+    final double totalSettlement = unpaidPrincipal + earlyFee;
+
+    bool isSettling = false;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.deepNavy,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          title: const Row(
+            children: [
+              Icon(CupertinoIcons.checkmark_shield_fill,
+                  color: AppColors.bottomBarCyan, size: 24),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Tất Toán Trước Hạn',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Tất toán toàn bộ hợp đồng tín dụng và chấm dứt nghĩa vụ nợ. Phí tất toán 1% được áp dụng theo quy định của Ngân hàng Nhà nước.',
+                style: TextStyle(
+                    color: Colors.white70, fontSize: 12.5, height: 1.35),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(14),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Dư nợ gốc còn lại:',
+                            style:
+                                TextStyle(color: Colors.white60, fontSize: 13)),
+                        Text(CurrencyFormatter.formatVND(unpaidPrincipal),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Phí phạt trước hạn (1%):',
+                            style:
+                                TextStyle(color: Colors.white60, fontSize: 13)),
+                        Text(CurrencyFormatter.formatVND(earlyFee),
+                            style: const TextStyle(
+                                color: AppColors.warning,
+                                fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    const Divider(color: Colors.white12, height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Tổng thanh toán:',
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14)),
+                        Text(
+                          CurrencyFormatter.formatVND(totalSettlement),
+                          style: const TextStyle(
+                              color: AppColors.bottomBarCyan,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSettling ? null : () => Navigator.pop(ctx),
+              child:
+                  const Text('Để sau', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.bottomBarCyan,
+                foregroundColor: AppColors.primaryDark,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: isSettling
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      setDialogState(() => isSettling = true);
+                      try {
+                        final loanId = _effectiveLoanId ??
+                            widget.loanData?['id']?.toString() ??
+                            widget.loanData?['loanId']?.toString();
+                        if (loanId != null && loanId.isNotEmpty) {
+                          await LoanRemoteDataSource().settleLoanEarly(loanId);
+                        }
+                        if (mounted) {
+                          setState(() {
+                            for (var term in _schedule) {
+                              term['status'] = 'PAID';
+                              term['paidDate'] = 'Hôm nay';
+                            }
+                          });
+                        }
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        HapticFeedback.heavyImpact();
+                        if (messenger.mounted)
+                          messenger.showSnackBar(
+                            const SnackBar(
+                              content: Row(
+                                children: [
+                                  Icon(CupertinoIcons.checkmark_seal_fill,
+                                      color: AppColors.emeraldGreen, size: 22),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Tất toán khoản vay thành công! Bạn đã hoàn thành toàn bộ nghĩa vụ hợp đồng.',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: AppColors.primaryDark,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                      } catch (e) {
+                        if (ctx.mounted) {
+                          setDialogState(() => isSettling = false);
+                        }
+                        if (!messenger.mounted) return;
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(extractErrorMessage(e)),
+                            backgroundColor: AppColors.error,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    },
+              child: isSettling
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          color: AppColors.primaryDark, strokeWidth: 2),
+                    )
+                  : const Text('Xác nhận Tất Toán',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -341,27 +615,37 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
             child: Column(
               children: [
                 _buildAppBar(),
+                if (_isLoading)
+                  const LinearProgressIndicator(
+                    minHeight: 2,
+                    color: AppColors.bottomBarCyan,
+                    backgroundColor: Colors.transparent,
+                  ),
                 Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    children: [
-                      _buildOverviewCard(),
-                      const SizedBox(height: 20),
-                      _buildBreakdownRatioCard(),
-                      const SizedBox(height: 22),
-                      _buildSectionHeader(
-                          'BẢNG KHẤU HAO TỪNG KỲ (DƯ NỢ GIẢM DẦN)'),
-                      const SizedBox(height: 12),
-                      _buildScheduleList(),
-                      const SizedBox(height: 20),
-                      _buildAutoDebitToggle(),
-                      const SizedBox(height: 20),
-                      _buildPrepaymentTermsCard(),
-                      const SizedBox(height: 28),
-                      _buildBottomActions(),
-                      const SizedBox(height: 40),
-                    ],
+                  child: RefreshIndicator(
+                    onRefresh: _loadSchedule,
+                    color: AppColors.bottomBarCyan,
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      children: [
+                        _buildOverviewCard(),
+                        const SizedBox(height: 20),
+                        _buildBreakdownRatioCard(),
+                        const SizedBox(height: 22),
+                        _buildSectionHeader(
+                            'BẢNG KHẤU HAO TỪNG KỲ (DƯ NỢ GIẢM DẦN)'),
+                        const SizedBox(height: 12),
+                        _buildScheduleList(),
+                        const SizedBox(height: 20),
+                        _buildAutoDebitToggle(),
+                        const SizedBox(height: 20),
+                        _buildPrepaymentTermsCard(),
+                        const SizedBox(height: 28),
+                        _buildBottomActions(),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -596,7 +880,8 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 ),
                 Container(height: 24, width: 1, color: Colors.white12),
                 Expanded(
-                  child: _buildMiniStat('Lãi suất', '$_interestRatePerMonth%/tháng'),
+                  child: _buildMiniStat(
+                      'Lãi suất', '$_interestRatePerMonth%/tháng'),
                 ),
               ],
             ),
@@ -617,9 +902,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
         const SizedBox(height: 2),
         Text(val,
             style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 13),
+                color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
             maxLines: 1,
             overflow: TextOverflow.ellipsis),
       ],
@@ -659,7 +942,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
             ),
             const SizedBox(height: 12),
             ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(10),
               child: Row(
                 children: [
                   Expanded(
@@ -883,7 +1166,10 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                 children: [
                   Text(
                     'Gốc: ${CurrencyFormatter.formatVND(principal)}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                    style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontFeatures: [FontFeature.tabularFigures()]),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -891,7 +1177,8 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                     style: const TextStyle(
                         color: AppColors.bottomBarCyan,
                         fontSize: 12,
-                        fontWeight: FontWeight.w600),
+                        fontWeight: FontWeight.w600,
+                        fontFeatures: [FontFeature.tabularFigures()]),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -899,7 +1186,8 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                     style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
-                        fontSize: 13),
+                        fontSize: 13,
+                        fontFeatures: [FontFeature.tabularFigures()]),
                   ),
                 ],
               ),
@@ -993,6 +1281,8 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
   }
 
   Widget _buildPrepaymentTermsCard() {
+    final bool allPaid = _schedule.isNotEmpty &&
+        _schedule.every((item) => item['status'] == 'PAID');
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -1001,19 +1291,49 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
         border:
             Border.all(color: AppColors.bottomBarCyan.withValues(alpha: 0.25)),
       ),
-      child: const Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(CupertinoIcons.info_circle_fill,
-              color: AppColors.bottomBarCyan, size: 20),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Chính sách trả nợ trước hạn: Phí phạt 0% từ kỳ thứ 3 trở đi. Tiền lãi chỉ tính trên số ngày thực tế sử dụng vốn đến thời điểm tất toán.',
-              style:
-                  TextStyle(color: Colors.white70, fontSize: 12, height: 1.35),
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(CupertinoIcons.info_circle_fill,
+                  color: AppColors.bottomBarCyan, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  allPaid
+                      ? 'Khoản vay đã được tất toán toàn bộ. Bạn không còn nghĩa vụ nợ nào cho hợp đồng này.'
+                      : 'Chính sách trả nợ trước hạn: Phí phạt 1% theo quy định NHNN. Tiền lãi chỉ tính trên số ngày thực tế sử dụng vốn đến thời điểm tất toán.',
+                  style: const TextStyle(
+                      color: Colors.white70, fontSize: 12, height: 1.35),
+                ),
+              ),
+            ],
           ),
+          if (!allPaid) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 38,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.bottomBarCyan,
+                  side: const BorderSide(
+                      color: AppColors.bottomBarCyan, width: 1.2),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: _showSettleEarlyDialog,
+                icon:
+                    const Icon(CupertinoIcons.checkmark_shield_fill, size: 16),
+                label: const Text(
+                  'Tất toán toàn bộ khoản vay trước hạn',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

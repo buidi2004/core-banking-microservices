@@ -118,10 +118,11 @@ DELETE FROM ledger_postings WHERE journal_entry_id IN (
 );
 DELETE FROM journal_entries WHERE transaction_id = 'e0000000-0000-0000-0000-000000000002';
 
--- Đảm bảo tài khoản Quỹ tiền mặt mặt đất 1011:BR_Q1 tồn tại
+-- Đảm bảo tài khoản Quỹ tiền mặt mặt đất 1011:BR_Q1 và ví Bob tồn tại
 INSERT INTO ledger_accounts (id, code, name, type, currency, is_active, description)
 VALUES 
-  ('10110000-0000-0000-0000-000000000001', '1011:BR_Q1', 'CASH_ON_HAND:BR_Q1', 'ASSET', 'VND', true, 'Quỹ tiền mặt mặt đất Chi nhánh Quận 1')
+  ('10110000-0000-0000-0000-000000000001', '1011:BR_Q1', 'CASH_ON_HAND:BR_Q1', 'ASSET', 'VND', true, 'Quỹ tiền mặt mặt đất Chi nhánh Quận 1'),
+  ('42110000-0000-0000-0000-000000000002', 'W:bob', 'WALLET:bob', 'LIABILITY', 'VND', true, 'Ví khách hàng Bob Tran')
 ON CONFLICT (code) DO NOTHING;
 
 -- Hạch toán kép cho món 200M

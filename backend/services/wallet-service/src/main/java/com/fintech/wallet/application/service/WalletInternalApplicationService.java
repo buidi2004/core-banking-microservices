@@ -76,9 +76,14 @@ public class WalletInternalApplicationService {
 
                 Money moneyAmount = Money.of(new BigDecimal(amount), locked.getBalance().getCurrency());
 
-                if (!locked.getBalance().isGreaterThanOrEqual(moneyAmount)) {
+                // Tính năng 4.1: cho phép số dư âm tới -overdraft_limit
+                BigDecimal overdraft = locked.getOverdraftLimit() != null
+                        ? BigDecimal.valueOf(locked.getOverdraftLimit()) : BigDecimal.ZERO;
+                BigDecimal effectiveAvailable = locked.getBalance().getAmount().add(overdraft);
+
+                if (effectiveAvailable.compareTo(moneyAmount.getAmount()) < 0) {
                     return DebitResult.failure("DEBIT_INSUFFICIENT_BALANCE",
-                            "Balance " + locked.getBalance() + " < " + moneyAmount);
+                            "Available (incl. overdraft " + overdraft + ") " + effectiveAvailable + " < " + moneyAmount);
                 }
 
                 BigDecimal previousBalance = locked.getBalance().getAmount();
@@ -175,7 +180,10 @@ public class WalletInternalApplicationService {
                         .orElseThrow(() -> new WalletNotFoundException("Wallet not found: " + walletId));
 
                 Money moneyAmount = Money.of(new BigDecimal(amount), locked.getBalance().getCurrency());
-                BigDecimal available = locked.getBalance().getAmount().subtract(
+                // Tính năng 4.1: reserved cho phép chạm vào hạn mức thấu chi
+                BigDecimal overdraft = locked.getOverdraftLimit() != null
+                        ? BigDecimal.valueOf(locked.getOverdraftLimit()) : BigDecimal.ZERO;
+                BigDecimal available = locked.getBalance().getAmount().add(overdraft).subtract(
                         locked.getReservedBalance() != null ? locked.getReservedBalance() : BigDecimal.ZERO);
 
                 if (available.compareTo(moneyAmount.getAmount()) < 0) {
@@ -274,7 +282,9 @@ public class WalletInternalApplicationService {
         BigDecimal requestAmount = new BigDecimal(amount);
         BigDecimal availableBalance = wallet.getBalance().getAmount();
         BigDecimal reserved = wallet.getReservedBalance() != null ? wallet.getReservedBalance() : BigDecimal.ZERO;
-        BigDecimal effectiveAvailable = availableBalance.subtract(reserved);
+        // Tính năng 4.1: số dư khả dụng gồm hạn mức thấu chi
+        BigDecimal overdraft = wallet.getOverdraftLimit() != null ? BigDecimal.valueOf(wallet.getOverdraftLimit()) : BigDecimal.ZERO;
+        BigDecimal effectiveAvailable = availableBalance.add(overdraft).subtract(reserved);
 
         boolean allowed = effectiveAvailable.compareTo(requestAmount) >= 0;
 

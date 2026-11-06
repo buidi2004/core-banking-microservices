@@ -12,14 +12,17 @@ class AppTypography {
     fontSize: 32,
     fontWeight: FontWeight.bold,
     letterSpacing: -0.5,
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
   static final _displayMediumBase = GoogleFonts.outfit(
     fontSize: 24,
     fontWeight: FontWeight.bold,
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
   static final _displaySmallBase = GoogleFonts.outfit(
     fontSize: 20,
     fontWeight: FontWeight.w600,
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
   static final _titleLargeBase = GoogleFonts.inter(
     fontSize: 18,
@@ -53,6 +56,13 @@ class AppTypography {
     fontSize: 28,
     fontWeight: FontWeight.w700,
     letterSpacing: 0.5,
+    fontFeatures: const [FontFeature.tabularFigures()],
+  );
+  static final _financialFiguresBase = GoogleFonts.inter(
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+    fontFeatures: const [FontFeature.tabularFigures()],
   );
 
   // ── Apple HIG Hierarchy cached base styles ──────────────────────────────
@@ -150,6 +160,18 @@ class AppTypography {
   static TextStyle balanceText({Color? color}) => color == null
       ? _balanceTextBase
       : _balanceTextBase.copyWith(color: color);
+
+  /// Typography số liệu tài chính chuyên sâu (Tabular Figures không giật dòng)
+  static TextStyle financialFigures({
+    Color? color,
+    double? fontSize,
+    FontWeight? fontWeight,
+  }) =>
+      _financialFiguresBase.copyWith(
+        color: color,
+        fontSize: fontSize,
+        fontWeight: fontWeight,
+      );
 
   // ── Apple HIG Named Typography API ──────────────────────────────────────
   /// Apple HIG Large Title (34pt, Bold)

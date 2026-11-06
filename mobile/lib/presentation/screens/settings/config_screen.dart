@@ -534,7 +534,7 @@ class _ConfigScreenState extends State<ConfigScreen> {
           ),
           const SizedBox(height: 14),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: (_pingMs / 100).clamp(0.1, 1.0),
               backgroundColor: Colors.white.withValues(alpha: 0.08),
@@ -917,17 +917,24 @@ class _ConfigScreenState extends State<ConfigScreen> {
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: p['method'] == 'POST'
-                        ? const Color(0xFF38BDF8).withValues(alpha: 0.2)
+                        ? AppColors.primaryLight.withValues(alpha: 0.2)
                         : (p['method'] == 'WS'
                             ? AppColors.bottomBarCyan.withValues(alpha: 0.2)
                             : AppColors.bottomBarCyan.withValues(alpha: 0.2)),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: (p['method'] == 'POST'
+                              ? AppColors.primaryLight
+                              : AppColors.bottomBarCyan)
+                          .withValues(alpha: 0.3),
+                      width: 0.5,
+                    ),
                   ),
                   child: Text(
                     p['method'] as String,
                     style: TextStyle(
                       color: p['method'] == 'POST'
-                          ? const Color(0xFF38BDF8)
+                          ? AppColors.primaryLight
                           : (p['method'] == 'WS'
                               ? AppColors.bottomBarCyan
                               : AppColors.bottomBarCyan),

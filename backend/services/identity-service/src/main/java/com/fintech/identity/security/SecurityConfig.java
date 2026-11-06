@@ -40,6 +40,9 @@ public class SecurityConfig {
                                 "/api/v1/sessions/**",
                                 "/api/v1/staff/**",
                                 "/api/v1/legal/**",
+                                "/api/v1/referrals/**",
+                                "/api/v1/feedback/**",
+                                "/api/v1/security/**",
                                 // Service-to-service nội bộ (không route qua API Gateway)
                                 "/api/v1/internal/**"
                         ).permitAll()

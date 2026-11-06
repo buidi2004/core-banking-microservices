@@ -14,7 +14,8 @@ void main() {
       expect(ApiConstants.baseUrl, endsWith('/api/v1'));
       expect(
         ApiConstants.baseUrl.startsWith('http://localhost:8080') ||
-            ApiConstants.baseUrl.contains('.app.github.dev'),
+            ApiConstants.baseUrl.contains('.app.github.dev') ||
+            ApiConstants.baseUrl.contains('ngrok'),
         isTrue,
       );
       expect(ApiConstants.wsUrl, endsWith('/ws-native'));

@@ -12,6 +12,8 @@ public class WebSocketNotifier {
 
     private static final String WALLET_TOPIC = "/topic/wallets/%s/notifications";
     private static final String USER_TOPIC = "/topic/users/%s/notifications";
+    private static final String ADMIN_TOPIC = "/topic/admin/notifications";
+    private static final String TRANSACTIONS_TOPIC = "/topic/transactions";
 
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -33,6 +35,14 @@ public class WebSocketNotifier {
         }
         String destination = String.format(USER_TOPIC, userId);
         send(destination, payload);
+    }
+
+    public void pushToAdmin(NotificationPayload payload) {
+        if (payload == null) {
+            return;
+        }
+        send(ADMIN_TOPIC, payload);
+        send(TRANSACTIONS_TOPIC, payload);
     }
 
     private void send(String destination, NotificationPayload payload) {

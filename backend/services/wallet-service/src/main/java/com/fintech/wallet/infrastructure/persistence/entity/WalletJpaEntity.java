@@ -37,6 +37,9 @@ public class WalletJpaEntity {
     @Column(name = "daily_spent")
     private Long dailySpent;
 
+    @Column(name = "overdraft_limit", nullable = false)
+    private Long overdraftLimit;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -100,6 +103,13 @@ public class WalletJpaEntity {
     }
     public void setDailySpent(Long dailySpent) {
         this.dailySpent = dailySpent;
+    }
+
+    public Long getOverdraftLimit() {
+        return overdraftLimit;
+    }
+    public void setOverdraftLimit(Long overdraftLimit) {
+        this.overdraftLimit = overdraftLimit;
     }
 
     public Instant getCreatedAt() {

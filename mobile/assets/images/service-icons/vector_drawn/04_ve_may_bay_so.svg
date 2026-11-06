@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <filter id="shadow4" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#005580" flood-opacity="0.30"/>
+    </filter>
+    <linearGradient id="bgCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00C4E6"/>
+      <stop offset="50%" stop-color="#0096C7"/>
+      <stop offset="100%" stop-color="#0077B6"/>
+    </linearGradient>
+    <linearGradient id="goldPlane" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF176"/>
+      <stop offset="50%" stop-color="#FFD54F"/>
+      <stop offset="100%" stop-color="#FFA000"/>
+    </linearGradient>
+    <linearGradient id="wingShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB300"/>
+      <stop offset="100%" stop-color="#E65100"/>
+    </linearGradient>
+  </defs>
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="url(#bgCyan)" filter="url(#shadow4)"/>
+  
+  <!-- Contrail curves -->
+  <path d="M 80 360 C 140 340 220 310 320 220" fill="none" stroke="#FFFFFF" stroke-width="6" opacity="0.35" stroke-linecap="round"/>
+  <path d="M 120 390 C 180 370 250 330 360 250" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.25" stroke-linecap="round"/>
+
+  <!-- Stars -->
+  <g fill="#FFF59D">
+    <path d="M 130 150 Q 140 150 140 140 Q 140 150 150 150 Q 140 150 140 160 Q 140 150 130 150 Z"/>
+    <path d="M 390 120 Q 398 120 398 112 Q 398 120 406 120 Q 398 120 398 128 Q 398 120 390 120 Z"/>
+    <path d="M 390 310 Q 396 310 396 304 Q 396 310 402 310 Q 396 310 396 316 Q 396 310 390 310 Z"/>
+    <circle cx="110" cy="220" r="3.5" opacity="0.7"/>
+    <circle cx="340" cy="110" r="4.5" opacity="0.8"/>
+  </g>
+
+  <!-- Golden Jet Airplane -->
+  <g transform="translate(256, 256) rotate(-28)">
+    <path d="M -15 -18 L -30 -115 L 20 -118 L 18 -18 Z" fill="url(#goldPlane)"/>
+    <path d="M -15 -18 L 18 -18 L 12 -28 Z" fill="url(#wingShadow)"/>
+    <rect x="-10" y="-80" width="16" height="34" rx="7" fill="url(#wingShadow)"/>
+
+    <path d="M -10 18 L 15 125 L 55 120 L 25 18 Z" fill="url(#wingShadow)"/>
+    <rect x="18" y="55" width="16" height="34" rx="7" fill="url(#wingShadow)"/>
+
+    <path d="M -110 -8 L -145 -55 L -125 -55 L -95 -5 Z" fill="url(#goldPlane)"/>
+    <path d="M -110 8 L -135 48 L -115 48 L -95 5 Z" fill="url(#wingShadow)"/>
+    <path d="M -85 0 L -140 0 L -125 -42 L -95 -25 Z" fill="url(#goldPlane)"/>
+
+    <path d="M -130 0 C -110 -18 60 -18 135 0 C 60 18 -110 18 -130 0 Z" fill="url(#goldPlane)"/>
+    <path d="M 70 -12 C 110 -8 135 0 135 0 C 135 0 110 8 70 12 Z" fill="#FFF9C4" opacity="0.6"/>
+    <path d="M 95 -6 L 112 -2 L 112 2 L 95 6 Z" fill="#005580" opacity="0.85"/>
+  </g>
+</svg>

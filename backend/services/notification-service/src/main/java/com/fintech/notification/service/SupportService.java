@@ -52,6 +52,11 @@ public class SupportService {
         return supportTicketRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 
+    public List<SupportTicket> getAllTickets() {
+        return supportTicketRepository.findAll(org.springframework.data.domain.Sort.by(
+                org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+    }
+
     public SupportTicket getTicketById(String ticketId) {
         return supportTicketRepository.findById(UUID.fromString(ticketId))
                 .orElseThrow(() -> new IllegalArgumentException("Ticket not found: " + ticketId));
@@ -62,7 +67,7 @@ public class SupportService {
         SupportTicket ticket = getTicketById(ticketId);
         List<TicketMessage> messages = readMessages(ticket.getMessagesJson());
         TicketMessage message = new TicketMessage(UUID.randomUUID().toString(), ticket.getId().toString(),
-                senderId, senderType, content, Instant.now());
+                senderId, senderType != null && !senderType.isBlank() ? senderType : "USER", content, Instant.now());
         messages.add(message);
         ticket.setMessagesJson(writeMessages(messages));
         if (!"CLOSED".equals(ticket.getStatus()) && !"RESOLVED".equals(ticket.getStatus())) {
@@ -70,6 +75,28 @@ public class SupportService {
         }
         supportTicketRepository.save(ticket);
         return message;
+    }
+
+    @Transactional
+    public SupportTicket resolveTicket(String ticketId, String staffId, String resolutionNotes) {
+        SupportTicket ticket = getTicketById(ticketId);
+        ticket.setStatus("RESOLVED");
+        ticket.setResolvedAt(Instant.now());
+        ticket.setResolvedBy(staffId != null ? staffId : "STAFF");
+        if (resolutionNotes != null && !resolutionNotes.isBlank()) {
+            List<TicketMessage> messages = readMessages(ticket.getMessagesJson());
+            messages.add(new TicketMessage(UUID.randomUUID().toString(), ticket.getId().toString(),
+                    staffId != null ? staffId : "STAFF", "STAFF", "Xử lý hỗ trợ: " + resolutionNotes, Instant.now()));
+            ticket.setMessagesJson(writeMessages(messages));
+        }
+        return supportTicketRepository.save(ticket);
+    }
+
+    @Transactional
+    public SupportTicket closeTicket(String ticketId, String staffId) {
+        SupportTicket ticket = getTicketById(ticketId);
+        ticket.setStatus("CLOSED");
+        return supportTicketRepository.save(ticket);
     }
 
     public List<TicketMessage> getTicketMessages(String ticketId) {

@@ -1,7 +1,7 @@
 class ApiConstants {
   ApiConstants._();
 
-  // Base URLs - Mặc định kết nối ngrok public tunnel (:8080), có thể override qua --dart-define hoặc ConfigScreen
+  // Base URLs - Cố định kết nối qua Ngrok Public Tunnel
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://mutation-tubby-overstock.ngrok-free.dev/api/v1',
@@ -31,12 +31,15 @@ class ApiConstants {
   static const String changePassword = '/auth/change-password';
   static const String changePasswordOtp = '/auth/change-password/otp';
   static const String changePinOtp = '/auth/change-pin/otp';
+  static const String loanOtp = '/auth/loan/otp';
+  static const String loanOtpVerify = '/auth/loan/otp/verify';
   static const String logout = '/auth/logout';
   // BE-GAP (BE-REQ-03): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String setPin = '/users/pin/set';
   // BE-GAP (BE-REQ-03): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String verifyPin = '/users/pin/verify';
   static const String biometricVerify = '/security/biometric/verify';
+  static const String emergencyLock = '/security/emergency-lock';
 
   // Wallet & Transfer endpoints
 
@@ -89,6 +92,7 @@ class ApiConstants {
 
   // User Profile & KYC
   static const String userMe = '/users/me';
+  static const String userAlias = '/users/me/alias';
   static const String userAvatar = '/users/me/avatar';
   static const String kycSubmit = '/kyc/submit';
   static const String kycStatus = '/kyc/status';
@@ -155,6 +159,11 @@ class ApiConstants {
   static const String savingsAccounts = '/savings/accounts';
   static String savingsDetail(String id) => '/savings/accounts/$id';
   static String savingsSettle(String id) => '/savings/accounts/$id/settle';
+  static String savingsWithdrawPartial(String id) => '/savings/accounts/$id/withdraw-partial';
+
+  // Scheduled & Recurring Transfers
+  static const String scheduledTransfers = '/payments/scheduled-transfers';
+  static String scheduledTransferDetail(String id) => '/payments/scheduled-transfers/$id';
 
   // Quick Loans (Core Banking In-house)
   static const String loanProducts = '/loans/products';
@@ -163,4 +172,13 @@ class ApiConstants {
   static String loanDetail(String id) => '/loans/$id';
   static String loanSchedule(String id) => '/loans/$id/schedule';
   static String loanRepay(String id) => '/loans/$id/repay';
+  static String loanSettleEarly(String id) => '/loans/$id/settle';
+
+  // AI Chatbot RAG Assistant 24/7
+  static const String chat = '/chat';
+
+  // Lottery Vietlott Core Banking
+  static const String lotteryBuy = '/lottery/buy';
+  static const String lotteryMyTickets = '/lottery/my-tickets';
+  static const String lotteryResults = '/lottery/results';
 }

@@ -14,6 +14,7 @@ import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class DepositConfirmScreen extends StatefulWidget {
   final double amount;
@@ -123,6 +124,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
       appBar: AppBar(
         title: const Text('Xác Nhận Nạp Tiền'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
@@ -163,7 +165,12 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                             Text(
                               CurrencyFormatter.formatVND(widget.amount),
                               style: AppTypography.displayMedium(
-                                  color: AppColors.successTextLight),
+                                      color: AppColors.successTextLight)
+                                  .copyWith(
+                                fontFeatures: const [
+                                  FontFeature.tabularFigures(),
+                                ],
+                              ),
                             ),
                             if (CurrencyFormatter.toVietnameseWords(
                                     widget.amount)
@@ -213,16 +220,19 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                                 Expanded(
                                   child: Row(
                                     children: [
-                                      Icon(CupertinoIcons.arrow_down_circle_fill,
+                                      Icon(
+                                          CupertinoIcons.arrow_down_circle_fill,
                                           color: AppColors.successTextLight,
                                           size: 18),
                                       SizedBox(width: 8),
                                       Expanded(
-                                        child: Text('Hạn mức nạp tiền trong ngày',
+                                        child: Text(
+                                            'Hạn mức nạp tiền trong ngày',
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 13,
-                                                color: AppColors.textPrimaryLight)),
+                                                color: AppColors
+                                                    .textPrimaryLight)),
                                       ),
                                     ],
                                   ),
@@ -237,7 +247,7 @@ class _DepositConfirmScreenState extends State<DepositConfirmScreen> {
                             ),
                             const SizedBox(height: 10),
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
                               child: LinearProgressIndicator(
                                 value:
                                     (widget.amount / 50000000).clamp(0.05, 1.0),

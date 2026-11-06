@@ -412,7 +412,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
           if (_state == NfcScanState.scanning) ...[
             const SizedBox(height: 18),
             ClipRRect(
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
                 value: _scanProgress,
                 backgroundColor: Colors.white.withValues(alpha: 0.1),

@@ -1,5 +1,6 @@
 package com.fintech.wallet.infrastructure.web;
 
+import com.fintech.wallet.domain.model.Money;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.model.WalletStatus;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
@@ -72,21 +73,33 @@ public class WalletRestController {
     @GetMapping("/recipient-info")
     public ResponseEntity<Map<String, Object>> recipientInfo(
             @RequestParam(required = false) String walletId,
-            @RequestParam(required = false) String phoneNumber) {
+            @RequestParam(required = false) String phoneNumber,
+            @RequestParam(required = false) String alias) {
 
         Optional<Wallet> wallet = Optional.empty();
         Map<String, Object> identity = null;
 
         if (walletId != null && !walletId.isBlank()) {
-            wallet = walletPersistencePort.findWalletById(walletId);
+            wallet = walletPersistencePort.findWalletById(walletId.trim())
+                    .or(() -> walletPersistencePort.findWalletByOwnerId(walletId.trim()));
+        } else if (alias != null && !alias.isBlank()) {
+            identity = lookupIdentity("phone", alias.trim().toUpperCase());
+            String ownerId = identity != null ? asString(identity.get("id")) : null;
+            if (ownerId != null) {
+                wallet = walletPersistencePort.findWalletByOwnerId(ownerId);
+            }
         } else if (phoneNumber != null && !phoneNumber.isBlank()) {
-            identity = lookupIdentity("phone", phoneNumber);
+            String cleanPhone = normalizePhone(phoneNumber);
+            identity = lookupIdentity("phone", cleanPhone);
+            if (identity == null && !cleanPhone.equals(phoneNumber.trim())) {
+                identity = lookupIdentity("phone", phoneNumber.trim());
+            }
             String ownerId = identity != null ? asString(identity.get("id")) : null;
             if (ownerId != null) {
                 wallet = walletPersistencePort.findWalletByOwnerId(ownerId);
             }
         } else {
-            return ResponseEntity.badRequest().body(error("Cần truyền walletId hoặc phoneNumber"));
+            return ResponseEntity.badRequest().body(error("Cần truyền walletId, phoneNumber hoặc alias"));
         }
 
         if (wallet.isEmpty()) {
@@ -185,6 +198,7 @@ public class WalletRestController {
             item.put("status", currentStatus);
             item.put("kycTier", kycTier);
             item.put("dailyLimit", w.getDailyLimit());
+            item.put("overdraftLimit", w.getOverdraftLimit());
             item.put("createdAt", w.getCreatedAt().toString());
             result.add(item);
         }
@@ -223,6 +237,122 @@ public class WalletRestController {
         }
     }
 
+    /**
+     * Batch tính và trả lãi tiền gửi không kỳ hạn CASA hàng tháng theo thông lệ Ngân hàng Việt Nam.
+     * Áp dụng mức lãi suất 0.2%/năm tính theo số dư bình quân ngày (30 ngày/kỳ).
+     */
+    @PostMapping("/admin/casa-interest/accrue")
+    public ResponseEntity<Map<String, Object>> accrueCasaInterest(
+            @RequestParam(defaultValue = "0.2") double annualRate,
+            @RequestParam(defaultValue = "30") int daysInPeriod) {
+
+        List<Wallet> allWallets = walletPersistencePort.findAllWallets();
+        int walletsAccrued = 0;
+        long totalInterestPaid = 0;
+
+        for (Wallet wallet : allWallets) {
+            if (wallet.getStatus() != WalletStatus.ACTIVE) continue;
+            long currentBal = wallet.getBalance().getAmount() != null ? wallet.getBalance().getAmount().longValue() : 0L;
+            if (currentBal < 10000L) continue;
+
+            long interest = (long) Math.round(currentBal * (annualRate / 100.0) * daysInPeriod / 365.0);
+            if (interest >= 1L) {
+                wallet.deposit(Money.of(interest, wallet.getBalance().getCurrency()));
+                walletPersistencePort.saveWallet(wallet);
+                totalInterestPaid += interest;
+                walletsAccrued++;
+            }
+        }
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("walletsAccrued", walletsAccrued);
+        summary.put("totalInterestPaid", totalInterestPaid);
+        summary.put("annualRatePercent", annualRate);
+        summary.put("daysInPeriod", daysInPeriod);
+        summary.put("currency", "VND");
+        summary.put("standard", "Quy chế tính lãi tiền gửi không kỳ hạn theo ngày thực tế (365 ngày)");
+
+        log.info("CASA interest batch completed: {} wallets accrued, total payout {} VND", walletsAccrued, totalInterestPaid);
+        return ResponseEntity.ok(ok("Đã tính và trả lãi tiền gửi không kỳ hạn CASA thành công", summary));
+    }
+
+    /**
+     * Tính năng 4.1 — Cấp hoặc thu hồi Hạn Mức Thấu Chi cho ví của khách hàng (Overdraft Limit).
+     * Số dư khả dụng = balance + overdraftLimit; lãi vay thấu chi tính theo ngày trên phần dư nợ âm.
+     */
+    @PostMapping("/admin/accounts/{walletId}/overdraft-limit")
+    public ResponseEntity<Map<String, Object>> setOverdraftLimit(
+            @PathVariable String walletId,
+            @RequestParam(defaultValue = "20000000") long limit) {
+
+        // Hạn mức thấu chi cấp trên sổ người dùng: tối thiểu 0, tối đa 200 triệu VND
+        final long OVERDRAFT_CAP = 200_000_000L;
+        if (limit < 0 || limit > OVERDRAFT_CAP) {
+            return ResponseEntity.badRequest().body(error(
+                    "Hạn mức thấu chi phải nằm trong khoảng [0 - " + OVERDRAFT_CAP + "] VND, nhận được: " + limit));
+        }
+
+        Optional<Wallet> walletOpt = walletPersistencePort.findWalletById(walletId);
+        if (walletOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error("Không tìm thấy ví: " + walletId));
+        }
+
+        Wallet wallet = walletOpt.get();
+        wallet.setOverdraftLimit(limit);
+        walletPersistencePort.saveWallet(wallet);
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("walletId", wallet.getId());
+        data.put("ownerId", wallet.getOwnerId());
+        data.put("overdraftLimit", limit);
+        data.put("availableBalance", wallet.getBalance().getAmount().add(java.math.BigDecimal.valueOf(limit)));
+        data.put("updatedAt", wallet.getUpdatedAt().toString());
+
+        log.info("Admin set overdraft limit {} VND for wallet {}", limit, walletId);
+        return ResponseEntity.ok(ok("Hạn mức thấu chi đã cập nhật thành công: " + limit + " VND", data));
+    }
+
+    /**
+     * Tính năng 4.1 — Batch tính lãi vay thấu chi hàng ngày trên phần dư nợ âm.
+     * Lãi trừ trực tiếp làm tăng dư nợ (balance giảm sâu hơn), không bị giới hạn bởi overdraftLimit.
+     * Mặc định 16%/năm (≈ 0.0438%/ngày) — mức phổ biến của hạn mức thấu chi không bảo đảm tại Việt Nam.
+     */
+    @PostMapping("/admin/overdraft-interest/accrue")
+    public ResponseEntity<Map<String, Object>> accrueOverdraftInterest(
+            @RequestParam(defaultValue = "16.0") double annualRate,
+            @RequestParam(defaultValue = "1") int daysInPeriod) {
+
+        List<Wallet> allWallets = walletPersistencePort.findAllWallets();
+        int walletsCharged = 0;
+        long totalInterestCharged = 0;
+
+        for (Wallet wallet : allWallets) {
+            if (wallet.getStatus() != WalletStatus.ACTIVE) continue;
+            long currentBal = wallet.getBalance().getAmount() != null ? wallet.getBalance().getAmount().longValue() : 0L;
+            if (currentBal >= 0) continue; // chỉ tính lãi trên phần dư nợ âm
+
+            long overdrawnDebt = -currentBal; // dư nợ thấu chi (số dương)
+            long interest = (long) Math.round(overdrawnDebt * (annualRate / 100.0) * daysInPeriod / 365.0);
+            if (interest >= 1L) {
+                wallet.chargeOverdraftInterest(Money.of(interest, wallet.getBalance().getCurrency()));
+                walletPersistencePort.saveWallet(wallet);
+                totalInterestCharged += interest;
+                walletsCharged++;
+            }
+        }
+
+        Map<String, Object> summary = new LinkedHashMap<>();
+        summary.put("walletsCharged", walletsCharged);
+        summary.put("totalInterestCharged", totalInterestCharged);
+        summary.put("annualRatePercent", annualRate);
+        summary.put("daysInPeriod", daysInPeriod);
+        summary.put("currency", "VND");
+        summary.put("standard", "Lãi vay thấu chi tính trên phần dư nợ âm theo ngày thực tế (365 ngày)");
+
+        log.info("Overdraft interest batch completed: {} wallets charged, total interest {} VND", walletsCharged, totalInterestCharged);
+        return ResponseEntity.ok(ok("Đã tính và ghi nhận lãi vay thấu chi thành công", summary));
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> lookupIdentity(String field, String value) {
         try {
@@ -245,6 +375,11 @@ public class WalletRestController {
         data.put("status", wallet.getStatus() != null ? wallet.getStatus().name() : "ACTIVE");
         data.put("reservedBalance", wallet.getReservedBalance());
         data.put("dailyLimit", wallet.getDailyLimit());
+        data.put("overdraftLimit", wallet.getOverdraftLimit());
+        // Số dư khả dụng = balance + overdraftLimit (tính năng 4.1 — thấu chi)
+        java.math.BigDecimal overdraftDaily = wallet.getOverdraftLimit() != null
+                ? java.math.BigDecimal.valueOf(wallet.getOverdraftLimit()) : java.math.BigDecimal.ZERO;
+        data.put("availableBalance", wallet.getBalance().getAmount().add(overdraftDaily));
         return data;
     }
 
@@ -268,5 +403,17 @@ public class WalletRestController {
 
     private String asString(Object value) {
         return value != null ? String.valueOf(value) : null;
+    }
+
+    private String normalizePhone(String raw) {
+        if (raw == null) return null;
+        String digits = raw.replaceAll("[^0-9]", "");
+        if (digits.startsWith("84") && digits.length() == 11) {
+            return "0" + digits.substring(2);
+        }
+        if (digits.length() == 9 && !digits.startsWith("0")) {
+            return "0" + digits;
+        }
+        return digits.isEmpty() ? raw.trim() : digits;
     }
 }

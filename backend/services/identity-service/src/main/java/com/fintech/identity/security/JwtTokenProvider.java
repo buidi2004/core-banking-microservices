@@ -107,6 +107,24 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String generateBiometricToken(String userId) {
+        Instant now = Instant.now();
+        Instant expiry = now.plusSeconds(300); // 5 phút chuẩn QĐ 2345/QĐ-NHNN
+        String jti = UUID.randomUUID().toString();
+
+        return Jwts.builder()
+                .id(jti)
+                .subject(userId)
+                .claim("type", "PIN_TOKEN")
+                .claim("scope", "TRANSACTION_AUTH")
+                .claim("authMethod", "BIOMETRIC_QD2345")
+                .claim("biometricVerified", true)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .signWith(secretKey)
+                .compact();
+    }
+
     public String generateOtpToken(String phoneNumber, String purpose) {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(600); // 10 phút

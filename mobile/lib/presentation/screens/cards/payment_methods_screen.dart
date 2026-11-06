@@ -7,6 +7,7 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
@@ -72,6 +73,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       appBar: AppBar(
         title: const Text('Nguồn Tiền & Phương Thức'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -466,10 +468,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1.5),
+                                horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
                                 color: badgeColor.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(4)),
+                                borderRadius: BorderRadius.circular(8)),
                             child: Text(typeBadge,
                                 style: TextStyle(
                                     fontSize: 9.5,
@@ -564,10 +566,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 5, vertical: 1.5),
+                                horizontal: 7, vertical: 2.5),
                             decoration: BoxDecoration(
                                 color: const Color(0xFFE0E7FF),
-                                borderRadius: BorderRadius.circular(4)),
+                                borderRadius: BorderRadius.circular(8)),
                             child: Text(bankCode,
                                 style: const TextStyle(
                                     fontSize: 9.5,

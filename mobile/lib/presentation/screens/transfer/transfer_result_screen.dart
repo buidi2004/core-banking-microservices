@@ -10,7 +10,9 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/theme/apple_hig_tokens.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
+import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/transfer_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 
 class TransferResultScreen extends StatefulWidget {
@@ -173,7 +175,7 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                   height: 4,
                   decoration: BoxDecoration(
                     color: AppColors.borderSubtle,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ),
@@ -230,14 +232,46 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(ctx).pop();
-                  setState(() => _isRecurringScheduled = true);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            'Đã thiết lập lịch chuyển tiền định kỳ: $_recurringCycle!')),
-                  );
+                  try {
+                    String freq = 'MONTHLY';
+                    if (_recurringCycle.contains('Hàng ngày')) {
+                      freq = 'DAILY';
+                    } else if (_recurringCycle.contains('Hàng tuần')) {
+                      freq = 'WEEKLY';
+                    }
+                    final target = (widget.phoneNumber != null && widget.phoneNumber!.isNotEmpty)
+                        ? widget.phoneNumber!
+                        : widget.recipient;
+                    final nextRun = DateTime.now().add(const Duration(days: 1)).toUtc().toIso8601String();
+                    await TransferRemoteDataSource().createScheduledTransfer(
+                      targetAccountNumber: target,
+                      amount: widget.amount,
+                      note: 'Chuyển tiền định kỳ: $_recurringCycle',
+                      frequency: freq,
+                      nextExecutionAt: nextRun,
+                    );
+                    if (mounted) {
+                      setState(() => _isRecurringScheduled = true);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: AppColors.emeraldGreen,
+                          content: Text(
+                              'Đã thiết lập lịch chuyển tiền định kỳ: $_recurringCycle trên Core Banking!'),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: AppColors.error,
+                          content: Text('Lỗi thiết lập: ${extractErrorMessage(e)}'),
+                        ),
+                      );
+                    }
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
@@ -362,6 +396,9 @@ class _TransferResultScreenState extends State<TransferResultScreen> {
                 ).copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
+                  fontFeatures: const [
+                    FontFeature.tabularFigures(),
+                  ],
                 ),
               ),
               const SizedBox(height: 18),

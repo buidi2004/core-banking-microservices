@@ -29,7 +29,15 @@ import 'package:sen_hong_bank/presentation/screens/history/transaction_detail_sc
 import 'package:sen_hong_bank/presentation/screens/history/transaction_history_screen.dart';
 import 'package:sen_hong_bank/presentation/screens/home/home_screen.dart';
 import 'package:sen_hong_bank/presentation/screens/home/notifications_screen.dart';
-import 'package:sen_hong_bank/presentation/screens/home/search_screen.dart';
+import 'package:sen_hong_bank/presentation/widgets/smart_search_modal_sheet.dart';
+import 'package:sen_hong_bank/presentation/screens/lifestyle/vua_xo_so_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/lifestyle/vietlott_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/lifestyle/data_topup_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/lifestyle/digital_flight_ticket_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/lifestyle/imedia_flight_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/lifestyle/game_card_data_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/lifestyle/van_so_screen.dart';
+import 'package:sen_hong_bank/presentation/screens/lifestyle/all_services_screen.dart';
 import 'package:sen_hong_bank/presentation/screens/more/more_screen.dart';
 import 'package:sen_hong_bank/presentation/screens/more/referral_screen.dart';
 import 'package:sen_hong_bank/presentation/screens/profile_ekyc/digital_signature_screen.dart';
@@ -83,7 +91,7 @@ void main() {
     'TermsOfService': const TermsOfServiceScreen(),
     'Home': const HomeScreen(),
     'Notifications': const NotificationsScreen(),
-    'Search': const SearchScreen(),
+    'Search': const SmartSearchModalSheet(),
     'TransactionHistory': const TransactionHistoryScreen(),
     'TransactionDetail': const TransactionDetailScreen(
       id: 'TX-1',
@@ -159,6 +167,14 @@ void main() {
     'NotificationSettings': const NotificationSettingsScreen(),
     'HelpCenter': const HelpCenterScreen(),
     'LiveChat': const LiveChatScreen(),
+    'VuaXoSo': const VuaXoSoScreen(),
+    'Vietlott': const VietlottScreen(),
+    'DataTopup': const DataTopupScreen(),
+    'DigitalFlight': const DigitalFlightTicketScreen(),
+    'ImediaFlight': const ImediaFlightScreen(),
+    'GameCards': const GameCardDataScreen(),
+    'VanSo': const VanSoScreen(),
+    'AllServices': const AllServicesScreen(),
   };
 
   testWidgets('Quét tương phản toàn bộ màn hình (chẩn đoán)', (tester) async {

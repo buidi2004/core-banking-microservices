@@ -62,13 +62,30 @@ public class NotificationController {
         return ResponseEntity.ok(ApiResponse.success("All notifications marked as read", null));
     }
 
-    @PutMapping("/settings")
+    @GetMapping("/settings")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getSettings(
+            @RequestHeader(name = "X-User-Id", required = false) String userId) {
+        String uid = requireUser(userId);
+        Map<String, Boolean> settings = notificationService.getSettings(uid);
+        return ResponseEntity.ok(ApiResponse.success("Notification settings retrieved", Map.of(
+                "transactionEnabled", settings.getOrDefault("TRANSACTION", true),
+                "promoEnabled", settings.getOrDefault("PROMO", true),
+                "settings", settings
+        )));
+    }
+
+    @RequestMapping(value = "/settings", method = {org.springframework.web.bind.annotation.RequestMethod.PUT, org.springframework.web.bind.annotation.RequestMethod.POST})
     public ResponseEntity<ApiResponse<Void>> updateSettings(
             @RequestHeader(name = "X-User-Id", required = false) String userId,
-            @RequestParam boolean transactionEnabled,
-            @RequestParam boolean promoEnabled) {
+            @RequestParam(required = false) Boolean transactionEnabled,
+            @RequestParam(required = false) Boolean promoEnabled,
+            @org.springframework.web.bind.annotation.RequestBody(required = false) Map<String, Object> body) {
         String uid = requireUser(userId);
-        notificationService.updateSettings(uid, transactionEnabled, promoEnabled);
+        boolean tx = transactionEnabled != null ? transactionEnabled :
+                (body != null && body.containsKey("transactionEnabled") ? Boolean.parseBoolean(String.valueOf(body.get("transactionEnabled"))) : true);
+        boolean promo = promoEnabled != null ? promoEnabled :
+                (body != null && body.containsKey("promoEnabled") ? Boolean.parseBoolean(String.valueOf(body.get("promoEnabled"))) : true);
+        notificationService.updateSettings(uid, tx, promo);
         return ResponseEntity.ok(ApiResponse.success("Notification settings updated", null));
     }
 

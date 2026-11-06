@@ -358,6 +358,10 @@ public class PaymentSagaOrchestrator {
             throw new IllegalArgumentException("Không tìm thấy ví của người nhận: " + ctx.getTargetUserId());
         }
         ctx.setTargetWalletId(target.getWalletId());
+
+        if (ctx.getSourceWalletId().equals(ctx.getTargetWalletId())) {
+            throw new IllegalArgumentException("Không thể tự chuyển tiền cho chính mình");
+        }
     }
 
     private Transaction createTransactionAndOutbox(SagaContext ctx, String status, String eventType) {

@@ -191,6 +191,30 @@ class AuthRemoteDataSource {
     return Map<String, dynamic>.from(json['data'] as Map? ?? {});
   }
 
+  /// Yêu cầu gửi mã OTP tới Gmail chính chủ (định danh qua X-User-Id do Gateway inject)
+  /// để xác thực ký hợp đồng vay vốn tín dụng (purpose=LOAN_APPLY).
+  Future<Map<String, dynamic>> requestLoanOtp() async {
+    final response = await _dio.post(ApiConstants.loanOtp);
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map? ?? {});
+  }
+
+  /// Xác thực mã OTP ký hợp đồng vay vốn, nhận mã otpToken JWT.
+  Future<String> verifyLoanOtp(String code) async {
+    final response = await _dio.post(ApiConstants.loanOtpVerify, data: {
+      'code': code.trim(),
+      'purpose': 'LOAN_APPLY',
+    });
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true) throw apiException(json);
+    final data = json['data'];
+    if (data is Map) {
+      return (data['otpToken'] ?? '').toString();
+    }
+    return '';
+  }
+
   /// Đổi mật khẩu đăng nhập: yêu cầu OTP (otpToken) đã xác thực qua Gmail.
   Future<void> changePassword({
     required String oldPassword,
@@ -249,5 +273,18 @@ class AuthRemoteDataSource {
     final response = await _dio.post(ApiConstants.setPin, data: {'pin': pin});
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
+  }
+
+  /// Khóa khẩn cấp tài khoản khi phát hiện gian lận (Kill-Switch)
+  Future<void> emergencyLock({String? reason}) async {
+    final response = await _dio.post(
+      ApiConstants.emergencyLock,
+      data: {
+        if (reason != null && reason.isNotEmpty) 'reason': reason,
+      },
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true) throw apiException(json);
+    await _local?.clearTokens();
   }
 }

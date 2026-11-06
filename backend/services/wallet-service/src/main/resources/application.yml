@@ -25,6 +25,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
+    open-in-view: false
+    show-sql: false
   flyway:
     enabled: true
     locations: classpath:db/migration

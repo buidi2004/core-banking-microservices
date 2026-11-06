@@ -15,6 +15,7 @@ import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.
 import 'package:sen_hong_bank/data/datasources/remote/savings_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class SavingsScreen extends StatefulWidget {
   const SavingsScreen({super.key});
@@ -274,7 +275,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     height: 4,
                     decoration: BoxDecoration(
                       color: AppColors.borderSubtle,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
@@ -402,7 +403,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 height: 4,
                 decoration: BoxDecoration(
                     color: AppColors.borderSubtle,
-                    borderRadius: BorderRadius.circular(2)),
+                    borderRadius: BorderRadius.circular(12)),
               ),
               const SizedBox(height: 16),
               const Icon(CupertinoIcons.doc_text_fill,
@@ -516,6 +517,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     : (isBold
                         ? AppColors.primaryDark
                         : AppColors.textPrimaryLight),
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
           ),
@@ -531,6 +533,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
       appBar: AppBar(
         title: const Text('Tiết Kiệm Sinh Lời'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
             tooltip: 'Biểu phí & Lãi suất',
@@ -866,13 +869,13 @@ class _SavingsScreenState extends State<SavingsScreen> {
                           if (tag.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
+                                  horizontal: 7, vertical: 2.5),
                               margin: const EdgeInsets.only(bottom: 6),
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? Colors.white
                                     : AppColors.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 tag,
@@ -1040,8 +1043,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: const Text(
                         'Tái tục toàn bộ Gốc và Lãi (Lãi kép sinh lời)',
-                        style:
-                            TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
                     onChanged: (v) => setState(() => _rolloverOption = v!),
                   ),
                   const Divider(height: 1, color: AppColors.borderLight),
@@ -1052,8 +1055,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: const Text(
                         'Tái tục Gốc, chuyển Lãi về tài khoản thanh toán',
-                        style:
-                            TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
                     onChanged: (v) => setState(() => _rolloverOption = v!),
                   ),
                   const Divider(height: 1, color: AppColors.borderLight),
@@ -1064,8 +1067,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     contentPadding: EdgeInsets.zero,
                     title: const Text(
                         'Tất toán toàn bộ Gốc và Lãi về tài khoản khi đáo hạn',
-                        style:
-                            TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
                     onChanged: (v) => setState(() => _rolloverOption = v!),
                   ),
                 ],
@@ -1121,88 +1124,91 @@ class _SavingsScreenState extends State<SavingsScreen> {
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          // Background Savings Illustration
-          Positioned(
-            right: -10,
-            bottom: -10,
-            top: -10,
-            width: 180,
-            child: ClipRRect(
-              borderRadius:
-                  const BorderRadius.horizontal(right: Radius.circular(20)),
-              child: Opacity(
-                opacity: 0.85,
-                child: Image.asset(
-                  'assets/images/banking_savings.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    CupertinoIcons.archivebox_fill,
-                    size: 90,
-                    color: Colors.white24,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          children: [
+            // Background Savings Illustration
+            Positioned(
+              right: -10,
+              bottom: -10,
+              top: -10,
+              width: 180,
+              child: ClipRRect(
+                borderRadius:
+                    const BorderRadius.horizontal(right: Radius.circular(20)),
+                child: Opacity(
+                  opacity: 0.85,
+                  child: Image.asset(
+                    'assets/images/banking_savings.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      CupertinoIcons.archivebox_fill,
+                      size: 90,
+                      color: Colors.white24,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          // Content
-          Padding(
-            padding: const EdgeInsets.all(18),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.bottomBarCyan.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: AppColors.bottomBarCyan.withOpacity(0.5)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(CupertinoIcons.shield_lefthalf_fill,
-                          color: AppColors.bottomBarCyan, size: 14),
-                      SizedBox(width: 4),
-                      Text(
-                        'TIẾT KIỆM BẢO CHỨNG NHNN',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.bottomBarCyan.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: AppColors.bottomBarCyan.withOpacity(0.5)),
                       ),
-                    ],
-                  ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(CupertinoIcons.shield_lefthalf_fill,
+                              color: AppColors.bottomBarCyan, size: 14),
+                          SizedBox(width: 4),
+                          Text(
+                            'TIẾT KIỆM BẢO CHỨNG NHNN',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Tiết Kiệm Sen Lộc Phát',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Lãi suất vượt trội đến 7.4%/năm\nRút gốc từng phần bảo toàn lãi suất',
+                      style: TextStyle(
+                          color: Colors.white70, fontSize: 12, height: 1.3),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Tiết Kiệm Sen Lộc Phát',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Lãi suất vượt trội đến 7.4%/năm\nRút gốc từng phần bảo toàn lãi suất',
-                  style: TextStyle(
-                      color: Colors.white70, fontSize: 12, height: 1.3),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
-      ],
-    ),
-  );
-}
+      ),
+    );
+  }
 
   Widget _buildQuickChip(String label, double amount) {
     return Padding(
@@ -1414,7 +1420,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
                       style: const TextStyle(
                           color: AppColors.primaryDark,
                           fontSize: 24,
-                          fontWeight: FontWeight.bold)),
+                          fontWeight: FontWeight.bold,
+                          fontFeatures: [FontFeature.tabularFigures()])),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -1431,7 +1438,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
                           style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.successTextLight)),
+                              color: AppColors.successTextLight,
+                              fontFeatures: [FontFeature.tabularFigures()])),
                     ],
                   ),
                   const Divider(height: 24, color: AppColors.cardBorderLight),
@@ -1622,6 +1630,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                   : AppColors.textPrimaryLight,
               fontSize: 13,
               fontWeight: FontWeight.w600,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ),

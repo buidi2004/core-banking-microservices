@@ -110,8 +110,15 @@ public class ReceiptExportService {
 
     @Transactional(readOnly = true)
     public byte[] exportTransactions(String walletId, String format) {
-        Page<Transaction> page = transactionRepository.findWalletHistory(walletId, "", PageRequest.of(0, 1000));
-        List<Transaction> list = page.getContent();
+        List<Transaction> list;
+        if (walletId == null || walletId.isBlank() || "ALL".equalsIgnoreCase(walletId)) {
+            Page<Transaction> page = transactionRepository.findAll(
+                    PageRequest.of(0, 1000, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")));
+            list = page.getContent();
+        } else {
+            Page<Transaction> page = transactionRepository.findWalletHistory(walletId, "", PageRequest.of(0, 1000));
+            list = page.getContent();
+        }
 
         if ("pdf".equalsIgnoreCase(format)) {
             return exportTransactionsPdf(walletId, list);
@@ -153,7 +160,10 @@ public class ReceiptExportService {
             Font colFont = new Font(Font.HELVETICA, 9, Font.BOLD, Color.WHITE);
             Font rowFont = new Font(Font.HELVETICA, 8, Font.NORMAL, Color.BLACK);
 
-            Paragraph p = new Paragraph("BANG SAO KE GIAO DICH - SEN HONG BANK\nVi tai khoan: " + walletId + "\n\n", headerFont);
+            String walletLabel = (walletId != null && !walletId.isBlank() && !"ALL".equalsIgnoreCase(walletId))
+                    ? "Vi tai khoan: " + walletId
+                    : "Pham vi: Toan he thong";
+            Paragraph p = new Paragraph("BANG SAO KE GIAO DICH - SEN HONG BANK\n" + walletLabel + "\n\n", headerFont);
             p.setAlignment(Element.ALIGN_CENTER);
             document.add(p);
 

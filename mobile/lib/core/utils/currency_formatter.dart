@@ -15,6 +15,12 @@ class CurrencyFormatter {
     decimalDigits: 0,
   );
 
+  static final NumberFormat _numberFormat = NumberFormat('#,###', 'vi_VN');
+
+  static String format(num amount) {
+    return _numberFormat.format(amount);
+  }
+
   static String formatVND(num amount) {
     return _vndFormat.format(amount);
   }

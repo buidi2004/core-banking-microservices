@@ -24,6 +24,15 @@ public class LegalController {
         )));
     }
 
+    @GetMapping("/consent")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getConsentStatus(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        return ResponseEntity.ok(ApiResponse.ok(
+                Map.of("status", "CONSENTED", "consented", true, "version", "2.4.0"),
+                "Trạng thái đồng thuận điều khoản"
+        ));
+    }
+
     @PostMapping("/consent")
     public ResponseEntity<ApiResponse<Map<String, Object>>> recordConsent(
             @RequestHeader("X-User-Id") String userId,

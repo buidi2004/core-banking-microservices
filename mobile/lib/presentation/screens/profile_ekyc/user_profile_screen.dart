@@ -14,6 +14,7 @@ import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import '../../widgets/avatar_picker_sheet.dart';
 import '../../widgets/user_avatar_widget.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final ProfileRemoteDataSource? profileDataSource;
@@ -30,6 +31,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _dobCtrl = TextEditingController();
   final TextEditingController _phoneCtrl = TextEditingController();
+  final TextEditingController _aliasCtrl = TextEditingController();
 
   // VAT Invoicing & Decree 13 Controllers (Consolidated from EmailSettingsScreen)
   final TextEditingController _companyNameCtrl = TextEditingController();
@@ -117,6 +119,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         if (pDob.isNotEmpty) _dobCtrl.text = pDob;
         final pPhone = profile['phoneNumber'] as String? ?? '';
         if (pPhone.isNotEmpty) _phoneCtrl.text = pPhone;
+        final pAlias = profile['accountAlias'] as String? ?? '';
+        if (pAlias.isNotEmpty) _aliasCtrl.text = pAlias;
 
         _cid = (profile['id'] ?? profile['userId'] ?? '').toString();
         final rawCreated = (profile['createdAt'] ?? '').toString();
@@ -152,6 +156,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     _emailCtrl.dispose();
     _dobCtrl.dispose();
     _phoneCtrl.dispose();
+    _aliasCtrl.dispose();
     _companyNameCtrl.dispose();
     _taxCodeCtrl.dispose();
     _invoiceAddressCtrl.dispose();
@@ -167,6 +172,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         email: _emailCtrl.text.trim(),
         dob: _dobCtrl.text.trim(),
       );
+
+      if (_aliasCtrl.text.trim().isNotEmpty) {
+        await _profileDs.updateAlias(_aliasCtrl.text.trim());
+      }
 
       const storage = AppSecureStorage.instance;
       await AppSecureStorage.safeWrite(storage,
@@ -532,6 +541,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       appBar: AppBar(
         title: const Text('Hồ Sơ Cá Nhân'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           if (_isEditing)
             TextButton(
@@ -709,7 +719,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'STK: $phone',
+                _aliasCtrl.text.isNotEmpty
+                    ? 'STK: $phone • Alias: ${_aliasCtrl.text}'
+                    : 'STK: $phone',
                 style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
@@ -864,6 +876,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               icon: LucideIcons.phone,
               enabled: false,
               helperText: 'Số điện thoại là tài khoản ngân hàng cố định',
+            ),
+            const SizedBox(height: 12),
+            _buildField(
+              label: 'Biệt danh tài khoản (Alias / Shop VietQR)',
+              ctrl: _aliasCtrl,
+              icon: LucideIcons.atSign,
+              enabled: _isEditing,
+              helperText:
+                  'Dùng biệt danh thay thế SĐT để nhận tiền VietQR (VD: SENHONG.SHOP)',
             ),
             const SizedBox(height: 12),
             _buildField(

@@ -134,19 +134,22 @@ class RealtimeNotificationService {
   void _subscribeAllActiveTopics() {
     if (_stompClient == null || !_stompClient!.connected) return;
 
-    // ✅ ĐÚNG THEO BE: /topic/wallets/{walletId}/notifications
+    // 1. Subscribe theo ví: /topic/wallets/{walletId}/notifications
     if (_currentWalletId != null && _currentWalletId!.isNotEmpty) {
       final walletTopic = '/topic/wallets/$_currentWalletId/notifications';
       _subscribeTopic(walletTopic);
-      return;
     }
 
-    // Chỉ fallback sang user topic khi chưa xác định được walletId,
-    // tránh nhận trùng 1 giao dịch trên cả 2 topic.
+    // 2. Subscribe theo người dùng: /topic/users/{userId}/notifications
+    // Nhờ cơ chế chống trùng _recentDeliveries trong _emit, việc subscribe cả 2 topic
+    // đảm bảo nhận 100% biến động số dư và thông báo hệ thống mà không sợ bị lặp.
     if (_currentUserId != null && _currentUserId!.isNotEmpty) {
       final userTopic = '/topic/users/$_currentUserId/notifications';
       _subscribeTopic(userTopic);
     }
+
+    // 3. Subscribe broadcast giao dịch toàn hệ thống
+    _subscribeTopic('/topic/transactions');
   }
 
   void _subscribeTopic(String destination) {

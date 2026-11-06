@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class TermsOfServiceScreen extends StatefulWidget {
   const TermsOfServiceScreen({super.key});
@@ -111,6 +112,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
       appBar: AppBar(
         title: const Text('Điều Khoản Dịch Vụ'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
             tooltip: 'Tải văn bản PDF',
@@ -239,9 +241,8 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primary
-                                : Colors.white,
+                            color:
+                                isSelected ? AppColors.primary : Colors.white,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isSelected
@@ -480,7 +481,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                 height: 16,
                 decoration: BoxDecoration(
                     color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(2)),
+                    borderRadius: BorderRadius.circular(12)),
               ),
               const SizedBox(width: 8),
               Expanded(

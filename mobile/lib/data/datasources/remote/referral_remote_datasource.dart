@@ -18,16 +18,25 @@ class ReferralRemoteDataSource {
   Future<List<Map<String, dynamic>>> getReferralHistory() async {
     final response = await _dio.get(ApiConstants.referralHistory);
     final json = Map<String, dynamic>.from(response.data as Map);
-    if (json['success'] != true || json['data'] is! List) throw apiException(json);
-    return (json['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    if (json['success'] != true) throw apiException(json);
+    final data = json['data'];
+    if (data is List) {
+      return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    if (data is Map && data['invitedUsers'] is List) {
+      return (data['invitedUsers'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    return [];
   }
 
-  Future<void> applyReferral(String referralCode) async {
+  Future<void> apply(String referralCode) async {
     final response = await _dio.post(
       ApiConstants.applyReferral,
-      queryParameters: {'referralCode': referralCode},
+      data: {'code': referralCode, 'referralCode': referralCode},
     );
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
   }
+
+  Future<void> applyReferral(String referralCode) => apply(referralCode);
 }

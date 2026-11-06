@@ -10,6 +10,7 @@ import 'package:sen_hong_bank/data/datasources/remote/bill_remote_datasource.dar
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class BillInputScreen extends StatefulWidget {
   final String? serviceType;
@@ -36,6 +37,40 @@ class _BillInputScreenState extends State<BillInputScreen> {
 
   final List<Map<String, String>> _savedCustomerCodes = [];
 
+  List<Map<String, String>> get _filteredProviders {
+    final s = (widget.serviceType ?? '').toLowerCase();
+    if (s.contains('nước') || s.contains('water')) {
+      final list =
+          _providers.where((p) => p['code']!.startsWith('WATER')).toList();
+      return list.isNotEmpty ? list : _providers;
+    }
+    if (s.contains('internet') ||
+        s.contains('wifi') ||
+        s.contains('cáp') ||
+        s.contains('truyền hình')) {
+      final list =
+          _providers.where((p) => p['code']!.startsWith('INTERNET')).toList();
+      return list.isNotEmpty ? list : _providers;
+    }
+    if (s.contains('điện') || s.contains('electric')) {
+      final list =
+          _providers.where((p) => p['code']!.startsWith('EVN')).toList();
+      return list.isNotEmpty ? list : _providers;
+    }
+    return _providers;
+  }
+
+  String _normalizeServiceType(String? raw) {
+    if (raw == null) return 'ELECTRICITY';
+    final lower = raw.toLowerCase();
+    if (lower.contains('nước') || lower.contains('water')) return 'WATER';
+    if (lower.contains('internet') ||
+        lower.contains('wifi') ||
+        lower.contains('cáp') ||
+        lower.contains('truyền hình')) return 'INTERNET';
+    return 'ELECTRICITY';
+  }
+
   Future<void> _handleLookup() async {
     final code = _customerCodeCtrl.text.trim();
     if (code.isEmpty) {
@@ -59,9 +94,11 @@ class _BillInputScreenState extends State<BillInputScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final provider = _providers[_selectedProviderIdx]['name']!;
+      final providers = _filteredProviders;
+      final idx = _selectedProviderIdx.clamp(0, providers.length - 1);
+      final provider = providers[idx]['name']!;
       final bill = await BillRemoteDataSource().lookup(
-        type: widget.serviceType ?? 'ELECTRICITY',
+        type: _normalizeServiceType(widget.serviceType),
         customerCode: code,
       );
       if (!mounted) return;
@@ -107,6 +144,7 @@ class _BillInputScreenState extends State<BillInputScreen> {
       appBar: AppBar(
         title: Text('Tra Cứu: $service'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -125,10 +163,10 @@ class _BillInputScreenState extends State<BillInputScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Column(
-                  children: List.generate(_providers.length, (idx) {
-                    final p = _providers[idx];
+                  children: List.generate(_filteredProviders.length, (idx) {
+                    final p = _filteredProviders[idx];
                     final isSelected = _selectedProviderIdx == idx;
-                    final isLast = idx == _providers.length - 1;
+                    final isLast = idx == _filteredProviders.length - 1;
                     return Column(
                       children: [
                         Material(

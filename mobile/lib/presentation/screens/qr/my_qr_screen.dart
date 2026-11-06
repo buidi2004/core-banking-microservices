@@ -15,6 +15,7 @@ import 'package:sen_hong_bank/data/datasources/remote/qr_remote_datasource.dart'
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class MyQRScreen extends StatefulWidget {
   const MyQRScreen({super.key});
@@ -317,6 +318,7 @@ class _MyQRScreenState extends State<MyQRScreen> {
       appBar: AppBar(
         title: const Text('Mã QR Của Tôi'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
             tooltip: 'Quét mã VietQR',
@@ -441,7 +443,10 @@ class _MyQRScreenState extends State<MyQRScreen> {
                               style: const TextStyle(
                                   color: AppColors.successTextLight,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 13),
+                                  fontSize: 13,
+                                  fontFeatures: [
+                                    FontFeature.tabularFigures(),
+                                  ]),
                             ),
                           ),
                         ],
@@ -626,9 +631,8 @@ class _MyQRScreenState extends State<MyQRScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primary
-                                  : Colors.white,
+                              color:
+                                  isSelected ? AppColors.primary : Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: isSelected
@@ -788,7 +792,10 @@ class _MyQRScreenState extends State<MyQRScreen> {
                                 style: const TextStyle(
                                     color: AppColors.successTextLight,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 14),
+                                    fontSize: 14,
+                                    fontFeatures: [
+                                      FontFeature.tabularFigures(),
+                                    ]),
                               ),
                             ],
                           ),

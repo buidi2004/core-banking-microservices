@@ -14,6 +14,12 @@ public class TransferRequest {
     @JsonAlias({"receiverId", "receiver_id", "targetId", "target_id"})
     private String targetUserId;
 
+    @JsonAlias({"source_wallet_id", "sourceWallet"})
+    private String sourceWalletId;
+
+    @JsonAlias({"target_wallet_id", "targetWallet", "receiverWalletId", "receiver_wallet_id"})
+    private String targetWalletId;
+
     @JsonAlias({"senderPhone", "sender_phone", "sourcePhone"})
     private String senderPhone;
 
@@ -33,5 +39,8 @@ public class TransferRequest {
     private String idempotencyKey;
 
     private String pinToken;
+
+    @JsonAlias({"biometricToken", "biometric_token", "faceToken", "face_token"})
+    private String biometricToken;
 }
 

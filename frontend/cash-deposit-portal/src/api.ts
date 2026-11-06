@@ -1,4 +1,4 @@
-import { CashDeposit, LoggedInStaff, LoanApplication, VaultSummary, AdminAccount, LedgerReconciliation, LedgerJournalEntry } from './types';
+import { CashDeposit, LoggedInStaff, LoanApplication, VaultSummary, AdminAccount, LedgerReconciliation, LedgerJournalEntry, KycApplication, AdminSavingsAccount, SupportTicket, TicketMessage, AmlTransaction, AmlReportResponse } from './types';
 
 const API_BASE = ''; // Proxied by Vite to http://localhost:8080
 
@@ -348,6 +348,7 @@ export const ApiService = {
             customerName: item.customerName || 'Khách hàng',
             phoneNumber: item.phoneNumber || 'N/A',
             balance: Number(item.balance || 0),
+            overdraftLimit: Number(item.overdraftLimit || 0),
             currency: item.currency || 'VND',
             status: item.status || 'ACTIVE',
             kycTier: item.kycTier || 'TIER_1',
@@ -383,6 +384,47 @@ export const ApiService = {
     }
   },
 
+  // --- TÍNH NĂNG 4.1: HẠN MỨC THẤU CHI (OVERDRAFT LIMIT) ---
+  async setOverdraftLimit(
+    staff: LoggedInStaff,
+    walletId: string,
+    limit: number
+  ): Promise<{ success: boolean; message?: string; data?: any }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/wallets/admin/accounts/${walletId}/overdraft-limit?limit=${limit}`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return { success: true, message: json.message || 'Cập nhật hạn mức thấu chi thành công', data: json.data };
+      }
+      return { success: false, message: json.message || 'Lỗi khi cập nhật hạn mức thấu chi' };
+    } catch (err: any) {
+      return { success: false, message: err.message };
+    }
+  },
+
+  async accrueOverdraftInterest(
+    staff?: LoggedInStaff | null,
+    annualRate: number = 16.0,
+    days: number = 1
+  ): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/wallets/admin/overdraft-interest/accrue?annualRate=${annualRate}&daysInPeriod=${days}`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return { success: true, message: json.message || 'Tính lãi vay thấu chi thành công', data: json.data };
+      }
+      return { success: false, message: json.message || 'Lỗi tính lãi thấu chi' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi kết nối tính lãi thấu chi' };
+    }
+  },
+
   // --- LEDGER RECONCILIATION & JOURNAL ENTRIES ---
   async fetchLedgerBalanceCheck(staff?: LoggedInStaff | null): Promise<LedgerReconciliation | null> {
     try {
@@ -409,6 +451,42 @@ export const ApiService = {
     } catch (e) {
       console.error('fetchLedgerBalanceCheck error:', e);
       return null;
+    }
+  },
+
+  async closeEndOfDay(staff?: LoggedInStaff | null): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/ledger/admin/eod/close-day`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return { success: true, message: json.message || 'Khóa sổ kế toán cuối ngày thành công', data: json.data };
+      }
+      return { success: false, message: json.message || 'Lỗi khóa sổ cuối ngày' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi kết nối khóa sổ cuối ngày' };
+    }
+  },
+
+  async accrueCasaInterest(
+    staff?: LoggedInStaff | null,
+    annualRate: number = 0.2,
+    days: number = 30
+  ): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/wallets/admin/casa-interest/accrue?annualRate=${annualRate}&daysInPeriod=${days}`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return { success: true, message: json.message || 'Tính lãi tiền gửi không kỳ hạn CASA thành công', data: json.data };
+      }
+      return { success: false, message: json.message || 'Lỗi tính lãi CASA' };
+    } catch (e: any) {
+      return { success: false, message: e.message };
     }
   },
 
@@ -445,6 +523,263 @@ export const ApiService = {
     } catch (e) {
       console.error('fetchJournalEntries error:', e);
       return [];
+    }
+  },
+
+  // --- eKYC Management ---
+  async fetchPendingKyc(staff?: LoggedInStaff | null): Promise<KycApplication[]> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/kyc/pending`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data)) {
+          return json.data.map((item: any) => ({
+            id: item.id,
+            userId: item.userId,
+            documentType: item.documentType || 'CCCD',
+            documentNumber: item.documentNumber,
+            frontImageUrl: item.frontImageUrl,
+            backImageUrl: item.backImageUrl,
+            faceImageUrl: item.faceImageUrl,
+            verificationStatus: item.verificationStatus || 'PENDING',
+            rejectReason: item.rejectReason,
+            currentKycTier: item.currentKycTier || 'BASIC',
+            createdAt: item.createdAt || new Date().toISOString(),
+            verifiedAt: item.verifiedAt,
+          }));
+        }
+      }
+      return [];
+    } catch (e) {
+      console.error('fetchPendingKyc error:', e);
+      return [];
+    }
+  },
+
+  async reviewKyc(
+    staff: LoggedInStaff | null,
+    kycId: string,
+    status: 'APPROVED' | 'REJECTED',
+    reason?: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const query = new URLSearchParams({ status });
+      if (reason) query.set('reason', reason);
+      const res = await fetch(`${API_BASE}/api/v1/kyc/${kycId}/review?${query.toString()}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(staff),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true, message: data.message || 'Cập nhật trạng thái duyệt eKYC thành công' };
+      }
+      return { success: false, message: data.message || 'Thao tác không thành công' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi kết nối duyệt eKYC' };
+    }
+  },
+
+  // --- Admin Savings Accounts ---
+  async fetchAdminSavings(staff?: LoggedInStaff | null): Promise<AdminSavingsAccount[]> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/savings/admin/accounts`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data)) {
+          return json.data.map((item: any) => ({
+            id: item.id,
+            userId: item.userId,
+            walletId: item.walletId,
+            accountNumber: item.accountNumber,
+            productType: item.productType || 'TERM_DEPOSIT',
+            productName: item.productName || 'Tiết kiệm có kỳ hạn',
+            principal: Number(item.principal || 0),
+            interestRate: Number(item.interestRate || 0),
+            termMonths: Number(item.termMonths || 0),
+            expectedInterest: Number(item.expectedInterest || 0),
+            accruedInterest: Number(item.accruedInterest || 0),
+            rolloverType: item.rolloverType || 'PRINCIPAL_AND_INTEREST',
+            status: item.status || 'ACTIVE',
+            startDate: item.startDate || new Date().toISOString().split('T')[0],
+            maturityDate: item.maturityDate || new Date().toISOString().split('T')[0],
+          }));
+        }
+      }
+      return [];
+    } catch (e) {
+      console.error('fetchAdminSavings error:', e);
+      return [];
+    }
+  },
+
+  async withdrawSavingsPartial(
+    staff: LoggedInStaff | null,
+    savingsId: string,
+    amount: number,
+    pinToken?: string
+  ): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/savings/accounts/${savingsId}/withdraw-partial`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify({ withdrawAmount: amount, pinToken }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        return { success: true, message: json.message || 'Rút gốc từng phần thành công', data: json.data };
+      }
+      return { success: false, message: json.message || 'Lỗi rút gốc từng phần' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi kết nối rút gốc từng phần' };
+    }
+  },
+
+  // --- Customer Support Helpdesk ---
+  async fetchSupportTickets(staff?: LoggedInStaff | null): Promise<SupportTicket[]> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/support/admin/tickets`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data)) {
+          return json.data;
+        }
+      }
+      return [];
+    } catch (e) {
+      console.error('fetchSupportTickets error:', e);
+      return [];
+    }
+  },
+
+  async fetchTicketDetail(staff: LoggedInStaff | null, ticketId: string): Promise<{ ticket: SupportTicket; messages: TicketMessage[] } | null> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/support/tickets/${ticketId}`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) {
+          return json.data;
+        }
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchTicketDetail error:', e);
+      return null;
+    }
+  },
+
+  async sendTicketReply(staff: LoggedInStaff | null, ticketId: string, content: string): Promise<{ success: boolean; message: string; data?: TicketMessage }> {
+    try {
+      const query = new URLSearchParams({ content, senderType: 'STAFF' });
+      const res = await fetch(`${API_BASE}/api/v1/support/tickets/${ticketId}/messages?${query.toString()}`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true, message: data.message || 'Phản hồi thành công', data: data.data };
+      }
+      return { success: false, message: data.message || 'Không thể gửi phản hồi' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi gửi tin nhắn phản hồi' };
+    }
+  },
+
+  async resolveSupportTicket(staff: LoggedInStaff | null, ticketId: string, notes?: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const query = new URLSearchParams();
+      if (notes) query.set('resolutionNotes', notes);
+      const res = await fetch(`${API_BASE}/api/v1/support/tickets/${ticketId}/resolve?${query.toString()}`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true, message: data.message || 'Đã giải quyết yêu cầu hỗ trợ' };
+      }
+      return { success: false, message: data.message || 'Không thể giải quyết ticket' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi xử lý yêu cầu' };
+    }
+  },
+
+  async closeSupportTicket(staff: LoggedInStaff | null, ticketId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/support/tickets/${ticketId}/close`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true, message: data.message || 'Đã đóng yêu cầu hỗ trợ' };
+      }
+      return { success: false, message: data.message || 'Không thể đóng ticket' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi đóng ticket' };
+    }
+  },
+
+  // --- Export Statements & Receipts ---
+  async exportTransactionsCsv(staff?: LoggedInStaff | null, walletId?: string): Promise<Blob | null> {
+    try {
+      const query = new URLSearchParams();
+      if (walletId) query.set('walletId', walletId);
+      const res = await fetch(`${API_BASE}/api/v1/transactions/export/csv?${query.toString()}`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        return await res.blob();
+      }
+      return null;
+    } catch (e) {
+      console.error('exportTransactionsCsv error:', e);
+      return null;
+    }
+  },
+
+  async downloadReceiptPdf(staff: LoggedInStaff | null, txId: string): Promise<Blob | null> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/transactions/${txId}/receipt.pdf`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        return await res.blob();
+      }
+      return null;
+    } catch (e) {
+      console.error('downloadReceiptPdf error:', e);
+      return null;
+    }
+  },
+
+  // --- AML Large Transactions Monitoring (Luật PCRT 2022) ---
+  async fetchAmlLargeTransactions(
+    staff?: LoggedInStaff | null,
+    minAmount: number = 400000000,
+    page: number = 0,
+    size: number = 50
+  ): Promise<AmlReportResponse | null> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/transactions/aml/large?minAmount=${minAmount}&page=${page}&size=${size}`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) {
+          return json.data;
+        }
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchAmlLargeTransactions error:', e);
+      return null;
     }
   },
 };

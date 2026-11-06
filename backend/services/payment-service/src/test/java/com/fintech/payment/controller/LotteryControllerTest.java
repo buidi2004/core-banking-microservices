@@ -95,5 +95,26 @@ class LotteryControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.ticketCode").value("VTL-1234567"));
     }
-}
 
+    @Test
+    @DisplayName("GET /api/v1/lottery/my-tickets từ chối request thiếu trusted identity")
+    void getMyTickets_MissingUserId_Unauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/lottery/my-tickets"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/lottery/buy từ chối request thiếu trusted identity")
+    void buyTicket_MissingUserId_Unauthorized() throws Exception {
+        LotteryBuyRequest req = LotteryBuyRequest.builder()
+                .gameName("Mega 6/45")
+                .numbers(List.of(3, 12, 18, 27, 35, 42))
+                .quantity(1)
+                .build();
+
+        mockMvc.perform(post("/api/v1/lottery/buy")
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isUnauthorized());
+    }
+}

@@ -15,6 +15,7 @@ import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class PhoneTopupConfirmScreen extends StatefulWidget {
   final String phoneNumber;
@@ -220,6 +221,7 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
       appBar: AppBar(
         title: const Text('Xác Nhận Nạp Tiền'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -298,10 +300,10 @@ class _PhoneTopupConfirmScreenState extends State<PhoneTopupConfirmScreen> {
                               const SizedBox(width: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 7, vertical: 2),
+                                    horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(
                                   color: AppColors.deepNavy.withOpacity(0.48),
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
                                       color: Colors.white.withOpacity(0.45),
                                       width: 0.8),

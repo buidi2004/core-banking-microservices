@@ -1,5 +1,6 @@
 package com.fintech.payment.controller;
 
+import com.fintech.payment.grpc.WalletGrpcClient;
 import com.fintech.payment.domain.entity.Transaction;
 import com.fintech.payment.dto.ApiResponse;
 import com.fintech.payment.repository.TransactionRepository;
@@ -32,6 +33,9 @@ class TransactionHistoryControllerTest {
 
     @Mock
     private ReceiptExportService receiptExportService;
+
+    @Mock
+    private WalletGrpcClient walletGrpcClient;
 
     @InjectMocks
     private TransactionHistoryController controller;
@@ -123,7 +127,7 @@ class TransactionHistoryControllerTest {
                 .thenReturn(new PageImpl<>(List.of(reversedTransfer, normalTransfer)));
 
         ResponseEntity<ApiResponse<Map<String, Object>>> response =
-                controller.list("wallet-source", null, 0, 10);
+                controller.list(null, "wallet-source", null, 0, 10);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().getData().get("content");
@@ -156,5 +160,18 @@ class TransactionHistoryControllerTest {
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isEqualTo(csvBytes);
         assertThat(response.getHeaders().getFirst("Content-Disposition")).contains("statement-wallet-source.csv");
+    }
+
+    @Test
+    @DisplayName("GET /export/{format}: Xuất toàn bộ sao kê hệ thống (Staff/Admin) khi không truyền walletId")
+    void exportTransactions_All_Success() {
+        byte[] csvBytes = "Mã giao dịch,Thời gian,Số tiền\nTXC-ALL,2026-10-21,1000000".getBytes();
+        when(receiptExportService.exportTransactions(null, "csv")).thenReturn(csvBytes);
+
+        ResponseEntity<byte[]> response = controller.exportTransactions("csv", null, null);
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        assertThat(response.getBody()).isEqualTo(csvBytes);
+        assertThat(response.getHeaders().getFirst("Content-Disposition")).contains("statement-all.csv");
     }
 }

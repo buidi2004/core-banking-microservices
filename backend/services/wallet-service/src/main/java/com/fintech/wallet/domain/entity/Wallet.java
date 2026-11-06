@@ -30,8 +30,11 @@ public class Wallet {
     @Column(name = "user_id", length = 36, nullable = false)
     private String userId;
 
-    @Column(nullable = false, columnDefinition = "bigint default 0 check (balance >= 0)")
+    @Column(nullable = false, columnDefinition = "bigint default 0")
     private Long balance;
+
+    @Column(name = "overdraft_limit", nullable = false, columnDefinition = "bigint default 0")
+    private Long overdraftLimit;
 
     @Column(name = "reserved_balance", nullable = false, columnDefinition = "bigint default 0 check (reserved_balance >= 0)")
     private Long reservedBalance;
@@ -71,11 +74,23 @@ public class Wallet {
         if (status == null) status = "ACTIVE";
         if (dailyLimit == null) dailyLimit = 50000000L;
         if (dailySpent == null) dailySpent = 0L;
+        if (overdraftLimit == null) overdraftLimit = 0L;
         if (version == null) version = 0L;
     }
 
     public Long availableBalance() {
         return balance - reservedBalance;
+    }
+
+    /**
+     * Số dư khả dụng bao gồm hạn mức thấu chi (tính năng 4.1):
+     * balance + overdraft_limit - reserved_balance.
+     */
+    public Long effectiveAvailableBalance() {
+        long od = overdraftLimit != null ? overdraftLimit : 0L;
+        long bal = balance != null ? balance : 0L;
+        long reserved = reservedBalance != null ? reservedBalance : 0L;
+        return bal + od - reserved;
     }
 
     public boolean isActive() {

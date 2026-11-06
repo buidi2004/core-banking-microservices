@@ -16,6 +16,7 @@ import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.d
 import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class ConfirmTransferScreen extends StatefulWidget {
   final String recipient;
@@ -142,9 +143,12 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
     final totalRequired = widget.amount + _fee;
     if (!_isLoadingWallet && _walletBalance < totalRequired) {
       HapticFeedback.vibrate();
+      final feeText = _fee > 0
+          ? '(bao gồm phí ${CurrencyFormatter.formatVND(_fee)})'
+          : '(Miễn phí chuyển tiền 100%)';
       AppAlerts.showError(
         context,
-        'Số dư ví (${CurrencyFormatter.formatVND(_walletBalance)}) không đủ để chuyển ${CurrencyFormatter.formatVND(totalRequired)} (bao gồm phí). Vui lòng nạp thêm tiền.',
+        'Số dư ví (${CurrencyFormatter.formatVND(_walletBalance)}) không đủ để chuyển ${CurrencyFormatter.formatVND(totalRequired)} $feeText. Vui lòng nạp thêm tiền.',
         title: 'Số dư không đủ',
         actionLabel: 'Nạp tiền',
         onAction: () => context.push('/deposit'),
@@ -307,8 +311,9 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Xác Nhận Giao Dịch'),
+        title: Text(_showPinModal ? 'Xác Thực PIN' : 'Xác Nhận Giao Dịch'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         leading: IconButton(
           icon: const Icon(CupertinoIcons.arrow_left),
           onPressed: _isSubmitting
@@ -332,115 +337,127 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Amount Summary
-                Center(
-                  child: Column(
-                    children: [
-                      Text('Tổng tiền thanh toán',
-                          style: AppTypography.bodyMedium(
-                              color: AppColors.textSecondaryLight)),
-                      const SizedBox(height: 6),
-                      Text(
-                        CurrencyFormatter.formatVND(widget.amount),
-                        style: AppTypography.displayLarge(
-                                color: AppColors.primaryDark)
-                            .copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                if (isInsufficientBalance) ...[
-                  InlineWarningBanner(
-                    title: 'Số dư khả dụng không đủ',
-                    message:
-                        'Tổng số tiền cần thanh toán (${CurrencyFormatter.formatVND(totalRequired)}) vượt quá số dư ví hiện có (${CurrencyFormatter.formatVND(_walletBalance)}). Vui lòng nạp thêm tiền để tiếp tục.',
-                    type: AlertType.error,
-                    actionLabel: 'Nạp tiền ngay',
-                    onAction: () => context.push('/deposit'),
-                  ),
-                  const SizedBox(height: 16),
-                ] else ...[
-                  const InlineWarningBanner(
-                    title: 'Cảnh báo an toàn chuyển tiền',
-                    message:
-                        'Quý khách vui lòng kiểm tra kỹ số tài khoản và họ tên người nhận. Tuyệt đối không chia sẻ mã PIN hay OTP cho bất kỳ ai (kể cả nhân viên SenBank).',
-                    type: AlertType.warning,
-                  ),
-                  const SizedBox(height: 16),
-                ],
-
-                // Details Card (GlassCard)
-                GlassCard(
-                  quality: GlassQuality.minimal,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
+                if (!_showPinModal) ...[
+                  // Amount Summary
+                  Center(
                     child: Column(
                       children: [
-                        _buildInfoRow(
-                            'Người nhận', _recipientName.toUpperCase()),
-                        if (_recipientPhone.isNotEmpty) ...[
-                          const Divider(
-                              height: 20, color: AppColors.cardBorderLight),
-                          _buildInfoRow('Số tài khoản / SĐT', _recipientPhone),
-                        ],
-                        const Divider(
-                            height: 20, color: AppColors.cardBorderLight),
-                        _buildInfoRow(
-                            'Phương thức', 'Ví Sen Hồng (Nội bộ 24/7)'),
-                        const Divider(
-                            height: 20, color: AppColors.cardBorderLight),
-                        _buildInfoRow(
-                            'Phí giao dịch', CurrencyFormatter.formatVND(_fee),
-                            valueColor: AppColors.successTextLight),
-                        const Divider(
-                            height: 20, color: AppColors.cardBorderLight),
-                        _buildInfoRow('Nội dung',
-                            widget.note.isEmpty ? 'Chuyen tien' : widget.note),
-                        const Divider(
-                            height: 20, color: AppColors.cardBorderLight),
-                        _buildInfoRow(
-                          'Nguồn tiền',
-                          _isLoadingWallet
-                              ? 'Ví chính (Đang tải...)'
-                              : 'Ví chính (Khả dụng: ${CurrencyFormatter.formatVND(_walletBalance)})',
-                          valueColor:
-                              isInsufficientBalance ? AppColors.error : null,
+                        Text('Tổng tiền thanh toán',
+                            style: AppTypography.bodyMedium(
+                                color: AppColors.textSecondaryLight)),
+                        const SizedBox(height: 6),
+                        Text(
+                          CurrencyFormatter.formatVND(widget.amount),
+                          style: AppTypography.displayLarge(
+                                  color: AppColors.primaryDark)
+                              .copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontFeatures: const [
+                              FontFeature.tabularFigures(),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 14),
+                  const SizedBox(height: 18),
 
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _saveBeneficiary,
-                      activeColor: AppColors.primary,
-                      onChanged: (v) =>
-                          setState(() => _saveBeneficiary = v ?? true),
+                  if (isInsufficientBalance) ...[
+                    InlineWarningBanner(
+                      title: 'Số dư khả dụng không đủ',
+                      message:
+                          'Tổng số tiền cần thanh toán (${CurrencyFormatter.formatVND(totalRequired)}) vượt quá số dư ví hiện có (${CurrencyFormatter.formatVND(_walletBalance)}). Vui lòng nạp thêm tiền để tiếp tục.',
+                      type: AlertType.error,
+                      actionLabel: 'Nạp tiền ngay',
+                      onAction: () => context.push('/deposit'),
                     ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(
-                            () => _saveBeneficiary = !_saveBeneficiary),
-                        child: Text(
-                          'Lưu vào danh bạ người thụ hưởng',
-                          style: AppTypography.bodySmall(
-                              color: AppColors.textSecondaryLight),
-                        ),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    const InlineWarningBanner(
+                      title: 'Cảnh báo an toàn chuyển tiền',
+                      message:
+                          'Quý khách vui lòng kiểm tra kỹ số tài khoản và họ tên người nhận. Tuyệt đối không chia sẻ mã PIN hay OTP cho bất kỳ ai (kể cả nhân viên SenBank).',
+                      type: AlertType.warning,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Details Card (GlassCard)
+                  GlassCard(
+                    quality: GlassQuality.minimal,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          _buildInfoRow(
+                              'Người nhận', _recipientName.toUpperCase()),
+                          if (_recipientPhone.isNotEmpty) ...[
+                            const Divider(
+                                height: 20, color: AppColors.cardBorderLight),
+                            _buildInfoRow(
+                                'Số tài khoản / SĐT', _recipientPhone),
+                          ],
+                          const Divider(
+                              height: 20, color: AppColors.cardBorderLight),
+                          _buildInfoRow(
+                              'Phương thức', 'Ví Sen Hồng (Nội bộ 24/7)'),
+                          const Divider(
+                              height: 20, color: AppColors.cardBorderLight),
+                          _buildInfoRow(
+                              'Phí giao dịch',
+                              _fee > 0
+                                  ? CurrencyFormatter.formatVND(_fee)
+                                  : '0 đ (Miễn phí 100%)',
+                              valueColor: AppColors.successTextLight),
+                          const Divider(
+                              height: 20, color: AppColors.cardBorderLight),
+                          _buildInfoRow(
+                              'Nội dung',
+                              widget.note.isEmpty
+                                  ? 'Chuyen tien'
+                                  : widget.note),
+                          const Divider(
+                              height: 20, color: AppColors.cardBorderLight),
+                          _buildInfoRow(
+                            'Nguồn tiền',
+                            _isLoadingWallet
+                                ? 'Ví chính (Đang tải...)'
+                                : 'Ví chính (Khả dụng: ${CurrencyFormatter.formatVND(_walletBalance)})',
+                            valueColor:
+                                isInsufficientBalance ? AppColors.error : null,
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
-                if (!_showPinModal) ...[
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _saveBeneficiary,
+                        activeColor: AppColors.primary,
+                        onChanged: (v) =>
+                            setState(() => _saveBeneficiary = v ?? true),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(
+                              () => _saveBeneficiary = !_saveBeneficiary),
+                          child: Text(
+                            'Lưu vào danh bạ người thụ hưởng',
+                            style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
                   SizedBox(
                     width: double.infinity,
                     height: 50,

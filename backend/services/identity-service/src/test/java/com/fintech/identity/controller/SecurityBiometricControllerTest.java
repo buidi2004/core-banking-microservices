@@ -2,6 +2,7 @@ package com.fintech.identity.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.identity.security.JwtTokenProvider;
+import com.fintech.identity.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,12 +35,15 @@ class SecurityBiometricControllerTest {
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
 
+    @MockBean
+    private AuthService authService;
+
     private final String userId = UUID.randomUUID().toString();
 
     @Test
     @DisplayName("POST /api/v1/security/biometric/verify: Xác thực sinh trắc học thiết bị và cấp PinToken")
     void verifyBiometric_Success() throws Exception {
-        when(jwtTokenProvider.generatePinToken(userId)).thenReturn("mock-pin-jwt-token-12345");
+        when(jwtTokenProvider.generateBiometricToken(userId)).thenReturn("mock-pin-jwt-token-12345");
 
         mockMvc.perform(post("/api/v1/security/biometric/verify")
                         .header("X-User-Id", userId)
@@ -46,6 +52,21 @@ class SecurityBiometricControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.pinToken").value("mock-pin-jwt-token-12345"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/security/emergency-lock: Khóa khẩn cấp tài khoản an toàn")
+    void emergencyLock_Success() throws Exception {
+        when(authService.emergencyLock(any(), eq(userId), any())).thenReturn(Map.of("status", "BLOCKED"));
+
+        mockMvc.perform(post("/api/v1/security/emergency-lock")
+                        .header("X-User-Id", userId)
+                        .header("Authorization", "Bearer test-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("reason", "Nghi lừa đảo"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.status").value("BLOCKED"));
     }
 }
 

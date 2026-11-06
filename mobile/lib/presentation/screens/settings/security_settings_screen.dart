@@ -7,6 +7,7 @@ import 'package:sen_hong_bank/core/constants/app_constants.dart';
 import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -386,49 +387,87 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   }
 
   void _showEmergencyLockDialog() {
+    bool isLocking = false;
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0D1B2A),
-        title: const Row(
-          children: [
-            Icon(CupertinoIcons.shield_slash_fill,
-                color: AppColors.error, size: 24),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text('Khóa Khẩn Cấp Tài Khoản?',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold)),
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF0D1B2A),
+          title: const Row(
+            children: [
+              Icon(CupertinoIcons.shield_slash_fill,
+                  color: AppColors.error, size: 24),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text('Khóa Khẩn Cấp Tài Khoản?',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Tất cả giao dịch trực tuyến, thẻ và phiên đăng nhập trên các thiết bị sẽ bị tạm khóa ngay lập tức để bảo vệ tài sản số dư. Bạn sẽ cần xác thực Face Match eKYC hoặc ra quầy giao dịch để mở khóa lại.',
+            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isLocking ? null : () => Navigator.pop(ctx),
+              child:
+                  const Text('Hủy bỏ', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+              onPressed: isLocking
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final router = GoRouter.of(context);
+                      setDialogState(() => isLocking = true);
+                      try {
+                        await AuthRemoteDataSource().emergencyLock(
+                          reason:
+                              'Người dùng kích hoạt Khóa khẩn cấp bảo vệ số dư tài khoản',
+                        );
+                        await AppSecureStorage.safeDeleteAll(
+                            AppSecureStorage.instance);
+                        if (!ctx.mounted || !messenger.mounted) return;
+                        Navigator.pop(ctx);
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            backgroundColor: AppColors.error,
+                            duration: Duration(seconds: 5),
+                            content: Text(
+                                'Tài khoản đã được KHÓA KHẨN CẤP thành công. Vui lòng liên hệ Hotline 1900 6688 khi cần hỗ trợ mở lại.'),
+                          ),
+                        );
+                        router.go('/auth/login');
+                      } catch (e) {
+                        if (ctx.mounted) {
+                          setDialogState(() => isLocking = false);
+                        }
+                        if (!messenger.mounted) return;
+                        messenger.showSnackBar(
+                          SnackBar(
+                            backgroundColor: AppColors.error,
+                            content: Text('Lỗi khi khóa khẩn cấp: $e'),
+                          ),
+                        );
+                      }
+                    },
+              child: isLocking
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text('Xác nhận Khóa Ngay'),
             ),
           ],
         ),
-        content: const Text(
-          'Tất cả giao dịch trực tuyến, thẻ và phiên đăng nhập trên các thiết bị sẽ bị tạm khóa ngay lập tức trong 30 giây để bảo vệ số dư của bạn. Bạn sẽ cần xác thực Face Match eKYC hoặc ra quầy giao dịch để mở khóa lại.',
-          style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child:
-                const Text('Hủy bỏ', style: TextStyle(color: Colors.white54)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  backgroundColor: AppColors.error,
-                  content: Text(
-                      'Tài khoản đã được KHÓA KHẨN CẤP thành công. Vui lòng liên hệ Hotline 1900 6688 khi cần mở lại.'),
-                ),
-              );
-            },
-            child: const Text('Xác nhận Khóa Ngay'),
-          ),
-        ],
       ),
     );
   }
@@ -440,6 +479,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       appBar: AppBar(
         title: const Text('Cài Đặt Bảo Mật & An Ninh'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: ListView(
@@ -651,7 +691,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                             'Thiết bị chính: Thiết bị này',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: Colors.white70, fontSize: 11),
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 11),
                           ),
                         ],
                       ),
@@ -1137,13 +1178,14 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       Text(
                         log['title']!,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 12),
                       ),
                       Text(
                         log['time']!,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            const TextStyle(color: Colors.white70, fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.white70, fontSize: 12),
                       ),
                     ],
                   ),
@@ -1154,7 +1196,11 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: AppColors.emeraldGreen.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.emeraldGreen.withValues(alpha: 0.3),
+                      width: 0.5,
+                    ),
                   ),
                   child: Text(
                     log['status']!,

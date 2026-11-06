@@ -120,6 +120,8 @@ export interface AdminAccount {
   customerName: string;
   phoneNumber: string;
   balance: number;
+  /** Hạn mức thấu chi cấp cho ví (tính năng 4.1). 0 = không thấu chi */
+  overdraftLimit: number;
   currency: string;
   status: 'ACTIVE' | 'BLOCKED';
   kycTier: string;
@@ -155,5 +157,95 @@ export interface LedgerJournalEntry {
   totalCredit?: number;
   postings?: LedgerPostingItem[];
   createdAt: string;
+}
+
+// --- eKYC Management Types ---
+export interface KycApplication {
+  id: string;
+  userId: string;
+  documentType: string;
+  documentNumber: string;
+  frontImageUrl?: string;
+  backImageUrl?: string;
+  faceImageUrl?: string;
+  verificationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectReason?: string;
+  currentKycTier?: string;
+  createdAt: string;
+  verifiedAt?: string;
+}
+
+// --- Admin Savings Management Types ---
+export interface AdminSavingsAccount {
+  id: string;
+  userId: string;
+  walletId: string;
+  accountNumber: string;
+  productType: string;
+  productName: string;
+  principal: number;
+  interestRate: number;
+  termMonths: number;
+  expectedInterest?: number;
+  accruedInterest?: number;
+  rolloverType: string;
+  status: 'ACTIVE' | 'SETTLED' | 'CLOSED';
+  startDate: string;
+  maturityDate: string;
+}
+
+// --- Support Helpdesk Types ---
+export interface TicketMessage {
+  id: string;
+  ticketId: string;
+  senderId: string;
+  senderType: 'USER' | 'STAFF' | 'SYSTEM';
+  content: string;
+  sentAt: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  subject: string;
+  description: string;
+  category: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  priority: 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
+  messagesJson?: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// --- Anti-Money Laundering (AML) Types (Luật PCRT 2022) ---
+export interface AmlTransaction {
+  id: string;
+  transactionId: string;
+  transactionCode?: string;
+  type: string;
+  status: string;
+  amount: number;
+  fee?: number;
+  currency: string;
+  note?: string;
+  createdAt: string;
+  timestamp?: string;
+  sourceWalletId?: string;
+  targetWalletId?: string;
+  counterpartyWalletId?: string;
+  runningBalance?: number;
+}
+
+export interface AmlReportResponse {
+  content: AmlTransaction[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  minThreshold: number;
+  standard: string;
 }
 

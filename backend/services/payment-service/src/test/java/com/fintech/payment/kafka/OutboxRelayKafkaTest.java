@@ -46,7 +46,7 @@ class OutboxRelayKafkaTest {
     @DisplayName("Outbox Relay publish sự kiện Kafka khi Saga hoàn thành: key = transaction_id, topic lifecycle")
     void shouldPublishKafkaLifecycleEventWhenRelayingCompletedEvent() {
         OutboxEvent event = OutboxEvent.pending("Transaction", TX_ID, "TransactionCompletedEvent", "{\"amount\":100000}");
-        when(outboxEventRepository.findPendingRetryable(anyInt())).thenReturn(Collections.singletonList(event));
+        when(outboxEventRepository.findPendingRetryable(anyInt(), any())).thenReturn(Collections.singletonList(event));
         when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
 
         relay.relayPendingEvents();
@@ -72,7 +72,7 @@ class OutboxRelayKafkaTest {
     @Test
     @DisplayName("Không có sự kiện PENDING thì không gọi Kafka Producer")
     void shouldNotCallKafkaWhenNoPendingEvent() {
-        when(outboxEventRepository.findPendingRetryable(anyInt())).thenReturn(Collections.emptyList());
+        when(outboxEventRepository.findPendingRetryable(anyInt(), any())).thenReturn(Collections.emptyList());
 
         relay.relayPendingEvents();
 
@@ -84,7 +84,7 @@ class OutboxRelayKafkaTest {
     @DisplayName("Sự kiện REVERSED cũng được stream Kafka với key = transaction_id")
     void shouldStreamReversedEventToKafka() {
         OutboxEvent event = OutboxEvent.pending("Transaction", TX_ID, "TransactionReversedEvent", "{\"reason\":\"credit failed\"}");
-        when(outboxEventRepository.findPendingRetryable(anyInt())).thenReturn(Collections.singletonList(event));
+        when(outboxEventRepository.findPendingRetryable(anyInt(), any())).thenReturn(Collections.singletonList(event));
         when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
 
         relay.relayPendingEvents();

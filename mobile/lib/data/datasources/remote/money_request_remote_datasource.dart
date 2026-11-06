@@ -69,7 +69,7 @@ class MoneyRequestRemoteDataSource {
       data: {
         'requesterId': activeRequesterId,
         'targetUserId': activeTargetUserId,
-        'amount': amount.toInt(),
+        'amount': amount,
         if (activeNote != null && activeNote.isNotEmpty) 'note': activeNote,
         if (expiresInHours != null && expiresInHours > 0) 'expiresInHours': expiresInHours,
       },

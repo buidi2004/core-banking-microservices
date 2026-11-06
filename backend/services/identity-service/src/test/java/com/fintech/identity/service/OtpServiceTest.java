@@ -57,10 +57,19 @@ class OtpServiceTest {
     }
 
     @Test
-    @DisplayName("sendOtp: Sinh mã 6 số ngẫu nhiên và lưu Redis với TTL 180s thành công")
-    void sendOtp_Success() {
+    @DisplayName("sendOtp: Sinh mã 6 số ngẫu nhiên và lưu Redis với TTL 180s thành công (FORGOT_PASSWORD)")
+    void sendOtp_Success() throws Exception {
         String phone = "0987654321";
         String purpose = "FORGOT_PASSWORD";
+
+        UserEntity user = UserEntity.builder()
+                .id(UUID.randomUUID().toString())
+                .phoneNumber(phone)
+                .email("customer@gmail.com")
+                .build();
+        when(userRepository.existsByPhoneNumber(phone)).thenReturn(true);
+        when(userRepository.findByPhoneNumber(phone)).thenReturn(Optional.of(user));
+        lenient().when(redisTemplate.hasKey(anyString())).thenReturn(false);
 
         OtpSendResponse response = otpService.sendOtp(phone, purpose);
 
@@ -70,6 +79,17 @@ class OtpServiceTest {
         assertThat(response.getReferenceId()).isNotBlank();
 
         verify(valueOperations).set(eq("identity:otp:" + phone + ":" + purpose), anyString(), eq(Duration.ofSeconds(180)));
+    }
+
+    @Test
+    @DisplayName("sendOtp: FORGOT_PASSWORD bị chặn khi SĐT không tồn tại trong hệ thống")
+    void sendOtp_ForgotPassword_UserNotFound() {
+        String phone = "0999999999";
+        when(userRepository.existsByPhoneNumber(phone)).thenReturn(false);
+
+        assertThatThrownBy(() -> otpService.sendOtp(phone, "FORGOT_PASSWORD"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("không tồn tại trong hệ thống");
     }
 
     @Test
@@ -108,6 +128,25 @@ class OtpServiceTest {
     }
 
     @Test
+    @DisplayName("verifyOtp: Nhập sai 3 lần thì khóa và yêu cầu mã mới")
+    void verifyOtp_LockedAfter3FailedAttempts() {
+        String phone = "0987654321";
+        String purpose = "FORGOT_PASSWORD";
+        String code = "123456";
+
+        when(valueOperations.get("identity:otp:" + phone + ":" + purpose)).thenReturn(code);
+        // Đã có 3 lần sai lưu trong Redis
+        when(valueOperations.get("identity:otp:attempts:" + phone + ":" + purpose)).thenReturn("3");
+
+        assertThatThrownBy(() -> otpService.verifyOtp(phone, "000000", purpose))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("quá 3 lần");
+
+        verify(redisTemplate).delete("identity:otp:" + phone + ":" + purpose);
+        verify(redisTemplate).delete("identity:otp:attempts:" + phone + ":" + purpose);
+    }
+
+    @Test
     @DisplayName("verifyOtp: Hết hạn OTP báo lỗi rõ ràng")
     void verifyOtp_Expired() {
         String phone = "0987654321";
@@ -122,13 +161,15 @@ class OtpServiceTest {
 
     @Test
     @DisplayName("forgotPassword: Người dùng tồn tại sẽ kích hoạt gửi OTP")
-    void forgotPassword_Success() {
+    void forgotPassword_Success() throws Exception {
         String phone = "0987654321";
         UserEntity user = UserEntity.builder()
                 .id(UUID.randomUUID().toString())
                 .phoneNumber(phone)
+                .email("customer@gmail.com")
                 .build();
 
+        when(userRepository.existsByPhoneNumber(phone)).thenReturn(true);
         when(userRepository.findByPhoneNumber(phone)).thenReturn(Optional.of(user));
 
         OtpSendResponse response = otpService.forgotPassword(phone);
@@ -146,6 +187,22 @@ class OtpServiceTest {
         assertThatThrownBy(() -> otpService.forgotPassword(phone))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Số điện thoại không tồn tại");
+    }
+
+    @Test
+    @DisplayName("forgotPassword: Tài khoản chưa liên kết email không thể gửi OTP khôi phục")
+    void forgotPassword_NoEmail() {
+        String phone = "0987654321";
+        UserEntity user = UserEntity.builder()
+                .id(UUID.randomUUID().toString())
+                .phoneNumber(phone)
+                .build(); // không có email
+
+        when(userRepository.findByPhoneNumber(phone)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> otpService.forgotPassword(phone))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("chưa liên kết email");
     }
 
     @Test
@@ -174,7 +231,7 @@ class OtpServiceTest {
 
     @Test
     @DisplayName("sendOtp: Đăng ký tài khoản mới (REGISTER) gửi OTP thành công")
-    void sendOtp_Register_Success() {
+    void sendOtp_Register_Success() throws Exception {
         String phone = "0912345678";
         String email = "newuser@gmail.com";
 
@@ -190,7 +247,7 @@ class OtpServiceTest {
 
     @Test
     @DisplayName("sendOtp: Cấp lại/Đổi mã PIN (RESET_PIN / CHANGE_PIN) gửi OTP thành công")
-    void sendOtp_ResetPin_Success() {
+    void sendOtp_ResetPin_Success() throws Exception {
         String phone = "0987654321";
         UserEntity user = UserEntity.builder()
                 .id("u-1")

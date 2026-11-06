@@ -317,4 +317,77 @@ class WalletGrpcServiceTest {
             assertEquals("WALLET_NOT_FOUND", result.errorCode);
         }
     }
+
+    // ======================== OVERDRAFT (tính năng 4.1) ========================
+
+    @Nested
+    @DisplayName("Overdraft — hạn mức thấu chi")
+    class OverdraftTests {
+
+        @Test
+        @DisplayName("Debit vượt số dư nhưng trong hạn mức thấu chi — thành công, số dư âm")
+        void debit_withinOverdraftLimit_success() {
+            Wallet wallet = createWallet("w-od-1", "u-1", 5000L, 0L, "VND", "ACTIVE");
+            wallet.setOverdraftLimit(10000L);
+            when(walletRepository.findByIdForUpdate("w-od-1")).thenReturn(Optional.of(wallet));
+
+            WalletGrpcService.DebitResult result = walletGrpcService.debitWallet("w-od-1", 8000L, "tx-od-1", null);
+
+            assertTrue(result.success);
+            assertEquals(-3000L, result.balanceAfter);
+            verify(walletRepository).save(wallet);
+        }
+
+        @Test
+        @DisplayName("Debit vượt cả số dư và hạn mức thấu chi — từ chối")
+        void debit_exceedsOverdraftLimit_rejected() {
+            Wallet wallet = createWallet("w-od-2", "u-1", 5000L, 0L, "VND", "ACTIVE");
+            wallet.setOverdraftLimit(10000L);
+            when(walletRepository.findByIdForUpdate("w-od-2")).thenReturn(Optional.of(wallet));
+
+            WalletGrpcService.DebitResult result = walletGrpcService.debitWallet("w-od-2", 20000L, "tx-od-2", null);
+
+            assertFalse(result.success);
+            assertEquals("DEBIT_INSUFFICIENT_BALANCE", result.errorCode);
+        }
+
+        @Test
+        @DisplayName("Debit khi không cấp hạn mức thấu chi (default 0) — không cho số dư âm")
+        void debit_defaultZeroOverdraft_rejected() {
+            Wallet wallet = createWallet("w-od-3", "u-1", 5000L, 0L, "VND", "ACTIVE");
+            wallet.setOverdraftLimit(0L);
+            when(walletRepository.findByIdForUpdate("w-od-3")).thenReturn(Optional.of(wallet));
+
+            WalletGrpcService.DebitResult result = walletGrpcService.debitWallet("w-od-3", 8000L, "tx-od-3", null);
+
+            assertFalse(result.success);
+            assertEquals("DEBIT_INSUFFICIENT_BALANCE", result.errorCode);
+        }
+
+        @Test
+        @DisplayName("Reserve chạm vào hạn mức thấu chi — thành công")
+        void reserve_usesOverdraftLimit_success() {
+            Wallet wallet = createWallet("w-od-4", "u-1", 10000L, 8000L, "VND", "ACTIVE");
+            wallet.setOverdraftLimit(10000L);
+            when(walletRepository.findByIdForUpdate("w-od-4")).thenReturn(Optional.of(wallet));
+
+            WalletGrpcService.ReserveResult result = walletGrpcService.reserveBalance("w-od-4", 5000L, "tx-od-4", 3600);
+
+            assertTrue(result.success);
+            assertEquals(13000L, wallet.getReservedBalance());
+        }
+
+        @Test
+        @DisplayName("CheckLimit — số dư khả dụng gồm hạn mức thấu chi")
+        void checkLimit_includesOverdraftLimit() {
+            Wallet wallet = createWallet("w-od-5", "u-1", 5000L, 1000L, "VND", "ACTIVE");
+            wallet.setOverdraftLimit(10000L);
+            when(walletRepository.findById("w-od-5")).thenReturn(Optional.of(wallet));
+
+            WalletGrpcService.LimitCheckResult result = walletGrpcService.checkLimit("w-od-5", 12000L, "TRANSFER", "u-1");
+
+            assertTrue(result.allowed);
+            assertEquals(14000L, result.availableBalance); // 5000 + 10000 - 1000
+        }
+    }
 }

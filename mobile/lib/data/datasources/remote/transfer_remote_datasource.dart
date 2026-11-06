@@ -48,7 +48,7 @@ class TransferRemoteDataSource {
       return _unwrap(response.data);
     }
 
-    // 3. Xử lý số điện thoại
+    // 3. Xử lý số điện thoại hoặc Alias
     final cleanDigits = trimmed.replaceAll(RegExp(r'[\s\.\-]'), '');
     final phoneClean = cleanDigits.startsWith('+84')
         ? '0${cleanDigits.substring(3)}'
@@ -56,11 +56,12 @@ class TransferRemoteDataSource {
             ? '0${cleanDigits.substring(2)}'
             : cleanDigits;
 
+    final isNumeric = RegExp(r'^\d+$').hasMatch(phoneClean);
     final response = await _dio.get(
       ApiConstants.recipientInfo,
-      queryParameters: RegExp(r'^\d+$').hasMatch(phoneClean)
+      queryParameters: isNumeric
           ? {'phoneNumber': phoneClean}
-          : {'walletId': trimmed},
+          : {'alias': trimmed.toUpperCase()},
     );
     return _unwrap(response.data);
   }
@@ -204,5 +205,40 @@ class TransferRemoteDataSource {
     final json = Map<String, dynamic>.from(raw as Map);
     if (json['success'] != true || json['data'] is! Map) throw apiException(json);
     return Map<String, dynamic>.from(json['data'] as Map);
+  }
+
+  /// Quản lý lệnh chuyển tiền đặt lịch / định kỳ (Scheduled & Recurring Transfers)
+  Future<Map<String, dynamic>> createScheduledTransfer({
+    required String targetAccountNumber,
+    required double amount,
+    String? note,
+    required String frequency,
+    required String nextExecutionAt,
+    String? pinToken,
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.scheduledTransfers,
+      data: {
+        'targetAccountNumber': targetAccountNumber,
+        'amount': amount,
+        'note': note ?? '',
+        'frequency': frequency,
+        'nextExecutionAt': nextExecutionAt,
+        if (pinToken != null && pinToken.isNotEmpty) 'pinToken': pinToken,
+      },
+    );
+    return _unwrap(response.data);
+  }
+
+  Future<List<Map<String, dynamic>>> getMyScheduledTransfers() async {
+    final response = await _dio.get(ApiConstants.scheduledTransfers);
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! List) throw apiException(json);
+    return (json['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<Map<String, dynamic>> cancelScheduledTransfer(String id) async {
+    final response = await _dio.delete(ApiConstants.scheduledTransferDetail(id));
+    return _unwrap(response.data);
   }
 }

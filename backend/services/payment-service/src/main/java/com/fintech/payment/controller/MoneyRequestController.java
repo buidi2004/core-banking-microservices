@@ -6,9 +6,11 @@ import com.fintech.payment.dto.MoneyRequestRequest;
 import com.fintech.payment.dto.MoneyRequestResponse;
 import com.fintech.payment.repository.MoneyRequestRepository;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -26,8 +28,11 @@ public class MoneyRequestController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<ApiResponse<MoneyRequestResponse>> create(@Valid @RequestBody MoneyRequestRequest request) {
-        if (request.getRequesterId().equals(request.getTargetUserId())) {
+    public ResponseEntity<ApiResponse<MoneyRequestResponse>> create(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @Valid @RequestBody MoneyRequestRequest request) {
+        requireUser(userId);
+        if (userId.equals(request.getTargetUserId())) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Không thể tự gửi yêu cầu tiền cho chính mình"));
         }
@@ -40,7 +45,7 @@ public class MoneyRequestController {
         }
 
         MoneyRequest mr = MoneyRequest.builder()
-                .requesterId(request.getRequesterId())
+                .requesterId(userId)
                 .targetUserId(request.getTargetUserId())
                 .amount(request.getAmount())
                 .status("PENDING")
@@ -55,7 +60,8 @@ public class MoneyRequestController {
     @PostMapping("/{id}/accept")
     @Transactional
     public ResponseEntity<ApiResponse<MoneyRequestResponse>> accept(@PathVariable String id,
-                                                                    @RequestParam String payerUserId) {
+                                                                    @RequestHeader(value = "X-User-Id", required = false) String payerUserId) {
+        requireUser(payerUserId);
         MoneyRequest mr = moneyRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tiền không tìm thấy: " + id));
         if (!mr.getTargetUserId().equals(payerUserId)) {
@@ -69,7 +75,8 @@ public class MoneyRequestController {
     @PostMapping("/{id}/reject")
     @Transactional
     public ResponseEntity<ApiResponse<MoneyRequestResponse>> reject(@PathVariable String id,
-                                                                    @RequestParam String payerUserId) {
+                                                                    @RequestHeader(value = "X-User-Id", required = false) String payerUserId) {
+        requireUser(payerUserId);
         MoneyRequest mr = moneyRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tiền không tìm thấy: " + id));
         if (!mr.getTargetUserId().equals(payerUserId)) {
@@ -81,9 +88,15 @@ public class MoneyRequestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<MoneyRequestResponse>> getDetail(@PathVariable String id) {
+    public ResponseEntity<ApiResponse<MoneyRequestResponse>> getDetail(
+            @PathVariable String id,
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        requireUser(userId);
         MoneyRequest mr = moneyRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tiền không tìm thấy: " + id));
+        if (!userId.equals(mr.getRequesterId()) && !userId.equals(mr.getTargetUserId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Không có quyền xem yêu cầu tiền này");
+        }
         return ResponseEntity.ok(ApiResponse.success("Chi tiết yêu cầu tiền", toResponse(mr)));
     }
 
@@ -91,7 +104,8 @@ public class MoneyRequestController {
     @Transactional
     public ResponseEntity<ApiResponse<MoneyRequestResponse>> cancel(
             @PathVariable String id,
-            @RequestHeader(value = "X-User-Id", defaultValue = "test-user") String userId) {
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        requireUser(userId);
         MoneyRequest mr = moneyRequestRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Yêu cầu tiền không tìm thấy: " + id));
         if (!mr.getRequesterId().equals(userId)) {
@@ -107,7 +121,8 @@ public class MoneyRequestController {
 
     @GetMapping("/received")
     public ResponseEntity<ApiResponse<List<MoneyRequestResponse>>> getReceived(
-            @RequestHeader(value = "X-User-Id", defaultValue = "test-user") String userId) {
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        requireUser(userId);
         List<MoneyRequestResponse> list = moneyRequestRepository.findByTargetUserId(userId).stream()
                 .map(this::toResponse).collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Danh sách yêu cầu tiền nhận được", list));
@@ -115,17 +130,40 @@ public class MoneyRequestController {
 
     @GetMapping("/sent")
     public ResponseEntity<ApiResponse<List<MoneyRequestResponse>>> getSent(
-            @RequestHeader(value = "X-User-Id", defaultValue = "test-user") String userId) {
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        requireUser(userId);
         List<MoneyRequestResponse> list = moneyRequestRepository.findByRequesterId(userId).stream()
                 .map(this::toResponse).collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Danh sách yêu cầu tiền đã gửi đi", list));
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<ApiResponse<List<MoneyRequestResponse>>> list(@PathVariable String userId) {
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<MoneyRequestResponse>>> listCurrentUserRequests(
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        requireUser(userId);
         List<MoneyRequestResponse> list = moneyRequestRepository.findByTargetUserId(userId).stream()
                 .map(this::toResponse).collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success("Danh sách yêu cầu tiền", list));
+    }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<List<MoneyRequestResponse>>> list(
+            @PathVariable String userId,
+            @RequestHeader(value = "X-User-Id", required = false) String requesterId) {
+        requireUser(requesterId);
+        if (!requesterId.equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Không có quyền xem yêu cầu tiền của người dùng khác");
+        }
+        List<MoneyRequestResponse> list = moneyRequestRepository.findByTargetUserId(userId).stream()
+                .map(this::toResponse).collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success("Danh sách yêu cầu tiền", list));
+    }
+
+    private void requireUser(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing trusted header X-User-Id");
+        }
     }
 
     private MoneyRequestResponse toResponse(MoneyRequest mr) {

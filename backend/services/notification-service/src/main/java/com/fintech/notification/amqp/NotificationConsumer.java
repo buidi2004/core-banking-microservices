@@ -9,10 +9,13 @@ import com.fintech.notification.notification.NotificationPayload;
 import com.fintech.notification.notification.UserPhoneResolver;
 import com.fintech.notification.notification.WebSocketNotifier;
 import com.fintech.notification.service.NotificationService;
+import com.fintech.common.audit.AuditEvent;
+import com.fintech.notification.audit.AuditEventPublisher;
 import com.fintech.wallet.domain.event.TransactionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -33,6 +36,7 @@ public class NotificationConsumer {
 
     private final EventIdempotencyStore idempotencyStore;
     private final NotificationService notificationService;
+    private AuditEventPublisher auditEventPublisher;
     private final WebSocketNotifier webSocketNotifier;
     private final FcmPushSender fcmPushSender;
     private final UserPhoneResolver userPhoneResolver;
@@ -50,6 +54,11 @@ public class NotificationConsumer {
         this.fcmPushSender = fcmPushSender;
         this.userPhoneResolver = userPhoneResolver;
         this.objectMapper = objectMapper;
+    }
+
+    @Autowired
+    void setAuditEventPublisher(AuditEventPublisher auditEventPublisher) {
+        this.auditEventPublisher = auditEventPublisher;
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_NOTIFICATION)
@@ -176,6 +185,12 @@ public class NotificationConsumer {
 
         try {
             notificationService.save(Notification.create(resolvedUserId, "BALANCE", title, bodyText, "FCM", dataPayload));
+            if (auditEventPublisher != null) {
+                auditEventPublisher.publish(new AuditEvent(
+                        java.util.UUID.randomUUID(), java.time.Instant.now(), "notification-service",
+                        "NOTIFICATION_CREATED", "NOTIFICATION", resolvedUserId, null, null, null,
+                        event.getTransactionId(), null, null, null, null, null));
+            }
         } catch (Exception e) {
             log.error("Failed to persist notification for userId={} walletId={}", resolvedUserId, walletId, e);
         }
@@ -184,6 +199,7 @@ public class NotificationConsumer {
         if (hasText(userId)) {
             webSocketNotifier.pushToUser(userId, payload);
         }
+        webSocketNotifier.pushToAdmin(payload);
 
         fcmPushSender.sendPushNotification(resolvedUserId, title, bodyText, data);
     }

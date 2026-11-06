@@ -7,6 +7,7 @@ import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class EmailSettingsScreen extends StatefulWidget {
   const EmailSettingsScreen({super.key});
@@ -209,6 +210,7 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
       appBar: AppBar(
         title: const Text('Cài Đặt Email & Hóa Đơn VAT'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: ListView(

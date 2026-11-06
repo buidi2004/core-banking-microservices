@@ -20,6 +20,10 @@ public class LoanApplicationResponse {
     private String productName;
     private BigDecimal principalAmount;
     private BigDecimal annualInterestRate;
+
+    public BigDecimal getAmount() {
+        return principalAmount;
+    }
     private Integer termMonths;
     private BigDecimal totalInterest;
     private BigDecimal totalRepayment;
@@ -30,5 +34,9 @@ public class LoanApplicationResponse {
     private String approvedBy;
     private String approvedAt;
     private String rejectReason;
+    private Integer cicGroup;
+    private String cicGroupName;
+    private Integer overdueDays;
+    private BigDecimal riskProvisionAmount;
 }
 

@@ -19,8 +19,14 @@ public class UserQrController {
 
     @GetMapping("/me/qrcode")
     public ResponseEntity<ApiResponse<VietQrResponse>> getMyQrCode(
-            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "user-me") String userId) {
-        VietQrResponse response = vietQrService.getUserQrCode(userId);
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-User-Phone", required = false) String phone) {
+        String identifier = (phone != null && !phone.isBlank()) ? phone : userId;
+        if (identifier == null || identifier.isBlank()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error("UNAUTHORIZED", "Thiếu thông tin người dùng"));
+        }
+        VietQrResponse response = vietQrService.getUserQrCode(identifier);
         return ResponseEntity.ok(ApiResponse.<VietQrResponse>builder()
                 .success(true)
                 .message("Lấy mã QR cá nhân thành công")

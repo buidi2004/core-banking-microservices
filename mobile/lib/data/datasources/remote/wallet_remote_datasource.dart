@@ -64,7 +64,26 @@ class WalletRemoteDataSource {
       balance: (data['balance'] as num).toDouble(),
       currency: data['currency'] as String? ?? 'VND',
       dailyLimit: (data['dailyLimit'] as num?)?.toDouble() ?? 50000000.0,
+      overdraftLimit: (data['overdraftLimit'] as num?)?.toDouble() ?? 0.0,
       status: data['status'] as String? ?? 'ACTIVE',
     );
+  }
+
+  Future<Map<String, dynamic>> estimateFee({
+    required double amount,
+    String type = 'TRANSFER',
+    String currency = 'VND',
+  }) async {
+    final response = await _dio.get(
+      ApiConstants.estimateFee,
+      queryParameters: {
+        'amount': amount,
+        'type': type,
+        'currency': currency,
+      },
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
   }
 }

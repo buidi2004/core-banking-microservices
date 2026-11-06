@@ -28,6 +28,8 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -47,10 +49,25 @@ public class AuthService {
     private static final String ATTEMPTS_PREFIX = "identity:attempts:";
     private static final int MAX_ATTEMPTS = 5;
 
+    public static String normalizePhoneNumber(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return "";
+        }
+        String clean = phone.replaceAll("[\\s\\-\\.\\(\\)]", "").trim();
+        if (clean.startsWith("+84")) {
+            return "0" + clean.substring(3);
+        }
+        if (clean.startsWith("84") && clean.length() == 11) {
+            return "0" + clean.substring(2);
+        }
+        return clean;
+    }
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        String phone = request.getPhoneNumber().trim();
-        if (userRepository.existsByPhoneNumber(phone)) {
+        String rawPhone = request.getPhoneNumber();
+        String phone = normalizePhoneNumber(rawPhone);
+        if (userRepository.existsByPhoneNumber(phone) || (rawPhone != null && !rawPhone.equals(phone) && userRepository.existsByPhoneNumber(rawPhone.trim()))) {
             throw new IllegalArgumentException("Số điện thoại " + phone + " đã tồn tại trong hệ thống.");
         }
 
@@ -131,36 +148,75 @@ public class AuthService {
 
     @Transactional
     public AuthResponse login(LoginRequest request, String ipAddress, String userAgent) {
-        String identifier = request.getIdentifier();
-        if (identifier == null || identifier.isBlank()) {
+        String rawIdentifier = request.getIdentifier();
+        if (rawIdentifier == null || rawIdentifier.isBlank()) {
             throw new IllegalArgumentException("Username hoặc số điện thoại là bắt buộc.");
         }
+        String identifier = rawIdentifier.trim();
+        String normalizedPhone = normalizePhoneNumber(identifier);
 
         String lockKey = LOCK_PREFIX + identifier;
-        String attemptsKey = ATTEMPTS_PREFIX + identifier;
+        String normLockKey = LOCK_PREFIX + normalizedPhone;
 
-        // Kiểm tra xem tài khoản có đang bị khóa đăng nhập tạm thời trong Redis không
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(lockKey))) {
-            throw new IllegalStateException("Tài khoản đang bị tạm khóa 30 phút do nhập sai mật khẩu quá 5 lần.");
+        // Kiểm tra xem tài khoản có đang bị khóa đăng nhập tạm thời trong Redis không (bảo vệ resilient)
+        try {
+            if (Boolean.TRUE.equals(redisTemplate.hasKey(lockKey)) ||
+                    (!normLockKey.equals(lockKey) && Boolean.TRUE.equals(redisTemplate.hasKey(normLockKey)))) {
+                throw new IllegalStateException("Tài khoản đang bị tạm khóa 30 phút do nhập sai mật khẩu quá 5 lần.");
+            }
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("Không thể kiểm tra Redis lock cho {}: {}", identifier, e.getMessage());
         }
 
+        // Tìm User: đa hình thức định danh (SĐT chuẩn, SĐT gốc, email, username)
         UserEntity user = userRepository.findByIdentifier(identifier).orElse(null);
+        if (user == null && !normalizedPhone.equals(identifier)) {
+            user = userRepository.findByIdentifier(normalizedPhone).orElse(null);
+        }
+        if (user == null && !identifier.toLowerCase().equals(identifier)) {
+            user = userRepository.findByIdentifier(identifier.toLowerCase()).orElse(null);
+        }
 
         boolean passwordValid = false;
-        if (user != null && request.getPassword() != null) {
-            passwordValid = passwordEncoder.matches(request.getPassword(), user.getPasswordHash())
-                    || ("DemoPass#2026!".equals(request.getPassword()) && user.getPasswordHash() != null && user.getPasswordHash().startsWith("$2a$12$e8Ytq"));
+        if (user != null && request.getPassword() != null && user.getPasswordHash() != null) {
+            String rawPassword = request.getPassword();
+            String trimmedPassword = rawPassword.trim();
+            String userHash = user.getPasswordHash();
+
+            // 1. So khớp mật khẩu chính xác nguyên bản
+            passwordValid = passwordEncoder.matches(rawPassword, userHash);
+
+            // 2. Thử so khớp khi cắt bỏ khoảng trắng đầu/cuối (xử lý bàn phím ảo/autofill mobile tự thêm space)
+            if (!passwordValid && !rawPassword.equals(trimmedPassword)) {
+                passwordValid = passwordEncoder.matches(trimmedPassword, userHash);
+            }
+
         }
 
         if (user == null || !passwordValid) {
-            Long attempts = redisTemplate.opsForValue().increment(attemptsKey);
-            redisTemplate.expire(attemptsKey, Duration.ofMinutes(15));
-            if (attempts != null && attempts >= MAX_ATTEMPTS) {
-                redisTemplate.opsForValue().set(lockKey, "LOCKED", Duration.ofMinutes(30));
-                redisTemplate.delete(attemptsKey);
-                throw new IllegalStateException("Tài khoản đã bị tạm khóa 30 phút do đăng nhập sai 5 lần.");
+            long remaining = MAX_ATTEMPTS - 1;
+            String attemptTarget = (user != null && user.getPhoneNumber() != null) ? user.getPhoneNumber() : normalizedPhone;
+            String attemptsKey = ATTEMPTS_PREFIX + attemptTarget;
+            String lockTargetKey = LOCK_PREFIX + attemptTarget;
+
+            try {
+                Long attempts = redisTemplate.opsForValue().increment(attemptsKey);
+                redisTemplate.expire(attemptsKey, Duration.ofMinutes(15));
+                if (attempts != null && attempts >= MAX_ATTEMPTS) {
+                    redisTemplate.opsForValue().set(lockTargetKey, "LOCKED", Duration.ofMinutes(30));
+                    redisTemplate.delete(attemptsKey);
+                    throw new IllegalStateException("Tài khoản đã bị tạm khóa 30 phút do đăng nhập sai 5 lần.");
+                }
+                if (attempts != null) {
+                    remaining = Math.max(0, MAX_ATTEMPTS - attempts);
+                }
+            } catch (IllegalStateException e) {
+                throw e;
+            } catch (Exception e) {
+                log.warn("Không thể cập nhật Redis login attempts cho {}: {}", attemptTarget, e.getMessage());
             }
-            long remaining = MAX_ATTEMPTS - (attempts != null ? attempts : 1);
             throw new IllegalArgumentException("Thông tin đăng nhập hoặc mật khẩu không chính xác. Còn " + remaining + " lần thử.");
         }
 
@@ -168,8 +224,25 @@ public class AuthService {
             throw new IllegalStateException("Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.");
         }
 
-        // Đăng nhập thành công -> Xóa bộ đếm sai
-        redisTemplate.delete(attemptsKey);
+        // Đăng nhập thành công -> Xóa bộ đếm sai & khóa tạm thời (đồng bộ mọi định danh)
+        try {
+            java.util.List<String> keysToDelete = new java.util.ArrayList<>();
+            keysToDelete.add(ATTEMPTS_PREFIX + identifier);
+            keysToDelete.add(LOCK_PREFIX + identifier);
+            if (user.getPhoneNumber() != null) {
+                keysToDelete.add(ATTEMPTS_PREFIX + user.getPhoneNumber());
+                keysToDelete.add(LOCK_PREFIX + user.getPhoneNumber());
+            }
+            if (user.getUsername() != null) {
+                keysToDelete.add(ATTEMPTS_PREFIX + user.getUsername());
+                keysToDelete.add(LOCK_PREFIX + user.getUsername());
+            }
+            keysToDelete.add(ATTEMPTS_PREFIX + user.getId());
+            keysToDelete.add(LOCK_PREFIX + user.getId());
+            redisTemplate.delete(keysToDelete);
+        } catch (Exception e) {
+            log.warn("Không thể dọn dẹp Redis attempt keys cho {}: {}", user.getPhoneNumber(), e.getMessage());
+        }
 
         // Sinh JWT Access Token & Refresh Token (chứa roles, branch_id, full_name)
         String accessToken = tokenProvider.generateAccessToken(
@@ -302,6 +375,18 @@ public class AuthService {
             userSessionRepository.save(s);
         });
 
+        // Xóa sạch trạng thái khóa đăng nhập do nhập sai trước đó
+        try {
+            redisTemplate.delete(java.util.List.of(
+                LOCK_PREFIX + user.getPhoneNumber(),
+                ATTEMPTS_PREFIX + user.getPhoneNumber(),
+                LOCK_PREFIX + user.getId(),
+                ATTEMPTS_PREFIX + user.getId()
+            ));
+        } catch (Exception e) {
+            log.warn("Không thể xóa lock Redis khi change password: {}", e.getMessage());
+        }
+
         log.info("Đổi mật khẩu thành công cho userId={}, phone={}", user.getId(), user.getPhoneNumber());
     }
 
@@ -319,6 +404,36 @@ public class AuthService {
                         userSessionRepository.save(session);
                     });
         }
+    }
+
+    @Transactional
+    public Map<String, Object> emergencyLock(String bearerToken, String userId, String reason) {
+        if (bearerToken != null && !bearerToken.isBlank()) {
+            String token = bearerToken.startsWith("Bearer ") ? bearerToken.substring(7) : bearerToken;
+            tokenProvider.blacklistToken(token);
+        }
+
+        if (userId != null && !userId.isBlank()) {
+            List<UserSessionEntity> sessions = userSessionRepository.findByUserIdAndIsRevokedFalse(userId);
+            for (UserSessionEntity s : sessions) {
+                s.setIsRevoked(true);
+            }
+            userSessionRepository.saveAll(sessions);
+
+            userRepository.findById(userId).ifPresent(u -> {
+                u.setStatus("BLOCKED");
+                userRepository.save(u);
+            });
+        }
+
+        log.warn("EMERGENCY LOCK: Tài khoản người dùng {} đã bị KHÓA KHẨN CẤP. Lý do: {}", userId, reason);
+
+        return Map.of(
+                "status", "BLOCKED",
+                "lockedAt", Instant.now().toString(),
+                "reason", (reason != null && !reason.isBlank()) ? reason : "Yêu cầu khóa khẩn cấp phòng chống gian lận",
+                "message", "Đã kích hoạt chế độ khóa khẩn cấp toàn diện. Tài khoản và mọi phiên đăng nhập đã bị phong tỏa."
+        );
     }
 
     private void saveUserSession(String userId, String deviceId, String deviceName, String deviceOs,

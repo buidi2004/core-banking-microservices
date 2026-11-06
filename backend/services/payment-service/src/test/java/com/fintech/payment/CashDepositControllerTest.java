@@ -6,8 +6,12 @@ import com.fintech.payment.domain.entity.CashDeposit;
 import com.fintech.payment.dto.CashDepositRejectRequest;
 import com.fintech.payment.dto.CashDepositRequest;
 import com.fintech.payment.exception.GlobalExceptionHandler;
+import com.fintech.payment.grpc.WalletGrpcClient;
 import com.fintech.payment.kafka.PaymentKafkaProducer;
 import com.fintech.payment.repository.CashDepositRepository;
+import com.fintech.payment.repository.CashInTransitRepository;
+import com.fintech.payment.repository.OutboxEventRepository;
+import com.fintech.payment.repository.TransactionRepository;
 import com.fintech.payment.rule.MakerCheckerRule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,6 +34,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -51,11 +56,23 @@ class CashDepositControllerTest {
     @MockBean
     private CashDepositRepository cashDepositRepository;
 
+    @MockBean
+    private CashInTransitRepository cashInTransitRepository;
+
     @SpyBean
     private MakerCheckerRule makerCheckerRule;
 
     @MockBean
     private PaymentKafkaProducer paymentKafkaProducer;
+
+    @MockBean
+    private WalletGrpcClient walletGrpcClient;
+
+    @MockBean
+    private TransactionRepository transactionRepository;
+
+    @MockBean
+    private OutboxEventRepository outboxEventRepository;
 
     private static final String TELLER_A_ID = "t0000001-0000-0000-0000-000000000001";
     private static final String MANAGER_C_ID = "m0000001-0000-0000-0000-000000000001";
@@ -63,6 +80,25 @@ class CashDepositControllerTest {
     @Nested
     @DisplayName("1. POST /api/v1/cash/deposits - Lập lệnh nạp tiền tại quầy")
     class CreateDepositTests {
+
+        @Test
+        @DisplayName("Thiếu trusted maker identity -> từ chối, không dùng makerId trong body")
+        void shouldRejectMissingTrustedMakerIdentity() throws Exception {
+            CashDepositRequest request = CashDepositRequest.builder()
+                    .accountNumber("0901234567")
+                    .customerName("Alice Nguyen")
+                    .amount(5_000_000L)
+                    .branchId("BR_Q1")
+                    .makerId(TELLER_A_ID)
+                    .idempotencyKey("idem_missing_maker")
+                    .build();
+
+            mockMvc.perform(post("/api/v1/cash/deposits")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isUnauthorized());
+            verifyNoInteractions(cashDepositRepository);
+        }
 
         @Test
         @DisplayName("Nạp tiền trong hạn mức (<= 50M) -> Tự động duyệt hoàn tất (COMPLETED)")

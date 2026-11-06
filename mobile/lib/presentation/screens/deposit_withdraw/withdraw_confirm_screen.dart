@@ -15,6 +15,7 @@ import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.d
 import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class WithdrawConfirmScreen extends StatefulWidget {
   final double amount;
@@ -133,6 +134,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
       appBar: AppBar(
         title: const Text('Xác Nhận Rút Tiền'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: Column(
@@ -168,6 +170,9 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                                 color: AppColors.successTextLight,
                                 fontSize: 32,
                                 fontWeight: FontWeight.w900,
+                                fontFeatures: [
+                                  FontFeature.tabularFigures(),
+                                ],
                               ),
                             ),
                             const Divider(
@@ -206,14 +211,17 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                                   child: Row(
                                     children: [
                                       Icon(CupertinoIcons.chart_pie_fill,
-                                          color: AppColors.primaryText, size: 18),
+                                          color: AppColors.primaryText,
+                                          size: 18),
                                       SizedBox(width: 8),
                                       Expanded(
-                                        child: Text('Hạn mức rút tiền trong ngày',
+                                        child: Text(
+                                            'Hạn mức rút tiền trong ngày',
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 13,
-                                                color: AppColors.textPrimaryLight)),
+                                                color: AppColors
+                                                    .textPrimaryLight)),
                                       ),
                                     ],
                                   ),
@@ -228,7 +236,7 @@ class _WithdrawConfirmScreenState extends State<WithdrawConfirmScreen> {
                             ),
                             const SizedBox(height: 10),
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
+                              borderRadius: BorderRadius.circular(8),
                               child: LinearProgressIndicator(
                                 value: ((widget.amount + 5000000) / 50000000)
                                     .clamp(0.05, 1.0),

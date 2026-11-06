@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/loans")
@@ -87,6 +88,31 @@ public class LoanController {
             @Valid @RequestBody LoanRepaymentRequest request) {
         LoanRepaymentResponse response = loanService.repayTerm(id, userId, request);
         return ResponseEntity.ok(ApiResponse.success(response.getMessage(), response));
+    }
+
+    @PostMapping("/{id}/settle")
+    public ResponseEntity<ApiResponse<LoanRepaymentResponse>> settleLoanEarly(
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "user-me") String userId,
+            @PathVariable("id") String id,
+            @RequestBody(required = false) Map<String, String> body) {
+        String pinToken = body != null ? body.get("pinToken") : null;
+        LoanRepaymentResponse response = loanService.settleLoanEarly(id, userId, pinToken);
+        return ResponseEntity.ok(ApiResponse.success(response.getMessage(), response));
+    }
+
+    /**
+     * Báo cáo và chạy phân loại nợ 5 nhóm CIC theo Thông tư 11/2021/TT-NHNN
+     */
+    @PostMapping({"/admin/cic-classify", "/cic/classify"})
+    public ResponseEntity<ApiResponse<CicDebtReportResponse>> classifyCicDebt() {
+        CicDebtReportResponse report = loanService.classifyCicDebtGroups();
+        return ResponseEntity.ok(ApiResponse.success("Phân loại nợ 5 nhóm CIC & trích lập dự phòng thành công", report));
+    }
+
+    @GetMapping({"/admin/cic-report", "/cic/report"})
+    public ResponseEntity<ApiResponse<CicDebtReportResponse>> getCicReport() {
+        CicDebtReportResponse report = loanService.classifyCicDebtGroups();
+        return ResponseEntity.ok(ApiResponse.success("Báo cáo phân loại nợ 5 nhóm CIC (Thông tư 11/2021/TT-NHNN)", report));
     }
 }
 

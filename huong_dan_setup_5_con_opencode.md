@@ -1,4 +1,21 @@
-# Báo Cáo & Hướng Dẫn Cài Đặt Setup 5 Instance OpenCode Chạy Song Song
+🔴 Chưa làm — cần backend workflow
+1. AML Case Management
+Hiện đã có:
+
+Danh sách giao dịch lớn qua AML.
+Lọc theo ngưỡng minAmount.
+Hiển thị cảnh báo trong Admin Operations.
+Chưa có:
+
+Tạo AML case.
+Gán case cho nhân viên.
+Trạng thái điều tra.
+Freeze/release tài khoản hoặc giao dịch.
+SLA/overdue.
+Đóng case.
+Ghi lý do và actor.
+Audit lịch sử xử lý.
+Mức độ: thiếu nghiệp vụ cốt lõi, chưa nên chỉ làm UI.# Báo Cáo & Hướng Dẫn Cài Đặt Setup 5 Instance OpenCode Chạy Song Song
 
 > [!NOTE]
 > Tài liệu này tổng hợp toàn bộ kiến trúc và quy trình thiết lập thực tế hệ thống **5 "con" OpenCode** đang hoạt động trên máy, giúp bạn có thể gửi trực tiếp cho bạn bè làm theo từ A đến Z một cách dễ dàng và chuẩn xác nhất.

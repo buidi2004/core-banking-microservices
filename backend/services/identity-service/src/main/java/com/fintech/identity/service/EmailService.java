@@ -1,12 +1,12 @@
 package com.fintech.identity.service;
 
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -22,10 +22,9 @@ public class EmailService {
     private String senderEmail;
 
     /**
-     * Gửi email OTP bất đồng bộ (chạy trên thread riêng)
+     * Gửi email OTP (đồng bộ để caller biết kết quả thành công/thất bại)
      */
-    @Async
-    public void sendOtpEmail(String recipientEmail, String otpCode, String purpose) {
+    public void sendOtpEmail(String recipientEmail, String otpCode, String purpose) throws MessagingException {
         if (recipientEmail == null || recipientEmail.isBlank()) {
             log.warn("[EmailService] Bỏ qua gửi email do địa chỉ email trống");
             return;

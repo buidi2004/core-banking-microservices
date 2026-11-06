@@ -65,26 +65,26 @@ class BackendCapabilities {
   /// BE đã cung cấp beneficiaries endpoints (BeneficiaryController)
   static const bool beneficiaries = bool.fromEnvironment('BE_CAP_BENEFICIARIES', defaultValue: true);
 
-  /// BE chưa cung cấp receipt/export endpoints (BE-REQ-06).
+  /// BE đã cung cấp receipt/export endpoints (TransactionHistoryController).
   static const bool receiptAndExport = bool.fromEnvironment('BE_CAP_RECEIPT_EXPORT', defaultValue: false);
 
-  /// BE chưa cung cấp referral endpoints (BE-REQ-06).
+  /// BE đã cung cấp referral endpoints (ReferralController).
   static const bool referrals = bool.fromEnvironment('BE_CAP_REFERRALS', defaultValue: false);
 
-  /// BE chưa cung cấp legal documents endpoints (BE-REQ-06).
+  /// BE đã cung cấp legal documents endpoints (LegalController).
   static const bool legalDocuments = bool.fromEnvironment('BE_CAP_LEGAL', defaultValue: false);
 
-  /// BE chưa cung cấp feedback endpoints (BE-REQ-06).
+  /// BE đã cung cấp feedback endpoints (FeedbackController).
   static const bool feedback = bool.fromEnvironment('BE_CAP_FEEDBACK', defaultValue: false);
 
   /// BE chưa có producer tạo thông báo Khuyến mãi / Hệ thống (chỉ có BALANCE) — BE-REQ-PROMO.
   static const bool promoAndSystemNotifications =
       bool.fromEnvironment('BE_CAP_PROMO_SYSTEM', defaultValue: false);
 
-  /// BE chưa cung cấp money-request detail/cancel endpoints (BE-REQ-06).
+  /// BE đã cung cấp money-request detail/cancel endpoints (MoneyRequestController).
   static const bool moneyRequestDetail = bool.fromEnvironment('BE_CAP_MONEY_REQUEST_DETAIL', defaultValue: false);
 
-  /// BE chưa cung cấp money-request cancel endpoints (BE-REQ-06).
+  /// BE đã cung cấp money-request cancel endpoints (MoneyRequestController).
   static const bool moneyRequestCancel = bool.fromEnvironment('BE_CAP_MONEY_REQUEST_CANCEL', defaultValue: false);
 
   /// BE đã cung cấp API sổ tiết kiệm core banking (SavingsController qua payment-service).
@@ -97,21 +97,16 @@ class BackendCapabilities {
   // Tra cứu endpoint theo đường dẫn (W3 — một nơi quyết định duy nhất)
   // ---------------------------------------------------------------------------
 
-  /// Các hằng đường dẫn mà backend **baseline** (`75bf273`) chưa có.
-  /// Dùng để chặn ở tầng UI/datasource mà không phải rà thủ công từng hằng.
+  /// Các hằng đường dẫn mà backend chưa có.
   static const Set<String> knownBackendGaps = <String>{
-    // BE-REQ-06 — biên lai / xuất sao kê
-    '/transactions/export',
-    // BE-REQ-06 — cấu hình hạn mức
     '/config/limits',
     '/config/limits/status',
   };
 
-  /// Các route có **tham số động** mà backend baseline chưa có.
-  /// (Không thể liệt kê dạng hằng vì phần path thay đổi theo id.)
+  /// Các route có **tham số động** mà backend chưa có.
   static final List<RegExp> knownBackendGapPatterns = <RegExp>[
-    // GET /transactions/{id}/receipt.pdf
-    RegExp(r'/transactions/[^/]+/receipt\.pdf$'),
+    RegExp(r'^/transactions/export/.*'),
+    RegExp(r'^/transactions/.+/receipt\.pdf$'),
   ];
 
   /// `true` nếu [path] **không** nằm trong danh mục endpoint chưa có ở backend.

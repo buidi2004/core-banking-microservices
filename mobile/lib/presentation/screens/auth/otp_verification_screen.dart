@@ -12,6 +12,7 @@ import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/auth_local_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   final String? phone;
@@ -164,6 +165,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       appBar: AppBar(
         title: const Text('Xác Thực Bảo Mật OTP'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

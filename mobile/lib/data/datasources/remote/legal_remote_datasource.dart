@@ -18,10 +18,12 @@ class LegalRemoteDataSource {
   Future<Map<String, dynamic>> consent(String termsVersion) async {
     final response = await _dio.post(
       ApiConstants.legalConsent,
-      queryParameters: {'termsVersion': termsVersion},
+      data: {'version': termsVersion},
     );
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true || json['data'] is! Map) throw apiException(json);
     return Map<String, dynamic>.from(json['data'] as Map);
   }
+
+  Future<Map<String, dynamic>> submitConsent(String termsVersion) => consent(termsVersion);
 }

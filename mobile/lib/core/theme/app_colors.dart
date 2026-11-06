@@ -3,29 +3,36 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Sen Hồng brand palette. Cyan remains dedicated to decorative accents and
-  // the bottom navigation gradient; semantic colors below are readable on
-  // the app's light glass surfaces.
-  // `primary` is also consumed directly by labels and icons throughout the
-  // app, so it must remain legible on light glass surfaces (WCAG AA).
-  static const Color primary = Color(0xFF075985);
-  static const Color primaryDark = Color(0xFF064E73);
-  static const Color primaryLight = Color(0xFF0E7490);
-  // Reused brand and surface colors that were previously duplicated as raw
-  // literals across screens. Keep these centralized so palette tuning stays
-  // consistent without changing their current appearance.
-  static const Color brandBlue = Color(0xFF0077B6);
-  static const Color brandNavy = Color(0xFF0F3E6D);
-  static const Color royalBlue = Color(0xFF023E8A);
-  static const Color oceanCyan = Color(0xFF0096C7);
-  static const Color tealNavy = Color(0xFF056676);
-  static const Color deepNavy = Color(0xFF0C1929);
-  static const Color inkNavy = Color(0xFF030B17);
-  static const Color cardNavy = Color(0xFF132A48);
-  static const Color primaryAccent = bottomBarCyan;
-  static const Color bottomBarCyan = Color(0xFF26E5DC);
-  static const Color bottomBarOcean = Color(0xFF00B4D8);
-  static const Color bottomBarGlow = Color(0xFF00E5FF);
+  // Sen Hồng brand palette - Professional Blue Spectrum with WCAG compliance
+  // Đa cấp độ blue tối ưu cho từng mục đích: chữ thường, chữ nhỏ, hiện đại, tiêu đề
+  // Tất cả đều đạt WCAG AA hoặc AAA trên nền trắng.
+  
+  // PRIMARY - Chữ thường, link, cân bằng nhất (#0066CC - 5.6:1 WCAG AA)
+  static const Color primary = Color(0xFF0066CC);
+  
+  // PRIMARY DARK - Chữ nhỏ, cần dễ đọc hơn (#0056B3 - 7:1 WCAG AAA)
+  static const Color primaryDark = Color(0xFF0056B3);
+  
+  // PRIMARY LIGHT - Hiện đại kiểu Tailwind (#1D4ED8 - 6.7:1)
+  static const Color primaryLight = Color(0xFF1D4ED8);
+  
+  // PRIMARY TEXT - Tiêu đề nghiêm túc (Navy #003366 - 13:1 WCAG AAA)
+  static const Color primaryText = Color(0xFF003366);
+  // Reused brand and surface colors aligned with Professional Blue palette.
+  static const Color brandBlue = Color(0xFF0066CC); // Same as primary
+  static const Color brandNavy = Color(0xFF003366); // Navy for headers
+  static const Color royalBlue = Color(0xFF1D4ED8); // Modern Tailwind blue
+  static const Color oceanCyan = Color(0xFF0EA5E9); // Lighter accent
+  static const Color tealNavy = Color(0xFF0056B3); // Dark readable blue
+  static const Color deepNavy = Color(0xFF001F3F); // Very deep navy
+  static const Color inkNavy = Color(0xFF00152A); // Ink navy
+  static const Color cardNavy = Color(0xFF002B5C); // Card navy
+  static const Color primaryAccent = Color(0xFF0066CC); // Same as primary
+  
+  // Bottom bar uses cyan accent for visual pop while keeping blue for semantics
+  static const Color bottomBarCyan = Color(0xFF06B6D4); // Cyan accent
+  static const Color bottomBarOcean = Color(0xFF0EA5E9); // Sky blue
+  static const Color bottomBarGlow = Color(0xFF38BDF8); // Light sky
   static const Color accentGold = Color(0xFFFFB300);
 
   // Secondary & Accents
@@ -98,10 +105,11 @@ class AppColors {
   static const Color textSecondaryLight = Color(0xFF475569);
   static const Color textMutedLight = Color(0xFF55657A);
 
-  // Màu nhấn dùng cho CHỮ trên nền sáng (WCAG AA ≥ 4.5:1).
-  // AppColors.primary is now a text-safe deep teal.
-  static const Color primaryText =
-      primary; // 5.8:1 (nền sáng) · 4.8:1 (nền xanh nhạt)
+  // Màu nhấn dùng cho CHỮ trên nền sáng - Phân cấp theo mục đích
+  // Primary #0066CC: Link, button text, chữ thường (5.6:1 AA) ✅
+  // PrimaryDark #0056B3: Body text, chữ nhỏ cần đọc rõ (7:1 AAA) ✅
+  // PrimaryLight #1D4ED8: Modern accent, highlights (6.7:1 AA+) ✅
+  // PrimaryText #003366: Headings, tiêu đề nghiêm túc (13:1 AAA) ✅
   // Xanh lá dạng chữ đạt WCAG AA trên bề mặt sáng.
   static const Color successTextLight = Color(0xFF14532D); // 8:1 on white
   // Cam dạng chữ (warningText #B45309 chỉ đạt 3.86:1).
@@ -119,26 +127,25 @@ class AppColors {
   static const Color textSecondaryDark = Color(0xFF94A3B8);
   static const Color textMutedDark = Color(0xFF64748B);
 
-  // Primary gradient is used beneath white labels and icons; keep both stops
-  // dark enough for accessible contrast on selected controls and cards.
+  // Primary gradient now features professional blue spectrum
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primary, primaryDark],
+    colors: [Color(0xFF0066CC), Color(0xFF003366)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient bottomBarGradient = LinearGradient(
-    colors: [Color(0xFF26E5DC), Color(0xFF00B4D8)],
+    colors: [Color(0xFF06B6D4), Color(0xFF0EA5E9)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient balanceCardGradient = LinearGradient(
     colors: [
-      Color(0xFF023E8A),
-      Color(0xFF0077B6),
-      Color(0xFF0096C7),
-      Color(0xFF26E5DC),
+      Color(0xFF003366), // Navy
+      Color(0xFF0056B3), // Dark blue
+      Color(0xFF0066CC), // Primary blue
+      Color(0xFF1D4ED8), // Tailwind blue
     ],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -152,6 +159,48 @@ class AppColors {
 
   static const LinearGradient cardTitaniumGradient = LinearGradient(
     colors: [Color(0xFF334155), Color(0xFF1E293B), Color(0xFF0F172A)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // Service card gradients - vibrant colors for quick service icons
+  static const LinearGradient serviceTransferGradient = LinearGradient(
+    colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient serviceRechargeGradient = LinearGradient(
+    colors: [Color(0xFFF97316), Color(0xFFEA580C)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient serviceUtilityGradient = LinearGradient(
+    colors: [Color(0xFF10B981), Color(0xFF059669)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient serviceSavingsGradient = LinearGradient(
+    colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient serviceLoanGradient = LinearGradient(
+    colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient serviceLotteryGradient = LinearGradient(
+    colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient serviceCardGradient = LinearGradient(
+    colors: [Color(0xFF06B6D4), Color(0xFF0891B2)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  static const LinearGradient serviceMoreGradient = LinearGradient(
+    colors: [Color(0xFF64748B), Color(0xFF475569)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

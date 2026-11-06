@@ -9,6 +9,7 @@ import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class IdentityDocumentScreen extends StatefulWidget {
   const IdentityDocumentScreen({super.key});
@@ -135,6 +136,7 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
       appBar: AppBar(
         title: const Text('Hồ Sơ Căn Cước Công Dân'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
             tooltip: 'Lịch sử xác thực',
@@ -479,7 +481,11 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                                 height: 20,
                                 decoration: BoxDecoration(
                                   color: AppColors.bottomBarCyan,
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.3),
+                                    width: 0.5,
+                                  ),
                                 ),
                                 child: const Icon(
                                     CupertinoIcons.radiowaves_right,
@@ -565,7 +571,11 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.white12,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: Colors.white24,
+                    width: 0.5,
+                  ),
                 ),
                 child: const Text('ICAO 9303 CHIP',
                     style: TextStyle(

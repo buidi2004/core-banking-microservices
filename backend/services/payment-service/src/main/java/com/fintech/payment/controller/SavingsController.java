@@ -61,5 +61,14 @@ public class SavingsController {
         SettleSavingsResponse response = savingsService.settleSavings(id, userId, request);
         return ResponseEntity.ok(ApiResponse.success(response.getMessage(), response));
     }
+
+    @PostMapping("/accounts/{id}/withdraw-partial")
+    public ResponseEntity<ApiResponse<SettleSavingsResponse>> withdrawPartial(
+            @RequestHeader(value = "X-User-Id", required = false, defaultValue = "user-me") String userId,
+            @PathVariable("id") String id,
+            @Valid @RequestBody PartialWithdrawSavingsRequest request) {
+        SettleSavingsResponse response = savingsService.withdrawPartial(id, userId, request);
+        return ResponseEntity.ok(ApiResponse.success(response.getMessage(), response));
+    }
 }
 

@@ -199,11 +199,15 @@ class DioClient {
         _activeWsUrl = deriveWsUrl(sharedDio.options.baseUrl);
       }
 
-      // Phương án 2: Tự động kéo link Codespace mới nhất từ GitHub Repo (không cần copy-paste khi cài APK)
+      // Phương án 2: Tự động kéo link Codespace mới nhất từ GitHub Repo (chỉ khi local không phản hồi hoặc đang dùng link Codespace)
       final currentBase = sharedDio.options.baseUrl;
-      if (currentBase.contains('localhost') ||
-          currentBase.contains('10.0.2.2') ||
-          currentBase.contains('.app.github.dev')) {
+      final isLocal = currentBase.contains('localhost') || currentBase.contains('10.0.2.2');
+      if (isLocal) {
+        final isLocalAlive = await probeGatewayReachable(currentBase);
+        if (!isLocalAlive) {
+          await syncFromCloudRegistry();
+        }
+      } else if (currentBase.contains('.app.github.dev')) {
         await syncFromCloudRegistry();
       }
     } catch (_) {}

@@ -6,7 +6,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -27,7 +29,8 @@ public class LotteryController {
 
     @GetMapping("/my-tickets")
     public ResponseEntity<ApiResponse<List<LotteryTicketDto>>> getMyTickets(
-            @RequestHeader(value = "X-User-Id", defaultValue = "user-test") String userId) {
+            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        requireUser(userId);
         log.info("Fetching lottery tickets for user: {}", userId);
         List<LotteryTicketDto> tickets = lotteryService.getUserTickets(userId);
         return ResponseEntity.ok(ApiResponse.success("Lấy danh sách vé đã mua thành công", tickets));
@@ -35,10 +38,17 @@ public class LotteryController {
 
     @PostMapping("/buy")
     public ResponseEntity<ApiResponse<LotteryBuyResponse>> buyTicket(
-            @RequestHeader(value = "X-User-Id", defaultValue = "user-test") String userId,
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
             @Valid @RequestBody LotteryBuyRequest request) {
+        requireUser(userId);
         log.info("User {} buying lottery ticket: game={}, quantity={}", userId, request.getGameName(), request.getQuantity());
         LotteryBuyResponse response = lotteryService.buyTicket(userId, request);
         return ResponseEntity.ok(ApiResponse.success("Mua vé số thành công", response));
+    }
+
+    private void requireUser(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing trusted header X-User-Id");
+        }
     }
 }

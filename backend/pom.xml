@@ -92,7 +92,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.1.2</version>
                     <configuration>
-                        <argLine>-Dapi.version=1.44</argLine>
+                        <argLine>-Dapi.version=1.44 -Xshare:off</argLine>
                     </configuration>
                 </plugin>
             </plugins>

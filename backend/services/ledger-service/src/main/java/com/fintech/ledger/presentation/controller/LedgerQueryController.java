@@ -16,7 +16,10 @@ import java.time.Instant;
  * - GET /api/v1/ledger/cash-summary: Trả về tổng Nợ 1011 (Quỹ tiền mặt) và tổng Có 4211 (Ví khách hàng),
  *   định lý bảo toàn Delta = 0 và trạng thái cân bằng tuyệt đối.
  */
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {
+        "${app.cors.portal-origin:http://localhost:5173}",
+        "${app.cors.portal-alt-origin:http://127.0.0.1:5173}"
+})
 @RestController
 @RequestMapping("/api/v1/ledger")
 public class LedgerQueryController {

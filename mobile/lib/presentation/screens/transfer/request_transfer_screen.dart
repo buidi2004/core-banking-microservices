@@ -7,6 +7,7 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/money_request_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class RequestTransferScreen extends StatefulWidget {
   const RequestTransferScreen({super.key});
@@ -23,11 +24,20 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
   int _splitMemberCount = 3;
   bool _isSubmitting = false;
 
-  final List<double> _quickAmounts = [50000, 100000, 200000, 500000, 1000000, 2000000];
+  final List<double> _quickAmounts = [
+    50000,
+    100000,
+    200000,
+    500000,
+    1000000,
+    2000000
+  ];
 
   double _eachPersonAmount(String amountText) {
     final total = double.tryParse(amountText) ?? 0;
-    return _isGroupSplit && _splitMemberCount > 0 ? (total / _splitMemberCount) : total;
+    return _isGroupSplit && _splitMemberCount > 0
+        ? (total / _splitMemberCount)
+        : total;
   }
 
   @override
@@ -57,7 +67,8 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
       HapticFeedback.vibrate();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Số tiền yêu cầu tối đa cho mỗi giao dịch là 50.000.000đ'),
+          content:
+              Text('Số tiền yêu cầu tối đa cho mỗi giao dịch là 50.000.000đ'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -92,7 +103,9 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
       await MoneyRequestRemoteDataSource().create(
         payerUserId: target,
         amount: _isGroupSplit ? perPerson : total,
-        message: _noteCtrl.text.isNotEmpty ? _noteCtrl.text : (_isGroupSplit ? 'Chia tiền nhóm' : 'Yêu cầu chuyển tiền'),
+        message: _noteCtrl.text.isNotEmpty
+            ? _noteCtrl.text
+            : (_isGroupSplit ? 'Chia tiền nhóm' : 'Yêu cầu chuyển tiền'),
       );
       if (mounted) Navigator.pop(context);
     } catch (_) {
@@ -103,7 +116,8 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
 
     if (!mounted) return;
     HapticFeedback.lightImpact();
-    Clipboard.setData(ClipboardData(text: 'https://senbank.vn/pay-request?target=$target&amount=$total'));
+    Clipboard.setData(ClipboardData(
+        text: 'https://senbank.vn/pay-request?target=$target&amount=$total'));
 
     showDialog(
       context: context,
@@ -112,10 +126,15 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
           children: [
-            Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight),
+            Icon(CupertinoIcons.checkmark_seal_fill,
+                color: AppColors.successTextLight),
             SizedBox(width: 8),
             Expanded(
-              child: Text('Đã tạo yêu cầu!', style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 18, fontWeight: FontWeight.bold)),
+              child: Text('Đã tạo yêu cầu!',
+                  style: TextStyle(
+                      color: AppColors.textPrimaryLight,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -127,15 +146,19 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
               _isGroupSplit
                   ? 'Yêu cầu chia tiền nhóm ($_splitMemberCount người, mỗi người ${CurrencyFormatter.formatVND(_eachPersonAmount(_amountCtrl.text))}) đã được khởi tạo.'
                   : 'Yêu cầu chuyển ${CurrencyFormatter.formatVND(total)} đã gửi tới $target.',
-              style: const TextStyle(color: AppColors.textSecondaryLight, height: 1.4),
+              style: const TextStyle(
+                  color: AppColors.textSecondaryLight, height: 1.4),
             ),
             const SizedBox(height: 16),
             const Center(
-              child: Icon(CupertinoIcons.qrcode, color: AppColors.primaryText, size: 80),
+              child: Icon(CupertinoIcons.qrcode,
+                  color: AppColors.primaryText, size: 80),
             ),
             const SizedBox(height: 8),
             const Center(
-              child: Text('Đã sao chép link thanh toán vào bộ nhớ đệm', style: TextStyle(fontSize: 12, color: AppColors.textMutedLight)),
+              child: Text('Đã sao chép link thanh toán vào bộ nhớ đệm',
+                  style:
+                      TextStyle(fontSize: 12, color: AppColors.textMutedLight)),
             ),
           ],
         ),
@@ -149,7 +172,9 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                 context.go('/transfer');
               }
             },
-            child: const Text('Đóng', style: TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold)),
+            child: const Text('Đóng',
+                style: TextStyle(
+                    color: AppColors.primaryText, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -163,15 +188,18 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
       appBar: AppBar(
         title: const Text('Yêu Cầu Chuyển Tiền / Chia Tiền'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
             tooltip: 'Mã QR của tôi',
-            icon: const Icon(CupertinoIcons.qrcode, color: AppColors.primaryText),
+            icon:
+                const Icon(CupertinoIcons.qrcode, color: AppColors.primaryText),
             onPressed: () => context.push('/my-qr'),
           ),
           IconButton(
             tooltip: 'Chuyển tiền',
-            icon: const Icon(CupertinoIcons.paperplane_fill, color: AppColors.primaryText),
+            icon: const Icon(CupertinoIcons.paperplane_fill,
+                color: AppColors.primaryText),
             onPressed: () => context.push('/transfer'),
           ),
         ],
@@ -215,38 +243,59 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
               const SizedBox(height: 20),
 
               if (!_isGroupSplit) ...[
-                Text('Người trả tiền (SĐT hoặc Tên)', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+                Text('Người trả tiền (SĐT hoặc Tên)',
+                    style: AppTypography.titleMedium(
+                        color: AppColors.textPrimaryLight)),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _targetCtrl,
-                  style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                      color: AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w600),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryText),
+                    prefixIcon: const Icon(CupertinoIcons.person_fill,
+                        color: AppColors.primaryText),
                     hintText: 'Nhập số điện thoại người cần nhắc nợ',
                     hintStyle: const TextStyle(color: AppColors.textMutedLight),
                     filled: true,
                     fillColor: AppColors.surfaceLight,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryDark, width: 1.5)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            const BorderSide(color: AppColors.borderLight)),
+                    enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide:
+                            const BorderSide(color: AppColors.borderLight)),
+                    focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                            color: AppColors.primaryDark, width: 1.5)),
                   ),
                 ),
                 const SizedBox(height: 18),
               ] else ...[
-                Text('Số người cùng chia (bao gồm cả bạn)', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+                Text('Số người cùng chia (bao gồm cả bạn)',
+                    style: AppTypography.titleMedium(
+                        color: AppColors.textPrimaryLight)),
                 const SizedBox(height: 8),
                 GlassCard(
                   quality: GlassQuality.minimal,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('$_splitMemberCount người', style: AppTypography.titleMedium(color: AppColors.primaryLight).copyWith(fontWeight: FontWeight.bold)),
+                        Text('$_splitMemberCount người',
+                            style: AppTypography.titleMedium(
+                                    color: AppColors.primaryLight)
+                                .copyWith(fontWeight: FontWeight.bold)),
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(CupertinoIcons.minus_circle_fill, color: AppColors.textSecondaryLight),
+                              icon: const Icon(CupertinoIcons.minus_circle_fill,
+                                  color: AppColors.textSecondaryLight),
                               onPressed: _splitMemberCount > 2
                                   ? () {
                                       HapticFeedback.selectionClick();
@@ -255,7 +304,8 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                                   : null,
                             ),
                             IconButton(
-                              icon: const Icon(CupertinoIcons.plus_circle_fill, color: AppColors.primaryText),
+                              icon: const Icon(CupertinoIcons.plus_circle_fill,
+                                  color: AppColors.primaryText),
                               onPressed: () {
                                 HapticFeedback.selectionClick();
                                 setState(() => _splitMemberCount++);
@@ -270,20 +320,35 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                 const SizedBox(height: 18),
               ],
 
-              Text('Tổng số tiền cần nhận', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+              Text('Tổng số tiền cần nhận',
+                  style: AppTypography.titleMedium(
+                      color: AppColors.textPrimaryLight)),
               const SizedBox(height: 8),
               TextField(
                 controller: _amountCtrl,
                 keyboardType: TextInputType.number,
-                style: AppTypography.displaySmall(color: AppColors.primaryLight).copyWith(fontWeight: FontWeight.bold),
+                style: AppTypography.displaySmall(color: AppColors.primaryLight)
+                    .copyWith(fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
                   suffixText: 'đ',
-                  suffixStyle: const TextStyle(color: AppColors.primaryLight, fontSize: 24, fontWeight: FontWeight.bold),
+                  suffixStyle: const TextStyle(
+                      color: AppColors.primaryLight,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryDark, width: 1.5)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                          color: AppColors.primaryDark, width: 1.5)),
                 ),
               ),
 
@@ -302,7 +367,9 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           child: Text(
                             'Bằng chữ: $words đồng',
-                            style: AppTypography.bodySmall(color: AppColors.primaryLight).copyWith(
+                            style: AppTypography.bodySmall(
+                                    color: AppColors.primaryLight)
+                                .copyWith(
                               fontStyle: FontStyle.italic,
                               fontWeight: FontWeight.w600,
                             ),
@@ -315,9 +382,13 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                         child: Row(
                           children: [
                             Icon(
-                              amt < 10000 || amt > 50000000 ? CupertinoIcons.exclamationmark_circle_fill : CupertinoIcons.checkmark_shield_fill,
+                              amt < 10000 || amt > 50000000
+                                  ? CupertinoIcons.exclamationmark_circle_fill
+                                  : CupertinoIcons.checkmark_shield_fill,
                               size: 13,
-                              color: amt < 10000 || amt > 50000000 ? AppColors.warningText : AppColors.emeraldGreenLight,
+                              color: amt < 10000 || amt > 50000000
+                                  ? AppColors.warningText
+                                  : AppColors.emeraldGreenLight,
                             ),
                             const SizedBox(width: 4),
                             Expanded(
@@ -325,7 +396,9 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                                 'Hạn mức yêu cầu: 10.000đ - 50.000.000đ / giao dịch',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: amt < 10000 || amt > 50000000 ? AppColors.warningText : AppColors.textMutedLight,
+                                  color: amt < 10000 || amt > 50000000
+                                      ? AppColors.warningText
+                                      : AppColors.textMutedLight,
                                 ),
                               ),
                             ),
@@ -347,7 +420,10 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                   return ActionChip(
                     label: Text(CurrencyFormatter.formatVND(amt)),
                     backgroundColor: AppColors.surfaceLight,
-                    labelStyle: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, fontWeight: FontWeight.w600),
+                    labelStyle: const TextStyle(
+                        color: AppColors.textPrimaryLight,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
                     side: const BorderSide(color: AppColors.borderLight),
                     onPressed: () {
                       HapticFeedback.selectionClick();
@@ -367,15 +443,21 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                       decoration: BoxDecoration(
                         color: AppColors.emeraldGreen.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.emeraldGreen.withOpacity(0.25)),
+                        border: Border.all(
+                            color: AppColors.emeraldGreen.withOpacity(0.25)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Mỗi người cần trả:', style: AppTypography.bodyMedium(color: AppColors.textPrimaryLight)),
+                          Text('Mỗi người cần trả:',
+                              style: AppTypography.bodyMedium(
+                                  color: AppColors.textPrimaryLight)),
                           Text(
-                            CurrencyFormatter.formatVND(_eachPersonAmount(value.text)),
-                            style: AppTypography.titleMedium(color: AppColors.successTextLight).copyWith(fontWeight: FontWeight.bold),
+                            CurrencyFormatter.formatVND(
+                                _eachPersonAmount(value.text)),
+                            style: AppTypography.titleMedium(
+                                    color: AppColors.successTextLight)
+                                .copyWith(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -385,20 +467,34 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
               ],
 
               const SizedBox(height: 18),
-              Text('Nội dung / Lời nhắn', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+              Text('Nội dung / Lời nhắn',
+                  style: AppTypography.titleMedium(
+                      color: AppColors.textPrimaryLight)),
               const SizedBox(height: 8),
               TextField(
                 controller: _noteCtrl,
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(CupertinoIcons.chat_bubble_text_fill, color: AppColors.primaryText),
+                  prefixIcon: const Icon(CupertinoIcons.chat_bubble_text_fill,
+                      color: AppColors.primaryText),
                   hintText: 'Nhập lý do nhắc nợ / chia tiền',
                   hintStyle: const TextStyle(color: AppColors.textMutedLight),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.primaryDark, width: 1.5)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                          color: AppColors.primaryDark, width: 1.5)),
                 ),
               ),
 
@@ -409,8 +505,14 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                 child: ElevatedButton(
                   onPressed: _isSubmitting ? null : _handleCreateRequest,
                   child: _isSubmitting
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : Text(_isGroupSplit ? 'Tạo liên kết chia tiền nhóm' : 'Gửi yêu cầu chuyển tiền'),
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : Text(_isGroupSplit
+                          ? 'Tạo liên kết chia tiền nhóm'
+                          : 'Gửi yêu cầu chuyển tiền'),
                 ),
               ),
 
@@ -420,7 +522,8 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     children: [
                       _buildRouterTile(
@@ -428,25 +531,37 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
                         label: 'Chuyển tiền trực tiếp ví & liên ngân hàng',
                         onTap: () => context.push('/transfer'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.qrcode,
                         label: 'Lấy mã VietQR cá nhân nhận tiền chuyển khoản',
                         onTap: () => context.push('/my-qr'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.qrcode_viewfinder,
                         label: 'Quét mã QR bạn bè để nhận diện tài khoản',
                         onTap: () => context.push('/scan-qr'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_2_fill,
                         label: 'Danh bạ người thụ hưởng đã lưu',
                         onTap: () => context.push('/beneficiaries'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.clock_fill,
                         label: 'Xem lịch sử các yêu cầu nhận & chuyển tiền',
@@ -465,7 +580,10 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -477,10 +595,13 @@ class _RequestTransferScreenState extends State<RequestTransferScreen> {
             Expanded(
               child: Text(
                 label,
-                style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12),
+                style:
+                    AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                        .copyWith(fontWeight: FontWeight.w600, fontSize: 12),
               ),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),

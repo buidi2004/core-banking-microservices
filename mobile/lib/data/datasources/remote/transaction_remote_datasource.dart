@@ -105,7 +105,10 @@ class TransactionRemoteDataSource {
     }
     final response = await _dio.get<List<int>>(
       ApiConstants.receiptPdf(transactionId),
-      options: Options(responseType: ResponseType.bytes),
+      options: Options(
+        responseType: ResponseType.bytes,
+        headers: {'Accept': 'application/pdf, application/octet-stream, */*'},
+      ),
     );
     if (response.data == null) throw Exception('Không nhận được biên lai từ backend');
     return response.data!;

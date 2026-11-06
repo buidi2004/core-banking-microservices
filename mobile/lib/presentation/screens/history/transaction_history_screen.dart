@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/network/realtime_notification_service.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
@@ -38,16 +40,23 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   bool _isLastPage = false;
   int _currentPage = 0;
   String? _walletId;
+  StreamSubscription? _notifSub;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
     _loadTransactions(refresh: true);
+    _notifSub = RealtimeNotificationService().notificationStream.listen((_) {
+      if (mounted) {
+        _loadTransactions(refresh: true);
+      }
+    });
   }
 
   @override
   void dispose() {
+    _notifSub?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
@@ -188,10 +197,104 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
       final bytes = await TransactionRemoteDataSource()
           .exportTransactions(walletId: wallet.walletId, format: format);
       if (mounted) {
-        AppAlerts.showSuccess(
-          context,
-          'Đã xuất thành công sao kê $format (${bytes.length} bytes)',
-          title: 'Xuất sao kê',
+        final ext = format.toLowerCase() == 'pdf' ? 'pdf' : (format.toLowerCase() == 'excel' ? 'xlsx' : 'csv');
+        final fileName = 'sao_ke_senhong_${DateTime.now().year}_${wallet.walletId.substring(0, 8)}.$ext';
+        final fileSizeKb = (bytes.length / 1024).toStringAsFixed(1);
+
+        showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          builder: (ctx) => Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.emeraldGreen.withOpacity(0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.checkmark_seal_fill,
+                    color: AppColors.emeraldGreen,
+                    size: 36,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Xuất Sao Kê Thành Công',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimaryLight,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tệp: $fileName ($fileSizeKb KB)',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryLight,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.black.withOpacity(0.06)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(CupertinoIcons.shield_lefthalf_fill, size: 18, color: AppColors.emeraldGreen),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Chứng từ điện tử có giá trị pháp lý theo Nghị định 52/2024/NĐ-CP về thanh toán không dùng tiền mặt.',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondaryLight.withOpacity(0.9),
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryLight,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Hoàn tất & Đóng', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       }
     } catch (error) {
@@ -768,7 +871,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                                                         ).copyWith(
                                                             fontWeight:
                                                                 FontWeight.bold,
-                                                            fontSize: 13.5),
+                                                            fontSize: 13.5,
+                                                            fontFeatures: const [
+                                                              FontFeature.tabularFigures(),
+                                                            ]),
                                                       ),
                                                     ),
                                                     const SizedBox(height: 4),

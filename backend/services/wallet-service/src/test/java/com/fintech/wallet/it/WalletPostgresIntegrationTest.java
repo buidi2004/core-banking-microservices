@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *  - CREATE: ví mới được lưu chính xác
  *  - READ: findById, findByOwnerId, findByIdForUpdate
  *  - UPDATE: pessimistic lock hoạt động đúng với SELECT FOR UPDATE
- *  - CHECK CONSTRAINT: balance không âm, reserved_balance không âm
+ *  - CHECK CONSTRAINT: reserved_balance không âm; balance cho phép âm (thấu chi — tính năng 4.1)
  *  - UNIQUE INDEX: không tạo 2 ví cùng user_id
  */
 @Testcontainers(disabledWithoutDocker = true)
@@ -85,6 +85,17 @@ class WalletPostgresIntegrationTest {
     private Wallet saveWallet(String userId, long balance) {
         Wallet w = buildWallet(userId, balance);
         return walletRepository.saveAndFlush(w);
+    }
+
+    private Wallet saveWallet(String userId, long balance, long overdraftLimit) {
+        Wallet w = buildWallet(userId, balance);
+        w.setOverdraftLimit(overdraftLimit);
+        return walletRepository.saveAndFlush(w);
+    }
+
+    private long rawOverdraftLimit(String walletId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT overdraft_limit FROM wallets WHERE id = ?", Long.class, walletId);
     }
 
     private long rawBalance(String walletId) {
@@ -144,6 +155,31 @@ class WalletPostgresIntegrationTest {
 
             Wallet second = buildWallet("user-dup-1", 0L);
             assertThatThrownBy(() -> walletRepository.saveAndFlush(second))
+                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        }
+    }
+
+    // ─── MIGRATION V2 — OVERDRAFT LIMIT (tính năng 4.1) ─────────────────────────
+
+    @Nested
+    @DisplayName("MIGRATION V2 — cột overdraft_limit")
+    class OverdraftLimitColumnTests {
+
+        @Test
+        @DisplayName("Ví mới có overdraft_limit mặc định 0 (không thấu chi — backward compatible)")
+        void overdraftLimit_defaultsToZero() {
+            Wallet wallet = saveWallet("user-od-default", 0L);
+
+            assertThat(rawOverdraftLimit(wallet.getId())).isEqualTo(0L);
+        }
+
+        @Test
+        @DisplayName("overdraft_limit âm bị chặn ở cấp DB (CHECK trong migration V2)")
+        void overdraftLimit_negativeRejected() {
+            Wallet wallet = saveWallet("user-od-negative", 0L);
+
+            assertThatThrownBy(() -> jdbcTemplate.update(
+                    "UPDATE wallets SET overdraft_limit = -1 WHERE id = ?", wallet.getId()))
                     .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
         }
     }
@@ -232,19 +268,18 @@ class WalletPostgresIntegrationTest {
         }
 
         @Test
-        @DisplayName("UPDATE với số dư âm — CHECK constraint chặn từ DB")
-        void update_negativeBalance_blockedByCheckConstraint() {
-            Wallet wallet = saveWallet("user-check-1", 10000L);
+        @DisplayName("UPDATE với số dư âm (thấu chi) — DB cho phép, giới hạn do service layer kiểm soát")
+        void update_negativeBalance_allowedForOverdraft() {
+            Wallet wallet = saveWallet("user-overdraft-1", 10000L, 20000L);
 
-            // CHECK constraint (balance >= 0) phải chặn ở cấp DB
-            assertThatThrownBy(() -> {
-                transactionTemplate.executeWithoutResult(status -> {
-                    Wallet w = walletRepository.findByIdForUpdate(wallet.getId()).orElseThrow();
-                    w.setBalance(-1L);
-                    walletRepository.saveAndFlush(w);
-                });
-            }).isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
-              .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("balance"));
+            // V1 chặn balance >= 0 ở DB; V2 bỏ CHECK — dư nợ thấu chi được persist
+            transactionTemplate.executeWithoutResult(status -> {
+                Wallet w = walletRepository.findByIdForUpdate(wallet.getId()).orElseThrow();
+                w.setBalance(-3000L);
+                walletRepository.saveAndFlush(w);
+            });
+
+            assertThat(rawBalance(wallet.getId())).isEqualTo(-3000L);
         }
 
         @Test
@@ -285,11 +320,12 @@ class WalletPostgresIntegrationTest {
     class CheckConstraintTests {
 
         @Test
-        @DisplayName("INSERT balance < 0 bị chặn bởi CHECK constraint")
-        void insert_negativeBalance_rejected() {
+        @DisplayName("INSERT balance < 0 không còn bị chặn — đây là dư nợ thấu chi (tính năng 4.1)")
+        void insert_negativeBalance_allowedForOverdraft() {
             Wallet wallet = Wallet.builder()
-                    .userId("user-balance-check")
+                    .userId("user-overdraft-2")
                     .balance(-100L)
+                    .overdraftLimit(20000L)
                     .reservedBalance(0L)
                     .currency("VND")
                     .status("ACTIVE")
@@ -297,9 +333,9 @@ class WalletPostgresIntegrationTest {
                     .dailySpent(0L)
                     .build();
 
-            assertThatThrownBy(() -> walletRepository.saveAndFlush(wallet))
-                    .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class)
-                    .satisfies(e -> assertThat(e.getMessage()).containsIgnoringCase("balance"));
+            Wallet saved = walletRepository.saveAndFlush(wallet);
+            assertThat(rawBalance(saved.getId())).isEqualTo(-100L);
+            assertThat(rawOverdraftLimit(saved.getId())).isEqualTo(20000L);
         }
 
         @Test

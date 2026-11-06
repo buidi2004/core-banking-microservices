@@ -22,6 +22,8 @@ class LoanRemoteDataSource {
     required int termMonths,
     String? purpose,
     String? pinToken,
+    String? otpToken,
+    String? otp,
   }) async {
     final response = await _dio.post(
       ApiConstants.loanApply,
@@ -32,6 +34,8 @@ class LoanRemoteDataSource {
         'termMonths': termMonths,
         if (purpose != null) 'purpose': purpose,
         if (pinToken != null && pinToken.isNotEmpty) 'pinToken': pinToken,
+        if (otpToken != null && otpToken.isNotEmpty) 'otpToken': otpToken,
+        if (otp != null && otp.isNotEmpty) 'otp': otp,
       },
     );
     final json = Map<String, dynamic>.from(response.data as Map);
@@ -71,6 +75,22 @@ class LoanRemoteDataSource {
       data: {
         'termNumber': termNumber,
         if (amount != null) 'amount': amount,
+        if (pinToken != null && pinToken.isNotEmpty) 'pinToken': pinToken,
+      },
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
+  }
+
+  /// Tất toán trước hạn toàn bộ khoản vay (phí 1% theo quy định NHNN)
+  Future<Map<String, dynamic>> settleLoanEarly(
+    String id, {
+    String? pinToken,
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.loanSettleEarly(id),
+      data: {
         if (pinToken != null && pinToken.isNotEmpty) 'pinToken': pinToken,
       },
     );

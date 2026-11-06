@@ -9,7 +9,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:/var/data/python/bin:$PATH"
 
 FULL=0
 [ "${1:-}" = "--full" ] && FULL=1
@@ -23,7 +23,7 @@ if ! command -v graphify >/dev/null 2>&1; then
   else
     python3 -m pip install --user "graphifyy[sql]"
   fi
-  export PATH="$HOME/.local/bin:$PATH"
+  export PATH="$HOME/.local/bin:/var/data/python/bin:$PATH"
 fi
 
 echo "→ graphify $(graphify --version 2>/dev/null | awk '{print $2}')"

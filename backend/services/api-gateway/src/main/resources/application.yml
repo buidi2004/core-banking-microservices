@@ -16,6 +16,14 @@ spring:
       port: ${REDIS_PORT:6379}
   cloud:
     gateway:
+      httpclient:
+        connect-timeout: 3000
+        response-timeout: 15s
+        pool:
+          type: ELASTIC
+          max-idle-time: 15s
+          max-life-time: 60s
+
       default-filters:
         # Gỡ header giả mạo từ client trước khi xác thực/route (chống spoofing X-User-*)
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
@@ -108,32 +116,10 @@ spring:
                 name: notificationServiceCb
                 fallbackUri: forward:/fallback/notification
 
-        - id: notification-service-feedback
-          uri: http://notification-service:8085
-          predicates:
-            - Path=/api/v1/feedback/**
-          filters:
-            - name: JwtAuthenticationFilter
-            - name: CircuitBreaker
-              args:
-                name: notificationServiceCb
-                fallbackUri: forward:/fallback/notification
-
         - id: notification-service-promotions
           uri: http://notification-service:8085
           predicates:
             - Path=/api/v1/promotions/**
-          filters:
-            - name: JwtAuthenticationFilter
-            - name: CircuitBreaker
-              args:
-                name: notificationServiceCb
-                fallbackUri: forward:/fallback/notification
-
-        - id: notification-service-referrals
-          uri: http://notification-service:8085
-          predicates:
-            - Path=/api/v1/referrals/**
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -298,6 +284,14 @@ spring:
             - name: JwtAuthenticationFilter
 
         # ----------------------------------------------------------------------------
+        # BANKS: DANH SÁCH NGÂN HÀNG THỤ HƯỞNG -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-banks
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/banks/**, /api/v1/banks
+
+        # ----------------------------------------------------------------------------
         # PAYMENT SERVICE: GIAO DỊCH CHUYỂN TIỀN & P2P SAGA -> payment-service:8083
         # ----------------------------------------------------------------------------
         - id: payment-service-route
@@ -406,6 +400,20 @@ spring:
             - Path=/api/v1/lottery/**
           filters:
             - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # AI CHATBOT SERVICE: TRỢ LÝ TÀI CHÍNH RAG 24/7 -> chatbot-service:8000
+        # ----------------------------------------------------------------------------
+        - id: chatbot-service-chat
+          uri: ${CHATBOT_SERVICE_URI:http://chatbot-service:8000}
+          predicates:
+            - Path=/api/v1/chat/**, /api/v1/chat
+          filters:
+            - name: JwtAuthenticationFilter
+            - AddRequestHeader=X-Internal-Key, ${INTERNAL_API_KEY:senhong-internal-chatbot-key-2026}
+          metadata:
+            response-timeout: 45000
+            connect-timeout: 5000
 
         # ----------------------------------------------------------------------------
         # Đã hoàn tất di trú 6/6 Microservices - Loại bỏ route rác Monolith Fallback

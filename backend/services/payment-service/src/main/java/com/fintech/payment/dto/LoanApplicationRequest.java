@@ -16,7 +16,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LoanApplicationRequest {
-    @NotBlank
     private String walletId;
 
     @NotBlank
@@ -35,5 +34,7 @@ public class LoanApplicationRequest {
     private String pinToken;
 
     private String otpToken;
+
+    private String otp;
 }
 

@@ -15,6 +15,7 @@ import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasou
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 import '../../widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class PhoneRechargeScreen extends StatefulWidget {
   const PhoneRechargeScreen({super.key});
@@ -275,6 +276,7 @@ class _PhoneRechargeScreenState extends State<PhoneRechargeScreen> {
       appBar: AppBar(
         title: const Text('Nạp Tiền Điện Thoại & 4G/5G'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

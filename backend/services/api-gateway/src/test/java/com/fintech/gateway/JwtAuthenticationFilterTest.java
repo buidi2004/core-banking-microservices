@@ -229,8 +229,8 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("8. Forward header X-Branch-Id từ client request và inject X-User-Roles")
-    void shouldForwardBranchIdAndUserRoles() {
+    @DisplayName("8. Ignore spoofed branch header and inject X-User-Roles")
+    void shouldIgnoreSpoofedBranchIdAndInjectUserRoles() {
         String userId = "teller-001";
         String token = createToken(userId, "0911222333", "ROLE_TELLER", "VERIFIED", "ACCESS", 3600);
 
@@ -253,6 +253,6 @@ class JwtAuthenticationFilterTest {
         HttpHeaders downstreamHeaders = captor.getValue().getRequest().getHeaders();
         assertEquals(userId, downstreamHeaders.getFirst("X-User-Id"));
         assertEquals("ROLE_TELLER", downstreamHeaders.getFirst("X-User-Roles"));
-        assertEquals("BRANCH_HN_01", downstreamHeaders.getFirst("X-Branch-Id"), "Header X-Branch-Id phải được forward xuống downstream");
+        assertNull(downstreamHeaders.getFirst("X-Branch-Id"), "Branch chỉ được lấy từ claim JWT, không tin header client");
     }
 }

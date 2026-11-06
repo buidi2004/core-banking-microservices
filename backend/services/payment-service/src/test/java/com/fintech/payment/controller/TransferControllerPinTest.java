@@ -2,9 +2,12 @@ package com.fintech.payment.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fintech.payment.dto.TransferRequest;
+import com.fintech.payment.dto.BatchTransferRequest;
+import com.fintech.payment.dto.BatchTransferItemRequest;
 import com.fintech.payment.saga.PaymentSagaOrchestrator;
 import com.fintech.payment.saga.SagaContext;
 import com.fintech.payment.security.PinTokenValidator;
+import com.fintech.payment.service.BatchTransferService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +42,29 @@ class TransferControllerPinTest {
     @MockBean
     private com.fintech.payment.repository.TransactionRepository transactionRepository;
 
+    @MockBean
+    private BatchTransferService batchTransferService;
+
+    @Test
+    @DisplayName("Batch transfer: thiếu trusted user identity -> từ chối")
+    void batchTransfer_MissingUserId_ShouldReject() throws Exception {
+        BatchTransferRequest request = BatchTransferRequest.builder()
+                .sourceWalletId("wallet-source")
+                .batchName("Payroll")
+                .items(java.util.List.of(BatchTransferItemRequest.builder()
+                        .accountNumber("0901234567")
+                        .amount(1000L)
+                        .build()))
+                .build();
+
+        mockMvc.perform(post("/api/v1/payments/transfer/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(batchTransferService);
+    }
+
     @Test
     @DisplayName("P2P Transfer: Khi truyền pinToken sai -> từ chối với INVALID_PIN_TOKEN và không chạy saga")
     void p2pTransfer_InvalidPinToken_ShouldReject() throws Exception {
@@ -54,6 +80,7 @@ class TransferControllerPinTest {
         when(pinTokenValidator.validatePinToken("invalid-pin-token", "user-source")).thenReturn(false);
 
         mockMvc.perform(post("/api/v1/payments/transfer")
+                        .header("X-User-Id", "user-source")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -86,6 +113,7 @@ class TransferControllerPinTest {
                 .thenReturn(ctx);
 
         mockMvc.perform(post("/api/v1/payments/transfer")
+                        .header("X-User-Id", "user-source")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -115,6 +143,7 @@ class TransferControllerPinTest {
                 .thenReturn(ctx);
 
         mockMvc.perform(post("/api/v1/payments/transfer")
+                        .header("X-User-Id", "user-source")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -122,4 +151,3 @@ class TransferControllerPinTest {
                 .andExpect(jsonPath("$.errorCode").value("INSUFFICIENT_BALANCE"));
     }
 }
-

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <filter id="shadow5" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+    <linearGradient id="planeBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#40C4FF"/>
+      <stop offset="50%" stop-color="#0288D1"/>
+      <stop offset="100%" stop-color="#01579B"/>
+    </linearGradient>
+    <linearGradient id="planeShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0277BD"/>
+      <stop offset="100%" stop-color="#004C8C"/>
+    </linearGradient>
+  </defs>
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="#FFFFFF" filter="url(#shadow5)"/>
+
+  <ellipse cx="250" cy="285" rx="110" ry="16" fill="#000000" opacity="0.08"/>
+
+  <g transform="translate(250, 210) rotate(-16) scale(1.15)">
+    <path d="M -10 -15 L -20 -95 L 18 -98 L 18 -15 Z" fill="url(#planeBlue)"/>
+    <rect x="-8" y="-70" width="14" height="28" rx="6" fill="url(#planeShadow)"/>
+
+    <path d="M -8 15 L 15 105 L 48 100 L 22 15 Z" fill="url(#planeShadow)"/>
+    <rect x="18" y="50" width="14" height="28" rx="6" fill="url(#planeShadow)"/>
+
+    <path d="M -90 -6 L -120 -45 L -105 -45 L -75 -4 Z" fill="url(#planeBlue)"/>
+    <path d="M -90 6 L -115 40 L -100 40 L -75 4 Z" fill="url(#planeShadow)"/>
+    <path d="M -70 0 L -115 0 L -105 -35 L -80 -20 Z" fill="url(#planeBlue)"/>
+
+    <path d="M -115 0 C -95 -16 50 -16 115 0 C 50 16 -95 16 -115 0 Z" fill="url(#planeBlue)"/>
+    <path d="M -80 -8 C 0 -12 70 -6 105 0 C 70 2 0 4 -80 0 Z" fill="#FFFFFF" opacity="0.4"/>
+    <path d="M 85 -5 L 100 -1 L 100 1 L 85 5 Z" fill="#FFFFFF" opacity="0.9"/>
+  </g>
+
+  <!-- Wordmark: SMEDIA -->
+  <g transform="translate(256, 350)">
+    <text x="-95" y="0" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="900" font-size="44" fill="#E65100">S</text>
+    <text x="-65" y="0" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="800" font-size="44" fill="#00838F" letter-spacing="4">MEDIA</text>
+  </g>
+</svg>

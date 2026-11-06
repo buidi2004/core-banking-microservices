@@ -21,6 +21,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sen_hong_bank/core/storage/app_session.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool sessionExpired;
@@ -340,15 +341,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  void _cycleWallpaper() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã đổi hình nền nghệ thuật phong cách Sen Hồng!'),
-        duration: Duration(milliseconds: 1000),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -365,6 +357,11 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
+          flexibleSpace: const AppBarSeamFade(),
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          shadowColor: Colors.transparent,
           leading: Navigator.of(context).canPop()
               ? IconButton(
                   icon: const Icon(CupertinoIcons.chevron_back,
@@ -372,26 +369,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                 )
               : null,
-          actions: [
-            IconButton(
-              tooltip: 'Cấu hình máy chủ Gateway (Local / GitHub Codespaces)',
-              icon: const Icon(CupertinoIcons.cloud_upload_fill,
-                  color: AppColors.primary),
-              onPressed: () => context.push('/settings/config'),
-            ),
-            IconButton(
-              tooltip: 'Đổi hình nền app',
-              icon: const Icon(CupertinoIcons.paintbrush_fill,
-                  color: AppColors.primary),
-              onPressed: _cycleWallpaper,
-            ),
-            IconButton(
-              tooltip: 'Tổng đài hỗ trợ CSKH',
-              icon: const Icon(CupertinoIcons.phone_circle_fill,
-                  color: AppColors.primary),
-              onPressed: () => context.push('/support/help-center'),
-            ),
-          ],
         ),
         body: SafeArea(
           child: SingleChildScrollView(
@@ -407,15 +384,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
-                      border:
-                          Border.all(color: AppColors.bottomBarCyan, width: 2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.bottomBarGlow.withOpacity(0.30),
-                          blurRadius: 20,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      border: Border.all(
+                        color: AppColors.bottomBarCyan.withOpacity(0.85),
+                        width: 1.5,
+                      ),
                     ),
                     padding: const EdgeInsets.all(8),
                     child: ClipOval(
@@ -448,14 +420,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppColors.warningBg,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                          color: AppColors.warningBorder, width: 1.2),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.warningText.withOpacity(0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
+                          color: AppColors.warningBorder, width: 1.0),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,13 +488,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.borderLight),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2)),
-                      ],
+                      border: Border.all(
+                        color: AppColors.borderLight,
+                        width: 1.0,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -552,9 +514,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                     color: AppColors.primaryDark),
                               ),
                               const SizedBox(height: 2),
-                              const Text(
-                                'Tài khoản Sen Hồng Bank',
-                                style: TextStyle(
+                              Text(
+                                _phoneController.text.isNotEmpty
+                                    ? 'SĐT: ${_phoneController.text}'
+                                    : 'Tài khoản Sen Hồng Bank',
+                                style: const TextStyle(
                                     fontSize: 11,
                                     color: AppColors.textSecondaryLight),
                               ),
@@ -586,33 +550,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppColors.textSecondaryLight),
                 ),
                 const SizedBox(height: 18),
-
-                // Anti-phishing fraud alert banner
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.warningBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.warningBorder),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(CupertinoIcons.shield_lefthalf_fill,
-                          color: AppColors.primary, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'CẢNH BÁO: Không đăng nhập qua đường link lạ. Ngân hàng KHÔNG BAO GIỜ gọi điện yêu cầu OTP/mật khẩu.',
-                          style: TextStyle(
-                              color: AppColors.warningText,
-                              fontSize: 11,
-                              height: 1.3),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
 
                 // Phone Field - Chỉ hiển thị khi chưa có tài khoản ghi nhớ hoặc người dùng muốn đổi tài khoản
                 if (!_isMaskedUser) ...[
@@ -744,12 +681,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Login Button
+                // Login Button - Tối ưu với haptic feedback mạnh hơn cho hành động quan trọng
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 52,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            HapticFeedback.mediumImpact();
+                            _login();
+                          },
                     child: _isLoading
                         ? const SizedBox(
                             width: 20,
@@ -778,13 +720,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                              border: Border.all(
+                                color: AppColors.borderLight,
+                                width: 1.0,
+                              ),
                             ),
                             child: const Icon(
                               CupertinoIcons.viewfinder,

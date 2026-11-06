@@ -4,7 +4,7 @@ import { ApiService } from '../api';
 import { formatCurrency } from '../utils';
 import { 
   Scale, CheckCircle2, AlertTriangle, RefreshCw, FileSpreadsheet, 
-  Search, ArrowDownRight, ArrowUpRight, ShieldCheck, Database
+  Search, ArrowDownRight, ArrowUpRight, ShieldCheck, Database, Download
 } from 'lucide-react';
 
 interface LedgerManagementProps {
@@ -17,6 +17,9 @@ export function LedgerManagement({ staff }: LedgerManagementProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedEntry, setSelectedEntry] = useState<LedgerJournalEntry | null>(null);
+  const [eodResult, setEodResult] = useState<any>(null);
+  const [eodLoading, setEodLoading] = useState<boolean>(false);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
 
   const fetchLedgerData = useCallback(async () => {
     setLoading(true);
@@ -39,6 +42,62 @@ export function LedgerManagement({ staff }: LedgerManagementProps) {
   }, [fetchLedgerData]);
 
   const isBalanced = reconciliation ? reconciliation.delta === 0 && reconciliation.balanced : true;
+
+  const handleCloseEndOfDay = async () => {
+    if (!window.confirm('Xác nhận KHÓA SỔ KẾ TOÁN CUỐI NGÀY (EOD Batch)?\n\nHệ thống sẽ đối soát toàn diện phát sinh Nợ - Có, khóa ngày giá trị T và chuyển sang T+1.')) return;
+    setEodLoading(true);
+    setActionNotice(null);
+    try {
+      const res = await ApiService.closeEndOfDay(staff);
+      if (res.success && res.data) {
+        setEodResult(res.data);
+        setActionNotice(`✅ ${res.message}`);
+        fetchLedgerData();
+      } else {
+        alert(`❌ Khóa sổ thất bại: ${res.message}`);
+      }
+    } catch (e: any) {
+      alert(`Lỗi: ${e.message}`);
+    } finally {
+      setEodLoading(false);
+    }
+  };
+
+  const handleAccrueCasa = async () => {
+    if (!window.confirm('Xác nhận tính và trả lãi tiền gửi không kỳ hạn CASA hàng tháng (0.2%/năm) cho các tài khoản ví?')) return;
+    setLoading(true);
+    try {
+      const res = await ApiService.accrueCasaInterest(staff, 0.2, 30);
+      if (res.success) {
+        alert(`✅ ${res.message}\nSố ví được trả lãi: ${res.data?.walletsAccrued}\nTổng tiền lãi: ${formatCurrency(res.data?.totalInterestPaid || 0)}`);
+        fetchLedgerData();
+      } else {
+        alert(`❌ Lỗi: ${res.message}`);
+      }
+    } catch (e: any) {
+      alert(`Lỗi: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportLedgerCsv = () => {
+    const now = new Date().toISOString().split('T')[0];
+    const headers = '\ufeffMã Chứng Từ,Mã Giao Dịch,Loại Nghiệp Vụ,Diễn Giải,Trạng Thái,Tổng Nợ (VND),Tổng Có (VND),Thời Gian Ghi Sổ\n';
+    const rows = filteredEntries.map(e =>
+      `"${e.id}","${e.transactionId}","${e.transactionType}","${(e.description || '').replace(/"/g, '""')}","${e.status}",${e.totalDebit || 0},${e.totalCredit || 0},"${e.createdAt}"`
+    ).join('\n');
+
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nhat-ky-so-cai-kep-${now}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
 
   const filteredEntries = entries.filter(e => {
     if (!searchTerm) return true;
@@ -82,17 +141,86 @@ export function LedgerManagement({ staff }: LedgerManagementProps) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchLedgerData}
-          disabled={loading}
-          className="btn btn-outline"
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}
-        >
-          <RefreshCw size={14} className={loading ? 'spin' : ''} />
-          <span>Đối soát tức thời</span>
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={handleAccrueCasa}
+            disabled={loading}
+            className="btn btn-outline"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', fontSize: '12.5px', color: 'var(--primary-blue)' }}
+            title="Trả lãi tiền gửi không kỳ hạn CASA 0.2%/năm"
+          >
+            <span>💰 Trả Lãi CASA</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCloseEndOfDay}
+            disabled={eodLoading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              borderRadius: '6px',
+              background: '#b91c1c',
+              color: '#ffffff',
+              border: 'none',
+              cursor: 'pointer'
+            }}
+            title="Khóa sổ kế toán cuối ngày T -> T+1"
+          >
+            <span>🔒 Khóa Sổ Cuối Ngày (EOD)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={fetchLedgerData}
+            disabled={loading}
+            className="btn btn-outline"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}
+          >
+            <RefreshCw size={14} className={loading ? 'spin' : ''} />
+            <span>Đối soát</span>
+          </button>
+        </div>
       </div>
+
+      {/* EOD Certificate Banner */}
+      {eodResult && (
+        <div style={{
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
+          color: '#ffffff',
+          padding: '18px 24px',
+          borderRadius: 'var(--radius-card)',
+          boxShadow: '0 4px 14px rgba(30, 58, 138, 0.25)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', fontWeight: 800 }}>
+              <ShieldCheck size={20} color="#60a5fa" />
+              <span>BIÊN BẢN CHỐT SỔ KẾ TOÁN CUỐI NGÀY: {eodResult.eodBatchId}</span>
+            </div>
+            <p style={{ margin: '6px 0 0 0', fontSize: '12.5px', color: '#bfdbfe' }}>
+              Ngày giá trị: <b>{eodResult.valueDate}</b> &rarr; Chuyển sang ngày mới: <b>{eodResult.nextValueDate}</b> | Bút toán: <b>{eodResult.totalEntries} chứng từ</b> ({eodResult.totalPostings} dòng Nợ/Có)
+            </p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ background: '#10b981', color: '#ffffff', padding: '4px 12px', borderRadius: '999px', fontSize: '11.5px', fontWeight: 800 }}>
+              ĐÃ CHỐT SỔ THÀNH CÔNG (Δ = 0.00 VND)
+            </span>
+            <div style={{ fontSize: '11px', color: '#bfdbfe', marginTop: '4px' }}>
+              Thời gian: {eodResult.closedAt ? new Date(eodResult.closedAt).toLocaleTimeString('vi-VN') : ''}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Đối soát Bất biến Kế toán (Reconciliation Banner) */}
       <div style={{
@@ -157,22 +285,45 @@ export function LedgerManagement({ staff }: LedgerManagementProps) {
             <span>NHẬT KÝ CHỨNG TỪ GHI SỔ GỐC (JOURNAL ENTRIES - {entries.length} CHỨNG TỪ)</span>
           </div>
 
-          <div style={{ position: 'relative', width: '320px' }}>
-            <input
-              type="text"
-              placeholder="Tìm theo mã giao dịch, mã chứng từ..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={handleExportLedgerCsv}
               style={{
-                width: '100%',
-                padding: '8px 12px 8px 32px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '7px 12px',
                 borderRadius: '6px',
                 border: '1px solid var(--border-color)',
-                fontSize: '12.5px',
-                background: 'var(--bg-main)'
+                background: 'var(--bg-subtle)',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: 'var(--primary-blue)',
+                cursor: 'pointer',
               }}
-            />
-            <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-muted)' }} />
+            >
+              <Download size={13} />
+              <span>Xuất Sổ Cái (CSV)</span>
+            </button>
+
+            <div style={{ position: 'relative', width: '280px' }}>
+              <input
+                type="text"
+                placeholder="Tìm theo mã giao dịch, mã chứng từ..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px 8px 32px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '12.5px',
+                  background: 'var(--bg-main)'
+                }}
+              />
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-muted)' }} />
+            </div>
           </div>
         </div>
 

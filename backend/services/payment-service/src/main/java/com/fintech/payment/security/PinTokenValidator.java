@@ -34,7 +34,7 @@ public class PinTokenValidator {
                     .parseSignedClaims(pinToken)
                     .getPayload();
 
-            boolean isPinType = "PIN_TOKEN".equals(claims.get("type"));
+            boolean isPinType = "PIN_TOKEN".equals(claims.get("type")) || "BIOMETRIC_TOKEN".equals(claims.get("type"));
             boolean isTransactionScope = "TRANSACTION_AUTH".equals(claims.get("scope"));
             boolean isUserMatch = expectedUserId.equals(claims.getSubject());
 
@@ -89,6 +89,26 @@ public class PinTokenValidator {
     public void validateOtp(String otpToken, String expectedPurpose) {
         if (!validateOtpToken(otpToken, expectedPurpose)) {
             throw new IllegalArgumentException("Mã xác thực OTP không hợp lệ hoặc đã hết hạn");
+        }
+    }
+
+    public boolean isBiometricToken(String token) {
+        if (token == null || token.isBlank()) {
+            return false;
+        }
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            Object authMethod = claims.get("authMethod");
+            Object bioVerified = claims.get("biometricVerified");
+            return "BIOMETRIC_QD2345".equals(authMethod)
+                    || "BIOMETRIC_TOKEN".equals(claims.get("type"))
+                    || Boolean.TRUE.equals(bioVerified);
+        } catch (Exception e) {
+            return false;
         }
     }
 }

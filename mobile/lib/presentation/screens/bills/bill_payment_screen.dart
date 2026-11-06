@@ -9,6 +9,7 @@ import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class BillPaymentScreen extends StatefulWidget {
   const BillPaymentScreen({super.key});
@@ -203,6 +204,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
       appBar: AppBar(
         title: const Text('Thanh Toán Hóa Đơn'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -364,17 +366,19 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: ((bill['color'] as Color) == AppColors.bottomBarCyan
-                                ? AppColors.primary
-                                : (bill['color'] as Color))
-                            .withValues(alpha: 0.15),
+                        color:
+                            ((bill['color'] as Color) == AppColors.bottomBarCyan
+                                    ? AppColors.primary
+                                    : (bill['color'] as Color))
+                                .withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         bill['icon'] as IconData,
-                        color: (bill['color'] as Color) == AppColors.bottomBarCyan
-                            ? AppColors.primaryDark
-                            : (bill['color'] as Color),
+                        color:
+                            (bill['color'] as Color) == AppColors.bottomBarCyan
+                                ? AppColors.primaryDark
+                                : (bill['color'] as Color),
                         size: 22,
                       ),
                     ),
@@ -735,7 +739,7 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
         ),
         Expanded(
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.white.withValues(alpha: 0.08),
@@ -842,9 +846,8 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
                     Text(
                       r['status'] as String,
                       style: TextStyle(
-                        color: isDone
-                            ? AppColors.successTextLight
-                            : Colors.white,
+                        color:
+                            isDone ? AppColors.successTextLight : Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -984,8 +987,8 @@ class _BillPaymentScreenState extends State<BillPaymentScreen>
           Expanded(
             child: Text(
               'SenBank miễn 100% phí xử lý thanh toán mọi loại hóa đơn gia đình. Hóa đơn được gạch nợ tức thì với EVN, Sawaco và các nhà mạng viễn thông.',
-              style:
-                  TextStyle(color: AppColors.successText, fontSize: 11, height: 1.35),
+              style: TextStyle(
+                  color: AppColors.successText, fontSize: 11, height: 1.35),
             ),
           ),
         ],

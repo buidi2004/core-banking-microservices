@@ -11,6 +11,7 @@ import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_dataso
 import 'package:sen_hong_bank/data/datasources/remote/promotion_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class BillConfirmScreen extends StatefulWidget {
   final String? service;
@@ -353,6 +354,7 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
       appBar: AppBar(
         title: const Text('Xác Nhận Hóa Đơn'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -698,8 +700,8 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
         Expanded(
           flex: 5,
           child: Text(label,
-              style: AppTypography.bodySmall(
-                  color: AppColors.textSecondaryLight)),
+              style:
+                  AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
         ),
         const SizedBox(width: 8),
         Expanded(

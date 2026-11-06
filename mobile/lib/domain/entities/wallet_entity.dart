@@ -8,6 +8,8 @@ class WalletEntity extends Equatable {
   final String status;
   final double dailyLimit;
   final double dailySpent;
+  /// Hạn mức thấu chi cấp cho ví (tính năng 4.1). 0 = không thấu chi.
+  final double overdraftLimit;
 
   const WalletEntity({
     required this.walletId,
@@ -17,7 +19,11 @@ class WalletEntity extends Equatable {
     this.status = 'ACTIVE',
     this.dailyLimit = 100000000,
     this.dailySpent = 0,
+    this.overdraftLimit = 0,
   });
+
+  /// Số dư khả dụng bao gồm hạn mức thấu chi: balance + overdraftLimit.
+  double get availableBalance => balance + overdraftLimit;
 
   WalletEntity copyWith({
     String? walletId,
@@ -27,6 +33,7 @@ class WalletEntity extends Equatable {
     String? status,
     double? dailyLimit,
     double? dailySpent,
+    double? overdraftLimit,
   }) {
     return WalletEntity(
       walletId: walletId ?? this.walletId,
@@ -36,6 +43,7 @@ class WalletEntity extends Equatable {
       status: status ?? this.status,
       dailyLimit: dailyLimit ?? this.dailyLimit,
       dailySpent: dailySpent ?? this.dailySpent,
+      overdraftLimit: overdraftLimit ?? this.overdraftLimit,
     );
   }
 
@@ -48,5 +56,6 @@ class WalletEntity extends Equatable {
         status,
         dailyLimit,
         dailySpent,
+        overdraftLimit,
       ];
 }

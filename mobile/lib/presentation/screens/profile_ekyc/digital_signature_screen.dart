@@ -11,6 +11,7 @@ import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class DigitalSignatureScreen extends StatefulWidget {
   const DigitalSignatureScreen({super.key});
@@ -316,6 +317,7 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
       appBar: AppBar(
         title: const Text('Chữ Ký Số & Smart OTP'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: ListView(
@@ -414,7 +416,8 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                             height: 44,
                             child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 6),
                                 side: const BorderSide(
                                     color: AppColors.borderSubtle),
                                 shape: RoundedRectangleBorder(
@@ -442,7 +445,8 @@ class _DigitalSignatureScreenState extends State<DigitalSignatureScreen> {
                             height: 44,
                             child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(horizontal: 6),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 6),
                                 backgroundColor: AppColors.primary,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12)),

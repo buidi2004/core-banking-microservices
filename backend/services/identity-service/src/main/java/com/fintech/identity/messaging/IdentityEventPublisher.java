@@ -1,6 +1,9 @@
 package com.fintech.identity.messaging;
 
 import com.fintech.wallet.domain.event.UserRegisteredEvent;
+import com.fintech.common.audit.AuditEvent;
+import com.fintech.identity.audit.AuditEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -17,6 +20,12 @@ import org.springframework.stereotype.Component;
 public class IdentityEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
+    private AuditEventPublisher auditEventPublisher;
+
+    @Autowired
+    void setAuditEventPublisher(AuditEventPublisher auditEventPublisher) {
+        this.auditEventPublisher = auditEventPublisher;
+    }
 
     @Value("${wallet.rabbitmq.exchange:wallet.exchange}")
     private String exchange;
@@ -29,6 +38,12 @@ public class IdentityEventPublisher {
                 exchange, userRegisteredRoutingKey, event.userId(), event.phone());
         try {
             rabbitTemplate.convertAndSend(exchange, userRegisteredRoutingKey, event);
+            if (auditEventPublisher != null) {
+                auditEventPublisher.publish(new AuditEvent(
+                        java.util.UUID.randomUUID(), java.time.Instant.now(), "identity-service",
+                        "USER_REGISTERED", "USER", event.userId(), null, null, null,
+                        null, null, null, null, null, null));
+            }
             log.info("Publish UserRegisteredEvent thành công cho userId={}", event.userId());
         } catch (Exception e) {
             log.error("Lỗi khi publish UserRegisteredEvent cho userId={}: {}", event.userId(), e.getMessage(), e);

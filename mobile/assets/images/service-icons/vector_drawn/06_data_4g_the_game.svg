@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <filter id="shadow6" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#311B92" flood-opacity="0.35"/>
+    </filter>
+    <linearGradient id="bgPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4A148C"/>
+      <stop offset="60%" stop-color="#6A1B9A"/>
+      <stop offset="100%" stop-color="#8E24AA"/>
+    </linearGradient>
+    <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF176"/>
+      <stop offset="100%" stop-color="#FFD54F"/>
+    </linearGradient>
+  </defs>
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="url(#bgPurple)" filter="url(#shadow6)"/>
+
+  <!-- Top: 4G with WiFi Bars -->
+  <g transform="translate(256, 195)">
+    <path d="M -90 -45 A 20 20 0 0 1 -55 -45" fill="none" stroke="#FFD54F" stroke-width="6" stroke-linecap="round"/>
+    <path d="M -102 -58 A 35 35 0 0 1 -43 -58" fill="none" stroke="#FFE082" stroke-width="6" stroke-linecap="round"/>
+    <text x="-4" y="0" text-anchor="middle" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="900" font-size="92" fill="#FFFFFF" letter-spacing="-2">4G</text>
+  </g>
+
+  <!-- Middle: Glowing Gold X / Divider -->
+  <g transform="translate(256, 255)">
+    <text x="-32" y="2" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="28" fill="url(#goldAccent)">✕</text>
+    <text x="18" y="0" text-anchor="middle" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="900" font-size="26" fill="url(#goldAccent)" letter-spacing="2">THẺ</text>
+  </g>
+
+  <!-- Bottom: GAME -->
+  <g transform="translate(256, 345)">
+    <text x="0" y="0" text-anchor="middle" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="900" font-size="76" fill="#FFFFFF" letter-spacing="6">GAME</text>
+  </g>
+</svg>

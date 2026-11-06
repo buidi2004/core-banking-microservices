@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OpenSavingsRequest {
-    @NotBlank
     private String walletId;
 
     @NotBlank

@@ -14,6 +14,7 @@ import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class WithdrawScreen extends StatefulWidget {
   const WithdrawScreen({super.key});
@@ -49,7 +50,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
   Future<void> _loadBalanceAndHistory() async {
     try {
       final wallet = await WalletRemoteDataSource().getMyWallet();
-      if (mounted) setState(() => _availableBalance = wallet.balance);
+      if (mounted) setState(() => _availableBalance = wallet.availableBalance);
       _loadWithdrawalHistory(wallet.walletId);
     } catch (_) {}
   }
@@ -124,6 +125,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
       appBar: AppBar(
         title: const Text('Rút Tiền Về Ngân Hàng'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -198,6 +200,59 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                               fontSize: 12, fontWeight: FontWeight.bold)),
                     ),
                   ],
+                ),
+              ),
+
+              // Banner Rút tiền ATM không cần thẻ
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.push('/atm-withdrawal');
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(top: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF14B885).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFF14B885).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF14B885).withOpacity(0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(CupertinoIcons.qrcode, color: Color(0xFF0F766E), size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Cần rút tiền mặt ngay?',
+                              style: TextStyle(
+                                color: Color(0xFF0F766E),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              'Rút tiền tại cây ATM không cần thẻ ngân hàng',
+                              style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(CupertinoIcons.chevron_right, size: 14, color: Color(0xFF0F766E)),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 20),

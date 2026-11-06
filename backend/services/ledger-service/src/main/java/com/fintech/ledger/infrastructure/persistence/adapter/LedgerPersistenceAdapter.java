@@ -138,4 +138,19 @@ public class LedgerPersistenceAdapter implements LedgerPersistencePort {
     public boolean existsJournalEntryByReference(String referenceNumber) {
         return journalEntryRepository.findByReferenceNumber(referenceNumber).isPresent();
     }
+
+    @Override
+    public long countTotalEntries() {
+        return journalEntryRepository.count();
+    }
+
+    @Override
+    public long countTotalPostings() {
+        return postingRepository.count();
+    }
+
+    @Override
+    public BigDecimal sumAccountCodePrefix(String codePrefix, PostingSide side) {
+        return postingRepository.sumAmountByAccountCodePrefixAndSide(codePrefix, side.name());
+    }
 }

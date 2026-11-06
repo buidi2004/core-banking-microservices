@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/payments/banks")
+@RequestMapping({"/api/v1/payments/banks", "/api/v1/banks"})
 public class BankController {
 
     private final BankRepository bankRepository;

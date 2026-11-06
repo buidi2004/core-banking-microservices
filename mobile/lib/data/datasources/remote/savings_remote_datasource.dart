@@ -64,5 +64,22 @@ class SavingsRemoteDataSource {
     if (json['success'] != true || json['data'] is! Map) throw apiException(json);
     return Map<String, dynamic>.from(json['data'] as Map);
   }
+
+  Future<Map<String, dynamic>> withdrawPartial({
+    required String id,
+    required double amount,
+    String? pinToken,
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.savingsWithdrawPartial(id),
+      data: {
+        'amount': amount,
+        if (pinToken != null && pinToken.isNotEmpty) 'pinToken': pinToken,
+      },
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
+  }
 }
 

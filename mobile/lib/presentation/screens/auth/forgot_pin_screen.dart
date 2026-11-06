@@ -9,6 +9,7 @@ import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class ForgotPinScreen extends StatefulWidget {
   final String? phone;
@@ -37,7 +38,9 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
     try {
       String phone = widget.phone ?? '';
       if (phone.isEmpty) {
-        phone = await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber) ?? '';
+        phone = await AppSecureStorage.safeRead(AppSecureStorage.instance,
+                key: AppConstants.keyPhoneNumber) ??
+            '';
       }
       if (phone.isEmpty) {
         phone = '0987654321';
@@ -60,7 +63,9 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
     try {
       final phone = _targetPhone.isNotEmpty
           ? _targetPhone
-          : (await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber) ?? '0987654321');
+          : (await AppSecureStorage.safeRead(AppSecureStorage.instance,
+                  key: AppConstants.keyPhoneNumber) ??
+              '0987654321');
       final verified = await AuthRemoteDataSource().verifyOtp(
         phoneNumber: phone,
         otp: _otpCtrl.text.trim(),
@@ -174,7 +179,8 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      AppAlerts.showError(context, e.toString(), title: 'Cài đặt mã PIN thất bại');
+      AppAlerts.showError(context, e.toString(),
+          title: 'Cài đặt mã PIN thất bại');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -191,6 +197,7 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
       appBar: AppBar(
         title: const Text('Cấp Lại Mã PIN'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -210,12 +217,16 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.primary, size: 22),
+                    Icon(CupertinoIcons.checkmark_shield_fill,
+                        color: AppColors.primary, size: 22),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Hệ thống xác thực qua mã OTP Gmail & SMS để bảo vệ tài khoản khi cấp lại mã PIN.',
-                        style: TextStyle(color: AppColors.textPrimaryLight, fontSize: 12, height: 1.35),
+                        style: TextStyle(
+                            color: AppColors.textPrimaryLight,
+                            fontSize: 12,
+                            height: 1.35),
                       ),
                     ),
                   ],
@@ -223,7 +234,8 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
               ),
               const InlineWarningBanner(
                 title: 'Bảo mật mã PIN thanh toán',
-                message: 'Mã PIN 6 số là khóa xác thực cho toàn bộ giao dịch ví SenBank. Không chia sẻ mã PIN cho bất kỳ ai và tránh sử dụng ngày tháng năm sinh.',
+                message:
+                    'Mã PIN 6 số là khóa xác thực cho toàn bộ giao dịch ví SenBank. Không chia sẻ mã PIN cho bất kỳ ai và tránh sử dụng ngày tháng năm sinh.',
                 type: AlertType.warning,
               ),
               const SizedBox(height: 18),
@@ -234,7 +246,8 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     children: [
                       _buildRouterTile(
@@ -242,37 +255,55 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
                         label: 'Quên mật khẩu đăng nhập? Khôi phục mật khẩu',
                         onTap: () => context.push('/auth/forgot-password'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.lock_shield_fill,
                         label: 'Quay lại trang Thiết lập mã PIN',
                         onTap: () => context.push('/auth/set-pin'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_crop_circle_fill,
                         label: 'Quay lại màn hình Đăng nhập',
                         onTap: () => context.go('/auth/login'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_badge_plus_fill,
                         label: 'Chưa có tài khoản? Đăng ký ví mới',
                         onTap: () => context.push('/auth/register'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_crop_circle_badge_checkmark,
                         label: 'Xác thực khuôn mặt eKYC để cấp lại PIN',
                         onTap: () => context.push('/profile/ekyc'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.doc_text_fill,
                         label: 'Xem Điều khoản dịch vụ & Quy định bảo mật',
                         onTap: () => context.push('/auth/terms'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.phone_circle_fill,
                         label: 'Hỗ trợ khách hàng 24/7 (Hotline 1900 6868)',
@@ -302,19 +333,23 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
               color: AppColors.primary.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(CupertinoIcons.lock_shield_fill, color: AppColors.primary, size: 36),
+            child: const Icon(CupertinoIcons.lock_shield_fill,
+                color: AppColors.primary, size: 36),
           ),
         ),
         const SizedBox(height: 20),
-        Text('Xác minh danh tính', style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold)),
+        Text('Xác minh danh tính',
+            style: AppTypography.displaySmall(color: AppColors.textPrimaryLight)
+                .copyWith(fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
         Text(
           'Hệ thống đã gửi mã xác thực OTP 6 số đến Gmail và số điện thoại đăng ký tài khoản của bạn để xác thực yêu cầu cấp lại mã PIN.',
           style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
         ),
         const SizedBox(height: 24),
-
-        Text('Mã OTP xác thực', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+        Text('Mã OTP xác thực',
+            style:
+                AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
         const SizedBox(height: 8),
         TextField(
           controller: _otpCtrl,
@@ -325,15 +360,24 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
               _verifyOtp();
             }
           },
-          style: const TextStyle(color: AppColors.primaryDark, fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              color: AppColors.primaryDark,
+              fontSize: 22,
+              letterSpacing: 8,
+              fontWeight: FontWeight.bold),
           decoration: InputDecoration(
             counterText: '',
             hintText: '• • • • • •',
-            hintStyle: const TextStyle(color: AppColors.textMutedLight, letterSpacing: 6),
+            hintStyle: const TextStyle(
+                color: AppColors.textMutedLight, letterSpacing: 6),
             filled: true,
             fillColor: AppColors.surfaceLight,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.borderLight)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.borderLight)),
           ),
         ),
         const SizedBox(height: 20),
@@ -346,7 +390,8 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
                 ? const SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2),
                   )
                 : const Icon(CupertinoIcons.checkmark_shield_fill, size: 18),
             label: Text(_isLoading ? 'Đang xác thực...' : 'Xác thực mã OTP'),
@@ -363,11 +408,14 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
         const SizedBox(height: 10),
         Text(
           _isConfirming ? 'Xác nhận lại mã PIN mới' : 'Thiết lập mã PIN mới',
-          style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+          style: AppTypography.displaySmall(color: AppColors.textPrimaryLight)
+              .copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 6),
         Text(
-          _isConfirming ? 'Nhập lại 6 chữ số để hoàn tất xác thực' : 'Mã PIN gồm 6 số dùng để ký chuyển tiền & thanh toán',
+          _isConfirming
+              ? 'Nhập lại 6 chữ số để hoàn tất xác thực'
+              : 'Mã PIN gồm 6 số dùng để ký chuyển tiền & thanh toán',
           style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
         ),
         const SizedBox(height: 24),
@@ -385,7 +433,8 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
                 shape: BoxShape.circle,
                 color: isFilled ? AppColors.primary : Colors.transparent,
                 border: Border.all(
-                  color: isFilled ? AppColors.primary : AppColors.textMutedLight,
+                  color:
+                      isFilled ? AppColors.primary : AppColors.textMutedLight,
                   width: 2,
                 ),
               ),
@@ -417,7 +466,8 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppColors.borderLight),
                   ),
-                  child: const Icon(CupertinoIcons.delete_left, color: AppColors.textPrimaryLight, size: 22),
+                  child: const Icon(CupertinoIcons.delete_left,
+                      color: AppColors.textPrimaryLight, size: 22),
                 ),
               );
             }
@@ -434,7 +484,10 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
                 child: Center(
                   child: Text(
                     digit,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimaryLight),
+                    style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimaryLight),
                   ),
                 ),
               ),
@@ -450,7 +503,10 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -460,9 +516,13 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
             Icon(icon, color: AppColors.primary, size: 18),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
+              child: Text(label,
+                  style:
+                      AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),

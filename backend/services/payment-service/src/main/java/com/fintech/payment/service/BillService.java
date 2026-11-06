@@ -25,19 +25,29 @@ public class BillService {
     private final BillRepository billRepository;
     private final TelcoTopupRepository telcoTopupRepository;
     private final WalletGrpcClient walletGrpcClient;
+    private final com.fintech.payment.repository.BillSubscriptionRepository billSubscriptionRepository;
 
     public BillService(BillRepository billRepository,
                        TelcoTopupRepository telcoTopupRepository,
                        WalletGrpcClient walletGrpcClient) {
+        this(billRepository, telcoTopupRepository, walletGrpcClient, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public BillService(BillRepository billRepository,
+                       TelcoTopupRepository telcoTopupRepository,
+                       WalletGrpcClient walletGrpcClient,
+                       @org.springframework.beans.factory.annotation.Autowired(required = false) com.fintech.payment.repository.BillSubscriptionRepository billSubscriptionRepository) {
         this.billRepository = billRepository;
         this.telcoTopupRepository = telcoTopupRepository;
         this.walletGrpcClient = walletGrpcClient;
+        this.billSubscriptionRepository = billSubscriptionRepository;
     }
 
     @Transactional
     public BillLookupResponse lookupBill(String type, String customerCode) {
         String cleanCode = (customerCode != null) ? customerCode.trim().toUpperCase() : "PE01000123456";
-        String cleanType = (type != null) ? type.trim().toUpperCase() : "ELECTRICITY";
+        String cleanType = normalizeBillType(type);
 
         Optional<Bill> existing = billRepository.findByCustomerCodeAndStatus(cleanCode, "UNPAID");
         if (existing.isPresent()) {
@@ -51,6 +61,18 @@ public class BillService {
         return toLookupResponse(bill);
     }
 
+    private String normalizeBillType(String raw) {
+        if (raw == null || raw.isBlank()) return "ELECTRICITY";
+        String upper = raw.trim().toUpperCase();
+        if (upper.contains("WATER") || upper.contains("NUOC") || upper.contains("NƯỚC")) {
+            return "WATER";
+        }
+        if (upper.contains("INTERNET") || upper.contains("WIFI") || upper.contains("MẠNG") || upper.contains("CAP") || upper.contains("CÁP")) {
+            return "INTERNET";
+        }
+        return "ELECTRICITY";
+    }
+
     @Transactional
     public BillPaymentResponse payBill(String userId, BillPaymentRequest request) {
         Bill bill = billRepository.findByBillId(request.getBillId())
@@ -61,16 +83,22 @@ public class BillService {
         }
 
         String transactionId = UUID.randomUUID().toString();
+        String idempKey = (request.getRequestId() != null && !request.getRequestId().isBlank())
+                ? request.getRequestId().trim()
+                : ("BILL_PAY_" + bill.getBillId() + "_" + transactionId);
 
         // Trừ tiền trong ví qua gRPC
         var debitRes = walletGrpcClient.debit(
                 request.getWalletId(),
                 request.getAmount().longValue(),
                 transactionId,
-                "BILL_PAY_" + bill.getBillId()
+                idempKey
         );
         if (debitRes == null || !debitRes.isSuccess()) {
-            throw new IllegalStateException("Giao dịch không thành công: Số dư ví không đủ hoặc ví đang bị khóa");
+            String errMsg = debitRes != null && debitRes.getErrorMessage() != null
+                    ? debitRes.getErrorMessage()
+                    : "Số dư ví không đủ hoặc ví đang bị khóa";
+            throw new IllegalStateException("Giao dịch không thành công: " + errMsg);
         }
 
         bill.setStatus("PAID");
@@ -98,15 +126,19 @@ public class BillService {
         BigDecimal netAmount = request.getAmount().subtract(discountAmount);
 
         String transactionId = UUID.randomUUID().toString();
+        String topupIdemKey = "TOPUP_" + transactionId;
 
         var debitRes = walletGrpcClient.debit(
                 request.getWalletId(),
                 netAmount.longValue(),
                 transactionId,
-                "TOPUP_" + request.getPhoneNumber()
+                topupIdemKey
         );
         if (debitRes == null || !debitRes.isSuccess()) {
-            throw new IllegalStateException("Giao dịch không thành công: Số dư ví không đủ để nạp điện thoại");
+            String err = (debitRes != null && debitRes.getErrorMessage() != null)
+                    ? debitRes.getErrorMessage()
+                    : "Số dư ví không đủ để nạp điện thoại";
+            throw new IllegalStateException("Giao dịch không thành công: " + err);
         }
 
         String telcoCode = detectTelco(request.getPhoneNumber());
@@ -157,7 +189,13 @@ public class BillService {
     }
 
     private Bill generateDeterministicBill(String type, String code) {
-        String billId = "BILL-" + type.substring(0, Math.min(3, type.length())) + "-" + Math.abs(code.hashCode() % 1000000);
+        String periodSuffix = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+        String baseId = "BILL-" + type.substring(0, Math.min(3, type.length())) + "-" + periodSuffix + "-" + Math.abs(code.hashCode() % 100000);
+        String billId = baseId;
+        int counter = 1;
+        while (billRepository.findByBillId(billId).isPresent()) {
+            billId = baseId + "-" + counter++;
+        }
         String providerCode;
         String providerName;
         BigDecimal amount;
@@ -218,5 +256,87 @@ public class BillService {
                 .dueDate(bill.getDueDate())
                 .status(bill.getStatus())
                 .build();
+    }
+
+    @Transactional
+    public BillSubscriptionResponse createSubscription(String userId, CreateBillSubscriptionRequest request) {
+        String walletId = request.getWalletId();
+        if (walletId == null || walletId.isBlank()) {
+            var userWallet = walletGrpcClient.getWalletByUserId(userId);
+            if (userWallet != null && userWallet.isFound()) {
+                walletId = userWallet.getWalletId();
+            } else {
+                throw new IllegalArgumentException("Không tìm thấy ví cho người dùng: " + userId);
+            }
+        }
+
+        com.fintech.payment.domain.entity.BillSubscription sub = com.fintech.payment.domain.entity.BillSubscription.builder()
+                .userId(userId)
+                .walletId(walletId)
+                .billType(normalizeBillType(request.getBillType()))
+                .customerCode(request.getCustomerCode().trim().toUpperCase())
+                .providerCode(request.getProviderCode().trim().toUpperCase())
+                .autoDebitDay(request.getAutoDebitDay() != null ? request.getAutoDebitDay() : 5)
+                .status("ACTIVE")
+                .build();
+
+        sub = billSubscriptionRepository.save(sub);
+        log.info("Đã đăng ký trích nợ tự động hóa đơn cho user {}: billType={} code={}", userId, sub.getBillType(), sub.getCustomerCode());
+        return BillSubscriptionResponse.from(sub);
+    }
+
+    public java.util.List<BillSubscriptionResponse> getUserSubscriptions(String userId) {
+        return billSubscriptionRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
+                .map(BillSubscriptionResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public BillSubscriptionResponse cancelSubscription(UUID id, String userId) {
+        var sub = billSubscriptionRepository.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy ủy thác trích nợ tự động: " + id));
+        sub.setStatus("CANCELLED");
+        sub = billSubscriptionRepository.save(sub);
+        return BillSubscriptionResponse.from(sub);
+    }
+
+    @Transactional
+    public java.util.Map<String, Object> executeDueSubscriptions() {
+        int todayDay = LocalDate.now().getDayOfMonth();
+        java.util.List<com.fintech.payment.domain.entity.BillSubscription> dueSubs =
+                billSubscriptionRepository.findByStatusAndAutoDebitDay("ACTIVE", todayDay);
+
+        int total = dueSubs.size();
+        int success = 0;
+        int failed = 0;
+
+        for (var sub : dueSubs) {
+            try {
+                BillLookupResponse bill = lookupBill(sub.getBillType(), sub.getCustomerCode());
+                if ("UNPAID".equalsIgnoreCase(bill.getStatus())) {
+                    BillPaymentRequest payReq = BillPaymentRequest.builder()
+                            .billId(bill.getBillId())
+                            .walletId(sub.getWalletId())
+                            .amount(bill.getAmount())
+                            .currency("VND")
+                            .requestId("auto_bill_" + sub.getId() + "_" + System.currentTimeMillis())
+                            .build();
+                    payBill(sub.getUserId(), payReq);
+                    sub.setLastDeductedAt(Instant.now());
+                    billSubscriptionRepository.save(sub);
+                    success++;
+                }
+            } catch (Exception e) {
+                log.error("Lỗi trích nợ tự động hóa đơn cho subId={}: {}", sub.getId(), e.getMessage());
+                failed++;
+            }
+        }
+
+        return java.util.Map.of(
+                "todayDay", todayDay,
+                "totalSubscriptions", total,
+                "successCount", success,
+                "failedCount", failed
+        );
     }
 }

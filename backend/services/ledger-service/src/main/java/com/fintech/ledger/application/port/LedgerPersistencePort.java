@@ -41,4 +41,16 @@ public interface LedgerPersistencePort {
     BigDecimal sumAmount(PostingSide side);
 
     boolean existsJournalEntryByReference(String referenceNumber);
+
+    default long countTotalEntries() {
+        return findAllEntries().size();
+    }
+
+    default long countTotalPostings() {
+        return findAllEntries().stream().mapToLong(e -> e.getPostings().size()).sum();
+    }
+
+    default BigDecimal sumAccountCodePrefix(String codePrefix, PostingSide side) {
+        return BigDecimal.ZERO;
+    }
 }

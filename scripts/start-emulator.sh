@@ -1,52 +1,73 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# 📱 SEN HỒNG BANK - KHỞI ĐỘNG MÁY ẢO ANDROID TỐI ƯU & MƯỢT MÀ (ZERO-LAG)
+# SEN HỒNG BANK - ANDROID 13 EMULATOR LAUNCHER (TỐI ƯU SIÊU MƯỢT / ZERO LAG)
 # ==============================================================================
-set -e
 
-AVD_NAME="Android13_Lightweight_20_9"
-EMULATOR_BIN="$HOME/Android/Sdk/emulator/emulator"
+export ANDROID_HOME=/home/buidi/Android/Sdk
+export ANDROID_SDK_ROOT=/home/buidi/Android/Sdk
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator
 
-if [ ! -f "$EMULATOR_BIN" ]; then
-    echo "❌ Không tìm thấy Android emulator tại: $EMULATOR_BIN"
-    exit 1
+# Tắt triệt để popup "Không phản hồi -> Bắt buộc thoát" của GNOME Ubuntu
+gsettings set org.gnome.mutter check-alive-timeout 0 2>/dev/null || true
+
+# Bắt buộc cho Ubuntu Wayland / X11 để hiển thị cửa sổ Qt mượt mà
+export QT_QPA_PLATFORM=xcb
+
+# Đồng nhất GPU rendering trên NVIDIA GeForce GTX 1650 (Tránh xung đột chéo với AMD iGPU)
+export __NV_PRIME_RENDER_OFFLOAD=1
+export __GLX_VENDOR_LIBRARY_NAME=nvidia
+export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
+
+# Kiểm tra nếu máy ảo đã đang chạy
+if adb devices | grep -q "emulator-5554"; then
+    echo "✅ Máy ảo Android 13 (emulator-5554) đã đang chạy sẵn sàng!"
+    adb -s emulator-5554 reverse tcp:8080 tcp:8080
+    exit 0
 fi
 
-echo "🚀 Đang kiểm tra / khởi động máy ảo Android: $AVD_NAME..."
+echo "🚀 Đang khởi động Android 13 Emulator (20:9 - 1080x2400) với GPU & KVM (Cold Boot - Zero Crash)..."
 
-# Nếu máy ảo chưa chạy thì bật mới
-if ! adb devices | grep -q "emulator-"; then
-    echo "⏳ Đang bật emulator nền (4GB RAM, SwiftShader Vulkan/GLES, GPU ổn định)..."
-    DISPLAY="${DISPLAY:-:0.0}" "$EMULATOR_BIN" \
-        -avd "$AVD_NAME" \
-        -gpu swiftshader \
-        -no-boot-anim \
-        -camera-back none \
-        -camera-front none \
-        >/dev/null 2>&1 &
-    
-    echo "⏳ Đang đợi máy ảo kết nối ADB..."
-    adb wait-for-device
-fi
+# Dùng systemd-run để tiến trình emulator sống độc lập, không bao giờ bị tắt khi đóng terminal
+systemd-run --user --unit=android-emulator \
+    emulator -avd Android13_20_9 \
+    -accel on \
+    -gpu host \
+    -no-snapshot \
+    -cores 4 \
+    -memory 4096 \
+    -netdelay none \
+    -netspeed full \
+    -camera-back none \
+    -camera-front none > /tmp/android-emulator.log 2>&1 || \
+nohup emulator -avd Android13_20_9 \
+    -accel on \
+    -gpu host \
+    -no-snapshot \
+    -cores 4 \
+    -memory 4096 \
+    -netdelay none \
+    -netspeed full \
+    -camera-back none \
+    -camera-front none > /tmp/android-emulator.log 2>&1 &
 
-echo "⏳ Đang kiểm tra hệ thống Android..."
-while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
-    sleep 2
-done
+EMU_PID=$!
+disown $EMU_PID 2>/dev/null || true
 
-echo "⚙️ Áp dụng tối ưu độ mượt giao diện (Giảm độ trễ Animation)..."
-adb shell settings put global window_animation_scale 0.5
-adb shell settings put global transition_animation_scale 0.5
-adb shell settings put global animator_duration_scale 0.5
-adb shell settings put global stay_on_while_plugged_in 3
+echo "📱 Đã phát lệnh chạy máy ảo (PID: $EMU_PID)."
+echo "   Xem log chi tiết tại: /tmp/android-emulator.log"
+echo "⏳ Đang đợi thiết bị khởi động hoàn tất..."
 
-echo "🔌 Cầu nối mạng (Reverse Ports): 8080 (Gateway), 8081 (Identity), 5173 (Portal)..."
-adb reverse tcp:8080 tcp:8080
-adb reverse tcp:8081 tcp:8081
-adb reverse tcp:5173 tcp:5173
-
-echo "📲 Khởi chạy ứng dụng Sen Hồng Bank..."
-adb shell monkey -p com.senhong.sen_hong_bank -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
-
-echo "✅ Máy ảo đã sẵn sàng và ứng dụng Sen Hồng Bank đã mở thành công!"
-
+(
+    adb -s emulator-5554 wait-for-device
+    while [ "$(adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
+        sleep 2
+    done
+    # Tinh chỉnh độ nhạy chuyển cảnh (0.5x)
+    adb -s emulator-5554 shell settings put global window_animation_scale 0.5
+    adb -s emulator-5554 shell settings put global transition_animation_scale 0.5
+    adb -s emulator-5554 shell settings put global animator_duration_scale 0.5
+    # Cấu hình ADB reverse cho API Gateway
+    adb -s emulator-5554 reverse tcp:8080 tcp:8080
+    echo "🎉 Máy ảo Android 13 (20:9) đã khởi động thành công (Zero-Lag, 60 FPS)!"
+) &
+disown 2>/dev/null || true

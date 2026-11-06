@@ -212,13 +212,17 @@ class BalanceCard extends StatelessWidget {
                             ),
                           );
                         },
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(10),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                              horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.15),
+                              width: 0.5,
+                            ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -233,6 +237,7 @@ class BalanceCard extends StatelessWidget {
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 1.0,
+                                  fontFeatures: const [FontFeature.tabularFigures()],
                                 ),
                               ),
                               const SizedBox(width: 5),
@@ -291,6 +296,7 @@ class BalanceCard extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
                           letterSpacing: 0.6,
+                          fontFeatures: const [FontFeature.tabularFigures()],
                         ),
                       ),
                       const SizedBox(width: 6),

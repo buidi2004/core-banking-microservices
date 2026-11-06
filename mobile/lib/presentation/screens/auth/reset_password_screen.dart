@@ -11,6 +11,7 @@ import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
 import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 import 'package:flutter/services.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String? phone;
@@ -59,7 +60,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     }
     int score = 0;
     if (text.length >= 6) score++;
-    if (text.contains(RegExp(r'[0-9]')) && text.contains(RegExp(r'[a-zA-Z]'))) score++;
+    if (text.contains(RegExp(r'[0-9]')) && text.contains(RegExp(r'[a-zA-Z]')))
+      score++;
     if (text.length >= 8 && text.contains(RegExp(r'[!@#\$&*~]'))) score++;
     setState(() => _passStrength = score == 0 ? 1 : score);
   }
@@ -67,7 +69,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   void _resendOtp() async {
     final phone = (widget.phone != null && widget.phone!.isNotEmpty)
         ? widget.phone!
-        : (await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber) ?? '0987654321');
+        : (await AppSecureStorage.safeRead(AppSecureStorage.instance,
+                key: AppConstants.keyPhoneNumber) ??
+            '0987654321');
     if (phone.isEmpty) return;
     _startTimer();
     try {
@@ -106,21 +110,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   Future<void> _handleReset() async {
     if (_otpController.text.length < 6) {
-      AppAlerts.showWarning(context, 'Vui lòng nhập đủ 6 chữ số mã OTP', title: 'Mã OTP chưa đủ');
+      AppAlerts.showWarning(context, 'Vui lòng nhập đủ 6 chữ số mã OTP',
+          title: 'Mã OTP chưa đủ');
       return;
     }
     if (_passController.text.length < 6) {
-      AppAlerts.showWarning(context, 'Mật khẩu mới phải có tối thiểu 6 ký tự', title: 'Mật khẩu quá ngắn');
+      AppAlerts.showWarning(context, 'Mật khẩu mới phải có tối thiểu 6 ký tự',
+          title: 'Mật khẩu quá ngắn');
       return;
     }
     if (_passController.text != _confirmPassController.text) {
-      AppAlerts.showWarning(context, 'Xác nhận mật khẩu không trùng khớp', title: 'Xác nhận mật khẩu sai');
+      AppAlerts.showWarning(context, 'Xác nhận mật khẩu không trùng khớp',
+          title: 'Xác nhận mật khẩu sai');
       return;
     }
 
     final phone = (widget.phone != null && widget.phone!.isNotEmpty)
         ? widget.phone!
-        : (await AppSecureStorage.safeRead(AppSecureStorage.instance, key: AppConstants.keyPhoneNumber) ?? '0987654321');
+        : (await AppSecureStorage.safeRead(AppSecureStorage.instance,
+                key: AppConstants.keyPhoneNumber) ??
+            '0987654321');
     final rawOtp = _otpController.text.trim();
     final newPass = _passController.text;
 
@@ -134,7 +143,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           otp: rawOtp,
           purpose: 'FORGOT_PASSWORD',
         );
-        otpToken = (verifyRes['otpToken'] ?? verifyRes['tempToken'] ?? rawOtp) as String;
+        otpToken = (verifyRes['otpToken'] ?? verifyRes['tempToken'] ?? rawOtp)
+            as String;
       }
 
       await AuthRemoteDataSource().resetPassword(
@@ -173,6 +183,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       appBar: AppBar(
         title: const Text('Đặt Lại Mật Khẩu'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -184,32 +195,49 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             children: [
               Text(
                 'Thiết lập mật khẩu mới',
-                style: AppTypography.displaySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.bold),
+                style: AppTypography.displaySmall(
+                        color: AppColors.textPrimaryLight)
+                    .copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 6),
               Text(
                 'Mã OTP đã được gửi đến Gmail và số điện thoại $displayPhone. Vui lòng kiểm tra hòm thư và thiết lập mật khẩu bảo mật mới.',
-                style: AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
+                style: AppTypography.bodyMedium(
+                    color: AppColors.textSecondaryLight),
               ),
               const SizedBox(height: 24),
 
               // OTP field
-              Text('Mã xác thực OTP (6 số)', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+              Text('Mã xác thực OTP (6 số)',
+                  style: AppTypography.titleMedium(
+                      color: AppColors.textPrimaryLight)),
               const SizedBox(height: 8),
               TextField(
                 controller: _otpController,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                style: const TextStyle(color: AppColors.primaryLight, fontSize: 20, letterSpacing: 8, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    color: AppColors.primaryLight,
+                    fontSize: 20,
+                    letterSpacing: 8,
+                    fontWeight: FontWeight.bold),
                 decoration: InputDecoration(
                   counterText: '',
-                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.primaryLight),
+                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill,
+                      color: AppColors.primaryLight),
                   hintText: '• • • • • •',
-                  hintStyle: const TextStyle(color: AppColors.textMutedLight, letterSpacing: 4),
+                  hintStyle: const TextStyle(
+                      color: AppColors.textMutedLight, letterSpacing: 4),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -224,9 +252,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(CupertinoIcons.stopwatch, size: 14, color: AppColors.textSecondaryLight),
+                        const Icon(CupertinoIcons.stopwatch,
+                            size: 14, color: AppColors.textSecondaryLight),
                         const SizedBox(width: 4),
-                        Text('Gửi lại mã sau ${_secondsLeft}s', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                        Text('Gửi lại mã sau ${_secondsLeft}s',
+                            style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight)),
                       ],
                     )
                   else
@@ -236,32 +267,49 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       children: [
                         InkWell(
                           onTap: _resendOtp,
-                          child: const Text('Gửi lại SMS OTP', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text('Gửi lại SMS OTP',
+                              style: TextStyle(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12)),
                         ),
                         InkWell(
                           onTap: _requestVoiceOtp,
-                          child: const Text('Nhận cuộc gọi Voice OTP', style: TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text('Nhận cuộc gọi Voice OTP',
+                              style: TextStyle(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12)),
                         ),
                       ],
                     ),
                   if (_secondsLeft > 0)
                     InkWell(
                       onTap: _requestVoiceOtp,
-                      child: const Text('Gọi Voice OTP', style: TextStyle(color: AppColors.primaryText, fontSize: 11, fontWeight: FontWeight.w600)),
+                      child: const Text('Gọi Voice OTP',
+                          style: TextStyle(
+                              color: AppColors.primaryText,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600)),
                     ),
                 ],
               ),
               const SizedBox(height: 18),
 
               // New Password
-              Text('Mật khẩu mới', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+              Text('Mật khẩu mới',
+                  style: AppTypography.titleMedium(
+                      color: AppColors.textPrimaryLight)),
               const SizedBox(height: 8),
               TextField(
                 controller: _passController,
                 obscureText: _obscurePass,
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(CupertinoIcons.lock_fill, color: AppColors.primaryLight),
+                  prefixIcon: const Icon(CupertinoIcons.lock_fill,
+                      color: AppColors.primaryLight),
                   suffixIcon: MorphEyeButton(
                     isHidden: _obscurePass,
                     color: AppColors.textMutedLight,
@@ -272,8 +320,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   hintStyle: const TextStyle(color: AppColors.textMutedLight),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
                 ),
               ),
 
@@ -284,14 +338,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   children: [
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
                           value: _passStrength / 3.0,
                           backgroundColor: AppColors.borderLight,
                           valueColor: AlwaysStoppedAnimation<Color>(
                             _passStrength == 1
                                 ? AppColors.error
-                                : (_passStrength == 2 ? AppColors.accentGold : AppColors.emeraldGreen),
+                                : (_passStrength == 2
+                                    ? AppColors.accentGold
+                                    : AppColors.emeraldGreen),
                           ),
                           minHeight: 5,
                         ),
@@ -301,13 +357,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     Text(
                       _passStrength == 1
                           ? 'Mật khẩu yếu'
-                          : (_passStrength == 2 ? 'Mức độ trung bình' : 'Mật khẩu rất mạnh'),
+                          : (_passStrength == 2
+                              ? 'Mức độ trung bình'
+                              : 'Mật khẩu rất mạnh'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         color: _passStrength == 1
                             ? AppColors.error
-                            : (_passStrength == 2 ? AppColors.warningText : AppColors.emeraldGreen),
+                            : (_passStrength == 2
+                                ? AppColors.warningText
+                                : AppColors.emeraldGreen),
                       ),
                     ),
                   ],
@@ -316,26 +376,38 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               const SizedBox(height: 16),
 
               // Confirm New Password
-              Text('Xác nhận mật khẩu mới', style: AppTypography.titleMedium(color: AppColors.textPrimaryLight)),
+              Text('Xác nhận mật khẩu mới',
+                  style: AppTypography.titleMedium(
+                      color: AppColors.textPrimaryLight)),
               const SizedBox(height: 8),
               TextField(
                 controller: _confirmPassController,
                 obscureText: _obscureConfirmPass,
-                style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                    color: AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600),
                 decoration: InputDecoration(
-                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill, color: AppColors.primaryLight),
+                  prefixIcon: const Icon(CupertinoIcons.checkmark_shield_fill,
+                      color: AppColors.primaryLight),
                   suffixIcon: MorphEyeButton(
                     isHidden: _obscureConfirmPass,
                     color: AppColors.textMutedLight,
                     size: 20,
-                    onTap: () => setState(() => _obscureConfirmPass = !_obscureConfirmPass),
+                    onTap: () => setState(
+                        () => _obscureConfirmPass = !_obscureConfirmPass),
                   ),
                   hintText: 'Nhập lại mật khẩu mới',
                   hintStyle: const TextStyle(color: AppColors.textMutedLight),
                   filled: true,
                   fillColor: AppColors.surfaceLight,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.borderLight)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
+                  enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -352,20 +424,29 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.successTextLight, size: 16),
+                        Icon(CupertinoIcons.checkmark_alt_circle_fill,
+                            color: AppColors.successTextLight, size: 16),
                         SizedBox(width: 8),
                         Expanded(
-                          child: Text('Độ dài tối thiểu 6 ký tự', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+                          child: Text('Độ dài tối thiểu 6 ký tự',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondaryLight)),
                         ),
                       ],
                     ),
                     SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(CupertinoIcons.checkmark_alt_circle_fill, color: AppColors.successTextLight, size: 16),
+                        Icon(CupertinoIcons.checkmark_alt_circle_fill,
+                            color: AppColors.successTextLight, size: 16),
                         SizedBox(width: 8),
                         Expanded(
-                          child: Text('Nên bao gồm cả chữ và số để tăng độ an toàn', style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight)),
+                          child: Text(
+                              'Nên bao gồm cả chữ và số để tăng độ an toàn',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondaryLight)),
                         ),
                       ],
                     ),
@@ -380,7 +461,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _handleReset,
                   child: _isLoading
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
                       : const Text('Hoàn tất đặt lại mật khẩu'),
                 ),
               ),
@@ -390,7 +475,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               GlassCard(
                 quality: GlassQuality.minimal,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     children: [
                       _buildRouterTile(
@@ -398,37 +484,55 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         label: 'Quay lại bước nhập số điện thoại nhận OTP',
                         onTap: () => context.push('/auth/forgot-password'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_crop_circle_fill,
                         label: 'Đã nhớ lại mật khẩu? Đăng nhập ngay',
                         onTap: () => context.go('/auth/login'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.question_circle_fill,
                         label: 'Cần cấp lại mã PIN giao dịch? Cấp lại PIN',
                         onTap: () => context.push('/auth/forgot-pin'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.lock_shield_fill,
                         label: 'Chưa tạo mã PIN bảo mật? Thiết lập PIN',
                         onTap: () => context.push('/auth/set-pin'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.person_badge_plus_fill,
                         label: 'Chưa có tài khoản ví Sen Hồng? Đăng ký',
                         onTap: () => context.push('/auth/register'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.doc_text_fill,
                         label: 'Xem Điều khoản dịch vụ & Quy định bảo mật',
                         onTap: () => context.push('/auth/terms'),
                       ),
-                      const Divider(height: 1, indent: 40, color: AppColors.cardBorderLight),
+                      const Divider(
+                          height: 1,
+                          indent: 40,
+                          color: AppColors.cardBorderLight),
                       _buildRouterTile(
                         icon: CupertinoIcons.phone_circle_fill,
                         label: 'Trợ giúp khẩn cấp CSKH 24/7',
@@ -446,7 +550,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildRouterTile({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildRouterTile(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -456,9 +563,13 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             Icon(icon, color: AppColors.primaryText, size: 18),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, style: AppTypography.bodySmall(color: AppColors.textPrimaryLight).copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
+              child: Text(label,
+                  style:
+                      AppTypography.bodySmall(color: AppColors.textPrimaryLight)
+                          .copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
             ),
-            const Icon(CupertinoIcons.chevron_forward, color: AppColors.textMutedLight, size: 14),
+            const Icon(CupertinoIcons.chevron_forward,
+                color: AppColors.textMutedLight, size: 14),
           ],
         ),
       ),

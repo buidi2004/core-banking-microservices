@@ -101,6 +101,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                     headers.remove(HEADER_USER_KYC_TIER);
                     headers.remove(HEADER_USER_ROLE);
                     headers.remove(HEADER_USER_ROLES);
+                    headers.remove(HEADER_BRANCH_ID);
                 })
                 .build();
 
@@ -208,8 +209,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 .header(HEADER_USER_ROLE, finalRole)
                 .header(HEADER_USER_ROLES, userRoles);
 
-        if (finalBranchIdClaim != null && !finalBranchIdClaim.isBlank()
-                && sanitizedRequest.getHeaders().getFirst(HEADER_BRANCH_ID) == null) {
+        if (finalBranchIdClaim != null && !finalBranchIdClaim.isBlank()) {
             requestMutator.header(HEADER_BRANCH_ID, finalBranchIdClaim);
         }
 

@@ -31,6 +31,9 @@ public class UserEntity {
     @Column(length = 50, unique = true)
     private String username;
 
+    @Column(name = "account_alias", length = 50, unique = true)
+    private String accountAlias;
+
     @Column(name = "phone_number", length = 15, nullable = false, unique = true)
     private String phoneNumber;
 

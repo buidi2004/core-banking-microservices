@@ -1,7 +1,7 @@
 import React from 'react';
 import { VaultSummary } from '../types';
 import { formatCurrency } from '../utils';
-import { Briefcase, ShieldCheck, AlertTriangle, ArrowDownLeft, Scale, Building2, CheckCircle2, Clock } from 'lucide-react';
+import { Briefcase, ShieldCheck, AlertTriangle, ArrowDownLeft, Scale, Building2, CheckCircle2, Clock, Download, FileSpreadsheet } from 'lucide-react';
 
 interface VaultSummaryWidgetProps {
   summary: VaultSummary;
@@ -28,17 +28,68 @@ export function VaultSummaryWidget({ summary }: VaultSummaryWidgetProps) {
     barBg = '#f59e0b';
   }
 
+  const handleExportVaultReport = () => {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toLocaleTimeString('vi-VN');
+
+    const headers = '\ufeffBIÊN BẢN KIỂM KÊ KÉT QUỸ TIỀN MẶT CUỐI NGÀY (EOD) - SEN HỒNG BANK\n' +
+      `Thời gian xuất:,${dateStr} ${timeStr}\n` +
+      `Chi nhánh:,Chi nhánh Quận 1 (TP.HCM)\n` +
+      `Trạng thái quỹ:,${badgeText}\n\n` +
+      'Chỉ số kiểm kê,Số tiền (VND),Ghi chú\n' +
+      `Tồn Quỹ Đầu Ngày,${summary.openingBalance},Số dư đầu ca\n` +
+      `Tổng Thu Tiền Mặt Hôm Nay,${summary.totalCashIn},Tổng tiền nạp thành công\n` +
+      `Tồn Quỹ Thực Tế Quầy,${summary.currentBalance},Tồn tiền mặt vật lý trong két\n` +
+      `Hạn Mức An Toàn Két,${summary.maxLimit},Hạn mức quy định chi nhánh\n` +
+      `Tỷ Lệ Sử Dụng Hạn Mức,${usagePct}%,${pct > 90 ? 'Vượt ngưỡng an toàn' : 'Trong hạn mức an toàn'}\n` +
+      `Số Giao Dịch Nạp Thành Công,${summary.successCount},Giao dịch hoàn tất\n` +
+      `Số Giao Dịch Chờ Kiểm Soát,${summary.pendingCount},Giao dịch chờ duyệt\n`;
+
+    const blob = new Blob([headers], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bien-ban-kiem-ke-ket-quy-${dateStr}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="card">
-      <div className="card-header">
+      <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
         <div className="card-title-text" style={{ fontSize: '15px', fontWeight: 800, color: 'var(--primary-navy)' }}>
           <Briefcase size={18} color="var(--primary-blue)" />
           <span>TỔNG KẾT KÉT QUỸ TIỀN MẶT TRONG NGÀY</span>
         </div>
-        <span className={badgeClass}>
-          <BadgeIcon size={13} />
-          <span>{badgeText}</span>
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={handleExportVaultReport}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              border: '1px solid var(--border-color)',
+              background: 'var(--bg-subtle)',
+              fontSize: '11px',
+              fontWeight: 600,
+              color: 'var(--primary-blue)',
+              cursor: 'pointer',
+            }}
+          >
+            <Download size={12} />
+            <span>Xuất Biên Bản Kiểm Kê (CSV)</span>
+          </button>
+          <span className={badgeClass}>
+            <BadgeIcon size={13} />
+            <span>{badgeText}</span>
+          </span>
+        </div>
       </div>
 
       <div className="vault-grid">

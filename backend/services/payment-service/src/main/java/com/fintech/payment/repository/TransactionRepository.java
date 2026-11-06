@@ -51,4 +51,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
     Page<Transaction> findWalletHistory(@Param("walletId") String walletId,
                                         @Param("type") String type,
                                         Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t WHERE t.amount >= :minAmount ORDER BY t.createdAt DESC")
+    Page<Transaction> findLargeTransactions(@Param("minAmount") Long minAmount, Pageable pageable);
 }

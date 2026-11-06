@@ -47,6 +47,15 @@ public class SupportController {
         return ResponseEntity.ok(ApiResponse.success("Tickets retrieved", supportService.getTickets(uid)));
     }
 
+    @GetMapping("/admin/tickets")
+    public ResponseEntity<ApiResponse<List<SupportTicket>>> getAllTickets(
+           @RequestHeader(name = "X-User-Id", required = false) String userId,
+           @RequestHeader(name = "X-User-Role", required = false) String userRole) {
+        requireUser(userId);
+        requireManager(userRole);
+        return ResponseEntity.ok(ApiResponse.success("All tickets retrieved", supportService.getAllTickets()));
+    }
+
     @GetMapping("/tickets/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getTicketDetail(@PathVariable String id) {
         SupportTicket ticket = supportService.getTicketById(id);
@@ -61,10 +70,34 @@ public class SupportController {
     public ResponseEntity<ApiResponse<TicketMessage>> addMessage(
             @RequestHeader(name = "X-User-Id", required = false) String userId,
             @PathVariable String id,
-            @RequestParam String content) {
+            @RequestParam String content,
+            @RequestParam(required = false, defaultValue = "USER") String senderType) {
         String uid = requireUser(userId);
-        TicketMessage message = supportService.addMessage(id, uid, "USER", content);
+        TicketMessage message = supportService.addMessage(id, uid, senderType, content);
         return ResponseEntity.ok(ApiResponse.success("Message sent to ticket thread", message));
+    }
+
+    @PostMapping("/tickets/{id}/resolve")
+    public ResponseEntity<ApiResponse<SupportTicket>> resolveTicket(
+            @RequestHeader(name = "X-User-Id", required = false) String userId,
+           @RequestHeader(name = "X-User-Role", required = false) String userRole,
+           @PathVariable String id,
+           @RequestParam(required = false, defaultValue = "Đã giải quyết yêu cầu") String resolutionNotes) {
+        String uid = requireUser(userId);
+        requireManager(userRole);
+        SupportTicket ticket = supportService.resolveTicket(id, uid, resolutionNotes);
+        return ResponseEntity.ok(ApiResponse.success("Ticket resolved successfully", ticket));
+    }
+
+    @PostMapping("/tickets/{id}/close")
+    public ResponseEntity<ApiResponse<SupportTicket>> closeTicket(
+            @RequestHeader(name = "X-User-Id", required = false) String userId,
+           @RequestHeader(name = "X-User-Role", required = false) String userRole,
+           @PathVariable String id) {
+        String uid = requireUser(userId);
+        requireManager(userRole);
+        SupportTicket ticket = supportService.closeTicket(id, uid);
+        return ResponseEntity.ok(ApiResponse.success("Ticket closed successfully", ticket));
     }
 
     @GetMapping("/faq")
@@ -77,5 +110,14 @@ public class SupportController {
             throw new IllegalArgumentException("Missing trusted header X-User-Id");
         }
         return userId;
+    }
+
+    private void requireManager(String role) {
+        if (role == null
+                || (!"ROLE_MANAGER".equalsIgnoreCase(role.trim())
+                && !"MANAGER".equalsIgnoreCase(role.trim()))) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only ROLE_MANAGER may access admin tickets");
+        }
     }
 }

@@ -8,6 +8,10 @@ set -eo pipefail
 
 PORTAL_URL="${PORTAL_URL:-http://localhost:5173}"
 GATEWAY_URL="${GATEWAY_URL:-http://localhost:8080}"
+AUTO_START_PORTAL="${AUTO_START_PORTAL:-true}"
+PORTAL_STARTUP_TIMEOUT="${PORTAL_STARTUP_TIMEOUT:-30}"
+PORTAL_DIR="${PORTAL_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../frontend/cash-deposit-portal" && pwd)}"
+PORTAL_PID=""
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -15,6 +19,51 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 BOLD='\033[1m'
 NC='\033[0m'
+
+cleanup_portal() {
+    if [ -n "$PORTAL_PID" ] && kill -0 "$PORTAL_PID" 2>/dev/null; then
+        kill -- "-$PORTAL_PID" 2>/dev/null || kill "$PORTAL_PID" 2>/dev/null || true
+        wait "$PORTAL_PID" 2>/dev/null || true
+    fi
+}
+trap cleanup_portal EXIT
+
+start_local_portal_if_needed() {
+    if [[ "$PORTAL_URL" != http://localhost:* && "$PORTAL_URL" != http://127.0.0.1:* ]]; then
+        return
+    fi
+    if [ "$AUTO_START_PORTAL" != "true" ]; then
+        return
+    fi
+
+    if curl -fsS --max-time 2 "${PORTAL_URL}/" >/dev/null 2>&1; then
+        return
+    fi
+
+    if [ ! -f "${PORTAL_DIR}/package.json" ]; then
+        echo -e "${RED}❌ Không tìm thấy Web Portal tại ${PORTAL_DIR}.${NC}"
+        exit 1
+    fi
+
+    local portal_port="${PORTAL_URL##*:}"
+    echo -e "${YELLOW}  • Web Portal chưa chạy; tự khởi động Vite trên cổng ${portal_port}...${NC}"
+    setsid npm --prefix "$PORTAL_DIR" run dev -- --host 127.0.0.1 --port "$portal_port" >/tmp/sen-hong-vite-audit.log 2>&1 &
+    PORTAL_PID=$!
+
+    local elapsed=0
+    until curl -fsS --max-time 2 "${PORTAL_URL}/" >/dev/null 2>&1; do
+        if ! kill -0 "$PORTAL_PID" 2>/dev/null; then
+            echo -e "${RED}❌ Vite không khởi động được. Chi tiết: /tmp/sen-hong-vite-audit.log${NC}"
+            exit 1
+        fi
+        if [ "$elapsed" -ge "$PORTAL_STARTUP_TIMEOUT" ]; then
+            echo -e "${RED}❌ Vite không sẵn sàng sau ${PORTAL_STARTUP_TIMEOUT}s. Chi tiết: /tmp/sen-hong-vite-audit.log${NC}"
+            exit 1
+        fi
+        sleep 1
+        elapsed=$((elapsed + 1))
+    done
+}
 
 echo -e "${BLUE}${BOLD}"
 echo "=============================================================================="
@@ -27,6 +76,7 @@ echo -e "${NC}"
 # 1. KIỂM TRA WEB DEV SERVER & PROXY ROUTING
 # ------------------------------------------------------------------------------
 echo -e "${YELLOW}▶ [AUDIT-01] KIỂM TRA SẴN SÀNG CỦA WEB QUẢN TRỊ & PROXY VITE${NC}"
+start_local_portal_if_needed
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${PORTAL_URL}/" || echo "000")
 if [ "$HTTP_CODE" != "200" ]; then
     echo -e "${RED}❌ Web Quản trị không phản hồi tại ${PORTAL_URL} (HTTP ${HTTP_CODE})!${NC}"
@@ -335,4 +385,3 @@ echo "🎉 TỔNG KẾT BÁO CÁO AUDIT: TOÀN BỘ 7/7 KỊCH BẢN KẾT NỐI
 echo "   Hệ thống sẵn sàng vận hành thực tế tại: ${PORTAL_URL}"
 echo "=============================================================================="
 echo -e "${NC}"
-

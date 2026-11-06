@@ -1,4 +1,5 @@
 {
+  "dart.flutterSdkPath": "/home/buidi/snap/flutter/common/flutter",
   "java.jdt.ls.lombokSupport.enabled": true,
   "java.import.maven.enabled": true,
   "java.import.gradle.enabled": false,
@@ -16,6 +17,7 @@
     "**/node_modules/**": true,
     "**/mobile/build/**": true,
     "**/backend/**/target/**": true
-  }
+  },
+  "9router-for-github-copilot.serverUrl": "http://localhost:20128/v1"
 }
 

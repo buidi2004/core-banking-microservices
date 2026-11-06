@@ -132,6 +132,15 @@ class ProfileRemoteDataSource {
     return _map(response.data);
   }
 
+  /// Đặt biệt danh tài khoản (Alias / Shop VietQR)
+  Future<Map<String, dynamic>> updateAlias(String alias) async {
+    final response = await _dio.put(
+      ApiConstants.userAlias,
+      queryParameters: {'alias': alias.trim().toUpperCase()},
+    );
+    return _map(response.data);
+  }
+
   Map<String, dynamic> _map(dynamic raw) {
     final json = Map<String, dynamic>.from(raw as Map);
     if (json['success'] != true || json['data'] is! Map) throw apiException(json);

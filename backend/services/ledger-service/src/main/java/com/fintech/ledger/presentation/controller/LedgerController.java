@@ -6,7 +6,9 @@ import com.fintech.ledger.domain.model.LedgerAccount;
 import com.fintech.ledger.domain.model.LedgerPosting;
 import com.fintech.ledger.presentation.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -17,7 +19,10 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {
+        "${app.cors.portal-origin:http://localhost:5173}",
+        "${app.cors.portal-alt-origin:http://127.0.0.1:5173}"
+})
 @RestController
 @RequestMapping("/api/v1/ledger")
 public class LedgerController {
@@ -37,7 +42,7 @@ public class LedgerController {
      * - Tổng Nợ (Debit), Tổng Có (Credit), Delta = 0, Cân bằng (balanced)
      * - Chi tiết Nợ TK 1011 (Quỹ tiền mặt mặt đất) và Có TK 4211 (Tiền gửi ví khách hàng)
      */
-    @GetMapping({"/summary", "/turnover-summary"})
+    @GetMapping({"/summary", "/turnover-summary", "/reconciliation"})
     public ResponseEntity<ApiResponse<LedgerService.LedgerTurnoverSummary>> getTurnoverSummary() {
         return ResponseEntity.ok(ApiResponse.ok("Ledger turnover summary retrieved",
                 ledgerService.getTurnoverSummary()));
@@ -53,6 +58,20 @@ public class LedgerController {
         // Đối soát toàn sổ: Σ Debit phải bằng Σ Credit
         return ResponseEntity.ok(ApiResponse.ok("Ledger balance verification",
                 ledgerService.verifyLedgerBalance()));
+    }
+
+    /**
+     * Khóa sổ kế toán cuối ngày (End-of-Day EOD / Close of Business COB Batch).
+     */
+    @PostMapping({"/admin/eod/close-day", "/eod/close-day"})
+    public ResponseEntity<ApiResponse<LedgerService.EndOfDayResult>> closeEndOfDay(
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Role", required = false)
+            String userRole) {
+        if (!isManager(userRole)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return ResponseEntity.ok(ApiResponse.ok("Khóa sổ cuối ngày thành công",
+                ledgerService.closeEndOfDay()));
     }
 
     /**
@@ -109,5 +128,11 @@ public class LedgerController {
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Invalid '" + param + "' date-time, expected ISO-8601 instant", e);
         }
-    }
+
+        }
+
+    private boolean isManager(String role) {
+            return role != null
+                    && ("ROLE_MANAGER".equalsIgnoreCase(role.trim()) || "MANAGER".equalsIgnoreCase(role.trim()));
+        }
 }

@@ -35,6 +35,36 @@ class MoneyRequestControllerExtendedTest {
     private final String userId = UUID.randomUUID().toString();
 
     @Test
+    @DisplayName("POST /api/v1/payments/money-requests: dùng trusted identity thay cho requesterId trong body")
+    void create_UsesTrustedUserId() throws Exception {
+        when(moneyRequestRepository.save(any(MoneyRequest.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post("/api/v1/payments/money-requests")
+                        .header("X-User-Id", userId)
+                        .contentType("application/json")
+                        .content("""
+                                {"requesterId":"spoofed-user","targetUserId":"user-target","amount":50000}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.requesterId").value(userId));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/payments/money-requests/{id}/accept: từ chối request thiếu trusted identity")
+    void accept_MissingUserId_Unauthorized() throws Exception {
+        mockMvc.perform(post("/api/v1/payments/money-requests/" + UUID.randomUUID() + "/accept"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/payments/money-requests: Từ chối request thiếu trusted identity")
+    void listCurrentUserRequests_MissingUserId_Unauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/payments/money-requests"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("GET /api/v1/payments/money-requests/{id}: Xem chi tiết yêu cầu tiền")
     void getDetail_Success() throws Exception {
         String id = UUID.randomUUID().toString();
@@ -50,7 +80,8 @@ class MoneyRequestControllerExtendedTest {
 
         when(moneyRequestRepository.findById(id)).thenReturn(Optional.of(mr));
 
-        mockMvc.perform(get("/api/v1/payments/money-requests/" + id))
+        mockMvc.perform(get("/api/v1/payments/money-requests/" + id)
+                        .header("X-User-Id", userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(id))
@@ -120,4 +151,3 @@ class MoneyRequestControllerExtendedTest {
                 .andExpect(jsonPath("$.data[0].amount").value(120000));
     }
 }
-

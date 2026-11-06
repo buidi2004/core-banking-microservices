@@ -11,6 +11,7 @@ import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/bank_account_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class BankCardsScreen extends StatefulWidget {
   const BankCardsScreen({super.key});
@@ -20,7 +21,8 @@ class BankCardsScreen extends StatefulWidget {
 }
 
 class _BankCardsScreenState extends State<BankCardsScreen> {
-  final BankAccountRemoteDataSource _bankDataSource = BankAccountRemoteDataSource();
+  final BankAccountRemoteDataSource _bankDataSource =
+      BankAccountRemoteDataSource();
   final ProfileRemoteDataSource _profileDataSource = ProfileRemoteDataSource();
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
@@ -65,7 +67,8 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
         _banks = rawAccounts.map((account) {
           final bankCode = account['bankCode'] as String? ?? 'BANK';
           final accNum = account['accountNumber'] as String? ?? '';
-          final holder = account['accountHolderName'] as String? ?? _userFullName;
+          final holder =
+              account['accountHolderName'] as String? ?? _userFullName;
           final isDef = account['isDefault'] as bool? ?? false;
           final id = account['id'] as String? ?? '';
           return {
@@ -143,10 +146,12 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
-          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          padding: EdgeInsets.fromLTRB(
+              24, 20, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
           child: SingleChildScrollView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             child: Column(
@@ -159,18 +164,22 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                     Expanded(
                       child: Text(
                         'Liên Kết Ngân Hàng Mới',
-                        style: AppTypography.titleLarge(color: AppColors.textPrimaryLight),
+                        style: AppTypography.titleLarge(
+                            color: AppColors.textPrimaryLight),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
                       onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
-                      icon: const Icon(CupertinoIcons.xmark, color: AppColors.textPrimaryLight),
+                      icon: const Icon(CupertinoIcons.xmark,
+                          color: AppColors.textPrimaryLight),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text('Chọn ngân hàng liên kết', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                Text('Chọn ngân hàng liên kết',
+                    style: AppTypography.bodySmall(
+                        color: AppColors.textSecondaryLight)),
                 const SizedBox(height: 6),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -184,7 +193,8 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                       value: selectedBankCode,
                       dropdownColor: Colors.white,
                       isExpanded: true,
-                      style: const TextStyle(color: AppColors.textPrimaryLight, fontSize: 14),
+                      style: const TextStyle(
+                          color: AppColors.textPrimaryLight, fontSize: 14),
                       items: _availableBanks
                           .map((b) => DropdownMenuItem(
                                 value: b['code'],
@@ -197,13 +207,16 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                       onChanged: isSubmitting
                           ? null
                           : (val) {
-                              if (val != null) setModalState(() => selectedBankCode = val);
+                              if (val != null)
+                                setModalState(() => selectedBankCode = val);
                             },
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text('Số tài khoản ngân hàng', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                Text('Số tài khoản ngân hàng',
+                    style: AppTypography.bodySmall(
+                        color: AppColors.textSecondaryLight)),
                 const SizedBox(height: 6),
                 TextField(
                   controller: accCtrl,
@@ -211,42 +224,52 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                   enabled: !isSubmitting,
                   style: const TextStyle(color: AppColors.textPrimaryLight),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(CupertinoIcons.creditcard, color: AppColors.primaryText),
+                    prefixIcon: const Icon(CupertinoIcons.creditcard,
+                        color: AppColors.primaryText),
                     hintText: 'Nhập số tài khoản ngân hàng chính chủ',
                     hintStyle: const TextStyle(color: AppColors.textMutedLight),
                     filled: true,
                     fillColor: AppColors.surfaceLight,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.borderLight),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.borderLight),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text('Tên chủ tài khoản (Chính chủ)', style: AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+                Text('Tên chủ tài khoản (Chính chủ)',
+                    style: AppTypography.bodySmall(
+                        color: AppColors.textSecondaryLight)),
                 const SizedBox(height: 6),
                 TextField(
                   controller: holderCtrl,
                   textCapitalization: TextCapitalization.characters,
                   enabled: !isSubmitting,
-                  style: const TextStyle(color: AppColors.textPrimaryLight, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.bold),
                   decoration: InputDecoration(
-                    prefixIcon: const Icon(CupertinoIcons.person_fill, color: AppColors.primaryText),
+                    prefixIcon: const Icon(CupertinoIcons.person_fill,
+                        color: AppColors.primaryText),
                     hintText: 'HỌ VÀ TÊN (KHÔNG DẤU)',
                     hintStyle: const TextStyle(color: AppColors.textMutedLight),
                     filled: true,
                     fillColor: AppColors.surfaceLight,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.borderLight),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: AppColors.borderLight),
+                      borderSide:
+                          const BorderSide(color: AppColors.borderLight),
                     ),
                   ),
                 ),
@@ -263,7 +286,8 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                               await showFeatureUnavailable(
                                 context,
                                 feature: 'Liên kết tài khoản ngân hàng',
-                                reason: 'Backend chưa cung cấp API tài khoản ngân hàng (BE-REQ-06).',
+                                reason:
+                                    'Backend chưa cung cấp API tài khoản ngân hàng (BE-REQ-06).',
                               );
                               return;
                             }
@@ -271,13 +295,17 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                             final holder = holderCtrl.text.trim();
                             if (acc.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Vui lòng nhập số tài khoản ngân hàng')),
+                                const SnackBar(
+                                    content: Text(
+                                        'Vui lòng nhập số tài khoản ngân hàng')),
                               );
                               return;
                             }
                             if (holder.isEmpty) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Vui lòng nhập họ tên chủ tài khoản')),
+                                const SnackBar(
+                                    content: Text(
+                                        'Vui lòng nhập họ tên chủ tài khoản')),
                               );
                               return;
                             }
@@ -295,7 +323,8 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     backgroundColor: AppColors.emeraldGreen,
-                                    content: Text('Liên kết tài khoản ngân hàng thành công!'),
+                                    content: Text(
+                                        'Liên kết tài khoản ngân hàng thành công!'),
                                   ),
                                 );
                                 _loadBankAccounts();
@@ -316,7 +345,9 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.textPrimaryLight),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.textPrimaryLight),
                           )
                         : const Text('Xác nhận liên kết ngân hàng'),
                   ),
@@ -333,7 +364,8 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surfaceLight,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -342,8 +374,10 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
             Material(
               type: MaterialType.transparency,
               child: ListTile(
-                leading: const Icon(CupertinoIcons.checkmark_seal_fill, color: AppColors.successTextLight),
-                title: const Text('Đặt làm tài khoản mặc định', style: TextStyle(color: AppColors.textPrimaryLight)),
+                leading: const Icon(CupertinoIcons.checkmark_seal_fill,
+                    color: AppColors.successTextLight),
+                title: const Text('Đặt làm tài khoản mặc định',
+                    style: TextStyle(color: AppColors.textPrimaryLight)),
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() {
@@ -357,8 +391,10 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
             Material(
               type: MaterialType.transparency,
               child: ListTile(
-                leading: const Icon(CupertinoIcons.trash_fill, color: AppColors.errorText),
-                title: const Text('Hủy liên kết tài khoản này', style: TextStyle(color: AppColors.errorText)),
+                leading: const Icon(CupertinoIcons.trash_fill,
+                    color: AppColors.errorText),
+                title: const Text('Hủy liên kết tài khoản này',
+                    style: TextStyle(color: AppColors.errorText)),
                 onTap: () async {
                   Navigator.pop(ctx);
                   // MOB-007: BE chưa có API bank-accounts (BE-REQ-06).
@@ -366,7 +402,8 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                     await showFeatureUnavailable(
                       context,
                       feature: 'Hủy liên kết tài khoản',
-                      reason: 'Backend chưa cung cấp API tài khoản ngân hàng (BE-REQ-06).',
+                      reason:
+                          'Backend chưa cung cấp API tài khoản ngân hàng (BE-REQ-06).',
                     );
                     return;
                   }
@@ -374,14 +411,16 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                     context: context,
                     builder: (dialogCtx) => AlertDialog(
                       title: const Text('Xác nhận hủy liên kết'),
-                      content: Text('Bạn có chắc chắn muốn hủy liên kết tài khoản ${b['bankName']} (${b['accountNumber']})?'),
+                      content: Text(
+                          'Bạn có chắc chắn muốn hủy liên kết tài khoản ${b['bankName']} (${b['accountNumber']})?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(dialogCtx, false),
                           child: const Text('Hủy'),
                         ),
                         ElevatedButton(
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.error),
                           onPressed: () => Navigator.pop(dialogCtx, true),
                           child: const Text('Xóa liên kết'),
                         ),
@@ -400,7 +439,8 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             backgroundColor: AppColors.emeraldGreen,
-                            content: Text('Đã hủy liên kết tài khoản thành công'),
+                            content:
+                                Text('Đã hủy liên kết tài khoản thành công'),
                           ),
                         );
                         _loadBankAccounts();
@@ -432,6 +472,7 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
       appBar: AppBar(
         title: const Text('Tài Khoản Ngân Hàng'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: _isLoading
@@ -442,37 +483,45 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
                   children: [
-                    Text('Tài khoản ngân hàng liên kết', style: AppTypography.titleLarge(color: AppColors.textPrimaryLight)),
+                    Text('Tài khoản ngân hàng liên kết',
+                        style: AppTypography.titleLarge(
+                            color: AppColors.textPrimaryLight)),
                     const SizedBox(height: 6),
                     Text(
                       'Liên kết tài khoản ngân hàng nội địa để nạp và rút tiền tức thì 24/7',
-                      style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight),
                     ),
                     const SizedBox(height: 16),
-
                     if (_banks.isEmpty)
                       GlassCard(
                         quality: GlassQuality.minimal,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 36, horizontal: 20),
                           child: Column(
                             children: [
-                              const Icon(CupertinoIcons.creditcard, size: 56, color: AppColors.textMutedLight),
+                              const Icon(CupertinoIcons.creditcard,
+                                  size: 56, color: AppColors.textMutedLight),
                               const SizedBox(height: 14),
                               Text(
                                 'Chưa có ngân hàng nào được liên kết',
-                                style: AppTypography.titleMedium(color: AppColors.textPrimaryLight),
+                                style: AppTypography.titleMedium(
+                                    color: AppColors.textPrimaryLight),
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 'Liên kết tài khoản ngân hàng để nạp tiền vào ví hoặc rút tiền về tài khoản ngân hàng bất cứ lúc nào',
                                 textAlign: TextAlign.center,
-                                style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                                style: AppTypography.bodySmall(
+                                    color: AppColors.textSecondaryLight),
                               ),
                               const SizedBox(height: 20),
                               ElevatedButton.icon(
                                 onPressed: _showAddBankModal,
-                                icon: const Icon(CupertinoIcons.plus_circle_fill, size: 18),
+                                icon: const Icon(
+                                    CupertinoIcons.plus_circle_fill,
+                                    size: 18),
                                 label: const Text('Liên kết ngân hàng ngay'),
                               ),
                             ],
@@ -493,20 +542,27 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                                   Row(
                                     children: [
                                       CircleAvatar(
-                                        backgroundColor: AppColors.primary.withOpacity(0.18),
+                                        backgroundColor:
+                                            AppColors.primary.withOpacity(0.18),
                                         child: Text(
                                           b['shortName'] as String,
-                                          style: const TextStyle(color: AppColors.primaryText, fontWeight: FontWeight.bold, fontSize: 11),
+                                          style: const TextStyle(
+                                              color: AppColors.primaryText,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11),
                                         ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               '${b['shortName']} - ${b['accountNumber']}',
-                                              style: AppTypography.titleMedium(color: AppColors.textPrimaryLight),
+                                              style: AppTypography.titleMedium(
+                                                  color: AppColors
+                                                      .textPrimaryLight),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -515,7 +571,9 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                                               '${b['holderName']} • ${b['bankName']}',
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: AppTypography.bodySmall(color: AppColors.textSecondaryLight),
+                                              style: AppTypography.bodySmall(
+                                                  color: AppColors
+                                                      .textSecondaryLight),
                                             ),
                                           ],
                                         ),
@@ -523,44 +581,79 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                                       const SizedBox(width: 8),
                                       if (isDefault)
                                         Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: AppColors.emeraldGreen.withOpacity(0.15),
-                                            borderRadius: BorderRadius.circular(12),
+                                            color: AppColors.emeraldGreen
+                                                .withOpacity(0.15),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
                                           ),
-                                          child: const Text('Mặc định', style: TextStyle(color: AppColors.successTextLight, fontSize: 11, fontWeight: FontWeight.bold)),
+                                          child: const Text('Mặc định',
+                                              style: TextStyle(
+                                                  color: AppColors
+                                                      .successTextLight,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold)),
                                         )
                                       else
                                         IconButton(
-                                          icon: const Icon(CupertinoIcons.ellipsis, color: AppColors.textMutedLight),
+                                          icon: const Icon(
+                                              CupertinoIcons.ellipsis,
+                                              color: AppColors.textMutedLight),
                                           onPressed: () => _showBankOptions(b),
                                         ),
                                     ],
                                   ),
-                                  const Divider(height: 20, color: AppColors.cardBorderLight),
+                                  const Divider(
+                                      height: 20,
+                                      color: AppColors.cardBorderLight),
                                   Row(
                                     children: [
                                       Expanded(
                                         child: OutlinedButton.icon(
                                           style: OutlinedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
-                                            side: const BorderSide(color: AppColors.borderLight),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8),
+                                            side: const BorderSide(
+                                                color: AppColors.borderLight),
                                           ),
-                                          onPressed: () => context.push('/deposit'),
-                                          icon: const Icon(CupertinoIcons.arrow_down_circle_fill, size: 16, color: AppColors.successTextLight),
-                                          label: const Text('Nạp tiền', style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight)),
+                                          onPressed: () =>
+                                              context.push('/deposit'),
+                                          icon: const Icon(
+                                              CupertinoIcons
+                                                  .arrow_down_circle_fill,
+                                              size: 16,
+                                              color:
+                                                  AppColors.successTextLight),
+                                          label: const Text('Nạp tiền',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppColors
+                                                      .textPrimaryLight)),
                                         ),
                                       ),
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: OutlinedButton.icon(
                                           style: OutlinedButton.styleFrom(
-                                            padding: const EdgeInsets.symmetric(vertical: 8),
-                                            side: const BorderSide(color: AppColors.borderLight),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8),
+                                            side: const BorderSide(
+                                                color: AppColors.borderLight),
                                           ),
-                                          onPressed: () => context.push('/withdraw'),
-                                          icon: const Icon(CupertinoIcons.arrow_up_circle_fill, size: 16, color: AppColors.primaryText),
-                                          label: const Text('Rút tiền', style: TextStyle(fontSize: 12, color: AppColors.textPrimaryLight)),
+                                          onPressed: () =>
+                                              context.push('/withdraw'),
+                                          icon: const Icon(
+                                              CupertinoIcons
+                                                  .arrow_up_circle_fill,
+                                              size: 16,
+                                              color: AppColors.primaryText),
+                                          label: const Text('Rút tiền',
+                                              style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: AppColors
+                                                      .textPrimaryLight)),
                                         ),
                                       ),
                                     ],
@@ -571,7 +664,6 @@ class _BankCardsScreenState extends State<BankCardsScreen> {
                           ),
                         );
                       }),
-
                     if (_banks.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       ElevatedButton.icon(

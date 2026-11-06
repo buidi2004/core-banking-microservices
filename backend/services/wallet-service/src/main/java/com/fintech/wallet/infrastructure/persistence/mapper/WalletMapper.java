@@ -23,7 +23,8 @@ public class WalletMapper {
                 entity.getVersion(),
                 status,
                 entity.getDailyLimit(),
-                entity.getDailySpent()
+                entity.getDailySpent(),
+                entity.getOverdraftLimit()
         );
     }
 
@@ -38,6 +39,7 @@ public class WalletMapper {
         entity.setStatus(domain.getStatus() != null ? domain.getStatus().name() : WalletStatus.ACTIVE.name());
         entity.setDailyLimit(domain.getDailyLimit());
         entity.setDailySpent(domain.getDailySpent());
+        entity.setOverdraftLimit(domain.getOverdraftLimit() != null ? domain.getOverdraftLimit() : 0L);
         entity.setCreatedAt(domain.getCreatedAt());
         entity.setUpdatedAt(domain.getUpdatedAt());
         entity.setVersion(domain.getVersion());

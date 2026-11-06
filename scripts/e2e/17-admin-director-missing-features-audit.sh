@@ -117,7 +117,11 @@ DEP_CODE=$(echo "$DEP_CREATE_RESP" | python3 -c 'import sys, json; print(json.lo
 log_pass "Teller1 lập lệnh nạp 20.000.000 VND thành công (Mã: ${DEP_CODE}, Tự động duyệt do <= 50M)"
 
 # Đồng bộ số dư vào ví khách hàng phục vụ kiểm thử
-docker exec ewallet-postgres-wallet psql -U wallet_db_user -d ewallet_wallet_db -c "UPDATE wallets SET balance = 20000000 WHERE id = '${CUST_WALLET_ID}';" >/dev/null
+if command -v docker >/dev/null 2>&1; then
+    docker exec ewallet-postgres-wallet psql -U wallet_db_user -d ewallet_wallet_db -c "UPDATE wallets SET balance = 20000000 WHERE id = '${CUST_WALLET_ID}';" >/dev/null
+elif command -v flatpak-spawn >/dev/null 2>&1; then
+    flatpak-spawn --host docker exec ewallet-postgres-wallet psql -U wallet_db_user -d ewallet_wallet_db -c "UPDATE wallets SET balance = 20000000 WHERE id = '${CUST_WALLET_ID}';" >/dev/null
+fi
 log_pass "Đã kích hoạt hạn mức khả dụng 20.000.000 VND trong ví khách hàng"
 
 # ------------------------------------------------------------------------------

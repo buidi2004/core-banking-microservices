@@ -136,6 +136,7 @@ class _ContractGatewayFallbackAdapter implements HttpClientAdapter {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late String activeBaseUrl;
   late Dio dio;
   var isLiveGatewayAvailable = false;

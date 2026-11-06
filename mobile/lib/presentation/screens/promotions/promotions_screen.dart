@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/promotion_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class PromotionsScreen extends StatefulWidget {
   const PromotionsScreen({super.key});
@@ -72,53 +74,87 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   ];
 
   // ===========================================================================
-  // 1. MEGA HERO BANNERS (HỆ THỐNG BANNER CHÍNH)
+  // 1. MEGA HERO BANNERS (HỆ THỐNG BANNER CHÍNH - HÌNH ẢNH THỰC TẾ & ĐIỆN ẢNH)
   // ===========================================================================
   final List<Map<String, dynamic>> _heroBanners = const [
+    {
+      'title': 'Mở Thẻ SenBank Visa Platinum - Hoàn 2 Triệu',
+      'subtitle':
+          'Hoàn tiền 50% chi tiêu kỳ đầu, miễn phí thường niên trọn đời',
+      'tag': 'SENBANK PREMIER',
+      'tagIcon': LucideIcons.creditCard,
+      'accentColor': Color(0xFFF59E0B),
+      'image': 'assets/images/banners/banner_gucci_luxury.jpg',
+      'cardImage': 'assets/images/banners/real_featured_visa_exact.png',
+      'gradient': [Color(0xFF0F2B48), AppColors.brandBlue],
+      'route': '/cards',
+    },
     {
       'title': 'Vay Mua Ô Tô VinFast VF3 - Lãi Suất 0%',
       'subtitle':
           'Hỗ trợ 85% giá trị xe, ân hạn nợ gốc 12 tháng, góp chỉ từ 2.9 triệu/tháng',
-      'tag': '🚗 XE HOT 2026',
-      'icon': CupertinoIcons.car_fill,
+      'tag': 'XE HOT 2026',
+      'tagIcon': LucideIcons.car,
+      'accentColor': Color(0xFF38BDF8),
+      'image': 'assets/images/banners/banner_car_loan_couple.png',
       'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
       'route': '/bills/quick-loan',
+    },
+    {
+      'title': 'Vi Vu Hè Cùng Vietnam Airlines & Cầu Vàng',
+      'subtitle':
+          'Giảm 500.000đ vé máy bay & vé cáp treo Sun World Bà Nà Hills',
+      'tag': 'DU LỊCH 5 SAO',
+      'tagIcon': LucideIcons.plane,
+      'accentColor': Color(0xFF2DD4BF),
+      'image': 'assets/images/banners/vietnam_danang_golden_bridge.jpg',
+      'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
+      'route': '/digital-flight',
     },
     {
       'title': 'Gói Vay Mua Nhà An Cư - Lãi Suất 5.2%/Năm',
       'subtitle':
           'Vinhomes & Masterise: Cố định 24 tháng, thời hạn vay 35 năm, 0đ phạt trả trước',
-      'tag': '🏠 BẤT ĐỘNG SẢN',
-      'icon': CupertinoIcons.house_fill,
+      'tag': 'BẤT ĐỘNG SẢN',
+      'tagIcon': LucideIcons.home,
+      'accentColor': Color(0xFF60A5FA),
+      'image': 'assets/images/banners/vietnam_phu_quoc.jpg',
       'gradient': [AppColors.brandNavy, AppColors.tealNavy],
       'route': '/bills/quick-loan',
     },
     {
       'title': 'Trả Góp 0% iPhone 16 Pro Max & MacBook',
       'subtitle':
-          '0 đồng trả trước tại FPT Shop & Thế Giới Di Động qua thẻ tín dụng SenBank',
+          '0 đồng trả trước tại FPT Shop & Thế Giới Di Động qua thẻ SenBank',
       'tag': 'TRẢ GÓP 0%',
-      'icon': CupertinoIcons.device_phone_portrait,
+      'tagIcon': LucideIcons.smartphone,
+      'accentColor': Color(0xFFA78BFA),
+      'image': 'assets/images/banners/banner_zara_uniqlo.jpg',
+      'cardImage': 'assets/images/banners/real_featured_jcb_exact.png',
       'gradient': [AppColors.brandNavy, AppColors.bottomBarOcean],
       'route': '/cards',
     },
     {
-      'title': 'Mở Thẻ SenBank Visa Platinum - Hoàn 2 Triệu',
+      'title': 'Du Thuyền Hạ Long Heritage Cruise 5 Sao',
       'subtitle':
-          'Hoàn tiền 50% chi tiêu kỳ đầu, miễn phí thường niên trọn đời',
-      'tag': '💳 SENBANK PREMIER',
-      'icon': CupertinoIcons.creditcard_fill,
-      'gradient': [Color(0xFF0F2B48), AppColors.brandBlue],
-      'route': '/cards',
+          'Nghỉ dưỡng thượng lưu trên Vịnh Di Sản, ưu đãi 35% cho chủ thẻ SenBank',
+      'tag': 'DI SẢN VIỆT NAM',
+      'tagIcon': LucideIcons.anchor,
+      'accentColor': Color(0xFF34D399),
+      'image': 'assets/images/banners/vietnam_halong_bay.jpg',
+      'gradient': [Color(0xFF0F2B48), Color(0xFF0D5C75)],
+      'route': '/promotions',
     },
     {
-      'title': 'Vi Vu Hè Cùng Vietnam Airlines & Agoda',
+      'title': 'Nike & Adidas Sport Fest 2026 - Hoàn 20%',
       'subtitle':
-          'Giảm 500.000đ vé máy bay khứ hồi & khách sạn 5 sao toàn quốc',
-      'tag': '✈️ DU LỊCH 5 SAO',
-      'icon': CupertinoIcons.airplane,
-      'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
-      'route': '/bills/input?service=Vé máy bay',
+          'Hoàn tiền khi thanh toán không tiếp xúc Apple Pay / SenBank Pay',
+      'tag': 'THỂ THAO NĂNG ĐỘNG',
+      'tagIcon': LucideIcons.flame,
+      'accentColor': Color(0xFFFB7185),
+      'image': 'assets/images/banners/banner_nike_adidas.jpg',
+      'gradient': [Color(0xFF1E1B4B), Color(0xFF831843)],
+      'route': '/promotions',
     },
   ];
 
@@ -136,7 +172,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'desc':
           'Tài trợ tới 85% giá trị hợp đồng mua bán nhà ở, căn hộ. Thủ tục thẩm định trực tuyến trong 24h.',
       'gradient': [Color(0xFF0A2540), AppColors.brandBlue],
-      'icon': CupertinoIcons.graph_square_fill,
+      'image': 'assets/images/banners/vietnam_phu_quoc.jpg',
+      'icon': LucideIcons.home,
       'type': 'house',
       'badgeColor': AppColors.bottomBarOcean,
     },
@@ -150,7 +187,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'desc':
           'Ưu đãi tặng gói bảo hiểm vật chất 2 năm và miễn phí trạm sạc pin toàn quốc 1 năm.',
       'gradient': [AppColors.brandNavy, AppColors.bottomBarOcean],
-      'icon': CupertinoIcons.car_fill,
+      'image': 'assets/images/banners/banner_car_loan_couple.png',
+      'icon': LucideIcons.car,
       'type': 'car',
       'badgeColor': AppColors.bottomBarOcean,
     },
@@ -164,7 +202,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'desc':
           'Sở hữu ngay xe máy điện bảo vệ môi trường, chi phí sạc siêu tiết kiệm chỉ bằng 1/5 tiền xăng.',
       'gradient': [AppColors.royalBlue, AppColors.bottomBarOcean],
-      'icon': CupertinoIcons.battery_charging,
+      'image': 'assets/images/banners/banner_car_driver_raw.jpg',
+      'icon': LucideIcons.zap,
       'type': 'bike',
       'badgeColor': AppColors.bottomBarCyan,
     },
@@ -178,7 +217,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'desc':
           'Áp dụng cho iPhone 16 Pro Max, MacBook Air M3, TV Sony OLED, Tủ lạnh Samsung Bespoke.',
       'gradient': [AppColors.brandNavy, AppColors.brandBlue],
-      'icon': CupertinoIcons.device_phone_portrait,
+      'image': 'assets/images/banners/banner_zara_uniqlo.jpg',
+      'icon': LucideIcons.smartphone,
       'type': 'tech',
       'badgeColor': AppColors.bottomBarOcean,
     },
@@ -192,7 +232,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'desc':
           'Giải ngân tiền mặt trực tiếp vào tài khoản ví SenBank. Không cần chứng minh thu nhập phức tạp.',
       'gradient': [Color(0xFF005C8A), AppColors.oceanCyan],
-      'icon': CupertinoIcons.bolt_horizontal_circle_fill,
+      'image': 'assets/images/banners/banner_nike_adidas.jpg',
+      'icon': LucideIcons.banknote,
       'type': 'loan',
       'badgeColor': AppColors.bottomBarCyan,
     },
@@ -210,7 +251,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'progress': 0.88,
       'left': 'Còn 12 mã',
       'gradient': [AppColors.royalBlue, AppColors.brandBlue],
-      'icon': CupertinoIcons.cart_fill,
+      'icon': LucideIcons.coffee,
       'route': '/scan-qr',
     },
     {
@@ -221,7 +262,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'progress': 0.94,
       'left': 'Còn 6 mã',
       'gradient': [AppColors.brandBlue, AppColors.oceanCyan],
-      'icon': CupertinoIcons.bag_fill,
+      'icon': LucideIcons.shoppingBag,
       'route': '/cards',
     },
     {
@@ -232,7 +273,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'progress': 0.72,
       'left': 'Còn 28 mã',
       'gradient': [AppColors.oceanCyan, AppColors.bottomBarOcean],
-      'icon': CupertinoIcons.car_fill,
+      'icon': LucideIcons.car,
       'route': '/transfer',
     },
     {
@@ -243,7 +284,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'progress': 0.82,
       'left': 'Còn 15 mã',
       'gradient': [AppColors.brandBlue, AppColors.bottomBarCyan],
-      'icon': CupertinoIcons.cart_fill,
+      'icon': LucideIcons.cupSoda,
       'route': '/scan-qr',
     },
     {
@@ -254,7 +295,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'progress': 0.65,
       'left': 'Còn 35 mã',
       'gradient': [Color(0xFF0F2B48), AppColors.brandBlue],
-      'icon': CupertinoIcons.play_circle_fill,
+      'icon': LucideIcons.film,
       'route': '/scan-qr',
     },
     {
@@ -265,7 +306,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'progress': 0.55,
       'left': 'Còn 45 mã',
       'gradient': [Color(0xFF0A2540), AppColors.oceanCyan],
-      'icon': CupertinoIcons.smiley_fill,
+      'icon': LucideIcons.pizza,
       'route': '/scan-qr',
     },
   ];
@@ -285,7 +326,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'HLCOFFEE',
       'expiry': 'HSD: 30/09/2026',
       'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
-      'icon': CupertinoIcons.cart_fill,
+      'icon': LucideIcons.coffee,
       'route': '/scan-qr',
       'condition': 'Tối đa 2 lần/tuần cho mỗi chủ tài khoản SenBank.',
       'rating': 4.8,
@@ -301,7 +342,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'SENBE50',
       'expiry': 'HSD: 15/10/2026',
       'gradient': [AppColors.royalBlue, AppColors.brandBlue],
-      'icon': CupertinoIcons.car_fill,
+      'icon': LucideIcons.car,
       'route': '/transfer',
       'condition': 'Áp dụng cho mọi khung giờ, kể cả giờ cao điểm.',
       'rating': 4.6,
@@ -318,7 +359,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'VINFAST0',
       'expiry': 'HSD: 31/12/2026',
       'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
-      'icon': CupertinoIcons.car_fill,
+      'icon': LucideIcons.carFront,
       'route': '/bills/quick-loan',
       'condition':
           'Kỳ hạn vay tối đa 8 năm, xét duyệt hồ sơ online trong 15 phút.',
@@ -336,7 +377,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'HOMELOAN52',
       'expiry': 'HSD: 31/12/2026',
       'gradient': [AppColors.brandNavy, AppColors.tealNavy],
-      'icon': CupertinoIcons.house_fill,
+      'icon': LucideIcons.home,
       'route': '/bills/quick-loan',
       'condition':
           'Hạn mức vay lên đến 30 tỷ VNĐ, thời hạn linh hoạt tới 35 năm.',
@@ -354,7 +395,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'TECH0PERCENT',
       'expiry': 'HSD: 31/10/2026',
       'gradient': [AppColors.brandNavy, AppColors.tealNavy],
-      'icon': CupertinoIcons.device_phone_portrait,
+      'icon': LucideIcons.smartphone,
       'route': '/cards',
       'condition':
           'Áp dụng cho đơn hàng từ 3.000.000đ tại chuỗi cửa hàng đối tác.',
@@ -372,7 +413,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'SENSHOPEE100',
       'expiry': 'HSD: 30/09/2026',
       'gradient': [Color(0xFF0A2540), AppColors.brandBlue],
-      'icon': CupertinoIcons.bag_fill,
+      'icon': LucideIcons.shoppingBag,
       'route': '/cards',
       'condition': 'Tiền hoàn sẽ vào tài khoản trong vòng 24 giờ.',
       'rating': 4.9,
@@ -389,7 +430,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'VIVUHE300',
       'expiry': 'HSD: 31/10/2026',
       'gradient': [AppColors.oceanBlue, AppColors.brandBlue],
-      'icon': CupertinoIcons.airplane,
+      'icon': LucideIcons.plane,
       'route': '/bills/input?service=Vé máy bay',
       'condition': 'Áp dụng cho hạng vé từ Phổ thông tiêu chuẩn trở lên.',
       'rating': 4.7,
@@ -406,7 +447,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'PHUCLONG25',
       'expiry': 'HSD: 15/10/2026',
       'gradient': [AppColors.tealNavy, AppColors.oceanBlue],
-      'icon': CupertinoIcons.cart_fill,
+      'icon': LucideIcons.cupSoda,
       'route': '/scan-qr',
       'condition': 'Áp dụng hóa đơn từ 80.000đ, không giới hạn số lần.',
       'rating': 4.8,
@@ -423,7 +464,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'EVO390K',
       'expiry': 'HSD: 30/11/2026',
       'gradient': [AppColors.tealNavy, AppColors.oceanBlue],
-      'icon': CupertinoIcons.battery_charging,
+      'icon': LucideIcons.zap,
       'route': '/bills/quick-loan',
       'condition': 'Áp dụng cho dòng xe Evo200 và Feliz S thế hệ mới.',
       'rating': 4.9,
@@ -440,7 +481,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'GOLDENGATE4',
       'expiry': 'HSD: 20/10/2026',
       'gradient': [AppColors.brandBlue, AppColors.bottomBarCyan],
-      'icon': CupertinoIcons.rosette,
+      'icon': LucideIcons.utensils,
       'route': '/scan-qr',
       'condition': 'Áp dụng vào tất cả các ngày trong tuần (trừ ngày Lễ).',
       'rating': 4.8,
@@ -457,7 +498,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'AUTOBILL50',
       'expiry': 'HSD: 31/10/2026',
       'gradient': [AppColors.brandNavy, AppColors.oceanBlue],
-      'icon': CupertinoIcons.doc_text_fill,
+      'icon': LucideIcons.receipt,
       'route': '/bills/input?service=ELECTRICITY',
       'condition':
           'Hoàn tiền sau khi chu kỳ cước đầu tiên được trích nợ thành công.',
@@ -475,7 +516,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'PLATINUM2026',
       'expiry': 'HSD: 31/12/2026',
       'gradient': [AppColors.bottomBarOcean, AppColors.brandBlue],
-      'icon': CupertinoIcons.creditcard_fill,
+      'icon': LucideIcons.creditCard,
       'route': '/cards',
       'condition':
           'Chi tiêu tối thiểu 1.000.000đ trong 30 ngày kể từ khi kích hoạt.',
@@ -493,7 +534,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'HOTEL15',
       'expiry': 'HSD: 30/10/2026',
       'gradient': [Color(0xFF03045E), AppColors.brandBlue],
-      'icon': CupertinoIcons.building_2_fill,
+      'icon': LucideIcons.hotel,
       'route': '/bills/input?service=Khách sạn',
       'condition': 'Đặt phòng tối thiểu 1 đêm, giá trị phòng từ 500.000đ/đêm.',
       'rating': 4.6,
@@ -510,7 +551,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'XANGDAU5',
       'expiry': 'HSD: 31/10/2026',
       'gradient': [AppColors.brandNavy, AppColors.oceanBlue],
-      'icon': CupertinoIcons.gauge,
+      'icon': LucideIcons.fuel,
       'route': '/scan-qr',
       'condition': 'Tối đa hoàn 50.000đ mỗi lần giao dịch, 4 lần/tháng.',
       'rating': 4.8,
@@ -527,7 +568,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'COFFEE30',
       'expiry': 'HSD: 31/10/2026',
       'gradient': [Color(0xFF005F73), Color(0xFF0A9396)],
-      'icon': CupertinoIcons.cart_fill,
+      'icon': LucideIcons.coffee,
       'route': '/scan-qr',
       'condition': 'Áp dụng tất cả cửa hàng The Coffee House, từ 6h-10h.',
       'rating': 4.7,
@@ -544,7 +585,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'code': 'PIZZA35',
       'expiry': 'HSD: 15/10/2026',
       'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
-      'icon': CupertinoIcons.smiley_fill,
+      'icon': LucideIcons.pizza,
       'route': '/scan-qr',
       'condition': 'Áp dụng tại tất cả cửa hàng Pizza Hut và KFC toàn quốc.',
       'rating': 4.5,
@@ -767,6 +808,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         centerTitle: true,
         actions: [
           IconButton(
@@ -847,58 +889,64 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: List.generate(_tabs.length, (idx) {
-          final isSelected = _selectedTab == idx;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _selectedTab = idx);
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: isSelected
-                      ? const LinearGradient(
-                          colors: [AppColors.primary, AppColors.primaryDark],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: isSelected ? null : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.40),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(_tabs.length, (idx) {
+            final isSelected = _selectedTab == idx;
+            return Padding(
+              padding: EdgeInsets.only(right: idx == _tabs.length - 1 ? 0 : 6),
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  setState(() => _selectedTab = idx);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? const LinearGradient(
+                            colors: [AppColors.primary, AppColors.primaryDark],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           )
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: Text(
-                    _tabs[idx],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : AppColors.textSecondaryLight,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w600,
-                      fontSize: 11.5,
-                      letterSpacing: 0.2,
+                        : null,
+                    color: isSelected ? null : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.40),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: Center(
+                    child: Text(
+                      _tabs[idx],
+                      maxLines: 1,
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.textSecondaryLight,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.w600,
+                        fontSize: 11.5,
+                        letterSpacing: 0.2,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        }),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -1339,8 +1387,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Row(
         children: [
-          const Icon(CupertinoIcons.search,
-              color: AppColors.primary, size: 20),
+          const Icon(CupertinoIcons.search, color: AppColors.primary, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(
@@ -1405,109 +1452,266 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     return Column(
       children: [
         SizedBox(
-          height: 180,
+          height: 202,
           child: PageView.builder(
             controller: _bannerController,
-            onPageChanged: (idx) => setState(() => _currentBannerIndex = idx),
+            onPageChanged: (idx) {
+              setState(() => _currentBannerIndex = idx);
+              HapticFeedback.selectionClick();
+            },
             itemCount: _heroBanners.length,
             itemBuilder: (context, index) {
               final banner = _heroBanners[index];
-              final gradient = _safeGradient(banner['gradient']);
+              final String? imagePath = banner['image'] as String?;
+              final String? cardImagePath = banner['cardImage'] as String?;
+              final Color accentColor =
+                  (banner['accentColor'] as Color?) ?? AppColors.brandBlue;
+              final IconData? tagIcon = banner['tagIcon'] as IconData?;
+              final String tag = (banner['tag'] as String?) ?? '';
+              final String title = (banner['title'] as String?) ?? '';
+              final String subtitle = (banner['subtitle'] as String?) ?? '';
+              final String route = (banner['route'] as String?) ?? '/promotions';
+
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: GestureDetector(
-                  onTap: () => context.push(banner['route'] as String),
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    try {
+                      context.push(route);
+                    } catch (_) {
+                      Navigator.of(context).pushNamed(route);
+                    }
+                  },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(22),
                     child: Container(
+                      height: 202,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: gradient,
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                        color: const Color(0xFF07101E),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.18),
+                          width: 0.8,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: gradient[0].withOpacity(0.35),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                            color: const Color(0xFF040A14).withOpacity(0.28),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
                       child: Stack(
                         children: [
+                          // 1. Ảnh chân thật người thật / phong cảnh thật chuyên sâu
+                          if (imagePath != null)
+                            Positioned.fill(
+                              child: Image.asset(
+                                imagePath,
+                                fit: BoxFit.cover,
+                                alignment: Alignment.centerRight,
+                                errorBuilder: (_, __, ___) =>
+                                    const SizedBox.shrink(),
+                              ),
+                            ),
+
+                          // 2. Lớp phủ chuyển sắc điện ảnh ngang (Cinematic scrim: obsidian bên trái để nổi bật văn bản)
                           Positioned.fill(
-                            child:
-                                CustomPaint(painter: _CirclePatternPainter()),
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  stops: const [0.0, 0.44, 0.72, 1.0],
+                                  colors: [
+                                    const Color(0xF8050E1C),
+                                    const Color(0xEB071324),
+                                    const Color(0x66081426),
+                                    const Color(0x10081426),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                          const Positioned.fill(
-                            child: ColoredBox(color: Color(0x66030B17)),
+
+                          // 3. Lớp phủ chuyển sắc dọc đáy (Bottom vertical scrim gia tăng độ sâu cho button)
+                          Positioned.fill(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  stops: const [0.0, 0.60, 1.0],
+                                  colors: const [
+                                    Colors.transparent,
+                                    Color(0x18000000),
+                                    Color(0x75030810),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
+
+                          // 4. Thẻ ngân hàng thực tế dập nổi (Realistic Card Overlay nếu có)
+                          if (cardImagePath != null)
+                            Positioned(
+                              right: -8,
+                              bottom: 12,
+                              child: Transform.rotate(
+                                angle: -0.09, // Góc nghiêng tự nhiên thanh lịch
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.55),
+                                        blurRadius: 18,
+                                        offset: const Offset(4, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Image.asset(
+                                    cardImagePath,
+                                    height: 108,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, __, ___) =>
+                                        const SizedBox.shrink(),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                          // 5. Nội dung thông tin Text & CTA Button
                           Padding(
                             padding: const EdgeInsets.all(18),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
+                                // Tag Badge (Kính mờ Liquid Glass)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
+                                      horizontal: 10, vertical: 4.5),
                                   decoration: BoxDecoration(
-                                    color: AppColors.deepNavy.withOpacity(0.72),
+                                    color: const Color(0xB3050F1E),
                                     borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Text(banner['tag'] as String,
-                                      style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w900)),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(banner['title'] as String,
-                                        style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16.5,
-                                            fontWeight: FontWeight.bold,
-                                            height: 1.2),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis),
-                                    const SizedBox(height: 4),
-                                    Text(banner['subtitle'] as String,
-                                        style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11.5,
-                                            height: 1.3),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis),
-                                    const SizedBox(height: 10),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 14, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Text('Khám phá ngay →',
-                                          style: TextStyle(
-                                            color: gradient[0],
-                                            fontSize: 11.5,
-                                            fontWeight: FontWeight.bold,
-                                          )),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.24),
+                                      width: 0.6,
                                     ),
-                                  ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (tagIcon != null) ...[
+                                        Icon(tagIcon,
+                                            size: 12, color: accentColor),
+                                        const SizedBox(width: 5),
+                                      ],
+                                      Text(
+                                        tag,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10.5,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Title, Subtitle và CTA Button
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: cardImagePath != null
+                                        ? 225
+                                        : MediaQuery.of(context).size.width *
+                                            0.68,
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.22,
+                                          letterSpacing: -0.2,
+                                          shadows: [
+                                            Shadow(
+                                              color: Color(0xCC000000),
+                                              blurRadius: 6,
+                                              offset: Offset(0, 1.5),
+                                            ),
+                                          ],
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        subtitle,
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.92),
+                                          fontSize: 11.5,
+                                          height: 1.32,
+                                          shadows: const [
+                                            Shadow(
+                                              color: Color(0x99000000),
+                                              blurRadius: 4,
+                                              offset: Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 14, vertical: 6.5),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.black.withOpacity(0.25),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              'Khám phá ngay',
+                                              style: TextStyle(
+                                                color: Color(0xFF0A1628),
+                                                fontSize: 11.5,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                            SizedBox(width: 4),
+                                            Icon(
+                                              CupertinoIcons.arrow_right,
+                                              size: 11.5,
+                                              color: Color(0xFF0A1628),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
-                            ),
-                          ),
-                          Positioned(
-                            right: 14,
-                            top: 14,
-                            child: Icon(
-                              banner['icon'] as IconData,
-                              size: 78,
-                              color: Colors.white.withOpacity(0.60),
                             ),
                           ),
                         ],
@@ -1526,14 +1730,15 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             _heroBanners.length,
             (idx) => AnimatedContainer(
               duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
               margin: const EdgeInsets.symmetric(horizontal: 3),
               height: 4,
               width: _currentBannerIndex == idx ? 22 : 6,
               decoration: BoxDecoration(
                 color: _currentBannerIndex == idx
-                    ? AppColors.bottomBarCyan
-                    : Colors.white24,
-                borderRadius: BorderRadius.circular(2),
+                    ? AppColors.brandBlue
+                    : AppColors.brandNavy.withOpacity(0.20),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
@@ -1545,13 +1750,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   Widget _buildSenPointClubCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
+        color: Colors.white.withOpacity(0.90),
         borderRadius: BorderRadius.circular(18),
         border:
-            Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.2),
+            Border.all(color: AppColors.primary.withOpacity(0.2), width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withOpacity(0.06),
             blurRadius: 14,
             offset: const Offset(0, 3),
           ),
@@ -1561,15 +1766,42 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 46,
+            height: 46,
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.bottomBarCyan]),
+                colors: [Color(0xFFF2F8FD), Colors.white],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: const Color(0xFFE5B54F).withOpacity(0.45),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.08),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+                BoxShadow(
+                  color: const Color(0xFFE5B54F).withOpacity(0.18),
+                  blurRadius: 6,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
-            child: const Icon(CupertinoIcons.star_circle_fill,
-                color: Colors.white, size: 24),
+            child: Image.asset(
+              'assets/icons/senbank_lotus_isolated.png',
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                CupertinoIcons.star_circle_fill,
+                color: AppColors.primary,
+                size: 24,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1591,16 +1823,31 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0xFFFFF8E7),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFE5B54F).withOpacity(0.4),
+                          width: 0.8,
+                        ),
                       ),
-                      child: const Text('Hạng Vàng',
-                          style: TextStyle(
-                              color: AppColors.primary,
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(CupertinoIcons.sparkles,
+                              size: 10, color: Color(0xFFB78103)),
+                          SizedBox(width: 3),
+                          Text(
+                            'Hạng Vàng',
+                            style: TextStyle(
+                              color: Color(0xFFB78103),
                               fontSize: 10,
-                              fontWeight: FontWeight.bold)),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1615,6 +1862,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           ),
           ElevatedButton(
             onPressed: () {
+              HapticFeedback.selectionClick();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                     content: Text('Đang tải danh mục đổi quà SenPoint...')),
@@ -1642,84 +1890,116 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     final items = [
       {
         'icon': CupertinoIcons.car_fill,
+        'image': 'assets/images/service-icons/promo_3d_car.png',
         'label': 'Vay xe 0%',
-        'action': () => setState(() => _selectedTab = 1)
+        'accent': const Color(0xFF0878A5),
+        'action': () => _openPromotionCategory('car'),
       },
       {
         'icon': CupertinoIcons.house_fill,
+        'image': 'assets/images/service-icons/promo_3d_house.png',
         'label': 'Mua nhà',
-        'action': () => setState(() => _selectedTab = 1)
+        'accent': const Color(0xFF537A68),
+        'action': () => _openPromotionCategory('home'),
       },
       {
         'icon': CupertinoIcons.device_phone_portrait,
+        'image': 'assets/images/service-icons/promo_3d_phone.png',
         'label': 'Điện máy',
-        'action': () => setState(() => _selectedTab = 1)
+        'accent': const Color(0xFF1976A8),
+        'action': () => _openPromotionCategory('electronics'),
       },
       {
         'icon': CupertinoIcons.cart_fill,
+        'image': 'assets/images/service-icons/promo_3d_coffee.png',
         'label': 'Highlands',
-        'action': () => _filterQuick('Ẩm thực & Cafe')
+        'accent': const Color(0xFF8A3F2D),
+        'action': () => _openPromotionCategory('highlands'),
       },
       {
         'icon': CupertinoIcons.airplane,
+        'image': 'assets/images/service-icons/promo_3d_airplane.png',
         'label': 'Vé bay',
-        'action': () => _filterQuick('Du lịch')
+        'accent': const Color(0xFF087F8C),
+        'action': () => _openPromotionCategory('travel'),
       },
       {
         'icon': CupertinoIcons.bag_fill,
+        'image': 'assets/images/service-icons/promo_3d_bag.png',
         'label': 'Shopee',
-        'action': () => _filterQuick('Mua sắm')
+        'accent': const Color(0xFFDA4B36),
+        'action': () => _openPromotionCategory('shopee'),
       },
       {
         'icon': CupertinoIcons.creditcard_fill,
+        'image': 'assets/images/service-icons/promo_3d_card.png',
         'label': 'Thẻ hoàn tiền',
-        'action': () => context.push('/cards')
+        'accent': const Color(0xFF345C9B),
+        'action': () => _openPromotionCategory('cashback'),
       },
       {
         'icon': CupertinoIcons.gift_fill,
+        'image': 'assets/images/service-icons/promo_3d_gift.png',
         'label': 'Vòng quay',
-        'action': () => setState(() => _selectedTab = 2)
+        'accent': const Color(0xFFB97922),
+        'action': () => _openPromotionCategory('wheel'),
       },
     ];
 
     Widget buildItem(Map<String, dynamic> item) {
+      final imagePath = item['image'] as String?;
+      final accent = item['accent'] as Color;
       return Expanded(
         child: InkWell(
-          onTap: item['action'] as VoidCallback,
-          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            (item['action'] as VoidCallback)();
+          },
+          borderRadius: BorderRadius.circular(18),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 56,
+                  height: 56,
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    color: accent.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.18),
-                      width: 1.2,
+                      color: accent.withOpacity(0.20),
+                      width: 0.8,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.08),
-                        blurRadius: 10,
+                        color: accent.withOpacity(0.07),
+                        blurRadius: 8,
                         offset: const Offset(0, 3),
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
                       ),
                     ],
                   ),
-                  child: Icon(
-                    item['icon'] as IconData,
-                    color: AppColors.primary,
-                    size: 24,
-                  ),
+                  child: imagePath != null
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.asset(
+                            imagePath,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => Icon(
+                              item['icon'] as IconData,
+                              color: accent,
+                              size: 24,
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          item['icon'] as IconData,
+                          color: accent,
+                          size: 24,
+                        ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -1755,11 +2035,94 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     );
   }
 
-  void _filterQuick(String catName) {
-    final idx = _categories.indexOf(catName);
-    if (idx != -1) {
-      setState(() => _selectedCategoryIndex = idx);
-    }
+  void _openPromotionCategory(String categoryKey) {
+    final List<Map<String, dynamic>> promotions = (switch (categoryKey) {
+      'car' => _allPromotions
+          .where((item) => const {'promo_3', 'promo_9'}.contains(item['id']))
+          .toList(),
+      'home' => _allPromotions
+          .where((item) => item['id'] == 'promo_4')
+          .toList(),
+      'electronics' => _allPromotions
+          .where((item) => item['id'] == 'promo_5')
+          .toList(),
+      'highlands' => _allPromotions
+          .where((item) => item['brand'] == 'Highlands Coffee')
+          .toList(),
+      'travel' => _allPromotions
+          .where((item) => item['category'] == 'Du lịch')
+          .toList(),
+      'shopee' => _allPromotions
+          .where((item) => (item['brand'] as String).contains('Shopee'))
+          .toList(),
+      'cashback' => _allPromotions
+          .where((item) => item['category'] == 'Hoàn tiền')
+          .toList(),
+      _ => <Map<String, dynamic>>[],
+    })
+        .where(_isCurrentPromotion)
+        .toList(growable: false);
+
+    final List<Map<String, dynamic>> flashDeals = switch (categoryKey) {
+      'highlands' => _flashDeals
+          .where((item) => item['brand'] == 'Highlands Coffee')
+          .toList(growable: false),
+      'shopee' => _flashDeals
+          .where((item) => item['brand'] == 'Shopee Mall')
+          .toList(growable: false),
+      _ => <Map<String, dynamic>>[],
+    };
+
+    final List<Map<String, dynamic>> installmentDeals = switch (categoryKey) {
+      'car' => _installmentDeals
+          .where((item) => item['type'] == 'car' || item['type'] == 'bike')
+          .toList(),
+      'home' => _installmentDeals
+          .where((item) => item['type'] == 'house')
+          .toList(),
+      'electronics' => _installmentDeals
+          .where((item) => item['type'] == 'tech')
+          .toList(),
+      _ => <Map<String, dynamic>>[],
+    };
+
+    final events = categoryKey == 'wheel'
+        ? _events
+            .map((event) => <String, dynamic>{
+                  ...event,
+                  'isActive': _isUpcomingEvent(event),
+                })
+            .toList(growable: false)
+        : <Map<String, dynamic>>[];
+
+    context.push(
+      '/promotions/category/$categoryKey',
+      extra: <String, dynamic>{
+        'promotions': promotions,
+        'flashDeals': flashDeals,
+        'installmentDeals': installmentDeals,
+        'events': events,
+      },
+    );
+  }
+
+  bool _isCurrentPromotion(Map<String, dynamic> promotion) =>
+      _isDateRangeActive(promotion['expiry'] as String?);
+
+  bool _isUpcomingEvent(Map<String, dynamic> event) =>
+      _isDateRangeActive(event['date'] as String?);
+
+  bool _isDateRangeActive(String? value) {
+    if (value == null) return false;
+    if (value.toLowerCase().contains('không giới hạn')) return true;
+    final dates = RegExp(r'(\d{2})/(\d{2})/(\d{4})').allMatches(value);
+    if (dates.isEmpty) return false;
+    final last = dates.last;
+    final day = int.parse(last.group(1)!);
+    final month = int.parse(last.group(2)!);
+    final year = int.parse(last.group(3)!);
+    final endOfDay = DateTime(year, month, day, 23, 59, 59);
+    return !endOfDay.isBefore(DateTime.now());
   }
 
   Widget _buildFlashSaleHeader() {
@@ -1862,10 +2225,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                               Flexible(
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
+                                      horizontal: 8, vertical: 3),
                                   decoration: BoxDecoration(
                                     color: Colors.black.withOpacity(0.35),
-                                    borderRadius: BorderRadius.circular(6),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Text(deal['discount'] as String,
                                       maxLines: 1,
@@ -1904,7 +2267,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(8),
                                 child: LinearProgressIndicator(
                                   value: deal['progress'] as double,
                                   backgroundColor: Colors.white24,
@@ -1953,100 +2316,156 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
         itemCount: _installmentDeals.length,
         itemBuilder: (context, index) {
           final deal = _installmentDeals[index];
-          final gradient = _safeGradient(deal['gradient']);
-          return Container(
-            width: 250,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  colors: gradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
-            ),
-            child: InkWell(
-              onTap: () => setState(() => _selectedTab = 1),
-              borderRadius: BorderRadius.circular(18),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xF20C1E36),
-                              borderRadius: BorderRadius.circular(6),
-                              border:
-                                  Border.all(color: Colors.white54, width: 0.8),
-                            ),
-                            child: Text(
-                              (deal['tag'] ?? '').toString(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Icon(
-                            (deal['icon'] as IconData?) ??
-                                CupertinoIcons.tickets_fill,
-                            color: Colors.white70,
-                            size: 20),
-                      ],
+          final String? imagePath = deal['image'] as String?;
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Container(
+              width: 260,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF091424),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.18),
+                  width: 0.8,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  // Ảnh nền chân thật
+                  if (imagePath != null)
+                    Positioned.fill(
+                      child: Image.asset(
+                        imagePath,
+                        fit: BoxFit.cover,
+                        alignment: Alignment.centerRight,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                      ),
                     ),
-                    Text(deal['title'] as String,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text.rich(
-                            style: const TextStyle(color: Colors.white, fontSize: 11),
-                            TextSpan(
-                              text: 'Lãi suất: ',
-                              style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 11),
-                              children: [
-                                TextSpan(
-                                  text: deal['interest'] as String,
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold),
+
+                  // Scrim điện ảnh đa lớp
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          stops: const [0.0, 0.52, 1.0],
+                          colors: const [
+                            Color(0xF5050F1E),
+                            Color(0xDD08162B),
+                            Color(0x5508162B),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  InkWell(
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      setState(() => _selectedTab = 1);
+                    },
+                    borderRadius: BorderRadius.circular(18),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xB3050F1E),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                        color: Colors.white54, width: 0.5),
+                                  ),
+                                  child: Text(
+                                    (deal['tag'] ?? '').toString(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold),
+                                  ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                  (deal['icon'] as IconData?) ??
+                                      CupertinoIcons.tickets_fill,
+                                  color: Colors.white70,
+                                  size: 20),
+                            ],
+                          ),
+                          Text(
+                            deal['title'] as String,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black54,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 1),
+                                  ),
+                                ]),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text('Xem ngay →',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold)),
-                      ],
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text.rich(
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 11),
+                                  TextSpan(
+                                    text: 'Lãi suất: ',
+                                    style: TextStyle(
+                                        color: Colors.white.withOpacity(0.85),
+                                        fontSize: 11),
+                                    children: [
+                                      TextSpan(
+                                        text: deal['interest'] as String,
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text('Xem ngay →',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           );
@@ -2129,16 +2548,17 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
     return Container(
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(cornerRadius),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF00142A).withOpacity(0.40),
-            blurRadius: 16,
-            offset: const Offset(0, 5),
+            color: const Color(0xFF00142A).withOpacity(0.30),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
           BoxShadow(
             color: (isHot ? const Color(0xFFE11D48) : AppColors.bottomBarOcean)
                 .withOpacity(0.08),
-            blurRadius: 20,
+            blurRadius: 16,
             offset: const Offset(0, 2),
           ),
         ],
@@ -2148,7 +2568,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           bottomBarHeight: bottomBarHeight,
           notchRadius: notchRadius,
           cornerRadius: cornerRadius,
-          borderColor: Color(0x33FFFFFF),
+          borderColor: AppColors.cardBorderDark, // Use token instead
           borderWidth: 1.0,
         ),
         child: ClipPath(
@@ -2181,6 +2601,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                 end: Alignment.bottomRight,
                               ),
                               borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.18),
+                                width: 0.8,
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: gradient[0].withOpacity(0.35),
@@ -2190,7 +2614,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                               ],
                             ),
                             child: Icon(item['icon'] as IconData,
-                                color: Colors.white, size: 24),
+                                color: Colors.white, size: 22),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -2292,7 +2716,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                             Row(
                               children: [
                                 const Icon(CupertinoIcons.clock_fill,
-                                    size: 14, color: AppColors.textSecondaryDark),
+                                    size: 14,
+                                    color: AppColors.textSecondaryDark),
                                 const SizedBox(width: 5),
                                 Text(
                                   item['expiry'] as String,
@@ -2318,7 +2743,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                     shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10)),
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
                                   ),
                                   child: const Row(
                                     children: [
@@ -2345,7 +2771,8 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                     tapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                     shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10)),
+                                        borderRadius:
+                                            BorderRadius.circular(10)),
                                   ),
                                   child: const Row(
                                     children: [
@@ -2380,6 +2807,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   Widget _buildFullInstallmentCard(Map<String, dynamic> deal) {
     final gradient = _safeGradient(deal['gradient']);
     final badgeColor = _safeColor(deal['badgeColor']);
+    final String? imagePath = deal['image'] as String?;
 
     return Container(
       decoration: BoxDecoration(
@@ -2400,15 +2828,31 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           children: [
             Row(
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: gradient),
-                    borderRadius: BorderRadius.circular(16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: gradient),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: imagePath != null
+                        ? Image.asset(
+                            imagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              deal['icon'] as IconData,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          )
+                        : Icon(
+                            deal['icon'] as IconData,
+                            color: Colors.white,
+                            size: 24,
+                          ),
                   ),
-                  child: Icon(deal['icon'] as IconData,
-                      color: Colors.white, size: 24),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -2567,13 +3011,23 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 48,
+            height: 48,
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.18),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 0.8,
+              ),
             ),
-            child: const Icon(CupertinoIcons.rosette,
-                color: Colors.white, size: 26),
+            child: Image.asset(
+              'assets/images/service-icons/promo_3d_gift.png',
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(CupertinoIcons.rosette,
+                  color: Colors.white, size: 26),
+            ),
           ),
           const SizedBox(width: 14),
           const Expanded(
@@ -2909,7 +3363,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               height: 4,
               decoration: BoxDecoration(
                   color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2)),
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
           const SizedBox(height: 20),
@@ -3125,27 +3579,6 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   }
 }
 
-// Pattern painter cho hero banner
-class _CirclePatternPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.06)
-      ..style = PaintingStyle.fill;
-    for (var i = 0; i < 6; i++) {
-      canvas.drawCircle(
-        Offset(size.width * 0.75 + i * 20, size.height * 0.3 + i * 15),
-        30.0 + i * 12,
-        paint,
-      );
-    }
-    canvas.drawCircle(Offset(size.width * 0.1, -10), 60, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
 /// Clipper tạo hình dáng vé xé ngân hàng (Coupon Ticket) với 2 lỗ khuyết bán nguyệt 2 bên mép
 class TicketCardClipper extends CustomClipper<Path> {
   final double bottomBarHeight;
@@ -3222,7 +3655,7 @@ class TicketBorderPainter extends CustomPainter {
     this.bottomBarHeight = 54.0,
     this.notchRadius = 9.0,
     this.cornerRadius = 18.0,
-    this.borderColor = const Color(0x33FFFFFF),
+    this.borderColor = AppColors.cardBorderDark, // Use token
     this.borderWidth = 1.0,
   });
 

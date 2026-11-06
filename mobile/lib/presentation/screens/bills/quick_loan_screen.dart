@@ -8,9 +8,13 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
+import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/loan_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class QuickLoanScreen extends StatefulWidget {
   const QuickLoanScreen({super.key});
@@ -31,6 +35,30 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
 
   bool _agreeTerms = true;
   bool _isLoading = false;
+  Map<String, dynamic>? _activeLoan;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkActiveLoan();
+  }
+
+  Future<void> _checkActiveLoan() async {
+    try {
+      final loans = await LoanRemoteDataSource().getUserLoans();
+      if (loans.isNotEmpty && mounted) {
+        setState(() {
+          _activeLoan = loans.firstWhere(
+            (l) =>
+                l['status'] == 'DISBURSED' ||
+                l['status'] == 'ACTIVE' ||
+                l['status'] == 'PENDING_APPROVAL',
+            orElse: () => loans.first,
+          );
+        });
+      }
+    } catch (_) {}
+  }
 
   final List<Map<String, dynamic>> _loanPackages = const [
     {
@@ -56,9 +84,9 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
     },
   ];
 
-  Future<void> _submitApplication() async {
+  void _submitApplication() {
     if (!BackendCapabilities.loans) {
-      await showFeatureUnavailable(
+      showFeatureUnavailable(
         context,
         feature: 'Vay tiêu dùng',
         reason: 'Hệ thống tín dụng tiêu dùng đang bảo trì.',
@@ -76,7 +104,26 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
       );
       return;
     }
+    _showSigningModal();
+  }
 
+  void _showSigningModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _LoanSigningModal(
+        loanAmount: _loanAmount,
+        loanMonths: _loanMonths,
+        onVerified: (pinToken, otpToken) {
+          Navigator.pop(ctx);
+          _executeLoanApply(pinToken: pinToken, otpToken: otpToken);
+        },
+      ),
+    );
+  }
+
+  Future<void> _executeLoanApply({String? pinToken, String? otpToken}) async {
     setState(() => _isLoading = true);
     try {
       final wallet = await WalletRemoteDataSource().getMyWallet();
@@ -86,6 +133,8 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
         amount: _loanAmount,
         termMonths: _loanMonths,
         purpose: 'Vay tiêu dùng cá nhân',
+        pinToken: pinToken,
+        otpToken: otpToken,
       );
       if (mounted) {
         showDialog(
@@ -100,7 +149,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                     color: AppColors.emeraldGreen, size: 28),
                 SizedBox(width: 10),
                 Expanded(
-                  child: Text('Giải Ngân Thành Công!',
+                  child: Text('Nộp Hồ Sơ Thành Công!',
                       style: TextStyle(
                           color: AppColors.textPrimaryLight,
                           fontSize: 18,
@@ -109,7 +158,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
               ],
             ),
             content: Text(
-              'Hợp đồng số ${res['contractNumber'] ?? ''} với số tiền ${CurrencyFormatter.formatVND(_loanAmount)} (kỳ hạn $_loanMonths tháng) đã được phê duyệt và giải ngân trực tiếp vào Ví Sen Hồng của bạn.',
+              'Hợp đồng số ${res['contractNumber'] ?? ''} với số tiền ${CurrencyFormatter.formatVND(_loanAmount)} (kỳ hạn $_loanMonths tháng) đã được tiếp nhận thành công và gửi tới hệ thống phê duyệt.',
               style: const TextStyle(
                   color: AppColors.textSecondaryLight, height: 1.4),
             ),
@@ -146,6 +195,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
       appBar: AppBar(
         title: const Text('Vay Tiêu Dùng Tức Thì'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -155,6 +205,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _buildActiveLoanBanner(),
               // Loan Limit Banner
               Container(
                 padding: const EdgeInsets.all(20),
@@ -247,7 +298,12 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                                     decoration: BoxDecoration(
                                       color:
                                           AppColors.primary.withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(8),
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color:
+                                            AppColors.primary.withOpacity(0.25),
+                                        width: 0.5,
+                                      ),
                                     ),
                                     child: Text(pkg['tag'] as String,
                                         maxLines: 1,
@@ -428,7 +484,8 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             flex: 6,
-                            child: Text(CurrencyFormatter.formatVND(_monthlyTotal),
+                            child: Text(
+                                CurrencyFormatter.formatVND(_monthlyTotal),
                                 textAlign: TextAlign.right,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -467,7 +524,8 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                           ),
-                          onPressed: () => context.push('/loan/schedule'),
+                          onPressed: () => context.push('/loan/schedule',
+                              extra: _activeLoan),
                           icon: const Icon(CupertinoIcons.calendar_today,
                               size: 16, color: AppColors.primary),
                           label: const Text(
@@ -599,6 +657,108 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
     );
   }
 
+  Widget _buildActiveLoanBanner() {
+    if (_activeLoan == null) return const SizedBox.shrink();
+    final contractNo = _activeLoan!['contractNumber'] ?? 'Hợp đồng';
+    final status = _activeLoan!['status'] ?? '';
+    final statusLabel = status == 'DISBURSED'
+        ? 'ĐANG GIẢI NGÂN'
+        : (status == 'PENDING_APPROVAL' ? 'CHỜ DUYỆT' : status.toString());
+    final amt =
+        (_activeLoan!['amount'] ?? _activeLoan!['principalAmount'] as num?)
+                ?.toDouble() ??
+            0.0;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(CupertinoIcons.doc_checkmark_fill,
+                color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        contractNo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: AppColors.textPrimaryLight),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: status == 'DISBURSED'
+                            ? AppColors.emeraldGreen.withValues(alpha: 0.15)
+                            : Colors.orange.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: status == 'DISBURSED'
+                              ? AppColors.emeraldGreen
+                              : Colors.orange,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text('Dư nợ gốc: ${CurrencyFormatter.formatVND(amt)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 11.5, color: AppColors.textSecondaryLight)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => context.push('/loan/schedule', extra: _activeLoan),
+            child: const Text('Lịch trả nợ',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRow(String label, String value, {bool isGreen = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -623,6 +783,7 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
                   : AppColors.textPrimaryLight,
               fontSize: 13,
               fontWeight: FontWeight.w600,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
         ),
@@ -696,6 +857,482 @@ class _QuickLoanScreenState extends State<QuickLoanScreen> {
               style:
                   AppTypography.bodySmall(color: AppColors.textSecondaryLight)
                       .copyWith(fontSize: 12, height: 1.4)),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoanSigningModal extends StatefulWidget {
+  final double loanAmount;
+  final int loanMonths;
+  final Function(String? pinToken, String? otpToken) onVerified;
+
+  const _LoanSigningModal({
+    required this.loanAmount,
+    required this.loanMonths,
+    required this.onVerified,
+  });
+
+  @override
+  State<_LoanSigningModal> createState() => _LoanSigningModalState();
+}
+
+class _LoanSigningModalState extends State<_LoanSigningModal> {
+  int _selectedTab = 0; // 0: Mã PIN, 1: Smart OTP
+  String _pin = '';
+  final TextEditingController _otpController = TextEditingController();
+  bool _isVerifying = false;
+  bool _isSendingOtp = false;
+  String? _errorMessage;
+  String? _otpSuccessMessage;
+  int _countdown = 0;
+
+  @override
+  void dispose() {
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    setState(() => _countdown = 60);
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+      setState(() => _countdown--);
+      return _countdown > 0;
+    });
+  }
+
+  Future<void> _handlePinChange(String val) async {
+    if (_isVerifying) return;
+    setState(() {
+      _pin = val;
+      _errorMessage = null;
+    });
+
+    if (val.length == 6) {
+      HapticFeedback.mediumImpact();
+      setState(() => _isVerifying = true);
+      try {
+        final pinToken =
+            await WalletTransactionRemoteDataSource().verifyPin(val);
+        if (mounted) {
+          widget.onVerified(pinToken, null);
+        }
+      } catch (err) {
+        if (mounted) {
+          HapticFeedback.vibrate();
+          setState(() {
+            _pin = '';
+            _isVerifying = false;
+            _errorMessage = extractErrorMessage(err);
+          });
+        }
+      }
+    }
+  }
+
+  Future<void> _sendOtp() async {
+    if (_countdown > 0 || _isSendingOtp) return;
+    setState(() {
+      _isSendingOtp = true;
+      _errorMessage = null;
+    });
+    try {
+      final res = await AuthRemoteDataSource().requestLoanOtp();
+      if (mounted) {
+        final email = res['maskedEmail'] ?? 'Gmail';
+        setState(() {
+          _isSendingOtp = false;
+          _otpSuccessMessage = 'Mã OTP 6 số đã được gửi tới $email';
+        });
+        _startCountdown();
+      }
+    } catch (err) {
+      if (mounted) {
+        setState(() {
+          _isSendingOtp = false;
+          _errorMessage = extractErrorMessage(err);
+        });
+      }
+    }
+  }
+
+  Future<void> _verifyOtp() async {
+    final code = _otpController.text.trim();
+    if (code.length != 6) {
+      setState(() => _errorMessage = 'Vui lòng nhập đủ 6 chữ số mã OTP');
+      return;
+    }
+    setState(() {
+      _isVerifying = true;
+      _errorMessage = null;
+    });
+    try {
+      final otpToken = await AuthRemoteDataSource().verifyLoanOtp(code);
+      if (mounted) {
+        widget.onVerified(null, otpToken);
+      }
+    } catch (err) {
+      if (mounted) {
+        HapticFeedback.vibrate();
+        setState(() {
+          _isVerifying = false;
+          _errorMessage = extractErrorMessage(err);
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 24 + bottomInset),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceLight,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 20,
+            offset: Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.black26,
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Ký Số Hợp Đồng Tín Dụng',
+                style:
+                    AppTypography.titleMedium(color: AppColors.textPrimaryLight)
+                        .copyWith(fontWeight: FontWeight.bold, fontSize: 17),
+              ),
+              IconButton(
+                icon: const Icon(CupertinoIcons.xmark_circle_fill,
+                    color: Colors.black38, size: 24),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+
+          // Summary Card
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Khoản giải ngân:',
+                        style: TextStyle(
+                            color: AppColors.textSecondaryLight, fontSize: 12)),
+                    const SizedBox(height: 2),
+                    Text(
+                      CurrencyFormatter.formatVND(widget.loanAmount),
+                      style: const TextStyle(
+                          color: AppColors.primaryDark,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                Text(
+                  'Kỳ hạn ${widget.loanMonths} tháng',
+                  style: const TextStyle(
+                      color: AppColors.textSecondaryLight,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Segment Tab: Mã PIN vs Smart OTP
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() {
+                      _selectedTab = 0;
+                      _errorMessage = null;
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _selectedTab == 0
+                            ? Colors.white
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: _selectedTab == 0
+                            ? [
+                                BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2))
+                              ]
+                            : null,
+                      ),
+                      child: Text(
+                        'Mã PIN Giao Dịch',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: _selectedTab == 0
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _selectedTab == 0
+                              ? AppColors.primaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() {
+                      _selectedTab = 1;
+                      _errorMessage = null;
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _selectedTab == 1
+                            ? Colors.white
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: _selectedTab == 1
+                            ? [
+                                BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2))
+                              ]
+                            : null,
+                      ),
+                      child: Text(
+                        'Smart OTP (Gmail)',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: _selectedTab == 1
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: _selectedTab == 1
+                              ? AppColors.primaryDark
+                              : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Error Message
+          if (_errorMessage != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(CupertinoIcons.exclamationmark_circle_fill,
+                      color: AppColors.error, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _errorMessage!,
+                      style:
+                          const TextStyle(color: AppColors.error, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // TAB 0: PIN
+          if (_selectedTab == 0) ...[
+            const Text(
+              'Nhập mã PIN 6 số để ký số phê duyệt hợp đồng',
+              style:
+                  TextStyle(color: AppColors.textSecondaryLight, fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+
+            // PIN Indicator Dots
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(6, (index) {
+                final isFilled = index < _pin.length;
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isFilled ? AppColors.primary : Colors.transparent,
+                    border: Border.all(
+                      color: isFilled
+                          ? AppColors.primary
+                          : AppColors.cardBorderLight,
+                      width: 2,
+                    ),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 16),
+
+            if (_isVerifying)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(
+                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                ),
+              )
+            else
+              CustomPinNumpad(
+                pin: _pin,
+                maxDigits: 6,
+                showBiometric: false,
+                onPinChanged: _handlePinChange,
+              ),
+          ]
+          // TAB 1: Smart OTP
+          else ...[
+            if (_otpSuccessMessage != null) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.emeraldGreen.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(CupertinoIcons.checkmark_alt_circle_fill,
+                        color: AppColors.emeraldGreen, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _otpSuccessMessage!,
+                        style: const TextStyle(
+                            color: AppColors.emeraldGreen, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
+            // OTP Input
+            TextField(
+              controller: _otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 10,
+              ),
+              decoration: InputDecoration(
+                counterText: '',
+                hintText: '• • • • • •',
+                hintStyle: const TextStyle(
+                  color: Colors.black26,
+                  letterSpacing: 8,
+                ),
+                filled: true,
+                fillColor: Colors.black.withOpacity(0.04),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Send/Resend OTP Button
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton.icon(
+                  onPressed:
+                      (_countdown > 0 || _isSendingOtp) ? null : _sendOtp,
+                  icon: _isSendingOtp
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(CupertinoIcons.mail_solid, size: 16),
+                  label: Text(
+                    _countdown > 0
+                        ? 'Gửi lại mã OTP sau ${_countdown}s'
+                        : (_otpSuccessMessage == null
+                            ? 'Gửi mã OTP về Gmail'
+                            : 'Gửi lại mã OTP'),
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Confirm Button
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _isVerifying ? null : _verifyOtp,
+                child: _isVerifying
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Xác nhận & Ký số hợp đồng'),
+              ),
+            ),
+          ],
         ],
       ),
     );

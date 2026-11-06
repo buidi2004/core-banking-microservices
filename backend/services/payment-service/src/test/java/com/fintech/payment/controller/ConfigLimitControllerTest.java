@@ -42,5 +42,11 @@ class ConfigLimitControllerTest {
                 .andExpect(jsonPath("$.data.userId").value(userId))
                 .andExpect(jsonPath("$.data.remainingDaily").isNumber());
     }
-}
 
+    @Test
+    @DisplayName("GET /api/v1/config/limits/status: Từ chối request không có trusted user identity")
+    void getLimitStatus_MissingUserId_Unauthorized() throws Exception {
+        mockMvc.perform(get("/api/v1/config/limits/status"))
+                .andExpect(status().isUnauthorized());
+    }
+}

@@ -15,6 +15,7 @@ import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/feature_unavailable.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class BillPaymentConfirmScreen extends StatefulWidget {
   final String billId;
@@ -206,6 +207,7 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
       appBar: AppBar(
         title: const Text('Xác Nhận Thanh Toán Hóa Đơn'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

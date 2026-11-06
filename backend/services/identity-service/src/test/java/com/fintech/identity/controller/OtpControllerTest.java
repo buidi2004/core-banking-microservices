@@ -36,6 +36,9 @@ class OtpControllerTest {
     @MockBean
     private OtpService otpService;
 
+    @MockBean
+    private com.fintech.identity.repository.UserRepository userRepository;
+
     @Test
     @DisplayName("POST /api/v1/auth/otp/send: Gửi OTP thành công")
     void sendOtp_Success() throws Exception {

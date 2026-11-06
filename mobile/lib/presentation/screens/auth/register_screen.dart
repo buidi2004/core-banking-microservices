@@ -9,6 +9,7 @@ import 'package:sen_hong_bank/data/datasources/remote/auth_remote_datasource.dar
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -72,6 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         title: const Text('Đăng Ký Tài Khoản'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -232,7 +234,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     Expanded(
                       child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
                           value: strength / 4,
                           backgroundColor: AppColors.borderLight,

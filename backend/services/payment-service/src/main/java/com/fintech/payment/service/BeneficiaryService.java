@@ -32,6 +32,22 @@ public class BeneficiaryService {
         String name = request.getFullName() != null ? request.getFullName() : request.getName();
         String nickname = request.getNickname() != null ? request.getNickname() : name;
 
+        // Tránh trùng lặp khi người dùng ấn Lưu nhiều lần
+        List<Beneficiary> existingList = beneficiaryRepository.findByUserId(userId);
+        for (Beneficiary b : existingList) {
+            boolean samePhone = request.getPhoneNumber() != null && !request.getPhoneNumber().isBlank() && request.getPhoneNumber().equals(b.getBeneficiaryPhone());
+            boolean sameAccount = request.getAccountNumber() != null && !request.getAccountNumber().isBlank() && request.getAccountNumber().equals(b.getAccountNumber());
+            boolean sameWallet = request.getBeneficiaryWalletId() != null && !request.getBeneficiaryWalletId().isBlank() && request.getBeneficiaryWalletId().equals(b.getBeneficiaryWalletId());
+            if (samePhone || sameAccount || sameWallet) {
+                if (name != null) b.setFullName(name);
+                if (nickname != null) b.setNickname(nickname);
+                if (request.getBankCode() != null) b.setBankCode(request.getBankCode());
+                b = beneficiaryRepository.save(b);
+                log.info("Updated existing beneficiary {} for user {}", b.getId(), userId);
+                return toDto(b);
+            }
+        }
+
         Beneficiary beneficiary = Beneficiary.builder()
                 .userId(userId)
                 .beneficiaryUserId(request.getBeneficiaryUserId())

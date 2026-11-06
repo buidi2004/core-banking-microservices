@@ -66,10 +66,27 @@ public class UserService {
         return mapToResponse(user, profile);
     }
 
+    @Transactional
+    public void setAccountAlias(String userId, String alias) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng với ID: " + userId));
+
+        if (userRepository.existsByAccountAlias(alias)) {
+            UserEntity existing = userRepository.findByAccountAlias(alias).orElse(null);
+            if (existing != null && !existing.getId().equals(userId)) {
+                throw new IllegalArgumentException("Biệt danh tài khoản '" + alias + "' đã được sử dụng bởi người dùng khác");
+            }
+        }
+        user.setAccountAlias(alias);
+        userRepository.save(user);
+        log.info("Set account alias {} for userId={}", alias, userId);
+    }
+
     private UserProfileResponse mapToResponse(UserEntity user, UserProfileEntity profile) {
         return UserProfileResponse.builder()
                 .userId(user.getId())
                 .phoneNumber(user.getPhoneNumber())
+                .accountAlias(user.getAccountAlias())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .role(user.getRole())

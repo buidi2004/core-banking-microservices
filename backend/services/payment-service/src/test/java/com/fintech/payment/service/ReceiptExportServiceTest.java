@@ -117,5 +117,33 @@ class ReceiptExportServiceTest {
         assertThat(pdfBytes).isNotEmpty();
         assertThat(new String(pdfBytes, 0, 5)).isEqualTo("%PDF-");
     }
+
+    @Test
+    @DisplayName("exportTransactions: walletId null hoặc rỗng xuất dữ liệu toàn hệ thống")
+    void exportTransactions_NullWalletId_ReturnsSystemWideTransactions() {
+        Transaction tx = Transaction.builder()
+                .id(txId)
+                .transactionCode("TX-SYS-001")
+                .sourceWalletId("wallet-sys-1")
+                .targetWalletId("wallet-sys-2")
+                .type("CASH_DEPOSIT")
+                .amount(1000000L)
+                .fee(0L)
+                .currency("VND")
+                .status("COMPLETED")
+                .note("Nạp tiền quầy giao dịch")
+                .createdAt(Instant.now())
+                .build();
+
+        when(transactionRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(tx)));
+
+        byte[] csvBytes = receiptExportService.exportTransactions(null, "csv");
+
+        assertThat(csvBytes).isNotEmpty();
+        String content = new String(csvBytes);
+        assertThat(content).contains("TX-SYS-001");
+        assertThat(content).contains("1000000");
+    }
 }
 

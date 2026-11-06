@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <filter id="shadow1" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+    <linearGradient id="wheelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E1F5FE"/>
+    </linearGradient>
+    <linearGradient id="redSphere" x1="30%" y1="20%" x2="80%" y2="90%">
+      <stop offset="0%" stop-color="#FF5252"/>
+      <stop offset="60%" stop-color="#D32F2F"/>
+      <stop offset="100%" stop-color="#8B0000"/>
+    </linearGradient>
+    <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C62828"/>
+      <stop offset="50%" stop-color="#E53935"/>
+      <stop offset="100%" stop-color="#B71C1C"/>
+    </linearGradient>
+  </defs>
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="#FFFFFF" filter="url(#shadow1)"/>
+  
+  <!-- Outer Wheel -->
+  <circle cx="256" cy="240" r="145" fill="url(#wheelGrad)" stroke="#1976D2" stroke-width="12"/>
+  <circle cx="256" cy="240" r="130" fill="none" stroke="#BBDEFB" stroke-width="4" stroke-dasharray="14 10"/>
+  
+  <!-- Wheel Segments -->
+  <g opacity="0.85">
+    <path d="M 256 110 L 256 240" stroke="#1E88E5" stroke-width="4"/>
+    <path d="M 126 240 L 256 240" stroke="#1E88E5" stroke-width="4"/>
+    <path d="M 386 240 L 256 240" stroke="#1E88E5" stroke-width="4"/>
+    <path d="M 164 148 L 256 240" stroke="#1E88E5" stroke-width="4"/>
+    <path d="M 348 148 L 256 240" stroke="#1E88E5" stroke-width="4"/>
+  </g>
+
+  <!-- Number 9 Sphere (Top Center) -->
+  <circle cx="256" cy="180" r="46" fill="url(#redSphere)" stroke="#FFFFFF" stroke-width="4"/>
+  <ellipse cx="244" cy="164" rx="16" ry="8" fill="#FFFFFF" opacity="0.4" transform="rotate(-30 244 164)"/>
+  <text x="256" y="196" text-anchor="middle" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="900" font-size="44" fill="#FFFFFF">9</text>
+
+  <!-- Side Lottery Balls -->
+  <circle cx="165" cy="225" r="28" fill="#FFC107" stroke="#FFFFFF" stroke-width="3"/>
+  <text x="165" y="235" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="26" fill="#3E2723">7</text>
+  
+  <circle cx="347" cy="225" r="28" fill="#00C853" stroke="#FFFFFF" stroke-width="3"/>
+  <text x="347" y="235" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="26" fill="#FFFFFF">8</text>
+
+  <!-- Banner Ribbon (VUA XỔ SỐ) -->
+  <g transform="translate(0, 15)">
+    <path d="M 100 295 L 140 270 L 140 330 L 100 350 Z" fill="#8B0000"/>
+    <path d="M 412 295 L 372 270 L 372 330 L 412 350 Z" fill="#8B0000"/>
+    <path d="M 125 290 Q 256 250 387 290 L 387 345 Q 256 305 125 345 Z" fill="url(#ribbonGrad)" stroke="#FFD54F" stroke-width="6"/>
+    <text x="256" y="324" text-anchor="middle" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="900" font-size="34" fill="#FFEB3B" letter-spacing="2">VUA XỔ SỐ</text>
+  </g>
+</svg>

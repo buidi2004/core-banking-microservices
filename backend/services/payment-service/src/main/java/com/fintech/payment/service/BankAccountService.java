@@ -34,7 +34,9 @@ public class BankAccountService {
 
     @Transactional
     public BankAccountDto linkBankAccount(String userId, LinkBankAccountRequest request) {
-        Bank bank = bankRepository.findByCode(request.getBankCode())
+        String lookupCode = request.getBankCode() != null ? request.getBankCode().trim().toUpperCase() : "";
+        Bank bank = bankRepository.findByCode(lookupCode)
+                .or(() -> bankRepository.findByBin(lookupCode))
                 .orElseThrow(() -> new IllegalArgumentException("Ngân hàng không tồn tại: " + request.getBankCode()));
 
         List<BankAccount> existing = bankAccountRepository.findByUserId(userId);

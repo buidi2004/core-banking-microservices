@@ -532,7 +532,11 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.emeraldGreen.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.emeraldGreen.withValues(alpha: 0.35),
+                          width: 0.5,
+                        ),
                       ),
                       child: const Text('HIỆN TẠI',
                           style: TextStyle(

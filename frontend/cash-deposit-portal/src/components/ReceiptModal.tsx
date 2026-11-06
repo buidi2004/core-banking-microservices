@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CashDeposit } from '../types';
+import { ApiService } from '../api';
 import { formatCurrency, formatDateVi, numberToVietnameseWords } from '../utils';
-import { Printer, X, FileText, CheckCircle2 } from 'lucide-react';
+import { Printer, X, FileText, CheckCircle2, Download } from 'lucide-react';
 
 interface ReceiptModalProps {
   deposit: CashDeposit;
@@ -140,7 +141,7 @@ export function ReceiptModal({ deposit, tellerName, onClose, onPrint }: ReceiptM
         </div>
 
         {/* Nút hành động - BO VIÊN THUỐC */}
-        <div className="no-print" style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+        <div className="no-print" style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={onClose}
@@ -149,6 +150,33 @@ export function ReceiptModal({ deposit, tellerName, onClose, onPrint }: ReceiptM
           >
             <X size={14} />
             <span>Đóng</span>
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const blob = await ApiService.downloadReceiptPdf(null, deposit.id);
+                if (blob) {
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `receipt-${deposit.code}.pdf`;
+                  document.body.appendChild(a);
+                  a.click();
+                  window.URL.revokeObjectURL(url);
+                  document.body.removeChild(a);
+                } else {
+                  alert('Hệ thống đang khởi tạo chứng từ PDF hoặc giao dịch chưa hoàn tất');
+                }
+              } catch (e: any) {
+                alert('Không thể tải PDF: ' + e.message);
+              }
+            }}
+            className="btn btn-outline"
+            style={{ padding: '8px 18px', fontSize: '13px', color: '#0284c7', borderColor: '#0284c7' }}
+          >
+            <Download size={14} />
+            <span>Tải Biên Lai PDF Ký Số</span>
           </button>
           <button
             type="button"

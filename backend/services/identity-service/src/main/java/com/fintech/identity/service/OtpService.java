@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -29,8 +30,10 @@ public class OtpService {
 
     private static final String OTP_PREFIX = "identity:otp:";
     private static final String ATTEMPTS_PREFIX = "identity:otp:attempts:";
+    private static final String COOLDOWN_PREFIX = "identity:otp:cooldown:";
     private static final int OTP_EXPIRY_SECONDS = 180; // 3 phút
     private static final int MAX_ATTEMPTS = 3;
+    private static final int COOLDOWN_SECONDS = 60; // thời gian chờ giữa 2 lần gửi OTP
 
     /**
      * Quy tắc nghiệp vụ bảo mật ngân hàng:
@@ -73,6 +76,16 @@ public class OtpService {
             if (explicitEmail != null && !explicitEmail.isBlank() && userRepository.existsByEmail(explicitEmail.trim().toLowerCase())) {
                 throw new IllegalArgumentException("Email " + explicitEmail + " đã được sử dụng.");
             }
+        } else if (Set.of("FORGOT_PASSWORD", "RESET_PASSWORD", "CHANGE_PASSWORD").contains(upperPurpose)) {
+            if (!userRepository.existsByPhoneNumber(cleanPhone)) {
+                throw new IllegalArgumentException("Số điện thoại " + cleanPhone + " không tồn tại trong hệ thống.");
+            }
+        }
+
+        // Rate-limit: chờ COOLDOWN_SECONDS giữa 2 lần gửi OTP cho cùng SĐT + purpose
+        String cooldownKey = COOLDOWN_PREFIX + cleanPhone + ":" + upperPurpose;
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(cooldownKey))) {
+            throw new IllegalArgumentException("Vui lòng đợi " + COOLDOWN_SECONDS + " giây trước khi yêu cầu mã OTP mới.");
         }
 
         // Generate 6-digit random code
@@ -83,20 +96,34 @@ public class OtpService {
         // Save to Redis with 180s TTL
         redisTemplate.opsForValue().set(key, code, Duration.ofSeconds(OTP_EXPIRY_SECONDS));
         redisTemplate.delete(attemptsKey);
+        // Đặt cooldown để tránh spam gửi OTP
+        redisTemplate.opsForValue().set(cooldownKey, "1", Duration.ofSeconds(COOLDOWN_SECONDS));
 
-        // Gửi OTP qua Email (Gmail chính chủ của tài khoản; fallback về Gmail quản trị cho các tài khoản seed demo)
+        // Gửi OTP qua email tới Gmail chính chủ của tài khoản
         String targetEmail = explicitEmail;
         if (targetEmail == null || targetEmail.isBlank()) {
             targetEmail = userRepository.findByPhoneNumber(cleanPhone)
                     .map(UserEntity::getEmail)
-                    .filter(e -> e != null && !e.isBlank())
+                    .filter(e -> e != null && !e.isBlank() && !e.endsWith("example.com"))
                     .orElse(null);
         }
-        if (targetEmail == null || targetEmail.isBlank() || targetEmail.endsWith("example.com")) {
-            targetEmail = "buidi7170@gmail.com";
+        if (targetEmail == null || targetEmail.isBlank()) {
+            // Không có email hợp lệ → xóa OTP đã lưu và không gửi mã đâu hết
+            redisTemplate.delete(key);
+            redisTemplate.delete(attemptsKey);
+            redisTemplate.delete(cooldownKey);
+            throw new IllegalArgumentException("Tài khoản chưa liên kết email hợp lệ. Không thể gửi mã OTP khôi phục.");
         }
 
-        emailService.sendOtpEmail(targetEmail, code, resolvedPurpose);
+        try {
+            emailService.sendOtpEmail(targetEmail, code, resolvedPurpose);
+        } catch (Exception e) {
+            // Gửi email thất bại → xóa OTP đã lưu, không để mã mồ côi trong Redis
+            redisTemplate.delete(key);
+            redisTemplate.delete(attemptsKey);
+            redisTemplate.delete(cooldownKey);
+            throw new IllegalStateException("Không thể gửi mã OTP qua email. Vui lòng thử lại sau.", e);
+        }
 
         String refId = "REF-" + System.currentTimeMillis();
         log.info("[In-House Core Banking OTP] Sinh mã OTP cho SĐT={}, purpose={}: code={} (Đã bắn email tới {})",
@@ -152,16 +179,19 @@ public class OtpService {
             throw new IllegalArgumentException("Mã OTP đã hết hạn hoặc không tồn tại");
         }
 
-        Long attempts = redisTemplate.opsForValue().increment(attemptsKey);
-        if (attempts != null && attempts > MAX_ATTEMPTS) {
+        // Kiểm tra số lần đã sai trước khi tăng (khóa đúng sau 3 lần sai)
+        String currentAttemptsStr = redisTemplate.opsForValue().get(attemptsKey);
+        long currentAttempts = (currentAttemptsStr != null) ? Long.parseLong(currentAttemptsStr) : 0L;
+        if (currentAttempts >= MAX_ATTEMPTS) {
             redisTemplate.delete(key);
             redisTemplate.delete(attemptsKey);
             throw new IllegalArgumentException("Bạn đã nhập sai OTP quá 3 lần. Vui lòng yêu cầu mã mới.");
         }
 
+        Long attempts = redisTemplate.opsForValue().increment(attemptsKey);
         if (!expectedCode.equals(code.trim())) {
             long remaining = MAX_ATTEMPTS - (attempts != null ? attempts : 1);
-            throw new IllegalArgumentException("Mã OTP không chính xác. Bạn còn " + remaining + " lần thử.");
+            throw new IllegalArgumentException("Mã OTP không chính xác. Bạn còn " + Math.max(0, remaining) + " lần thử.");
         }
 
         // Clean up OTP in Redis
@@ -185,10 +215,11 @@ public class OtpService {
         UserEntity user = userRepository.findByPhoneNumber(cleanPhone)
                 .orElseThrow(() -> new IllegalArgumentException("Số điện thoại không tồn tại trong hệ thống."));
 
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            log.warn("Tài khoản SĐT={} chưa liên kết Gmail. Không thể gửi OTP khôi phục mật khẩu.", cleanPhone);
+        String email = user.getEmail();
+        if (email == null || email.isBlank() || email.endsWith("example.com")) {
+            throw new IllegalArgumentException("Tài khoản chưa liên kết email hợp lệ. Vui lòng liên hệ bộ phận hỗ trợ để khôi phục mật khẩu.");
         }
-        return sendOtp(cleanPhone, "FORGOT_PASSWORD", user.getEmail());
+        return sendOtp(cleanPhone, "FORGOT_PASSWORD", email);
     }
 
     @Transactional
@@ -211,6 +242,18 @@ public class OtpService {
             log.info("Đã xóa tất cả phiên đăng nhập cũ của userId={}", user.getId());
         } catch (Exception e) {
             log.warn("Không thể xóa phiên đăng nhập cũ: {}", e.getMessage());
+        }
+
+        // Xóa sạch trạng thái khóa đăng nhập do nhập sai trước đó
+        try {
+            redisTemplate.delete(java.util.List.of(
+                "identity:locked:" + cleanPhone,
+                "identity:attempts:" + cleanPhone,
+                "identity:locked:" + user.getId(),
+                "identity:attempts:" + user.getId()
+            ));
+        } catch (Exception e) {
+            log.warn("Không thể xóa lock Redis khi reset password: {}", e.getMessage());
         }
 
         log.info("Đã đặt lại mật khẩu thành công cho người dùng SĐT={}", cleanPhone);

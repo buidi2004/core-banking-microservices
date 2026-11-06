@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -185,7 +187,7 @@ class _ScanQRScreenState extends State<ScanQRScreen>
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.borderSubtle,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
             const SizedBox(height: 18),
@@ -746,6 +748,41 @@ class _ScanQRScreenState extends State<ScanQRScreen>
     );
   }
 
+  Future<void> _pickAndAnalyzeGalleryImage() async {
+    HapticFeedback.lightImpact();
+    try {
+      final picker = ImagePicker();
+      final file = await picker.pickImage(source: ImageSource.gallery);
+      if (file == null) return;
+
+      final capture = await _controller.analyzeImage(file.path);
+      if (capture != null && capture.barcodes.isNotEmpty) {
+        for (final barcode in capture.barcodes) {
+          if (barcode.rawValue != null && barcode.rawValue!.isNotEmpty) {
+            _onDetect(capture);
+            return;
+          }
+        }
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Không tìm thấy mã VietQR trong ảnh vừa chọn. Vui lòng thử lại với ảnh rõ nét hơn.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi khi đọc ảnh: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Widget _buildBottomToolbar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -762,15 +799,7 @@ class _ScanQRScreenState extends State<ScanQRScreen>
                   child: _buildToolItem(
                     icon: CupertinoIcons.photo_fill,
                     label: 'Thư viện ảnh',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Vui lòng hướng camera trực tiếp vào mã VietQR hoặc chọn "Nhập STK"'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    onTap: _pickAndAnalyzeGalleryImage,
                   ),
                 ),
               ),
@@ -816,7 +845,10 @@ class _ScanQRScreenState extends State<ScanQRScreen>
       required String label,
       required VoidCallback onTap}) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -967,7 +999,7 @@ class _ScannedQrVerificationSheetState
               height: 4,
               decoration: BoxDecoration(
                 color: AppColors.borderSubtle,
-                borderRadius: BorderRadius.circular(2),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),

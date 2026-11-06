@@ -87,6 +87,22 @@ public class LoanContract {
     @Column(name = "first_due_date")
     private LocalDate firstDueDate;
 
+    @Column(name = "cic_group")
+    @Builder.Default
+    private Integer cicGroup = 1;
+
+    @Column(name = "cic_group_name", length = 100)
+    @Builder.Default
+    private String cicGroupName = "Nhóm 1 - Nợ đủ tiêu chuẩn";
+
+    @Column(name = "overdue_days")
+    @Builder.Default
+    private Integer overdueDays = 0;
+
+    @Column(name = "risk_provision_amount", precision = 19, scale = 2)
+    @Builder.Default
+    private BigDecimal riskProvisionAmount = BigDecimal.ZERO;
+
     @OneToMany(mappedBy = "loanContract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<LoanScheduleItem> scheduleItems = new ArrayList<>();

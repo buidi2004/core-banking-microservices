@@ -47,4 +47,19 @@ public class UserController {
         UserProfileResponse response = userService.updateProfile(userId, req);
         return ResponseEntity.ok(ApiResponse.ok(response, "Cập nhật ảnh đại diện thành công"));
     }
+
+    @PutMapping("/me/alias")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> setAccountAlias(
+            @RequestHeader(value = "X-User-Id") String userId,
+            @RequestParam String alias) {
+        String cleanAlias = alias.trim().toUpperCase();
+        if (cleanAlias.length() < 3 || cleanAlias.length() > 30) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Biệt danh tài khoản phải từ 3 đến 30 ký tự"));
+        }
+        if (!cleanAlias.matches("^[A-Z0-9._-]+$")) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Biệt danh chỉ bao gồm chữ cái in hoa không dấu, chữ số và dấu . _ -"));
+        }
+        userService.setAccountAlias(userId, cleanAlias);
+        return ResponseEntity.ok(ApiResponse.ok(java.util.Map.of("userId", userId, "accountAlias", cleanAlias), "Thiết lập biệt danh tài khoản nhận tiền thành công"));
+    }
 }

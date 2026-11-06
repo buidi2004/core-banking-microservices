@@ -5,6 +5,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/support_remote_datasource.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
@@ -17,10 +18,24 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   final TextEditingController _faqSearchCtrl = TextEditingController();
   String _faqFilter = '';
 
+  Map<String, dynamic>? _latestTicket;
+
   @override
   void initState() {
     super.initState();
     _loadFaqs();
+    _loadLatestTicket();
+  }
+
+  Future<void> _loadLatestTicket() async {
+    try {
+      final tickets = await SupportRemoteDataSource().getTickets();
+      if (tickets.isNotEmpty && mounted) {
+        setState(() {
+          _latestTicket = tickets.first;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadFaqs() async {
@@ -242,11 +257,42 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       appBar: AppBar(
         title: const Text('Trung Tâm Trợ Giúp'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
-          IconButton(
-            tooltip: 'Live Chat',
-            icon: const Icon(CupertinoIcons.chat_bubble_2_fill),
-            onPressed: () => context.push('/support/live-chat'),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: 'Trợ lý AI Sen Hồng',
+              icon: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primary.withOpacity(0.3),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: ClipOval(
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Image.asset(
+                      'assets/icons/ai_assistant_ghost.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+              onPressed: () => context.push('/support/live-chat'),
+            ),
           ),
         ],
       ),
@@ -290,10 +336,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () => context.push('/support/live-chat'),
-                            icon: const Icon(
-                                CupertinoIcons.bubble_left_bubble_right_fill,
-                                size: 18),
-                            label: const Text('Chat 24/7'),
+                            icon: Image.asset(
+                              'assets/icons/ai_assistant_ghost.png',
+                              width: 20,
+                              height: 20,
+                            ),
+                            label: const Text('Chat với AI'),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -528,54 +576,120 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   }
 
   Widget _buildTicketStatusCard() {
+    final hasTicket = _latestTicket != null;
+    final ticketId = hasTicket
+        ? (_latestTicket!['id']?.toString().substring(0, 8).toUpperCase() ??
+            'TK2026')
+        : 'TK2026-9921';
+    final status = hasTicket
+        ? (_latestTicket!['status']?.toString() ?? 'ĐANG XỬ LÝ')
+        : 'ĐANG XỬ LÝ';
+    final subject = hasTicket
+        ? (_latestTicket!['subject']?.toString() ?? 'Yêu cầu hỗ trợ giao dịch')
+        : 'Tra soát chuyển tiền Napas 24/7 • Cập nhật gần đây';
+
     return GlassCard(
       quality: GlassQuality.minimal,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.bottomBarCyan.withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(CupertinoIcons.ticket,
-                  color: AppColors.primary, size: 22),
-            ),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text('Ticket #TK2026-9921',
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: AppColors.primaryDark)),
-                      ),
-                      SizedBox(width: 8),
-                      Text('ĐANG XỬ LÝ',
-                          style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold)),
-                    ],
+      child: InkWell(
+        onTap: () {
+          if (!hasTicket) {
+            _createTicketModal(context);
+          } else {
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                backgroundColor: AppColors.surfaceLight,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                title: Text('Ticket #$ticketId',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Chủ đề: $subject',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    Text('Trạng thái: $status',
+                        style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12)),
+                    const SizedBox(height: 8),
+                    const Text(
+                        'Cán bộ quầy & kiểm soát viên Sen Hồng Bank đang tiếp nhận và đối soát hồ sơ.',
+                        style: TextStyle(
+                            fontSize: 12, color: AppColors.textSecondaryLight)),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Đóng')),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _createTicketModal(context);
+                    },
+                    child: const Text('Tạo ticket mới'),
                   ),
-                  SizedBox(height: 2),
-                  Text('Tra soát chuyển tiền Napas 24/7 • Cập nhật lúc 09:15',
-                      style: TextStyle(
-                          fontSize: 11.5, color: AppColors.textSecondaryLight)),
                 ],
               ),
-            ),
-            const Icon(CupertinoIcons.chevron_forward,
-                color: AppColors.textMutedLight, size: 16),
-          ],
+            );
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.bottomBarCyan.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(CupertinoIcons.ticket,
+                    color: AppColors.primary, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text('Ticket #$ticketId',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                  color: AppColors.primaryDark)),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(status,
+                            style: const TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(subject,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 11.5,
+                            color: AppColors.textSecondaryLight)),
+                  ],
+                ),
+              ),
+              const Icon(CupertinoIcons.chevron_forward,
+                  color: AppColors.textMutedLight, size: 16),
+            ],
+          ),
         ),
       ),
     );

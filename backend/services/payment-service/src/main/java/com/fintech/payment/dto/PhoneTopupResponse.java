@@ -19,5 +19,9 @@ public class PhoneTopupResponse {
     private BigDecimal netAmount;
     private String status;
     private String message;
+
+    public String getTransactionCode() {
+        return transactionId != null ? "TX-" + transactionId.substring(0, Math.min(8, transactionId.length())).toUpperCase() : null;
+    }
 }
 

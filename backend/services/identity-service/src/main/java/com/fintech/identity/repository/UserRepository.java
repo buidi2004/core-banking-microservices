@@ -18,11 +18,14 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
 
     Optional<UserEntity> findByEmail(String email);
 
+    Optional<UserEntity> findByAccountAlias(String accountAlias);
+
     @Query("SELECT u FROM UserEntity u WHERE " +
-           "u.username = :identifier OR " +
+           "LOWER(u.username) = LOWER(:identifier) OR " +
+           "LOWER(u.accountAlias) = LOWER(:identifier) OR " +
            "u.phoneNumber = :identifier OR " +
-           "u.email = :identifier OR " +
-           "u.email LIKE CONCAT(:identifier, '@%')")
+           "LOWER(u.email) = LOWER(:identifier) OR " +
+           "LOWER(u.email) LIKE LOWER(CONCAT(:identifier, '@%'))")
     Optional<UserEntity> findByIdentifier(@Param("identifier") String identifier);
 
     @Query("SELECT u FROM UserEntity u WHERE UPPER(u.branchId) = UPPER(:branchId) AND " +
@@ -35,4 +38,6 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
+
+    boolean existsByAccountAlias(String accountAlias);
 }

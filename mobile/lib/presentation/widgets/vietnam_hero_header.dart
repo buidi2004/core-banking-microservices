@@ -15,6 +15,10 @@ class VietnamHeroHeader extends StatelessWidget {
   final double balance;
   final bool isHidden;
   final VoidCallback onToggleVisibility;
+
+  /// Hạn mức thấu chi cấp cho ví (tính năng 4.1). 0 = không thấu chi.
+  final double overdraftLimit;
+
   final VoidCallback? onDeposit;
   final VoidCallback? onWithdraw;
   final VoidCallback? onTransfer;
@@ -30,6 +34,7 @@ class VietnamHeroHeader extends StatelessWidget {
     required this.balance,
     required this.isHidden,
     required this.onToggleVisibility,
+    this.overdraftLimit = 0,
     this.onDeposit,
     this.onWithdraw,
     this.onTransfer,
@@ -48,19 +53,38 @@ class VietnamHeroHeader extends StatelessWidget {
     final topPadding = MediaQuery.of(context).padding.top;
     final displayAmount =
         isHidden ? '••••••••' : _currencyFormatter.format(balance);
-    final bannerHeight = 355.0 + topPadding;
+    final bannerHeight = 300.0 + topPadding;
 
     return Container(
       height: bannerHeight,
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0xFF041E3A),
-            Color(0xFF0A2E50),
-            Color(0xFF0E4D7A),
+            const Color(0xFF041E3A),
+            const Color(0xFF0A2E50),
+            const Color(0xFF0E4D7A),
+            const Color(0xFF0E4D7A).withOpacity(0.95), // 85% opacity
+            const Color(0xFF0E4D7A).withOpacity(0.85), // 70% opacity
+            const Color(0xFF0E4D7A).withOpacity(0.70), // 50% opacity
+            const Color(0xFF0E4D7A).withOpacity(0.50), // 30% opacity
+            const Color(0xFF0E4D7A).withOpacity(0.30), // 15% opacity
+            const Color(0xFF0E4D7A).withOpacity(0.15), // 8% opacity
+            Colors.transparent, // Hoàn toàn trong suốt
+          ],
+          stops: const [
+            0.0,
+            0.35,
+            0.50,
+            0.60,
+            0.68,
+            0.76,
+            0.84,
+            0.90,
+            0.95,
+            1.0
           ],
         ),
       ),
@@ -68,6 +92,7 @@ class VietnamHeroHeader extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           // 1. PHÔNG NỀN LÀM MỜ TỐI ƯU TUYỆT ĐỐI (ẢNH BANNER + LỚP PHỦ CHỮ ĐỀU FADE OUT MỊN MÀNG)
+          // TỐI ƯU: Gradient hoà trộn mượt hơn với nền trắng, không bị đứt đoạn
           Positioned(
             top: 0,
             left: 0,
@@ -75,23 +100,32 @@ class VietnamHeroHeader extends StatelessWidget {
             height: bannerHeight,
             child: ShaderMask(
               shaderCallback: (Rect bounds) {
-                return const LinearGradient(
+                return LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors
-                        .black, // 0% -> 50%: Giữ 100% độ rõ cho thông tin và kiến trúc
-                    Colors.black,
-                    Color(0xF5000000), // 60%: Bắt đầu chuyển tiếp siêu êm
-                    Color(0xD8000000), // 70%
-                    Color(0xA0000000), // 78%
-                    Color(0x60000000), // 86%
-                    Color(0x28000000), // 93%
-                    Color(0x0A000000), // 97%
-                    Colors
-                        .transparent, // 100%: Hoàn toàn trong suốt, hòa tan mượt mà vào nền kính
+                    Colors.black, // 0% - 45%: Giữ nguyên độ rõ
+                    Colors.black, // 45%: Vẫn giữ 100%
+                    Colors.black.withOpacity(
+                        0.85), // 55%: 85% opacity - chuyển tiếp mượt
+                    Colors.black.withOpacity(0.70), // 65%: 70% opacity
+                    Colors.black.withOpacity(0.50), // 75%: 50% opacity
+                    Colors.black.withOpacity(0.30), // 85%: 30% opacity
+                    Colors.black.withOpacity(0.15), // 92%: 15% opacity
+                    Colors.black.withOpacity(0.08), // 96%: 8% opacity
+                    Colors.transparent, // 100%: Hoàn toàn trong suốt
                   ],
-                  stops: [0.0, 0.50, 0.60, 0.70, 0.78, 0.86, 0.93, 0.97, 1.0],
+                  stops: const [
+                    0.0,
+                    0.35,
+                    0.45,
+                    0.55,
+                    0.65,
+                    0.75,
+                    0.84,
+                    0.92,
+                    1.0
+                  ],
                 ).createShader(bounds);
               },
               blendMode: BlendMode.dstIn,
@@ -215,36 +249,38 @@ class VietnamHeroHeader extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.black.withOpacity(0.25),
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 0.8,
+                        if (onQr != null) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.black.withOpacity(0.25),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(
+                                minWidth: 44,
+                                minHeight: 44,
+                              ),
+                              tooltip: 'Quét mã QR',
+                              onPressed: () {
+                                HapticFeedback.selectionClick();
+                                onQr?.call();
+                              },
+                              icon: const Icon(
+                                CupertinoIcons.qrcode_viewfinder,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             ),
                           ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 44,
-                              minHeight: 44,
-                            ),
-                            tooltip: 'Quét mã QR',
-                            onPressed: () {
-                              HapticFeedback.selectionClick();
-                              onQr?.call();
-                            },
-                            icon: const Icon(
-                              CupertinoIcons.qrcode_viewfinder,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                        ),
+                        ],
                       ],
                     ),
 
@@ -402,7 +438,7 @@ class VietnamHeroHeader extends StatelessWidget {
                     // Khả dụng + Icon Mắt
                     InkWell(
                       onTap: onToggleVisibility,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(12),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 4, vertical: 2),
@@ -446,6 +482,9 @@ class VietnamHeroHeader extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         letterSpacing: 0.6,
+                        fontFeatures: const [
+                          FontFeature.tabularFigures(),
+                        ],
                         shadows: const [
                           Shadow(
                             color: Colors.black54,
@@ -474,6 +513,51 @@ class VietnamHeroHeader extends StatelessWidget {
                     ),
                   ],
                 ),
+
+                // HÀNG 5: CHIP HẠN MỨC THẤU CHI (tính năng 4.1)
+                if (overdraftLimit > 0 && !isHidden) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.30),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: balance < 0
+                            ? const Color(0xFFF59E0B).withOpacity(0.55)
+                            : AppColors.bottomBarCyan.withOpacity(0.4),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          balance < 0
+                              ? CupertinoIcons.exclamationmark_circle_fill
+                              : CupertinoIcons.arrow_down_right_circle_fill,
+                          size: 13,
+                          color: balance < 0
+                              ? const Color(0xFFF59E0B) // Amber — đang dư nợ
+                              : AppColors.bottomBarCyan,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          balance < 0
+                              ? 'Dư nợ thấu chi ${_currencyFormatter.format(-balance)} VND — khả dụng ${_currencyFormatter.format(balance + overdraftLimit)} VND'
+                              : 'Hạn mức thấu chi: ${_currencyFormatter.format(overdraftLimit)} VND',
+                          style: GoogleFonts.inter(
+                            color: Colors.white.withOpacity(0.88),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -528,15 +612,15 @@ class _CopyStkChipState extends State<_CopyStkChip> {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: _copy,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: _copied
               ? AppColors.bottomBarCyan.withOpacity(0.18)
               : Colors.black.withOpacity(0.25),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _copied
                 ? AppColors.bottomBarCyan.withOpacity(0.8)

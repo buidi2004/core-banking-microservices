@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <filter id="shadow2" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+    <linearGradient id="vietlottRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF333A"/>
+      <stop offset="60%" stop-color="#ED1C24"/>
+      <stop offset="100%" stop-color="#C7000B"/>
+    </linearGradient>
+  </defs>
+  <rect x="40" y="40" width="432" height="432" rx="104" fill="#FFFFFF" filter="url(#shadow2)"/>
+
+  <!-- Red Vietlott Circle -->
+  <circle cx="256" cy="256" r="160" fill="url(#vietlottRed)"/>
+  <circle cx="256" cy="256" r="158" fill="none" stroke="#FFA4A7" stroke-width="3" opacity="0.5"/>
+
+  <!-- Vietlott Emblem (Lotus / Star Ribbon Swirl) -->
+  <g transform="translate(256, 200) scale(1.15)">
+    <path d="M 0,-48 C 16,-48 32,-36 36,-20 C 26,-24 14,-22 4,-14 C -6,-6 -10,6 -8,18 C -14,10 -16,-2 -14,-14 C -12,-30 -4,-48 0,-48 Z" fill="#FFFFFF"/>
+    <path d="M 46,-15 C 50,0 44,18 30,28 C 24,18 16,14 4,14 C -8,14 -18,22 -24,32 C -20,22 -18,10 -10,2 C 2,-10 26,-18 46,-15 Z" fill="#FFFFFF"/>
+    <path d="M 28,39 C 14,49 -4,50 -20,40 C -12,34 -8,24 -8,12 C -8,0 -16,-10 -26,-16 C -18,-14 -6,-10 2,-4 C 14,6 24,24 28,39 Z" fill="#FFFFFF"/>
+    <path d="M -28,39 C -42,30 -48,12 -42,-4 C -34,2 -24,4 -14,-2 C -4,-8 0,-20 0,-32 C -4,-22 -12,-16 -22,-14 C -36,-10 -46,2 -28,39 Z" fill="#FFFFFF"/>
+    <path d="M -46,-15 C -44,-32 -30,-44 -14,-46 C -18,-36 -16,-26 -8,-18 C 0,-10 8,-8 18,-10 C 10,-4 2,-2 -8,4 C -22,12 -38,4 -46,-15 Z" fill="#FFFFFF"/>
+    <circle cx="0" cy="0" r="7" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Vietlott Text -->
+  <text x="256" y="260" text-anchor="middle" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="700" font-size="20" fill="#FFFFFF" letter-spacing="1.5" opacity="0.95">Vietlott</text>
+
+  <!-- SMS Text -->
+  <text x="256" y="340" text-anchor="middle" font-family="'Be Vietnam Pro', Arial, sans-serif" font-weight="900" font-size="72" fill="#FFFFFF" letter-spacing="4">SMS</text>
+</svg>

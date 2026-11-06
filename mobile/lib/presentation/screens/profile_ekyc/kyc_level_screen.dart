@@ -8,6 +8,7 @@ import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class KycLevelScreen extends StatefulWidget {
   const KycLevelScreen({super.key});
@@ -72,6 +73,7 @@ class _KycLevelScreenState extends State<KycLevelScreen> {
       appBar: AppBar(
         title: const Text('Hạn Mức & Định Danh'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
         actions: [
           IconButton(
             tooltip: 'Quy định NHNN',

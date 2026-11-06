@@ -5,6 +5,11 @@
 server:
   port: 8084
 
+app:
+  cors:
+    portal-origin: ${PORTAL_ORIGIN:http://localhost:5173}
+    portal-alt-origin: ${PORTAL_ALT_ORIGIN:http://127.0.0.1:5173}
+
 spring:
   application:
     name: ledger-service
@@ -20,6 +25,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
+    show-sql: false
   flyway:
     enabled: true
     locations: classpath:db/migration

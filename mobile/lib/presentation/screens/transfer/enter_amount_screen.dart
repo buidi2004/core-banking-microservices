@@ -7,6 +7,7 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
+import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class EnterAmountScreen extends StatefulWidget {
   final String recipient;
@@ -77,7 +78,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
     {
       'title': 'Tiền Nhà / Trọ',
       'icon': CupertinoIcons.house_fill,
-      'color': const Color(0xFF38BDF8),
+      'color': const Color(0xFF93C5FD), // Light blue WCAG compliant
       'defaultNote': 'Gui tien thue nha thang nay',
     },
   ];
@@ -101,7 +102,8 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
       final wallet = await WalletRemoteDataSource().getMyWallet();
       if (mounted) {
         setState(() {
-          _balance = wallet.balance;
+          // Số dư khả dụng gồm hạn mức thấu chi (tính năng 4.1): balance + overdraftLimit
+          _balance = wallet.availableBalance;
           _isLoadingBalance = false;
         });
       }
@@ -153,6 +155,14 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
       appBar: AppBar(
         title: const Text('Nhập Số Tiền Chuyển'),
         backgroundColor: Colors.transparent,
+        flexibleSpace: const AppBarSeamFade(),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+          child: _buildSubmitButton(amountVal, remainingLimit),
+        ),
       ),
       body: SafeArea(
         child: GestureDetector(
@@ -161,7 +171,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -210,13 +220,9 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
 
                 // 7. Note & Save Beneficiary Section
                 _buildNoteAndBeneficiarySection(),
-                const SizedBox(height: 24),
-
-                // 8. Submit Button
-                _buildSubmitButton(amountVal, remainingLimit),
                 const SizedBox(height: 20),
 
-                // 9. Guarantee & Security Notice
+                // Guarantee & Security Notice
                 _buildSecurityGuaranteeNotice(),
               ],
             ),
@@ -336,52 +342,55 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                   children: [
                     IntrinsicWidth(
                       child: TextField(
-                      controller: _amountController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      autofocus: true,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimaryLight,
-                      ),
-                      decoration: const InputDecoration(
-                        hintText: '0',
-                        hintStyle: TextStyle(color: AppColors.textMutedLight),
-                        suffixText: ' đ',
-                        suffixStyle: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryText,
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        autofocus: true,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimaryLight,
+                          fontFeatures: [
+                            FontFeature.tabularFigures(),
+                          ],
                         ),
-                        border: InputBorder.none,
-                      ),
-                      onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  if (amountVal > 0)
-                    GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _amountController.clear());
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(left: 6),
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          shape: BoxShape.circle,
+                        decoration: const InputDecoration(
+                          hintText: '0',
+                          hintStyle: TextStyle(color: AppColors.textMutedLight),
+                          suffixText: ' đ',
+                          suffixStyle: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryText,
+                          ),
+                          border: InputBorder.none,
                         ),
-                        child: const Icon(CupertinoIcons.clear_thick,
-                            size: 13, color: AppColors.textSecondaryLight),
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
-                ],
+                    if (amountVal > 0)
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          setState(() => _amountController.clear());
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(CupertinoIcons.clear_thick,
+                              size: 13, color: AppColors.textSecondaryLight),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
               if (amountVal > 0) ...[
                 const SizedBox(height: 4),
                 Text(
@@ -687,11 +696,11 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
                             const SizedBox(width: 6),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
+                                  horizontal: 8, vertical: 2.5),
                               decoration: BoxDecoration(
                                 color: AppColors.emeraldGreen
                                     .withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(6),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
                                 m['badge'] as String,
@@ -786,7 +795,7 @@ class _EnterAmountScreenState extends State<EnterAmountScreen> {
           ),
           const SizedBox(height: 10),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.white.withValues(alpha: 0.08),
