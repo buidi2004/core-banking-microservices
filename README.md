@@ -1,14 +1,22 @@
 # 🚀 Sen Hồng Core Banking & E-Wallet Microservices System
 
-[![Java 17](https://img.shields.io/badge/Java-17-orange.svg)](https://www.oracle.com/java/)
-[![Spring Boot 3](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Flutter](https://img.shields.io/badge/Flutter-3.19%2B-blue.svg)](https://flutter.dev/)
-[![Docker Compose](https://img.shields.io/badge/Docker%20Compose-v2-blue.svg)](https://www.docker.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791.svg)](https://www.postgresql.org/)
-[![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-KRaft-black.svg)](https://kafka.apache.org/)
-[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.12-orange.svg)](https://www.rabbitmq.com/)
-[![Redis](https://img.shields.io/badge/Redis-7.0-red.svg)](https://redis.io/)
+[![Release APK](https://img.shields.io/badge/Release%20APK-v1.0.0--build.43-brightgreen.svg?logo=android&logoColor=white)](https://github.com/buidi2004/core-banking-microservices/releases/tag/v1.0.0-build.43)
+[![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-Passing-success.svg?logo=githubactions&logoColor=white)](https://github.com/buidi2004/core-banking-microservices/actions)
+[![Java 17](https://img.shields.io/badge/Java-17-orange.svg?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![Spring Boot 3](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen.svg?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Flutter](https://img.shields.io/badge/Flutter-3.47%2B-blue.svg?logo=flutter&logoColor=white)](https://flutter.dev/)
+[![Docker Compose](https://img.shields.io/badge/Docker%20Compose-v2-blue.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%20%C3%976-336791.svg?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-KRaft-black.svg?logo=apachekafka&logoColor=white)](https://kafka.apache.org/)
+[![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.12-orange.svg?logo=rabbitmq&logoColor=white)](https://www.rabbitmq.com/)
+[![Redis](https://img.shields.io/badge/Redis-7.0-red.svg?logo=redis&logoColor=white)](https://redis.io/)
 [![Architecture](https://img.shields.io/badge/Architecture-Database--per--Service%20%7C%20Event--Driven-purple.svg)](#-kiến-trúc-hệ-thống)
+
+> [!TIP]
+> 📱 **Cài đặt ngay ứng dụng di động Sen Hồng Bank:**
+> - Tải tệp cài đặt chính thức: [**`sen-hong-bank-v1.0.0.apk` (164.91 MB)**](https://github.com/buidi2004/core-banking-microservices/releases/download/v1.0.0-build.43/sen-hong-bank-v1.0.0.apk)
+> - Chi tiết bản phát hành: [GitHub Release v1.0.0 (Build #43)](https://github.com/buidi2004/core-banking-microservices/releases/tag/v1.0.0-build.43)
+> - Sơ đồ kiến trúc tương tác trực quan (Interactive SVG): [docs/architecture/ewallet-system.html](docs/architecture/ewallet-system.html)
 
 ---
 
@@ -18,25 +26,28 @@ Hệ thống **Sen Hồng Core Banking & E-Wallet** là nền tảng tài chính
 1. **Backend Microservices Core** (Java 17 / Spring Boot 3) đạt chuẩn kiến trúc ngân hàng lõi **Database-per-Service**, giao tiếp đa kênh **gRPC** hiệu năng cao, điều phối giao dịch phân tán **Saga Orchestration**, xuất bản sự kiện theo mô hình **Transactional Outbox**, và hạch toán **Sổ cái kép bất biến (Double-Entry Ledger)**.
 2. **Mobile Client - Sen Hồng Bank** (Flutter 3 / Dart) xây dựng theo chuẩn **Clean Architecture**, trang bị giao diện **Liquid Glass (iOS Glassmorphism)** cao cấp, hỗ trợ xác thực sinh trắc học (Biometrics), quét mã VietQR chuẩn EMVCo, và nhận thông báo biến động số dư Realtime qua WebSocket/FCM.
 3. **Teller Cash Deposit Web Portal** (React 18 / Vite / TailwindCSS) dành cho cán bộ quầy chi nhánh thực hiện quy trình phê duyệt nạp tiền mặt 2 cấp **Maker-Checker** kèm kiểm soát hạn mức két quỹ (Vault Limits).
+4. **AI Financial Assistant & eKYC Biometric Engine** (RAG Hybrid Search với pgvector + Full-text Search RRF, tích hợp Gemini 1.5 Flash và model thị giác máy tính chạy GPU CUDA ArcFace 512-d).
 
 ```mermaid
 flowchart TD
     subgraph Clients["📱 Lớp Trình Diễn (Presentation Clients)"]
-        Mobile["📱 Mobile App (Flutter / Liquid Glass)"]
-        TellerPortal["💻 Teller Portal (React Vite)"]
-        ExternalBank["🏦 Hệ thống Ngân hàng liên kết (NAPAS / VietQR)"]
+        Mobile["📱 Mobile App (Flutter / Liquid Glass)<br/><i>v1.0.0 Release APK</i>"]
+        TellerPortal["💻 Teller Portal (React 18 / Vite)"]
+        ExternalBank["🏦 Core Banking Đối Tác (NAPAS / VietQR)"]
     end
 
     subgraph Gateway["🚪 Lớp Biên & Định Tuyến (Edge Gateway)"]
-        APIGW["API Gateway (Spring Cloud Gateway :8080)<br/>• JWT Authentication & Blacklist Filter<br/>• Rate Limiting (Redis)<br/>• Dynamic Route Dispatcher"]
+        APIGW["API Gateway (Spring Cloud Gateway :8080)<br/>• JWT Authentication & Redis Blacklist<br/>• Distributed Rate Limiting (Redis)<br/>• Dynamic Route Dispatcher & WebSocket Proxy"]
     end
 
     subgraph Microservices["⚙️ Lớp Dịch Vụ Lõi (Microservices Core)"]
-        Identity["🔐 Identity Service (:8081)<br/>User, KYC, BCrypt PIN, Device ID"]
-        Wallet["💰 Wallet Service (:8082 / gRPC :9090)<br/>Pessimistic Lock, Balance, Hexagonal"]
+        Identity["🔐 Identity Service (:8081)<br/>User, eKYC, BCrypt PIN, Device ID"]
+        Wallet["💰 Wallet Service (:8082 / gRPC :9090)<br/>Pessimistic Lock, Balance, Limits"]
         Payment["⚡ Payment Service (:8083)<br/>Saga Orchestrator, Outbox Relay, Maker-Checker"]
-        Ledger["📖 Ledger Service (:8084)<br/>Double-Entry, Immutable Journal, Postings"]
-        Notification["🔔 Notification Service (:8085)<br/>STOMP WebSocket, FCM, SMS Format"]
+        Ledger["📖 Ledger Service (:8084)<br/>Double-Entry Bookkeeping, Immutable Journal"]
+        Notification["🔔 Notification Service (:8085)<br/>STOMP WebSocket, FCM Adapter, SMS Banking"]
+        AIService["🤖 AI Chatbot Service (:8086)<br/>RAG Hybrid Search (pgvector + RRF), Gemini Flash"]
+        EKYCAI["👁️ eKYC AI Engine (:8087)<br/>GPU CUDA Liveness & ArcFace 512-d"]
     end
 
     subgraph Storage["💾 Lớp Lưu Trữ Độc Lập (Database-per-Service)"]
@@ -45,12 +56,17 @@ flowchart TD
         DB_PAY[("Postgres Payment<br/>:5435")]
         DB_LED[("Postgres Ledger<br/>:5436")]
         DB_NOT[("Postgres Notification<br/>:5437")]
+        DB_AI[("Postgres AI Vector<br/>:5438 (pgvector)")]
     end
 
-    subgraph Messaging["📬 Cụm Thông Điệp & Bộ Nhớ Đệm (Event Brokers & Cache)"]
-        Kafka[("Apache Kafka (KRaft)<br/>• wallet.balance-changed.v1<br/>• transaction.lifecycle.v1")]
-        RabbitMQ[("RabbitMQ Cluster<br/>• wallet.transaction.events<br/>• DLQ & Retry Topics")]
-        Redis[("Redis 7<br/>• Distributed Lock (Redlock)<br/>• Token Blacklist & OTP Store")]
+    subgraph Messaging["📬 Cụm Thông Điệp & Bộ Nhớ Đệm (Brokers & Cache)"]
+        Kafka[("Apache Kafka (KRaft :9092)<br/>• wallet.balance-changed.v1<br/>• transaction.lifecycle.v1")]
+        RabbitMQ[("RabbitMQ Cluster (:5672)<br/>• wallet.transaction.events<br/>• DLQ & Retry Topics")]
+        Redis[("Redis 7 (:6379)<br/>• Distributed Lock (Redlock)<br/>• Token Blacklist & OTP Cache")]
+    end
+
+    subgraph CloudExt["☁️ Dịch Vụ Đám Mây & Đối Tác Bên Ngoài"]
+        FCM["🔥 Firebase Cloud Messaging<br/>(FCM Push Cloud Realtime)"]
     end
 
     Mobile --> APIGW
@@ -62,6 +78,8 @@ flowchart TD
     APIGW --> Payment
     APIGW --> Ledger
     APIGW --> Notification
+    APIGW --> AIService
+    Identity -. "Nội bộ" .-> EKYCAI
 
     Payment -- "gRPC (Debit/Credit/Reserve)" --> Wallet
     Payment -- "Transactional Outbox" --> Kafka & RabbitMQ
@@ -69,14 +87,17 @@ flowchart TD
 
     Kafka & RabbitMQ --> Ledger
     Kafka & RabbitMQ --> Notification
+    Notification --> FCM
+    FCM -. "Push Alert" .-> Mobile
 
     Identity --- DB_ID
     Wallet --- DB_WAL
     Payment --- DB_PAY
     Ledger --- DB_LED
     Notification --- DB_NOT
+    AIService --- DB_AI
 
-    Identity & Wallet & Payment --- Redis
+    Identity & Wallet & Payment & AIService --- Redis
 ```
 
 ---
@@ -109,14 +130,16 @@ Hệ thống loại bỏ hoàn toàn việc chia sẻ cơ sở dữ liệu giữ
 
 ## ⚙️ 3. Chi Tiết Các Microservices Backend
 
-| Microservice | Cổng HTTP | Cổng gRPC | Cơ sở dữ liệu | Trách nhiệm chính |
+| Microservice | Cổng HTTP | Cổng gRPC / Internal | Cơ sở dữ liệu | Trách nhiệm chính |
 | :--- | :---: | :---: | :---: | :--- |
-| **`api-gateway`** | `8080` | — | Redis (:6379) | Cửa ngõ duy nhất, xác thực JWT, tra cứu Redis Token Blacklist, Rate Limiting, CORS, Proxy WebSocket. |
-| **`identity-service`** | `8081` | — | `ewallet_identity_db` (:5433) | Đăng ký, đăng nhập, cấp JWT (Access + Refresh Token), băm mã PIN BCrypt, xác thực OTP qua Redis, quản lý Device ID và trạng thái KYC. |
+| **`api-gateway`** | `8080` | — | Redis (:6379) | Cửa ngõ duy nhất, xác thực JWT, tra cứu Redis Token Blacklist, Rate Limiting, CORS, Proxy WebSocket & gRPC. |
+| **`identity-service`** | `8081` | — | `ewallet_identity_db` (:5433) | Đăng ký, đăng nhập, cấp JWT (Access + Refresh Token), băm mã PIN BCrypt 12, xác thực OTP qua Redis, quản lý Device ID và hồ sơ KYC. |
 | **`wallet-service`** | `8082` | `9090` | `ewallet_wallet_db` (:5434) | Quản lý vòng đời ví, số dư khả dụng/đóng băng, hạn mức ngày/tháng, xử lý Debit/Credit qua gRPC tốc độ cao, bắn sự kiện Kafka `banking.wallet.balance-changed.v1`. |
 | **`payment-service`** | `8083` | — | `ewallet_payment_db` (:5435) | Máy trạng thái thanh toán, điều phối Saga P2P, Outbox Relay, nghiệp vụ nạp tiền mặt tại quầy Maker-Checker, quản lý hạn mức két quỹ chi nhánh. |
 | **`ledger-service`** | `8084` | — | `ewallet_ledger_db` (:5436) | Sổ cái kế toán kép bất biến, tài khoản hệ thống (System Cash Vault, User Settlement), chống duplicate posting giữa RabbitMQ và Kafka. |
-| **`notification-service`** | `8085` | — | `ewallet_notification_db` (:5437) | Đẩy thông báo WebSocket STOMP (`/topic/notifications`), Firebase Cloud Messaging (FCM), chuẩn hóa nội dung tin nhắn biến động số dư SMS Banking. |
+| **`notification-service`** | `8085` | — | `ewallet_notification_db` (:5437) | Đẩy thông báo WebSocket STOMP (`/topic/notifications`), Firebase Cloud Messaging (FCM Adapter), chuẩn hóa nội dung tin nhắn biến động số dư SMS Banking. |
+| **`ai-service`** | `8086` | — | `ewallet_ai_db` (:5438, pgvector) | Trợ lý tài chính AI Chatbot 24/7, RAG Hybrid Search (cosine similarity + tsvector full-text search RRF), phân tích chi tiêu, tích hợp Gemini 1.5 Flash. |
+| **`ekyc-ai-engine`** | `8087` | — | — | Tăng tốc GPU CUDA: Nhận diện khuôn mặt ArcFace 512 chiều, phát hiện giả mạo Liveness MiniFASNetV2, OCR căn cước công dân chip CCCD. |
 | **`common-library`** | — | — | — | Protobuf definitions (`wallet.proto`), gRPC stubs, shared DTOs, Event Envelopes, Jackson Serializers. |
 
 ---
@@ -194,8 +217,8 @@ chmod +x run.sh ./mobile/run.sh
 ./run.sh all
 
 # 2. Hoặc khởi động riêng từng thành phần:
-./run.sh infra      # 5 Postgres DBs, Redis, RabbitMQ, Kafka, Kafka-UI
-./run.sh be         # 6 Spring Boot Microservices
+./run.sh infra      # 6 Postgres DBs, Redis, RabbitMQ, Kafka, Kafka-UI
+./run.sh be         # 7 Backend Microservices (Spring Boot & FastAPI AI)
 ./run.sh fe         # Cổng giao dịch viên React (:5173)
 ./run.sh health     # Kiểm tra trạng thái sức khỏe toàn bộ cổng dịch vụ
 ```
@@ -285,6 +308,8 @@ bash scratch/test_e2e_baseline.sh
 | **Payment Service** | `HTTP :8083` | `http://localhost:8080/api/v1/payments` | Chuyển tiền P2P, Maker-Checker nạp tiền |
 | **Ledger Service** | `HTTP :8084` | `http://localhost:8080/api/v1/ledger` | Truy vấn bút toán, sổ cái kép |
 | **Notification Service** | `HTTP :8085` | `ws://localhost:8080/ws-native` | WebSocket STOMP nhận thông báo số dư |
+| **AI Chatbot Service** | `HTTP :8086` | `http://localhost:8080/api/v1/ai` | Tư vấn tài chính cá nhân RAG & Gemini Flash |
+| **eKYC AI Engine** | `HTTP :8087` | `http://localhost:8087/api/v1/ekyc` | Nhận diện mặt ArcFace 512-d & Liveness GPU CUDA |
 | **RabbitMQ Dashboard** | `HTTP :15672` | `http://localhost:15672` | Quản trị Broker (User: `wallet` / Pass: `wallet123`) |
 | **Kafka UI (Monitoring)**| `HTTP :8090` | `http://localhost:8090` | Giám sát Kafka Topics & Consumer Groups |
 | **Teller React Portal** | `HTTP :5173` | `http://localhost:5173` | Cổng giao diện cán bộ quầy chi nhánh |
@@ -292,20 +317,6 @@ bash scratch/test_e2e_baseline.sh
 ---
 
 ## 🔒 9. Tiêu Chuẩn Bảo Mật Ngân Hàng
-
-> [!IMPORTANT]
-> - **Mật khẩu & Mã PIN:** Được mã hóa một chiều bằng thuật toán `BCrypt` với độ phức tạp cao (`strength = 12`). Mã PIN thanh toán được lưu trữ tách biệt hoàn toàn với mật khẩu đăng nhập.
-> - **JWT Blacklist & Thu Hồi:** Đưa token vào Redis Blacklist ngay khi người dùng chọn Đăng xuất, vô hiệu hóa ngay lập tức các token còn hạn.
-> - **Khóa tài khoản tự động:** Tự động khóa đăng nhập 30 phút khi phát hiện 5 lần nhập sai liên tiếp; khóa chức năng thanh toán khi nhập sai mã PIN 3 lần.
-> - **Tính lũy trị (Idempotency):** Tất cả các API thay đổi trạng thái tiền tệ bắt buộc cung cấp Header `Idempotency-Key` (UUIDv4) để chống double-spending khi mạng chập chờn.
-> - **Tuân thủ Chuẩn UTC:** Toàn bộ dấu thời gian (`createdAt`, `updatedAt`, `postedAt`) được lưu trữ dưới định dạng chuẩn ISO-8601 UTC trong Database và trao đổi qua JSON.
-
----
-
-## 👥 10. Đóng Góp & Giấy Phép
-
-- Dự án được phát triển nhằm phục vụ mục đích nghiên cứu, học thuật và trình diễn kiến trúc công nghệ tài chính lõi ngân hàng số đạt chuẩn quốc tế.
-- **Giấy phép:** [MIT License](LICENSE). Mọi hành vi sao chép phục vụ thương mại cần tuân thủ quy định cấp phép của tác giả.
 
 > [!IMPORTANT]
 > - **Mật khẩu & Mã PIN:** Được mã hóa một chiều bằng thuật toán `BCrypt` với độ phức tạp cao (`strength = 12`). Mã PIN thanh toán được lưu trữ tách biệt hoàn toàn với mật khẩu đăng nhập.
