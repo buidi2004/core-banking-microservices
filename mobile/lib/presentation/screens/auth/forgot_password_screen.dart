@@ -19,6 +19,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController _phoneController = TextEditingController();
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
+  }
+
   Future<void> _handleSendOtp() async {
     if (_phoneController.text.trim().isEmpty) {
       AppAlerts.showWarning(

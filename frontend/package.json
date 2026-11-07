@@ -1,0 +1,10 @@
+{
+  "name": "frontend-root",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix cash-deposit-portal run dev",
+    "build": "npm --prefix cash-deposit-portal run build",
+    "preview": "npm --prefix cash-deposit-portal run preview"
+  }
+}
+

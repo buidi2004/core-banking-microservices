@@ -1,11 +1,10 @@
 {
   "mcpServers": {
-    "mobile-mcp": {
-      "command": "/Users/buidi/.nodejs/bin/mcp-server-mobile",
-      "args": ["--stdio"],
-      "env": {
-        "PATH": "/Users/buidi/.nodejs/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-      }
+    "dart-flutter-analyzer": {
+      "command": "node",
+      "args": [
+        "/home/buidi/T\u00e0i li\u1ec7u/core-banking-microservices/.agents/servers/dart-flutter-mcp/server.js"
+      ]
     }
   }
 }

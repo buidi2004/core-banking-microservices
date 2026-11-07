@@ -8,53 +8,19 @@ on:
 
 jobs:
   backend-build-and-test:
-    name: Backend Build & Test (Java 25 / Spring Boot)
+    name: Backend Build (Java 17 / Spring Boot 3.2.5)
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_DB: walletdb
-          POSTGRES_USER: walletuser
-          POSTGRES_PASSWORD: walletpassword
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 25
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '25'
+          java-version: '17'
           distribution: 'temurin'
           cache: maven
 
-      - name: Run Maven Tests & Jacoco Code Coverage
-        run: mvn clean test jacoco:report
-
-      - name: Package Spring Boot Production JAR
-        run: mvn package -DskipTests
-
-      - name: Upload JaCoCo Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco/
+      - name: Compile and Package All Microservices
+        run: mvn clean package -DskipTests

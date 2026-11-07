@@ -17,6 +17,12 @@ class _LuckyAccountScreenState extends State<LuckyAccountScreen> {
   int _selectedCategoryIndex = 0;
   String _searchQuery = '';
 
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
   final List<String> _categories = const [
     'Tất cả',
     'Lộc Phát (68-86)',

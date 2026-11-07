@@ -25,6 +25,12 @@ class _BillInputScreenState extends State<BillInputScreen> {
   int _selectedProviderIdx = 0;
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _customerCodeCtrl.dispose();
+    super.dispose();
+  }
+
   final List<Map<String, String>> _providers = const [
     {'name': 'EVN Hà Nội', 'area': 'Miền Bắc', 'code': 'EVNHN'},
     {'name': 'EVN TP.HCM', 'area': 'Miền Nam', 'code': 'EVNHCM'},

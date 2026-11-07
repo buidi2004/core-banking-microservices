@@ -3,7 +3,7 @@
     "dart-flutter-analyzer": {
       "command": "node",
       "args": [
-        "/home/buidi/Tài liệu/core-banking-microservices/.agents/servers/dart-flutter-mcp/server.js"
+        "/home/buidi/T\u00e0i li\u1ec7u/core-banking-microservices/.agents/servers/dart-flutter-mcp/server.js"
       ]
     },
     "codebase-memory": {
@@ -16,7 +16,7 @@
     "graphify": {
       "command": "/home/buidi/.local/bin/graphify-mcp",
       "args": [
-        "/home/buidi/Tài liệu/core-banking-microservices/graphify-out/graph.json"
+        "/home/buidi/T\u00e0i li\u1ec7u/core-banking-microservices/graphify-out/graph.json"
       ]
     },
     "filesystem": {
@@ -24,7 +24,7 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "/home/buidi/Tài liệu/core-banking-microservices"
+        "/home/buidi/T\u00e0i li\u1ec7u/core-banking-microservices"
       ]
     },
     "github": {

@@ -1,40 +1,93 @@
-name: Build Android APK
+name: Build & Release Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: "Release Version Tag (e.g. v1.0.0)"
+        required: false
+        default: "v1.0.0"
+      create_release:
+        description: "Publish to GitHub Releases"
+        type: boolean
+        required: false
+        default: true
   push:
     branches: [ main, master ]
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  build-apk:
+    name: Build & Release APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Java 25
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '25'
+          java-version: '17'
 
-      - name: Setup Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      - name: Install dependencies
+      - name: Install Flutter Dependencies
         working-directory: mobile
         run: flutter pub get
 
-      - name: Build Android APK
+      - name: Build Android Release APK
         working-directory: mobile
         run: flutter build apk --release
 
-      - name: Upload APK
+      - name: Prepare APK Asset
+        run: |
+          mkdir -p dist
+          cp mobile/build/app/outputs/flutter-apk/app-release.apk dist/sen-hong-bank-v1.0.0.apk
+          ls -la dist/
+
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+          name: sen-hong-bank-v1.0.0-apk
+          path: dist/sen-hong-bank-v1.0.0.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.create_release != 'false' }}
+        with:
+          tag_name: ${{ github.event.inputs.release_version || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || format('v1.0.0-build.{0}', github.run_number) }}
+          name: "📱 Sen Hồng Mobile Banking v1.0.0 (Build #${{ github.run_number }})"
+          body: |
+            ## 🏦 Sen Hồng Core Banking Mobile App — Production Release
+
+            ### 📦 Thông tin gói cài đặt
+            - **Tên ứng dụng:** Sen Hồng Bank Mobile
+            - **Phiên bản:** v1.0.0 (Build #${{ github.run_number }})
+            - **Tệp cài đặt:** `sen-hong-bank-v1.0.0.apk`
+            - **Cam kết Git SHA:** `${{ github.sha }}`
+            - **Nhánh:** `${{ github.ref_name }}`
+
+            ### 🚀 Tính năng cốt lõi
+            - 🔐 **Xác thực sinh trắc học eKYC & PIN:** Tăng tốc nhận diện mặt qua GPU CUDA (GTX 1650), ArcFace 512-d và mã PIN bảo mật BCrypt 12.
+            - 💸 **Chuyển tiền P2P & Thanh toán tức thì:** Saga Orchestrator thời gian thực, khóa số dư phân tán qua gRPC internal `:9090`.
+            - 📲 **Thông báo đa kênh thời gian thực:** WebSocket STOMP & Firebase Cloud Messaging (FCM Push Cloud).
+            - 📊 **Sổ cái tài chính kép:** Bút toán kế toán kép bất biến (Double-Entry General Ledger).
+            - 🤖 **Trợ lý tài chính AI Chatbot 24/7:** Tư vấn thông minh RAG Hybrid Search (pgvector + tsvector RRF).
+
+            ---
+            *👉 Tải trực tiếp tệp `sen-hong-bank-v1.0.0.apk` bên dưới để cài đặt trên thiết bị Android.*
+          files: |
+            dist/sen-hong-bank-v1.0.0.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

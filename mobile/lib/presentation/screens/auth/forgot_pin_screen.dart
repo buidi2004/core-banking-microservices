@@ -34,6 +34,12 @@ class _ForgotPinScreenState extends State<ForgotPinScreen> {
     _sendInitialOtp();
   }
 
+  @override
+  void dispose() {
+    _otpCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _sendInitialOtp() async {
     try {
       String phone = widget.phone ?? '';
