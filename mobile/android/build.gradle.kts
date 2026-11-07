@@ -17,12 +17,8 @@ subprojects {
 }
 
 subprojects {
-    project.evaluationDependsOn(":app")
-}
-
-subprojects {
-    afterEvaluate {
-        val android = project.extensions.findByName("android")
+    val configureSubproject: Project.() -> Unit = {
+        val android = extensions.findByName("android")
         if (android != null) {
             try {
                 val m = android.javaClass.getMethod("setCompileSdkVersion", Int::class.javaPrimitiveType)
@@ -35,6 +31,18 @@ subprojects {
             }
         }
     }
+
+    if (state.executed) {
+        configureSubproject()
+    } else {
+        afterEvaluate {
+            configureSubproject()
+        }
+    }
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
 }
 
 subprojects {
