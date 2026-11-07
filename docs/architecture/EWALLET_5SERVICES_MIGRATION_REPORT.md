@@ -311,8 +311,8 @@ Việc phân rã được thực hiện tuần tự theo mẫu **Strangler Fig P
 ## 7. TỔNG KẾT ARTIFACTS & TÀI LIỆU KÈM THEO
 
 1. **Sơ đồ Kiến Trúc Tương Tác 5 Microservices (Archify Showcase Passed):**
-   - File JSON đặc tả: [ewallet-5services.architecture.json](file:///home/buidi/app-mono-di-va-khoa/docs/architecture/ewallet-5services.architecture.json)
-   - File HTML hiển thị trực quan (Interactive SVG): [ewallet-5services.html](file:///home/buidi/app-mono-di-va-khoa/docs/architecture/ewallet-5services.html)
+   - File JSON đặc tả: [ewallet-system.architecture.json](file:///home/buidi/Tài%20liệu/core-banking-microservices/docs/architecture/ewallet-system.architecture.json)
+   - File HTML hiển thị trực quan (Interactive SVG): [ewallet-system.html](file:///home/buidi/Tài%20liệu/core-banking-microservices/docs/architecture/ewallet-system.html)
    - Đạt chuẩn Showcase với 9/9 tiêu chí xác thực (0 errors, 0 warnings).
 2. **Kế hoạch hành động tiếp theo:**
    - Review và thống nhất ranh giới phân rã giữa các domain.

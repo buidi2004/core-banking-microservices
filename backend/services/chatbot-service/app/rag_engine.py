@@ -1130,6 +1130,7 @@ class AdvancedRAGEngine:
         model = self._get_embed_model()
 
         # Nếu là câu hỏi đa lượt có đại từ thay thế ("nó", "thẻ này", "gói này"), bổ sung ngữ cảnh lượt trước
+        search_query = user_question
         search_query = normalize_vietnamese_query(user_question)
         if history and any(p in user_question.lower() for p in ["nó", "đó", "thẻ này", "gói này", "kỳ hạn này", "của nó", "thế còn"]):
             last_user_q = next((h.content for h in reversed(history) if h.role == "user"), "")
@@ -1243,6 +1244,7 @@ NGHIỆP VỤ & NGUYÊN TẮC BẢO MẬT (CHỐNG LAN MAN - ĐÚNG TRỌNG TÂM
 
 5. ĐỊNH DẠNG ĐẦU RA: Trả về JSON thuần túy (không bọc mã markdown codeblock) gồm đúng 3 trường:
    - "answer": Nội dung trả lời chi tiết, súc tích, lịch sự bằng tiếng Việt.
+   - "quick_replies": Mảng gồm 2-3 câu hỏi gợi ý liên quan mật thiết.
    - "quick_replies": Mảng gồm 2-3 câu hỏi gợi ý tự nhiên người dùng rất có thể muốn hỏi tiếp, viết bằng tiếng Việt chuẩn ngữ pháp, có dấu đầy đủ, súc tích (10-45 ký tự), liên quan mật thiết đến nội dung vừa giải đáp (Ví dụ: ["Lãi suất kỳ hạn 12 tháng", "Rút trước hạn có mất lãi không?", "Cách mở sổ online"]). Tuyệt đối không sinh câu hỏi cộc lốc hay lặp lại câu hỏi gốc.
    - "suggested_action": Object điều hướng như mô tả ở trên hoặc null nếu không cần thiết.
 
@@ -1869,6 +1871,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         - Bảo mật Zero-PII Leak tuyệt đối cho thông tin tài chính cá nhân
         """
         start_time = time.time()
+        q_clean = question.strip()
         q_clean = normalize_vietnamese_query(question.strip())
         embed_model = self._get_embed_model()
 
@@ -2161,6 +2164,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                     quick_replies.append(str(qr).strip())
         elif isinstance(raw_qr, str) and raw_qr.strip():
             quick_replies = [raw_qr.strip()]
+        quick_replies = quick_replies[:4]
         quick_replies = enrich_smart_quick_replies(q_clean, quick_replies, max_items=3)
 
         # Ghép suggested action từ LLM hoặc fallback tối ưu từ Jev System One

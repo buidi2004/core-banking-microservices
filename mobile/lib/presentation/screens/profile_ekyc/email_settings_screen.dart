@@ -34,6 +34,15 @@ class _EmailSettingsScreenState extends State<EmailSettingsScreen> {
     _loadProfileData();
   }
 
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _taxCodeCtrl.dispose();
+    _companyNameCtrl.dispose();
+    _invoiceAddressCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadProfileData() async {
     const storage = FlutterSecureStorage();
     try {

@@ -1,13 +1,84 @@
 {
   "mcpServers": {
+    "dart-flutter-analyzer": {
+      "command": "node",
+      "args": [
+        "/home/buidi/Tài liệu/core-banking-microservices/.agents/servers/dart-flutter-mcp/server.js"
+      ]
+    },
     "codebase-memory": {
-      "command": "/home/buidi/.local/bin/codebase-memory-mcp",
-      "args": []
+      "command": "npx",
+      "args": [
+        "-y",
+        "codebase-memory-mcp"
+      ]
     },
     "graphify": {
-      "command": "/home/buidi/.gemini/antigravity/bin/graphify-mcp",
+      "command": "/home/buidi/.local/bin/graphify-mcp",
       "args": [
         "/home/buidi/Tài liệu/core-banking-microservices/graphify-out/graph.json"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/home/buidi/Tài liệu/core-banking-microservices"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": ""
+      }
+    },
+    "docker": {
+      "command": "/home/buidi/.local/bin/mcp-server-docker",
+      "args": []
+    },
+    "postgres-ledger": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://ledger_app_user:LedgerApp%23Secure2025%21@localhost:5436/ewallet_ledger_db"
+      ]
+    },
+    "postgres-payment": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://payment_db_user:PaymentDb%23Secure2025%21@localhost:5435/ewallet_payment_db"
+      ]
+    },
+    "postgres-wallet": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://wallet_db_user:WalletDb%23Secure2025%21@localhost:5434/ewallet_wallet_db"
+      ]
+    },
+    "postgres-identity": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://identity_db_user:IdentityDb%23Secure2025%21@localhost:5433/ewallet_identity_db"
+      ]
+    },
+    "openapi": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "openapi-mcp-server",
+        "http://localhost:8900/openapi.json"
       ]
     }
   }

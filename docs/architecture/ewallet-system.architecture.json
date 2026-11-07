@@ -2,80 +2,300 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Fintech E-Wallet System Architecture",
+    "title": "Sen Hồng Core Banking & AI Microservices Ecosystem",
     "quality_profile": "showcase",
-    "viewBox": [1100, 600],
+    "viewBox": [1260, 1060],
     "views": [
       {
-        "id": "payment-flow",
-        "label": "Core transaction path",
-        "focus": ["mobile", "gateway", "backend", "postgres", "redis"],
-        "note": "Money transfer with distributed lock, idempotency check, and double-entry ledger persistence."
+        "id": "overview",
+        "label": "Toàn cảnh Hệ sinh thái Core Banking & AI",
+        "focus": [
+          "client_mobile",
+          "client_web",
+          "api_gateway",
+          "svc_identity",
+          "svc_wallet",
+          "svc_payment",
+          "svc_ledger",
+          "svc_notification",
+          "svc_ekyc_ai",
+          "svc_chatbot",
+          "postgres_dbs",
+          "redis_cluster",
+          "kafka_stream",
+          "rabbitmq_bus",
+          "banking_gw",
+          "fcm_cloud"
+        ],
+        "note": "Kiến trúc tổng thể 7 microservices độc lập: Database-per-Service, Dual-Broker (Kafka + RabbitMQ), gRPC nội bộ và AI tăng tốc GPU."
       },
       {
-        "id": "async-events",
-        "label": "Async event pipeline",
-        "focus": ["backend", "rabbitmq", "consumers", "fcm"],
-        "note": "Transactional outbox relay and asynchronous consumers for audit and notifications."
+        "id": "flow-p2p-saga",
+        "label": "Luồng 1: Chuyển tiền P2P & Saga gRPC",
+        "focus": ["client_mobile", "api_gateway", "svc_payment", "svc_wallet", "redis_cluster", "kafka_stream", "banking_gw", "postgres_dbs"],
+        "note": "Payment điều phối Saga qua gRPC khóa số dư người gửi (Pessimistic lock), lưu Outbox và stream lên Kafka 6 partitions."
       },
       {
-        "id": "external-banking",
-        "label": "Banking & VietQR integration",
-        "focus": ["backend", "banking"],
-        "note": "VietQR payment settlement and banking partner integration."
+        "id": "flow-ekyc-ai",
+        "label": "Luồng 2: Xác thực eKYC Biometric AI",
+        "focus": ["client_mobile", "api_gateway", "svc_identity", "svc_ekyc_ai", "redis_cluster", "postgres_dbs"],
+        "note": "Mobile truyền ảnh nhận diện mặt thật; Gateway chuyển tới eKYC AI Service chạy GPU CUDA so khớp ArcFace 512-d và MiniFASNetV2."
+      },
+      {
+        "id": "flow-cash-deposit",
+        "label": "Luồng 3: Nạp tiền Quầy Maker-Checker",
+        "focus": ["client_web", "api_gateway", "svc_payment", "svc_ledger", "kafka_stream", "postgres_dbs"],
+        "note": "Giao dịch viên tạo yêu cầu nạp tiền, Kiểm soát viên phê duyệt 2 cấp; bút toán định khoản kép bất biến vào Sổ cái General Ledger."
+      },
+      {
+        "id": "flow-event-streaming",
+        "label": "Luồng 4: Event Streaming & Bắn thông báo",
+        "focus": ["kafka_stream", "svc_ledger", "svc_notification", "fcm_cloud", "client_mobile", "postgres_dbs"],
+        "note": "Ledger ghi bút toán nợ/có tự động, Notification Service tiêu thụ stream giao dịch để bắn FCM Push Alert và WebSocket STOMP."
       }
     ]
   },
   "components": [
-    { "id": "mobile", "type": "frontend", "label": "Mobile App", "sublabel": "React Native", "pos": [40, 230], "size": [140, 64] },
-    { "id": "web", "type": "frontend", "label": "Web Portal", "sublabel": "Admin / Merchant", "pos": [40, 380], "size": [140, 64] },
-    { "id": "gateway", "type": "security", "label": "API Gateway", "sublabel": "JWT & Rate Limit", "pos": [250, 305], "size": [140, 64], "tag": "HTTPS :443" },
-    { "id": "backend", "type": "backend", "label": "Wallet Core", "sublabel": "Spring Boot 3.2", "brand": "spring", "pos": [470, 305], "size": [140, 64], "tag": "Hexagonal DDD" },
-    { "id": "redis", "type": "database", "label": "Redis Cache", "sublabel": "Lock & Idempotency", "brand": "redis", "pos": [470, 140], "size": [140, 64], "tag": ":6379" },
-    { "id": "postgres", "type": "database", "label": "PostgreSQL", "sublabel": "Double-Entry Ledger", "brand": "postgresql", "pos": [700, 305], "size": [140, 64], "tag": ":5432" },
-    { "id": "rabbitmq", "type": "messagebus", "label": "RabbitMQ", "sublabel": "Event Broker", "brand": "rabbitmq", "pos": [470, 470], "size": [140, 64], "tag": ":5672" },
-    { "id": "consumers", "type": "backend", "label": "Async Consumers", "sublabel": "Audit / Ledger / FCM", "pos": [700, 470], "size": [140, 64] },
-    { "id": "banking", "type": "external", "label": "Partner Banks", "sublabel": "NAPAS & VietQR", "pos": [700, 140], "size": [140, 64] },
-    { "id": "fcm", "type": "cloud", "label": "Firebase FCM", "sublabel": "Push Notifications", "brand": "firebase", "pos": [920, 470], "size": [140, 64] }
+    {
+      "id": "client_mobile",
+      "type": "frontend",
+      "label": "Mobile Banking",
+      "sublabel": "Sen Hồng · Flutter",
+      "pos": [40, 370],
+      "size": [140, 64],
+      "tag": "iOS & Android"
+    },
+    {
+      "id": "client_web",
+      "type": "frontend",
+      "label": "Teller Portal",
+      "sublabel": "Maker-Checker Cash",
+      "brand": "react",
+      "pos": [40, 510],
+      "size": [140, 64],
+      "tag": "Port :5173"
+    },
+    {
+      "id": "api_gateway",
+      "type": "security",
+      "label": "API Gateway",
+      "sublabel": "JWT & Rate Limit",
+      "brand": "spring",
+      "pos": [260, 440],
+      "size": [150, 64],
+      "tag": "Port :8080"
+    },
+
+    {
+      "id": "svc_identity",
+      "type": "backend",
+      "label": "Identity Service",
+      "sublabel": "IAM, KYC & PIN BCrypt",
+      "brand": "spring",
+      "pos": [500, 60],
+      "size": [160, 64],
+      "tag": "Port :8081"
+    },
+    {
+      "id": "svc_wallet",
+      "type": "backend",
+      "label": "Wallet Core",
+      "sublabel": "Balance & gRPC Engine",
+      "brand": "spring",
+      "pos": [500, 185],
+      "size": [160, 64],
+      "tag": "Port :8082"
+    },
+    {
+      "id": "svc_payment",
+      "type": "backend",
+      "label": "Payment Service",
+      "sublabel": "Saga & Outbox Relay",
+      "brand": "spring",
+      "pos": [500, 310],
+      "size": [160, 64],
+      "tag": "Port :8083"
+    },
+    {
+      "id": "svc_ledger",
+      "type": "backend",
+      "label": "Ledger Service",
+      "sublabel": "Double-Entry Accounting",
+      "brand": "spring",
+      "pos": [500, 435],
+      "size": [160, 64],
+      "tag": "Port :8084"
+    },
+    {
+      "id": "svc_notification",
+      "type": "backend",
+      "label": "Notification Svc",
+      "sublabel": "STOMP, FCM & SMS",
+      "brand": "spring",
+      "pos": [500, 560],
+      "size": [160, 64],
+      "tag": "Port :8085"
+    },
+    {
+      "id": "svc_ekyc_ai",
+      "type": "backend",
+      "label": "eKYC AI Service",
+      "sublabel": "ArcFace & Anti-Spoof",
+      "brand": "fastapi",
+      "pos": [500, 685],
+      "size": [160, 64],
+      "tag": "GPU CUDA :8900"
+    },
+    {
+      "id": "svc_chatbot",
+      "type": "backend",
+      "label": "AI Chatbot Service",
+      "sublabel": "JEV Gate & RRF Search",
+      "brand": "fastapi",
+      "pos": [500, 810],
+      "size": [160, 64],
+      "tag": "Port :8000"
+    },
+
+    {
+      "id": "postgres_dbs",
+      "type": "database",
+      "label": "6 PostgreSQL DBs",
+      "sublabel": "Database-per-Service",
+      "brand": "postgresql",
+      "pos": [500, 935],
+      "size": [160, 64],
+      "tag": "Ports :5433-:5438"
+    },
+
+    {
+      "id": "redis_cluster",
+      "type": "database",
+      "label": "Redis Cluster",
+      "sublabel": "Redlock, Blacklist & OTP",
+      "brand": "redis",
+      "pos": [780, 140],
+      "size": [150, 64],
+      "tag": "Port :6379"
+    },
+    {
+      "id": "kafka_stream",
+      "type": "messagebus",
+      "label": "Kafka KRaft",
+      "sublabel": "6-Partition Event Stream",
+      "brand": "apache-kafka",
+      "pos": [780, 400],
+      "size": [160, 64],
+      "tag": "Port :9092"
+    },
+    {
+      "id": "rabbitmq_bus",
+      "type": "messagebus",
+      "label": "RabbitMQ Broker",
+      "sublabel": "Task Queue & Worker Bus",
+      "brand": "rabbitmq",
+      "pos": [1050, 60],
+      "size": [150, 64],
+      "tag": "Port :5672"
+    },
+    {
+      "id": "banking_gw",
+      "type": "external",
+      "label": "NAPAS & VietQR",
+      "sublabel": "Interbank Settlement",
+      "pos": [1050, 310],
+      "size": [150, 64],
+      "tag": "EMVCo / ISO 8583"
+    },
+    {
+      "id": "fcm_cloud",
+      "type": "cloud",
+      "label": "Firebase FCM",
+      "sublabel": "Mobile Push Cloud",
+      "brand": "firebase",
+      "pos": [1050, 560],
+      "size": [150, 64],
+      "tag": "Google Cloud"
+    }
   ],
   "boundaries": [
-    { "kind": "region", "label": "E-Wallet Core Infrastructure", "wraps": ["backend", "redis", "postgres", "rabbitmq", "consumers"] }
+    {
+      "kind": "region",
+      "label": "Sen Hồng Microservices & Storage Ecosystem (Database-per-Service)",
+      "wraps": [
+        "svc_identity",
+        "svc_wallet",
+        "svc_payment",
+        "svc_ledger",
+        "svc_notification",
+        "svc_ekyc_ai",
+        "svc_chatbot",
+        "postgres_dbs",
+        "redis_cluster",
+        "kafka_stream",
+        "rabbitmq_bus"
+      ]
+    }
   ],
   "connections": [
-    { "id": "mobile-to-gw", "from": "mobile", "to": "gateway", "label": "HTTPS", "variant": "emphasis" },
-    { "id": "web-to-gw", "from": "web", "to": "gateway", "label": "HTTPS" },
-    { "id": "gw-to-backend", "from": "gateway", "to": "backend", "label": "Forward", "variant": "emphasis" },
-    { "id": "backend-to-redis", "from": "backend", "to": "redis", "label": "Lock / Token", "fromSide": "top", "toSide": "bottom", "labelDy": -25 },
-    { "id": "backend-to-db", "from": "backend", "to": "postgres", "label": "JPA Ledger", "variant": "emphasis" },
-    { "id": "backend-to-mq", "from": "backend", "to": "rabbitmq", "label": "Outbox Relay", "fromSide": "bottom", "toSide": "top", "labelDy": 30 },
-    { "id": "backend-to-banking", "from": "backend", "to": "banking", "label": "VietQR API", "fromSide": "top", "toSide": "left", "variant": "dashed" },
-    { "id": "mq-to-consumers", "from": "rabbitmq", "to": "consumers", "label": "Subscribe" },
-    { "id": "consumers-to-fcm", "from": "consumers", "to": "fcm", "label": "Push Alert" },
-    { "id": "consumers-to-db", "from": "consumers", "to": "postgres", "label": "Update Log", "fromSide": "top", "toSide": "bottom" }
+    { "id": "conn-mobile-gw", "from": "client_mobile", "to": "api_gateway", "label": "HTTPS / WSS", "variant": "emphasis" },
+    { "id": "conn-web-gw", "from": "client_web", "to": "api_gateway", "label": "HTTPS REST" },
+
+    { "id": "conn-gw-auth", "from": "api_gateway", "to": "svc_identity", "label": "Auth API", "fromSide": "top", "toSide": "left" },
+    { "id": "conn-gw-payment", "from": "api_gateway", "to": "svc_payment", "label": "Payment API", "variant": "emphasis", "fromSide": "top", "toSide": "left" },
+    { "id": "conn-gw-ledger", "from": "api_gateway", "to": "svc_ledger", "label": "Audit Query", "fromSide": "right", "toSide": "left", "labelDx": 20, "labelDy": -18 },
+    { "id": "conn-gw-notify", "from": "api_gateway", "to": "svc_notification", "label": "Inbox API", "fromSide": "bottom", "toSide": "left" },
+    { "id": "conn-gw-ekyc", "from": "api_gateway", "to": "svc_ekyc_ai", "label": "eKYC Biometrics", "fromSide": "bottom", "toSide": "left" },
+    { "id": "conn-gw-chat", "from": "api_gateway", "to": "svc_chatbot", "label": "AI Chat RAG", "fromSide": "bottom", "toSide": "left" },
+
+    { "id": "conn-payment-wallet", "from": "svc_payment", "to": "svc_wallet", "label": "gRPC Balance", "variant": "emphasis", "fromSide": "top", "toSide": "bottom" },
+
+    { "id": "conn-identity-redis", "from": "svc_identity", "to": "redis_cluster", "label": "Session TTL", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-wallet-redis", "from": "svc_wallet", "to": "redis_cluster", "label": "Redlock Balance", "fromSide": "right", "toSide": "left" },
+
+    { "id": "conn-auth-mq", "from": "svc_identity", "to": "rabbitmq_bus", "label": "UserRegistered", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-mq-wallet", "from": "rabbitmq_bus", "to": "svc_wallet", "label": "AutoCreateWallet", "variant": "dashed", "fromSide": "bottom", "toSide": "right", "labelDy": 24 },
+
+    { "id": "conn-payment-kafka", "from": "svc_payment", "to": "kafka_stream", "label": "Outbox Events", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-payment-bank", "from": "svc_payment", "to": "banking_gw", "label": "EMVCo VietQR", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+
+    { "id": "conn-kafka-ledger", "from": "kafka_stream", "to": "svc_ledger", "label": "Ledger Consumer", "variant": "emphasis", "fromSide": "left", "toSide": "right" },
+    { "id": "conn-kafka-notify", "from": "kafka_stream", "to": "svc_notification", "label": "Notify Consumer", "variant": "emphasis", "fromSide": "bottom", "toSide": "right" },
+
+    { "id": "conn-notify-fcm", "from": "svc_notification", "to": "fcm_cloud", "label": "FCM Push Alert", "fromSide": "right", "toSide": "left" },
+    { "id": "conn-notify-db", "from": "svc_chatbot", "to": "postgres_dbs", "label": "pgvector & DBs", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 24 }
   ],
   "cards": [
     {
       "dot": "emerald",
-      "title": "Hexagonal & Double-Entry",
+      "title": "Kiến trúc 6 DBs (Database-per-Service)",
       "items": [
-        "Domain Layer is isolated with Ports & Adapters",
-        "Strict double-entry accounting balances Debit and Credit"
+        "Phân rã 6 cơ sở dữ liệu Postgres độc lập (:5433-:5438), cô lập hoàn toàn schema và user roles",
+        "Sổ cái General Ledger áp dụng phân quyền Append-Only chống sửa/xóa bút toán tài chính (Delta = 0)"
       ]
     },
     {
       "dot": "cyan",
-      "title": "Concurrency & Idempotency",
+      "title": "Dual-Broker & Saga Orchestration",
       "items": [
-        "Distributed lock via Redis prevents multi-instance race conditions",
-        "Pessimistic locking (SELECT FOR UPDATE) on PostgreSQL wallets"
+        "Payment Engine gọi gRPC Wallet Internal để Lock/Debit/Credit số dư với độ trễ thấp (<15ms)",
+        "Kafka KRaft 6 partitions đồng bộ sổ cái kết hợp RabbitMQ điều phối hàng đợi tác vụ bất đồng bộ"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "AI & Biometrics GPU Tăng Tốc",
+      "items": [
+        "eKYC AI Microservice (:8900) chạy GPU NVIDIA GTX 1650 CUDA: SCRFD phát hiện mặt & ArcFace 512-d",
+        "Trợ lý Chatbot AI (:8000) RAG Hybrid Search (pgvector + tsvector Reciprocal Rank Fusion) và JEV Gate"
       ]
     },
     {
       "dot": "amber",
-      "title": "Reliable Messaging",
+      "title": "Bảo mật Ngân hàng Đa lớp & Chống Gian lận",
       "items": [
-        "Transactional Outbox pattern guarantees message delivery",
-        "RabbitMQ consumers decouple audit, ledger, and push notifications"
+        "API Gateway lọc JWT, khóa token qua Redis Blacklist và giới hạn tần suất request (Rate Limiting)",
+        "Xác thực mã PIN bằng BCrypt độ mạnh 12, cơ chế chống tấn công bom giải nén ảnh eKYC trực tiếp trên RAM"
       ]
     }
   ]
