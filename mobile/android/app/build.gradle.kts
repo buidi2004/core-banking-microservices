@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.senhong.sen_hong_bank"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

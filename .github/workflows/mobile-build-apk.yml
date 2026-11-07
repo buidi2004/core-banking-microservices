@@ -44,6 +44,12 @@ jobs:
         working-directory: mobile
         run: flutter pub get
 
+      - name: Ensure Android 36 SDK Platform
+        run: |
+          export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"
+          yes | sdkmanager --licenses || true
+          sdkmanager "platforms;android-36" || true
+
       - name: Build Android Release APK
         working-directory: mobile
         run: flutter build apk --release
