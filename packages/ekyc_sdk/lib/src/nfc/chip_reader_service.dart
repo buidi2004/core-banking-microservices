@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter_cccd_vn/cccd_vietnam.dart';
 import 'package:flutter_nfc_kit/flutter_nfc_kit.dart';

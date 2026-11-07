@@ -55,18 +55,35 @@ export function ManagerQueue({ deposits, currentUserId, onApprove, onReject }: M
                 <td className="mono" style={{ fontWeight: 800, color: 'var(--warning-amber)', fontSize: '14px' }}>
                   {formatCurrency(d.amount)}
                 </td>
-                <td>{d.makerName}</td>
+                <td>
+                  <span>{d.makerName}</span>
+                  {d.makerId === currentUserId && (
+                    <span style={{ display: 'block', fontSize: '10.5px', color: 'var(--warning-amber)', fontWeight: 700 }}>
+                      (Lệnh do bạn lập)
+                    </span>
+                  )}
+                </td>
                 <td>
                   <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      type="button"
-                      className="btn btn-success"
-                      style={{ padding: '6px 14px', fontSize: '12px' }}
-                      onClick={() => onApprove(d.id)}
-                    >
-                      <Check size={13} />
-                      <span>Phê Duyệt</span>
-                    </button>
+                    {d.makerId === currentUserId ? (
+                      <span
+                        className="badge badge-amber"
+                        style={{ fontSize: '11px', padding: '5px 10px' }}
+                        title="Theo quy chuẩn Maker-Checker, bạn không được tự duyệt lệnh của chính mình"
+                      >
+                        Chờ Checker khác
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-success"
+                        style={{ padding: '6px 14px', fontSize: '12px' }}
+                        onClick={() => onApprove(d.id)}
+                      >
+                        <Check size={13} />
+                        <span>Phê Duyệt</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn-danger"

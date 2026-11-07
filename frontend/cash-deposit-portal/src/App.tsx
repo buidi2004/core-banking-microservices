@@ -20,7 +20,7 @@ import { SupportDeskManagement } from './components/SupportDeskManagement';
 import { AdminOperations } from './components/AdminOperations';
 import { AmlCaseManagement } from './components/AmlCaseManagement';
 import { LedgerAuditLogManagement } from './components/LedgerAuditLogManagement';
-import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut, Wallet, FileText, RefreshCw, CheckCircle2, Scale, Users, PiggyBank, Headphones, ShieldAlert, ScrollText } from 'lucide-react';
+import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut, Wallet, FileText, RefreshCw, CheckCircle2, Scale, Users, PiggyBank, Headphones, ShieldAlert, ScrollText, Clock, Layers } from 'lucide-react';
 import { realtimeNotificationManager, RealtimeNotification } from './realtime';
 import './styles.css';
 
@@ -48,6 +48,18 @@ export default function App() {
   const [isOnlineBackend, setIsOnlineBackend] = useState<boolean>(false);
   const [backendVaultSummary, setBackendVaultSummary] = useState<VaultSummary | null>(null);
   const [liveToast, setLiveToast] = useState<{ id: string; title: string; body: string; time: string } | null>(null);
+
+  type CategoryId = 'ALL' | 'OPERATIONS' | 'LENDING' | 'CUSTOMERS' | 'LEDGER_GOVERNANCE';
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>('ALL');
+  const [currentTime, setCurrentTime] = useState<string>(() => new Date().toLocaleTimeString('vi-VN'));
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('vi-VN'));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const role: Role = currentStaff?.role || 'TELLER';
 
@@ -166,6 +178,89 @@ export default function App() {
     const total = vaultSummary.totalCashIn;
     return { debit1011: total, credit4211: total, delta: 0 };
   }, [vaultSummary.totalCashIn]);
+
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    await loadBackendData();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
+  const navTabs = useMemo(() => [
+    {
+      id: 'DEPOSIT' as const,
+      category: 'OPERATIONS' as const,
+      label: 'Nạp Quầy & Chuyển Tiền',
+      icon: Wallet,
+    },
+    {
+      id: 'LOANS' as const,
+      category: 'LENDING' as const,
+      label: 'Phê Duyệt Vay',
+      icon: FileText,
+      badge: loans.filter(l => l.status === 'PENDING_APPROVAL').length,
+    },
+    {
+      id: 'SAVINGS' as const,
+      category: 'LENDING' as const,
+      label: 'Sổ Tiết Kiệm',
+      icon: PiggyBank,
+    },
+    {
+      id: 'LEDGER' as const,
+      category: 'LEDGER_GOVERNANCE' as const,
+      label: 'Sổ Cái Kép (Δ=0)',
+      icon: Scale,
+    },
+    {
+      id: 'ACCOUNTS' as const,
+      category: 'CUSTOMERS' as const,
+      label: 'Danh Mục Tài Khoản',
+      icon: Users,
+    },
+    {
+      id: 'KYC' as const,
+      category: 'CUSTOMERS' as const,
+      label: 'Duyệt Hồ Sơ eKYC',
+      icon: UserCheck,
+    },
+    {
+      id: 'SUPPORT' as const,
+      category: 'CUSTOMERS' as const,
+      label: 'Hỗ Trợ CSKH',
+      icon: Headphones,
+    },
+    {
+      id: 'AML' as const,
+      category: 'LEDGER_GOVERNANCE' as const,
+      label: 'Hồ Sơ AML / PCRT',
+      icon: ShieldAlert,
+    },
+    {
+      id: 'AUDIT' as const,
+      category: 'LEDGER_GOVERNANCE' as const,
+      label: 'Kiểm Toán Sổ Cái',
+      icon: ScrollText,
+    },
+    {
+      id: 'OPERATIONS' as const,
+      category: 'LEDGER_GOVERNANCE' as const,
+      label: 'Vận Hành Hệ Thống',
+      icon: Layers,
+    },
+  ], [loans]);
+
+  const categories = useMemo(() => [
+    { id: 'ALL' as const, label: 'Tất cả nghiệp vụ (10)' },
+    { id: 'OPERATIONS' as const, label: 'Giao dịch quầy' },
+    { id: 'LENDING' as const, label: 'Tín dụng & Tiết kiệm' },
+    { id: 'CUSTOMERS' as const, label: 'Khách hàng' },
+    { id: 'LEDGER_GOVERNANCE' as const, label: 'Sổ cái & Kiểm soát' },
+  ], []);
+
+  const visibleTabs = useMemo(() => {
+    if (selectedCategory === 'ALL') return navTabs;
+    return navTabs.filter(t => t.category === selectedCategory);
+  }, [navTabs, selectedCategory]);
 
   // Lập lệnh nạp tiền tại quầy (Maker)
   const handleCreateDeposit = async (data: {
@@ -340,20 +435,20 @@ export default function App() {
       )}
 
       {/* Top Banner */}
-      <div className="demo-banner" style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="demo-banner" style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 24px', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span className="badge-pill">CORE BANKING 2026</span>
-          <span>HỆ THỐNG GIAO DỊCH QUẦY — QUY CHUẨN MAKER-CHECKER &amp; SỔ CÁI BẢO TOÀN (DELTA = 0.00 VND)</span>
+          <span style={{ fontSize: '12px' }}>HỆ THỐNG GIAO DỊCH QUẦY — QUY CHUẨN MAKER-CHECKER &amp; SỔ CÁI BẢO TOÀN (Δ = 0.00 VND)</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px' }}>
-          <span style={{
-            display: 'inline-block',
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: isOnlineBackend ? '#10b981' : '#f59e0b'
-          }} />
-          <span>{isOnlineBackend ? 'Đã kết nối Backend API Gateway' : 'Chế độ Cục bộ / API Offline'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '11px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbd5e1' }}>
+            <Clock size={12} />
+            <span className="mono">{currentTime} (Hà Nội UTC+7)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className={`status-pulse-dot ${isOnlineBackend ? 'online' : 'offline'}`} />
+            <span>{isOnlineBackend ? 'Gateway :8080 Sẵn Sàng' : 'Chế độ Cục bộ / API Offline'}</span>
+          </div>
         </div>
       </div>
 
@@ -371,7 +466,7 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           {/* Thông tin Cán bộ đang đăng nhập */}
           <div style={{
             display: 'flex',
@@ -393,6 +488,18 @@ export default function App() {
               {role === 'TELLER' ? 'TELLER' : 'MANAGER'}
             </span>
           </div>
+
+          {/* Nút Làm Mới Dữ Liệu */}
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={handleManualRefresh}
+            style={{ padding: '6px 14px', fontSize: '12px', gap: '6px' }}
+            title="Đồng bộ lại dữ liệu tức thời từ Backend Gateway"
+          >
+            <RefreshCw size={13} className={isRefreshing ? 'spin-anim' : ''} />
+            <span>Làm Mới</span>
+          </button>
 
           {/* Nút Đăng Xuất */}
           <button
@@ -419,245 +526,53 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Navigation Sub-Tabs */}
-      <div style={{
-        maxWidth: '1280px',
-        margin: '16px auto 0 auto',
-        padding: '0 24px',
-        display: 'flex',
-        gap: '12px'
-      }}>
-        <button
-          type="button"
-          onClick={() => setActiveTab('DEPOSIT')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'DEPOSIT' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'DEPOSIT' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'DEPOSIT' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <Wallet size={16} />
-          <span>Giao Dịch Nạp Tiền Quầy &amp; Chuyển Khoản</span>
-        </button>
+      {/* Navigation Sub-Tabs Enterprise */}
+      <div className="nav-subtabs-wrapper">
+        <div className="nav-subtabs-container">
+          {/* Category Filter Pills */}
+          <div className="nav-categories-bar">
+            {categories.map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                className={`nav-category-btn ${selectedCategory === cat.id ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat.id)}
+              >
+                <span>{cat.label}</span>
+              </button>
+            ))}
+          </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('LOANS');
-            loadBackendData();
-          }}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'LOANS' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'LOANS' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'LOANS' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <FileText size={16} />
-          <span>Phê Duyệt Hồ Sơ Vay Tín Dụng</span>
-          {loans.filter(l => l.status === 'PENDING_APPROVAL').length > 0 && (
-            <span style={{
-              background: '#ef4444',
-              color: '#ffffff',
-              fontSize: '11px',
-              fontWeight: 800,
-              padding: '2px 7px',
-              borderRadius: '999px'
-            }}>
-              {loans.filter(l => l.status === 'PENDING_APPROVAL').length}
-            </span>
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('LEDGER')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'LEDGER' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'LEDGER' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'LEDGER' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <Scale size={16} />
-          <span>Sổ Cái Kép &amp; Đối Soát Bút Toán (Δ = 0.00)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('ACCOUNTS')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'ACCOUNTS' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'ACCOUNTS' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'ACCOUNTS' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <Users size={16} />
-          <span>Danh Mục &amp; Bộ Lọc Tài Khoản (Admin/Giám Đốc)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('KYC')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'KYC' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'KYC' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'KYC' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <UserCheck size={16} />
-          <span>Duyệt Hồ Sơ eKYC</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('SAVINGS')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'SAVINGS' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'SAVINGS' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'SAVINGS' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <PiggyBank size={16} />
-          <span>Sổ Tiết Kiệm (Core Savings)</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab('SUPPORT')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'SUPPORT' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'SUPPORT' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'SUPPORT' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <Headphones size={16} />
-          <span>Hỗ Trợ &amp; CSKH (Tickets)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('OPERATIONS')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'OPERATIONS' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'OPERATIONS' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'OPERATIONS' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <Scale size={16} />
-          <span>Trung tâm vận hành</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('AML')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'AML' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'AML' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'AML' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <ShieldAlert size={16} />
-          <span>Hồ Sơ AML (PCRT 2022)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('AUDIT')}
-          style={{
-            padding: '10px 20px',
-            fontWeight: 700,
-            fontSize: '13.5px',
-            borderRadius: '8px 8px 0 0',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: activeTab === 'AUDIT' ? 'var(--bg-card)' : 'transparent',
-            color: activeTab === 'AUDIT' ? 'var(--primary-blue)' : 'var(--text-muted)',
-            borderBottom: activeTab === 'AUDIT' ? '3px solid var(--primary-blue)' : '3px solid transparent'
-          }}
-        >
-          <ScrollText size={16} />
-          <span>Nhật Ký Kiểm Toán Sổ Cái</span>
-        </button>
+          {/* Tab Rail Buttons */}
+          <div className="nav-tabs-scroll-rail">
+            {visibleTabs.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={`nav-tab-button ${isActive ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.id === 'LOANS') {
+                      loadBackendData();
+                    }
+                  }}
+                  title={tab.label}
+                >
+                  <span className="tab-icon">
+                    <Icon size={15} />
+                  </span>
+                  <span>{tab.label}</span>
+                  {tab.badge && tab.badge > 0 ? (
+                    <span className="nav-tab-badge">{tab.badge}</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Main Container */}

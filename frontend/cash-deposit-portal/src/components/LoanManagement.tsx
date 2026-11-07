@@ -121,7 +121,7 @@ export function LoanManagement({ currentStaff, loans, onRefresh, onLoanApproved 
         </div>
         <div style={{ background: 'var(--bg-card-subtle)', padding: '14px 18px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Tổng khối lượng vốn chờ giải ngân</div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary-navy)', marginTop: '4px' }}>
+          <div className="mono tabular-nums" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary-navy)', marginTop: '4px' }}>
             {formatCurrency(totalPendingAmount)}
           </div>
         </div>
