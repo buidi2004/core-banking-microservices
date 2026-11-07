@@ -65,7 +65,13 @@ def http_req(url, method="GET", data=None, headers=None):
         return 500, {"error": str(e)}
 
 def get_chatbot_logs(tail=40):
-    cmd = ["flatpak-spawn", "--host", "docker", "logs", "--tail", str(tail), "ewallet-chatbot-service"]
+    import shutil
+    if shutil.which("docker"):
+        cmd = ["docker", "logs", "--tail", str(tail), "ewallet-chatbot-service"]
+    elif shutil.which("flatpak-spawn"):
+        cmd = ["flatpak-spawn", "--host", "docker", "logs", "--tail", str(tail), "ewallet-chatbot-service"]
+    else:
+        cmd = ["/usr/bin/docker", "logs", "--tail", str(tail), "ewallet-chatbot-service"]
     res = subprocess.run(cmd, capture_output=True, text=True)
     return res.stdout + res.stderr
 

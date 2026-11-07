@@ -185,8 +185,8 @@ exec_docker exec ewallet-postgres-wallet psql -U wallet_db_user -d ewallet_walle
 # ------------------------------------------------------------------------------
 log_step "4. Chuyển tiền P2P qua Saga Orchestration (User -> Bob)"
 
-BOB_WALLET="86ae40d7-2ce2-4a67-ae9a-0f696c49f97e"
-BOB_USER="497260ee-3b16-4199-9675-fb8a5f8e15d1"
+BOB_WALLET="22222222-2222-2222-2222-222222222222"
+BOB_USER="b0b00000-0000-0000-0000-000000000002"
 P2P_RESP=$(curl -s -X POST "${GATEWAY_URL}/api/v1/payments/transfer" \
     -H "Authorization: Bearer ${USER_TOKEN}" \
     -H "Content-Type: application/json" \

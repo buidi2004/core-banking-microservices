@@ -18,10 +18,32 @@ public class NotificationPayload {
     private final String title;
     private final String body;
 
+    // Các trường mở rộng chuẩn hóa cho thiết bị di động (Mobile HUD & push format)
+    private final String accountNumber;
+    private final String phoneNumber;
+    private final BigDecimal amount;
+    private final String formattedTime;
+
+    /**
+     * Constructor tương thích ngược 13 tham số.
+     */
     public NotificationPayload(String transactionId, String requestId, String type, String status,
                                String walletId, BigDecimal transactionAmount, String transactionCurrency,
                                BigDecimal newBalance, String currency, String timestamp, String note,
                                String title, String body) {
+        this(transactionId, requestId, type, status, walletId, transactionAmount, transactionCurrency,
+                newBalance, currency, timestamp, note, title, body,
+                walletId, null, transactionAmount, timestamp);
+    }
+
+    /**
+     * Constructor đầy đủ 17 tham số hỗ trợ hiển thị tối ưu trên Mobile.
+     */
+    public NotificationPayload(String transactionId, String requestId, String type, String status,
+                               String walletId, BigDecimal transactionAmount, String transactionCurrency,
+                               BigDecimal newBalance, String currency, String timestamp, String note,
+                               String title, String body,
+                               String accountNumber, String phoneNumber, BigDecimal amount, String formattedTime) {
         this.transactionId = transactionId;
         this.requestId = requestId;
         this.type = type;
@@ -35,6 +57,10 @@ public class NotificationPayload {
         this.note = note;
         this.title = title;
         this.body = body;
+        this.accountNumber = accountNumber != null ? accountNumber : walletId;
+        this.phoneNumber = phoneNumber;
+        this.amount = amount != null ? amount : transactionAmount;
+        this.formattedTime = formattedTime != null ? formattedTime : timestamp;
     }
 
     public String getTransactionId() { return transactionId; }
@@ -51,9 +77,14 @@ public class NotificationPayload {
     public String getTitle() { return title; }
     public String getBody() { return body; }
 
+    public String getAccountNumber() { return accountNumber; }
+    public String getPhoneNumber() { return phoneNumber; }
+    public BigDecimal getAmount() { return amount; }
+    public String getFormattedTime() { return formattedTime; }
+
     @Override
     public String toString() {
         return "NotificationPayload{txId='" + transactionId + "', walletId='" + walletId
-                + "', type='" + type + "', status='" + status + "'}";
+                + "', type='" + type + "', status='" + status + "', account='" + accountNumber + "'}";
     }
 }

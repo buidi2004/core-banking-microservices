@@ -32,6 +32,13 @@ public class KafkaLedgerEventTranslator {
             currency = "VND";
         }
 
+        if (isPaymentTransaction(transactionId)) {
+            // Giao dịch thanh toán được điều phối bởi Payment Service (P2P Transfer, nạp/rút, hoá đơn, vay...).
+            // Bút toán kép hoàn chỉnh (đầy đủ 2 bên Nợ/Có) sẽ được ghi sổ qua topic payment.transaction-lifecycle
+            // hoặc RabbitMQ. Bỏ qua sự kiện biến động số dư đơn lẻ để tránh ghi đè và làm sai lệch Sổ cái.
+            return null;
+        }
+
         if (transactionId == null || transactionId.isBlank()) {
             transactionId = "wallet-event:" + walletId + ":" + envelope.getEventId();
         }
@@ -39,12 +46,14 @@ public class KafkaLedgerEventTranslator {
         TransactionEventMessage event = new TransactionEventMessage();
         event.setEventId(envelope.getEventId());
         event.setTransactionId(transactionId);
-        if ("CREDIT".equalsIgnoreCase(direction)) {
+        if ("CREDIT".equalsIgnoreCase(direction) || "DEPOSIT".equalsIgnoreCase(direction) || "TRANSFER_IN".equalsIgnoreCase(direction)) {
             event.setType("DEPOSIT");
             event.setTargetWalletId(walletId);
-        } else if ("DEBIT".equalsIgnoreCase(direction)) {
+        } else if ("DEBIT".equalsIgnoreCase(direction) || "WITHDRAWAL".equalsIgnoreCase(direction) || "TRANSFER_OUT".equalsIgnoreCase(direction)) {
             event.setType("WITHDRAWAL");
             event.setSourceWalletId(walletId);
+        } else if ("RESERVE".equalsIgnoreCase(direction) || "RELEASE".equalsIgnoreCase(direction)) {
+            return null;
         } else {
             throw new IllegalArgumentException("Wallet balance-changed event must carry CREDIT or DEBIT direction, got: "
                     + direction + ", envelope=" + envelope);
@@ -121,11 +130,11 @@ public class KafkaLedgerEventTranslator {
     }
 
     private BigDecimal requireAmount(Map<String, Object> payload) {
-        Object amount = firstValue(payload, "amount", "Amount", "value");
+        Object amount = firstValue(payload, "amount", "Amount", "value", "changeAmount", "ChangeAmount");
         if (amount == null) {
             throw new IllegalArgumentException("Payload must carry amount");
         }
-        BigDecimal parsed = new BigDecimal(String.valueOf(amount));
+        BigDecimal parsed = new BigDecimal(String.valueOf(amount)).abs();
         if (parsed.signum() <= 0) {
             throw new IllegalArgumentException("Amount must be strictly positive, got: " + parsed);
         }
@@ -144,5 +153,19 @@ public class KafkaLedgerEventTranslator {
             }
         }
         return null;
+    }
+
+    public static boolean isPaymentTransaction(String txId) {
+        if (txId == null || txId.isBlank()) {
+            return false;
+        }
+        // UUID v4 format (36 chars: 8-4-4-4-12)
+        if (txId.length() == 36 && txId.charAt(8) == '-' && txId.charAt(13) == '-' && txId.charAt(18) == '-' && txId.charAt(23) == '-') {
+            return true;
+        }
+        String upper = txId.toUpperCase();
+        return upper.startsWith("TXN_") || upper.startsWith("DEP_") || upper.startsWith("DEP-")
+                || upper.startsWith("WDR_") || upper.startsWith("SAV_") || upper.startsWith("LN_")
+                || upper.startsWith("BILL_") || upper.startsWith("LOTTERY_");
     }
 }

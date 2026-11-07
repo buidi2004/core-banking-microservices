@@ -15,19 +15,45 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fintech.ledger.infrastructure.persistence.entity.AuditLogJpaEntity;
+import com.fintech.ledger.infrastructure.persistence.entity.EodBatchJpaEntity;
+import com.fintech.ledger.infrastructure.persistence.repository.SpringAuditLogRepository;
+import com.fintech.ledger.infrastructure.persistence.repository.SpringEodBatchRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class LedgerService {
 
     private static final Logger log = LoggerFactory.getLogger(LedgerService.class);
     private final LedgerPersistencePort persistencePort;
+    private final SpringEodBatchRepository eodBatchRepository;
+    private final SpringAuditLogRepository auditLogRepository;
+
+    @Autowired
+    public LedgerService(LedgerPersistencePort persistencePort,
+                         @Autowired(required = false) SpringEodBatchRepository eodBatchRepository,
+                         @Autowired(required = false) SpringAuditLogRepository auditLogRepository) {
+        this.persistencePort = persistencePort;
+        this.eodBatchRepository = eodBatchRepository;
+        this.auditLogRepository = auditLogRepository;
+    }
 
     public LedgerService(LedgerPersistencePort persistencePort) {
-        this.persistencePort = persistencePort;
+        this(persistencePort, null, null);
     }
 
     /**
@@ -347,6 +373,156 @@ public class LedgerService {
     public record LedgerReconciliationResult(BigDecimal totalDebit, BigDecimal totalCredit, boolean balanced) {
     }
 
+    public record AccountChecksumReport(
+            int totalAccountsChecked,
+            int validAccountsCount,
+            int corruptedAccountsCount,
+            List<String> mismatchedAccountCodes,
+            boolean allChecksumsValid
+    ) {
+    }
+
+    public record EodGateStatus(
+            String gateName,
+            boolean passed,
+            String status,
+            String details
+    ) {
+    }
+
+    public record EodReadinessReport(
+            boolean readyToClose,
+            String overallStatus,
+            boolean doubleEntryBalanced,
+            boolean accountChecksumValid,
+            long makerCheckerPending,
+            long outboxPending,
+            List<EodGateStatus> gates,
+            List<String> blockingReasons,
+            Instant evaluatedAt
+    ) {
+    }
+
+    public record CloseEodRequest(
+            boolean force,
+            String notes
+    ) {
+    }
+
+    @Transactional(readOnly = true)
+    public AccountChecksumReport verifyAccountChecksums() {
+        List<LedgerAccount> accounts = persistencePort.findAllAccounts();
+        int total = accounts.size();
+        int valid = 0;
+        int corrupted = 0;
+        List<String> mismatchedCodes = new ArrayList<>();
+
+        for (LedgerAccount account : accounts) {
+            BigDecimal debitSum = persistencePort.sumAmountByAccountIdAndSide(account.getId(), PostingSide.DEBIT);
+            BigDecimal creditSum = persistencePort.sumAmountByAccountIdAndSide(account.getId(), PostingSide.CREDIT);
+            BigDecimal expectedBalance = account.getType().isDebitNormal()
+                    ? debitSum.subtract(creditSum)
+                    : creditSum.subtract(debitSum);
+
+            if (account.getBalance().compareTo(expectedBalance) == 0) {
+                valid++;
+            } else {
+                corrupted++;
+                mismatchedCodes.add(account.getCode() + " (stored=" + account.getBalance() + ", expected=" + expectedBalance + ")");
+            }
+        }
+
+        return new AccountChecksumReport(total, valid, corrupted, mismatchedCodes, corrupted == 0);
+    }
+
+    @Transactional(readOnly = true)
+    public EodReadinessReport getEodReadiness() {
+        LedgerReconciliationResult recon = verifyLedgerBalance();
+        AccountChecksumReport checksumReport = verifyAccountChecksums();
+        PaymentGateInfo paymentGate = queryPaymentGate();
+
+        List<EodGateStatus> gates = new ArrayList<>();
+        List<String> blockingReasons = new ArrayList<>();
+
+        // Gate 1: Double-Entry Balance (Debit == Credit)
+        gates.add(new EodGateStatus("DOUBLE_ENTRY_BALANCE", recon.balanced(),
+                recon.balanced() ? "PASSED" : "FAILED",
+                "Total Debit: " + recon.totalDebit() + ", Total Credit: " + recon.totalCredit()));
+        if (!recon.balanced()) {
+            blockingReasons.add("Sổ cái không cân bằng kép: Debit (" + recon.totalDebit() + ") != Credit (" + recon.totalCredit() + ")");
+        }
+
+        // Gate 2: Account balance checksums
+        gates.add(new EodGateStatus("ACCOUNT_CHECKSUM", checksumReport.allChecksumsValid(),
+                checksumReport.allChecksumsValid() ? "PASSED" : "FAILED",
+                checksumReport.validAccountsCount() + "/" + checksumReport.totalAccountsChecked() + " tài khoản khớp số dư"));
+        if (!checksumReport.allChecksumsValid()) {
+            blockingReasons.add(checksumReport.corruptedAccountsCount() + " tài khoản không khớp số dư với tổng bút toán: " + String.join(", ", checksumReport.mismatchedAccountCodes()));
+        }
+
+        // Gate 3: Maker-checker pending queue
+        boolean mcPassed = !paymentGate.reachable() || paymentGate.mcPending() == 0;
+        gates.add(new EodGateStatus("MAKER_CHECKER_GATE", mcPassed,
+                mcPassed ? "PASSED" : "BLOCKED",
+                paymentGate.reachable() ? (paymentGate.mcPending() + " giao dịch/lệnh đang chờ duyệt") : "N/A (Chế độ độc lập)"));
+        if (!mcPassed) {
+            blockingReasons.addAll(paymentGate.reasons().stream().filter(r -> !r.contains("outbox")).toList());
+        }
+
+        // Gate 4: Outbox drain queue
+        boolean outboxPassed = !paymentGate.reachable() || paymentGate.outboxPending() == 0;
+        gates.add(new EodGateStatus("OUTBOX_DRAIN_GATE", outboxPassed,
+                outboxPassed ? "PASSED" : "BLOCKED",
+                paymentGate.reachable() ? (paymentGate.outboxPending() + " sự kiện outbox chưa drain") : "N/A (Chế độ độc lập)"));
+        if (!outboxPassed) {
+            blockingReasons.addAll(paymentGate.reasons().stream().filter(r -> r.contains("outbox")).toList());
+        }
+
+        boolean ready = blockingReasons.isEmpty();
+        return new EodReadinessReport(
+                ready,
+                ready ? "READY" : "BLOCKED",
+                recon.balanced(),
+                checksumReport.allChecksumsValid(),
+                paymentGate.mcPending(),
+                paymentGate.outboxPending(),
+                gates,
+                blockingReasons,
+                Instant.now()
+        );
+    }
+
+    private PaymentGateInfo queryPaymentGate() {
+        try {
+            org.springframework.web.client.RestTemplate restTemplate = new org.springframework.web.client.RestTemplate();
+            restTemplate.setRequestFactory(new org.springframework.http.client.SimpleClientHttpRequestFactory() {{
+                setConnectTimeout(1500);
+                setReadTimeout(1500);
+            }});
+            String url = System.getenv().getOrDefault("PAYMENT_SERVICE_URL", "http://payment-service:8083") + "/api/v1/payments/ops/eod-gate";
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.set("X-User-Role", "ROLE_MANAGER");
+            org.springframework.http.HttpEntity<Void> entity = new org.springframework.http.HttpEntity<>(headers);
+            var response = restTemplate.exchange(url, org.springframework.http.HttpMethod.GET, entity, Map.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
+                if (data != null) {
+                    boolean canClose = Boolean.TRUE.equals(data.get("canCloseEod"));
+                    long mcTotal = ((Number) data.getOrDefault("pendingMakerCheckerTotal", 0)).longValue();
+                    long outboxPending = ((Number) data.getOrDefault("pendingOutboxCount", 0)).longValue();
+                    long outboxFailed = ((Number) data.getOrDefault("failedOutboxCount", 0)).longValue();
+                    List<String> reasons = (List<String>) data.getOrDefault("blockingReasons", List.of());
+                    return new PaymentGateInfo(true, canClose, mcTotal, outboxPending + outboxFailed, reasons);
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Cannot connect to payment-service EOD gate: {}", e.getMessage());
+        }
+        return new PaymentGateInfo(false, true, 0, 0, List.of());
+    }
+
+    private record PaymentGateInfo(boolean reachable, boolean canClose, long mcPending, long outboxPending, List<String> reasons) {}
+
     public record EndOfDayResult(
             String eodBatchId,
             String valueDate,
@@ -363,19 +539,71 @@ public class LedgerService {
     ) {
     }
 
-    public EndOfDayResult closeEndOfDay() {
+    @Transactional
+    public EndOfDayResult closeEndOfDay(String executedBy, boolean force, String notes) {
         LedgerReconciliationResult recon = verifyLedgerBalance();
         if (!recon.balanced()) {
-            throw new IllegalStateException("Sổ cái không cân bằng (Total Debit != Total Credit). Không thể khóa sổ cuối ngày.");
+            throw new IllegalStateException("Sổ cái không cân bằng (Total Debit != Total Credit). CẤM TUYỆT ĐỐI khóa sổ khi mất cân đối kế toán.");
+        }
+
+        EodReadinessReport readiness = getEodReadiness();
+        if (!readiness.readyToClose() && !force) {
+            throw new IllegalStateException("Điều kiện khóa sổ cuối ngày chưa thỏa mãn: " + String.join("; ", readiness.blockingReasons()));
         }
 
         LedgerTurnoverSummary turnover = getTurnoverSummary();
-        java.time.LocalDate today = java.time.LocalDate.now();
-        java.time.LocalDate nextDay = today.plusDays(1);
+        LocalDate today = LocalDate.now();
+        LocalDate nextDay = today.plusDays(1);
         String batchId = "EOD-" + today + "-" + (System.currentTimeMillis() % 100000);
 
-        log.info("EOD close-day completed: batch={}, valueDate={}, debit={}, credit={}, entries={}",
-                batchId, today, turnover.totalDebit(), turnover.totalCredit(), turnover.totalEntries());
+        String status = !readiness.readyToClose() && force ? "FORCED_SUCCESS" : "SUCCESS";
+        String operator = executedBy != null && !executedBy.isBlank() ? executedBy : "LEDGER_MANAGER";
+
+        if (eodBatchRepository != null) {
+            EodBatchJpaEntity batch = EodBatchJpaEntity.builder()
+                    .batchId(batchId)
+                    .valueDate(today)
+                    .nextValueDate(nextDay)
+                    .totalDebit(turnover.totalDebit())
+                    .totalCredit(turnover.totalCredit())
+                    .delta(turnover.delta())
+                    .isBalanced(turnover.balanced())
+                    .totalEntries(turnover.totalEntries())
+                    .totalPostings(turnover.totalPostings())
+                    .checksumPassed(readiness.accountChecksumValid())
+                    .corruptedAccounts(readiness.accountChecksumValid() ? 0 : 1)
+                    .makerCheckerPending((int) readiness.makerCheckerPending())
+                    .outboxPending((int) readiness.outboxPending())
+                    .status(status)
+                    .executedBy(operator)
+                    .notes(notes)
+                    .createdAt(Instant.now())
+                    .build();
+            eodBatchRepository.save(batch);
+        }
+
+        if (auditLogRepository != null) {
+            AuditLogJpaEntity auditLog = new AuditLogJpaEntity(
+                    UUID.randomUUID(),
+                    "JOURNAL_EOD_CLOSED",
+                    "EOD_BATCH",
+                    batchId,
+                    "Khóa sổ kế toán cuối ngày " + today + " (" + status + "). Tổng Debit=" + turnover.totalDebit() + ", Credit=" + turnover.totalCredit(),
+                    operator,
+                    LocalDateTime.now(),
+                    "ledger-service",
+                    "ROLE_MANAGER",
+                    "HEAD_OFFICE",
+                    batchId,
+                    "127.0.0.1",
+                    "SERVER",
+                    notes != null ? notes : "Khóa sổ định kỳ cuối ngày làm việc"
+            );
+            auditLogRepository.save(auditLog);
+        }
+
+        log.info("EOD close-day completed: batch={}, status={}, valueDate={}, debit={}, credit={}, entries={}",
+                batchId, status, today, turnover.totalDebit(), turnover.totalCredit(), turnover.totalEntries());
 
         return new EndOfDayResult(
                 batchId,
@@ -387,10 +615,92 @@ public class LedgerService {
                 true,
                 turnover.totalEntries(),
                 turnover.totalPostings(),
-                "CLOSED_SUCCESS",
+                status,
                 Instant.now(),
-                "Khóa sổ kế toán cuối ngày T (" + today + ") thành công. Bút toán cân đối tuyệt đối 100%, chuyển ngày làm việc sang T+1 (" + nextDay + ")."
+                "Khóa sổ kế toán cuối ngày T (" + today + ") thành công (" + status + "). Chuyển ngày làm việc sang T+1 (" + nextDay + ")."
         );
+    }
+
+    public EndOfDayResult closeEndOfDay() {
+        return closeEndOfDay("LEDGER_MANAGER", false, "Khóa sổ tự động");
+    }
+
+    @Transactional(readOnly = true)
+    public List<EodBatchJpaEntity> getEodHistory(int limit) {
+        if (eodBatchRepository == null) return List.of();
+        return eodBatchRepository.findAllByOrderByCreatedAtDesc(org.springframework.data.domain.PageRequest.of(0, Math.max(1, limit)));
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportJournalEntriesCsv() {
+        List<JournalEntry> entries = persistencePort.findAllEntries();
+        Map<String, String> accountCodeMap = persistencePort.findAllAccounts().stream()
+                .collect(Collectors.toMap(LedgerAccount::getId, LedgerAccount::getCode, (a, b) -> a));
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('\ufeff'); // UTF-8 BOM
+        sb.append("Mã chứng từ,Mã giao dịch,Số tham chiếu,Thời gian ghi sổ,Trạng thái,Diễn giải,Tài khoản,Chiều hạch toán,Số tiền,Tiền tệ\n");
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+
+        for (JournalEntry entry : entries) {
+            String timeStr = entry.getPostedAt() != null ? fmt.format(entry.getPostedAt()) : "";
+            for (LedgerPosting posting : entry.getPostings()) {
+                String accCode = accountCodeMap.getOrDefault(posting.getAccountId(), posting.getAccountId());
+                sb.append('"').append(entry.getId()).append("\",");
+                sb.append('"').append(entry.getTransactionId()).append("\",");
+                sb.append('"').append(entry.getReferenceNumber() != null ? entry.getReferenceNumber() : "").append("\",");
+                sb.append('"').append(timeStr).append("\",");
+                sb.append('"').append(entry.getStatus()).append("\",");
+                sb.append('"').append(entry.getDescription() != null ? entry.getDescription().replace("\"", "\"\"") : "").append("\",");
+                sb.append('"').append(accCode).append("\",");
+                sb.append('"').append(posting.getSide()).append("\",");
+                sb.append(posting.getAmount()).append(",");
+                sb.append('"').append(posting.getCurrency()).append("\"\n");
+            }
+        }
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportAccountsCsv() {
+        List<LedgerAccount> accounts = persistencePort.findAllAccounts();
+        StringBuilder sb = new StringBuilder();
+        sb.append('\ufeff');
+        sb.append("Mã tài khoản (ID),Số hiệu tài khoản,Tên tài khoản,Phân loại,Số dư,Tiền tệ\n");
+
+        for (LedgerAccount acc : accounts) {
+            sb.append('"').append(acc.getId()).append("\",");
+            sb.append('"').append(acc.getCode()).append("\",");
+            sb.append('"').append(acc.getName() != null ? acc.getName().replace("\"", "\"\"") : "").append("\",");
+            sb.append('"').append(acc.getType()).append("\",");
+            sb.append(acc.getBalance()).append(",");
+            sb.append('"').append(acc.getCurrency()).append("\"\n");
+        }
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] exportEodBatchesCsv() {
+        List<EodBatchJpaEntity> history = getEodHistory(100);
+        StringBuilder sb = new StringBuilder();
+        sb.append('\ufeff');
+        sb.append("Mã lô EOD,Ngày giá trị,Thời điểm đóng sổ,Người thực hiện,Trạng thái,Tổng Nợ (Debit),Tổng Có (Credit),Ghi chú\n");
+
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+
+        for (EodBatchJpaEntity batch : history) {
+            String closedAtStr = batch.getCreatedAt() != null ? fmt.format(batch.getCreatedAt()) : "";
+            sb.append('"').append(batch.getBatchId() != null ? batch.getBatchId() : batch.getId()).append("\",");
+            sb.append('"').append(batch.getValueDate()).append("\",");
+            sb.append('"').append(closedAtStr).append("\",");
+            sb.append('"').append(batch.getExecutedBy() != null ? batch.getExecutedBy() : "").append("\",");
+            sb.append('"').append(batch.getStatus()).append("\",");
+            sb.append(batch.getTotalDebit() != null ? batch.getTotalDebit() : BigDecimal.ZERO).append(",");
+            sb.append(batch.getTotalCredit() != null ? batch.getTotalCredit() : BigDecimal.ZERO).append(",");
+            sb.append('"').append(batch.getNotes() != null ? batch.getNotes().replace("\"", "\"\"") : "").append("\"\n");
+        }
+        return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     public record LedgerTurnoverSummary(

@@ -77,9 +77,9 @@ class BackendCapabilities {
   /// BE đã cung cấp feedback endpoints (FeedbackController).
   static const bool feedback = bool.fromEnvironment('BE_CAP_FEEDBACK', defaultValue: false);
 
-  /// BE chưa có producer tạo thông báo Khuyến mãi / Hệ thống (chỉ có BALANCE) — BE-REQ-PROMO.
+  /// BE đã cung cấp thông báo Khuyến mãi / Hệ thống (NotificationController).
   static const bool promoAndSystemNotifications =
-      bool.fromEnvironment('BE_CAP_PROMO_SYSTEM', defaultValue: false);
+      bool.fromEnvironment('BE_CAP_PROMO_SYSTEM', defaultValue: true);
 
   /// BE đã cung cấp money-request detail/cancel endpoints (MoneyRequestController).
   static const bool moneyRequestDetail = bool.fromEnvironment('BE_CAP_MONEY_REQUEST_DETAIL', defaultValue: false);

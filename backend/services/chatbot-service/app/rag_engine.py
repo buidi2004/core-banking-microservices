@@ -26,6 +26,11 @@ from app.jev_system_one import (
     JevDecision
 )
 from app.schemas import MessageItem, ChatResponse, IngestResponse, ActionItem
+from app.vietnamese_nlp import (
+    normalize_vietnamese_query, 
+    enrich_smart_quick_replies, 
+    strip_vietnamese_accents
+)
 
 logger = logging.getLogger("rag_engine")
 
@@ -53,6 +58,11 @@ DOCUMENT_TITLE_MAP = {
     "21_kien_truc_he_thong_microservices_va_backend.md": "Kiến trúc hệ thống & Backend",
     "22_cam_nang_chuyen_sau_tinh_nang_mobile_va_tien_ich_so.md": "Cẩm nang tính năng Mobile App",
     "23_tong_hop_toan_bo_tinh_nang_mobile_va_backend_huong_dan_khach_hang.md": "Cẩm nang tính năng Mobile & Backend",
+    "24_kho_voucher_uu_dai_doi_tac_va_chuong_trinh_khuyen_mai.md": "Kho Voucher & Ưu Đãi Đối Tác",
+    "25_ty_gia_ngoai_te_va_kieu_hoi_quoc_te.md": "Tỷ giá & Kiều hối quốc tế",
+    "26_mang_luoi_chi_nhanh_va_diem_giao_dich.md": "Mạng lưới Chi nhánh & ATM",
+    "27_huong_dan_biet_danh_tai_khoan_alias_va_vietqr_pro.md": "Biệt danh Alias & VietQR Pro",
+    "28_giai_dap_tinh_huong_nghiep_vu_kho_va_tu_van_chuyen_sau.md": "Tư vấn nghiệp vụ & Tình huống chuyên sâu",
     "bieu_phi_dich_vu.md": "Biểu phí dịch vụ",
     "huong_dan_the_visa.md": "Hướng dẫn thẻ Visa",
     "lai_suat_tiet_kiem.md": "Biểu lãi suất tiết kiệm",
@@ -110,10 +120,19 @@ class AdvancedRAGEngine:
         self._init_llm_clients()
 
     def _get_db_connection(self):
-        """Tái sử dụng kết nối autocommit persistent, giảm độ trễ kết nối 17.8x (< 1ms/query)"""
-        if self._conn is None or self._conn.closed or (
-            hasattr(self._conn, "info") and self._conn.info.transaction_status == psycopg.pq.TransactionStatus.UNKNOWN
-        ):
+        """Tái sử dụng kết nối autocommit persistent với cơ chế tự phục hồi kết nối (Self-Healing Socket)"""
+        need_reconnect = False
+        if self._conn is None or self._conn.closed:
+            need_reconnect = True
+        else:
+            try:
+                # Kiểm tra socket còn sống không trước khi giao cho transaction mới
+                with self._conn.cursor() as cur:
+                    cur.execute("SELECT 1;")
+            except Exception:
+                need_reconnect = True
+
+        if need_reconnect:
             try:
                 if self._conn and not self._conn.closed:
                     self._conn.close()
@@ -430,9 +449,23 @@ class AdvancedRAGEngine:
         if has_link_1 != has_link_2:
             return False
 
+        # 7. Tránh nhầm lẫn giữa các mã voucher, khuyến mãi đối tác cụ thể
+        voucher_codes = [
+            "xinchao50", "freego", "friend50k", "welcome100k", "senbank9", "hlcoffee50",
+            "shopee100", "begrab40", "phuclong30", "cgvpopcorn", "pizza35", "vinfast0",
+            "homeloan52", "tech0percent", "senshopee100", "vivuhe300", "phuclong25",
+            "evo390k", "goldengate4", "autobill50", "platinum2026", "hotel15", "xangdau5"
+        ]
+        code_1 = next((c for c in voucher_codes if c in l1), None)
+        code_2 = next((c for c in voucher_codes if c in l2), None)
+        if code_1 and code_2 and code_1 != code_2:
+            return False
+        if (code_1 is not None) != (code_2 is not None):
+            return False
+
         return True
 
-    def _check_semantic_cache(self, user_question: str, query_vec: List[float], max_distance: float = 0.020) -> Optional[Dict[str, Any]]:
+    def _check_semantic_cache(self, user_question: str, query_vec: List[float], max_distance: float = 0.040) -> Optional[Dict[str, Any]]:
         """Kiểm tra Semantic Cache với khoảng cách Cosine <= 0.020 (độ tương đồng >= 0.980) và bộ lọc ngữ nghĩa tương thích"""
         try:
             conn = self._get_db_connection()
@@ -529,9 +562,6 @@ class AdvancedRAGEngine:
 
             combined_context = "\n\n".join(context_texts) if context_texts else "Không tìm thấy tài liệu chính thống liên quan."
             return combined_context, sources
-
-            combined_context = "\n\n".join(context_texts) if context_texts else "Không tìm thấy tài liệu chính thống liên quan."
-            return combined_context, sources
         except Exception as e:
             logger.error("Error executing Hybrid Search SQL: %s", e)
             return "Không tìm thấy tài liệu chính thống liên quan.", []
@@ -551,12 +581,35 @@ class AdvancedRAGEngine:
             text = "\n".join(lines).strip()
 
         # 2. Thử parse với strict=False (cho phép ký tự điều khiển/xuống dòng thực tế)
+        def _normalize_dict(d: Dict[str, Any]) -> Dict[str, Any]:
+            qr = d.get("quick_replies")
+            if qr and isinstance(qr, list):
+                clean_qr = []
+                for item in qr:
+                    if isinstance(item, str) and item.strip():
+                        clean_qr.append(item.strip())
+                    elif isinstance(item, dict):
+                        lbl = item.get("label") or item.get("text") or item.get("title") or ""
+                        if lbl:
+                            clean_qr.append(str(lbl).strip())
+                        if not d.get("suggested_action") and item.get("route"):
+                            d["suggested_action"] = {
+                                "label": str(lbl or "Xem chi tiết").strip(),
+                                "route": item["route"]
+                            }
+                    elif item is not None:
+                        clean_qr.append(str(item).strip())
+                d["quick_replies"] = clean_qr[:4]
+            elif qr is not None and not isinstance(qr, list):
+                d["quick_replies"] = [str(qr).strip()]
+            return d
+
         try:
             parsed = json.loads(text, strict=False)
             if isinstance(parsed, list) and len(parsed) > 0 and isinstance(parsed[0], dict):
-                return parsed[0]
+                return _normalize_dict(parsed[0])
             elif isinstance(parsed, dict):
-                return parsed
+                return _normalize_dict(parsed)
         except Exception:
             pass
 
@@ -578,7 +631,9 @@ class AdvancedRAGEngine:
             pass
 
         # 4. Nếu JSON hỏng nhưng LLM đã sinh văn bản tự nhiên hữu ích, bảo toàn câu trả lời
-        cleaned_text = re.sub(r'[{}\[\]"]', '', text).strip()
+        cleaned_text = text.strip()
+        if cleaned_text.startswith("{") and cleaned_text.endswith("}"):
+            cleaned_text = cleaned_text[1:-1].strip()
         if len(cleaned_text) > 20:
             return {
                 "answer": cleaned_text,
@@ -1066,7 +1121,7 @@ class AdvancedRAGEngine:
         )
         return self._extractive_fallback_answer(fallback_context, user_question), True
 
-    def query(self, user_question: str, history: Optional[List[MessageItem]] = None) -> Dict[str, Any]:
+    def query(self, user_question: str, history: Optional[List[MessageItem]] = None, user_id: Optional[str] = None) -> Dict[str, Any]:
         """
         Xử lý câu hỏi với Semantic Cache, Hybrid Search RRF và Grounded LLM
         (API chuẩn tương thích hoàn toàn với đoạn code mẫu)
@@ -1075,7 +1130,7 @@ class AdvancedRAGEngine:
         model = self._get_embed_model()
 
         # Nếu là câu hỏi đa lượt có đại từ thay thế ("nó", "thẻ này", "gói này"), bổ sung ngữ cảnh lượt trước
-        search_query = user_question
+        search_query = normalize_vietnamese_query(user_question)
         if history and any(p in user_question.lower() for p in ["nó", "đó", "thẻ này", "gói này", "kỳ hạn này", "của nó", "thế còn"]):
             last_user_q = next((h.content for h in reversed(history) if h.role == "user"), "")
             if last_user_q:
@@ -1096,20 +1151,53 @@ class AdvancedRAGEngine:
         # 3. Hybrid Search lấy Top Parent Documents (top_k=4 giảm nhiễu)
         combined_context, sources = self._hybrid_search_rrf(search_query, query_vec, top_k=4)
 
+        # 3b. Tự động tích hợp dữ liệu Live Promotions & Vouchers từ notification-service khi khách hỏi về ưu đãi/mã giảm giá
+        q_lower_check = search_query.lower()
+        is_promo_query = any(k in q_lower_check for k in [
+            "voucher", "khuyen mai", "khuyến mại", "khuyến mãi", "uu dai", "ưu đãi", "giam gia", "giảm giá",
+            "ma giam gia", "mã giảm giá", "ma qua tang", "mã quà tặng", "xinchao50", "freego", "friend50k",
+            "welcome100k", "senbank9", "senpoint", "sen point", "tich diem", "tích điểm", "hoan tien", "hoàn tiền"
+        ])
+        if is_promo_query:
+            try:
+                live_promos = self._fetch_active_promotions()
+                if live_promos:
+                    promo_lines = ["DANH SÁCH MÃ VOUCHER LIVE ĐANG CÓ HIỆU LỰC TRÊN HỆ THỐNG SEN HỒNG:"]
+                    for p in live_promos:
+                        c = p.get("code")
+                        t = p.get("title")
+                        val = p.get("discountValue", 0)
+                        min_ord = p.get("minOrderAmount", 0)
+                        val_str = f"{val:,.0f}đ".replace(",", ".")
+                        min_str = f"{min_ord:,.0f}đ".replace(",", ".") if min_ord else "0đ"
+                        promo_lines.append(f"- Mã `{c}`: {t} (Giá trị giảm: {val_str}, Đơn tối thiểu: {min_str}, Trạng thái: Đang hoạt động)")
+                    live_promo_block = "\n".join(promo_lines)
+                    combined_context = f"{live_promo_block}\n\n{combined_context}"
+                    if "Kho Voucher & Ưu Đãi Đối Tác" not in sources:
+                        sources.append("Kho Voucher & Ưu Đãi Đối Tác")
+            except Exception as e:
+                logger.warning("Could not enrich live promotions: %s", e)
+
         # 4. Prompt hệ thống ngân hàng chuyên nghiệp & bảo mật (Thiết kế chống lan man - Đúng trọng tâm)
         system_prompt = f"""
 Bạn là Trợ lý Tài chính AI Thông minh 24/7 của Ngân hàng Số Sen Hồng (Sen Hồng Core Banking).
 VAI TRÒ & PHONG CÁCH:
 - Xưng hô "em" và gọi khách hàng là "quý khách" lịch sự, chu đáo, ấm áp, tận tâm chuẩn dịch vụ ngân hàng số cao cấp.
-- Trả lời ĐÚNG TRỌNG TÂM, mạch lạc, có cấu trúc gạch đầu dòng các bước thao tác (Bước 1, Bước 2...) khi hướng dẫn khách hàng sử dụng tính năng.
+- Trả lời ĐÚNG TRỌNG TÂM, mạch lạc, có cấu trúc rõ ràng. Luôn mở đầu nhã nhặn ("Dạ Sen Hồng xin thông tin đến Quý khách:...") và kết thúc bằng câu hỗ trợ ấm áp ("Nếu Quý khách cần hỗ trợ thêm thông tin nào, cứ nhắn em nhé ạ!").
+- Luôn in đậm các số liệu quan trọng bằng cú pháp markdown `**...**` (ví dụ: `**miễn phí 100%**`, `**6.3%/năm**`, `**50.000đ**`, `**10 triệu đồng**`, `**1.2%/tháng**`, `**1 đến 3 giây**`) để ứng dụng di động tự động làm nổi bật sắc nét cho khách hàng.
+- Khi hướng dẫn thao tác, đánh số các bước mạch lạc: `1. **Bước 1:** ...`, `2. **Bước 2:** ...` để khách hàng dễ làm theo.
 
 NGHIỆP VỤ & NGUYÊN TẮC BẢO MẬT (CHỐNG LAN MAN - ĐÚNG TRỌNG TÂM):
 1. TRẢ LỜI ĐÚNG TRỌNG TÂM, TUYỆT ĐỐI KHÔNG LAN MAN:
-   - Khách hỏi tính năng/dịch vụ nào thì CHỈ trả lời duy nhất tính năng/dịch vụ đó.
-   - Tuyệt đối KHÔNG giải thích hoặc liệt kê lan man sang các dịch vụ khác cùng nằm trong tài liệu (Ví dụ: khách hỏi về "Vé máy bay" thì KHÔNG được nói về "Học phí", "Bảo hiểm" hay "Tiền điện"; khách hỏi về "Lãi suất 6 tháng" thì CHỈ trả lời lãi suất kỳ hạn 6 tháng, không nói sang tiền gửi tối thiểu hay điều kiện rút trước hạn nếu khách không hỏi; khách hỏi "Rút tiền ATM không thẻ" thì KHÔNG giải thích "Rút tiền về tài khoản ngân hàng").
-2. SÚC TÍCH, DƯỚI 150-200 TỪ (3-5 GẠCH ĐẦU DÒNG):
-   - Trình bày ngắn gọn, rõ ràng theo từng bước thao tác, tối ưu trải nghiệm đọc trên màn hình điện thoại di động (Mobile Chat UI).
-   - Không sao chép nguyên văn khối văn bản dài hoặc các phần không liên quan từ tài liệu.
+   - Khách hỏi tính năng/dịch vụ nào thì tập trung giải đáp chính xác tính năng/dịch vụ đó.
+   - Tuyệt đối KHÔNG giải thích hoặc liệt kê lan man sang các dịch vụ khác không liên quan cùng nằm trong tài liệu (Ví dụ: khách hỏi về "Vé máy bay" thì KHÔNG được nói về "Học phí" hay "Tiền điện").
+2. XỬ LÝ CÂU HỎI PHỨC TẠP / ĐA Ý / TƯ VẤN TÀI CHÍNH CHUYÊN SÂU:
+   - Nếu câu hỏi gồm nhiều vế hoặc điều kiện (ví dụ: lãi suất VÀ rút trước hạn; hạn mức chuyển tiền VÀ điều kiện sinh trắc học; phí thanh toán quốc tế VÀ rút tiền ATM), phải giải đáp trọn vẹn tất cả các vế, tách bạch bằng gạch đầu dòng rõ ràng.
+   - Khi tư vấn gửi tiết kiệm (ví dụ: có 50tr, 100tr nên gửi 12 tháng hay chia nhỏ): Phân tích rõ nếu gửi 12 tháng thì lãi suất cao nhất **6.3%/năm**; nếu chia nhỏ thành nhiều sổ 6 tháng (**5.5%/năm**) thì linh hoạt dòng tiền tối đa (chiến lược tiết kiệm bậc thang), khi cần tiền gấp chỉ rút 1 sổ nhỏ mà không bị mất lãi của các sổ còn lại. Rút trước hạn được nhận 100% gốc, lãi tính không kỳ hạn (0.2%/năm).
+   - Khi tư vấn vay Quick Loan: Khẳng định tính lãi theo **dư nợ giảm dần** chỉ từ **1.2%/tháng** (**14.4%/năm**), tiền lãi giảm dần đều qua các tháng, miễn phí trả nợ trước hạn 100%. Nêu rõ tiền gốc mỗi tháng và lãi tháng đầu.
+   - Khi khách gặp sự cố giao dịch (bị trừ tiền nhưng chưa nhận, giao dịch treo): Luôn trấn an trước tiên: **"Tiền của Quý khách luôn được bảo toàn 100% trong hệ thống sổ cái kép Ledger của ngân hàng và không bao giờ bị thất thoát."** Giải thích do nghẽn mạch liên ngân hàng Napas, thời gian đối soát tự động từ 15-30 phút hoặc 24-72h làm việc, hướng dẫn tạo Ticket tra soát tại `/support/help-center`.
+   - Khi khách bị khóa mã PIN sau 3 lần nhập sai hoặc khóa mật khẩu sau 5 lần: Giải thích cơ chế bảo vệ an toàn, hướng dẫn tự mở khóa và đặt mã PIN mới ngay trên App bằng eKYC khuôn mặt (Face ID) + OTP mà **KHÔNG CẦN RA QUẦY**, điều hướng tới `/auth/forgot-pin`.
+   - Về thẻ ảo Visa Platinum Virtual: Phát hành ngay 30s, miễn phí phát hành và thường niên 100%; bảo mật CVV động; thanh toán online toàn cầu; KHÔNG rút trực tiếp tại khe cắm ATM truyền thống (rút tiền mặt tại ATM bằng tính năng Rút tiền QR trên app); phí chuyển đổi ngoại tệ chỉ **1.5%**.
 3. NÊU RÕ CON SỐ & ĐIỀU KIỆN CHÍNH XÁC:
    - Miễn phí 100%, hạn mức, lãi suất cụ thể theo tài liệu chính thức.
 4. TUYỆT ĐỐI BẢO MẬT:
@@ -1155,7 +1243,7 @@ NGHIỆP VỤ & NGUYÊN TẮC BẢO MẬT (CHỐNG LAN MAN - ĐÚNG TRỌNG TÂM
 
 5. ĐỊNH DẠNG ĐẦU RA: Trả về JSON thuần túy (không bọc mã markdown codeblock) gồm đúng 3 trường:
    - "answer": Nội dung trả lời chi tiết, súc tích, lịch sự bằng tiếng Việt.
-   - "quick_replies": Mảng gồm 2-3 câu hỏi gợi ý liên quan mật thiết.
+   - "quick_replies": Mảng gồm 2-3 câu hỏi gợi ý tự nhiên người dùng rất có thể muốn hỏi tiếp, viết bằng tiếng Việt chuẩn ngữ pháp, có dấu đầy đủ, súc tích (10-45 ký tự), liên quan mật thiết đến nội dung vừa giải đáp (Ví dụ: ["Lãi suất kỳ hạn 12 tháng", "Rút trước hạn có mất lãi không?", "Cách mở sổ online"]). Tuyệt đối không sinh câu hỏi cộc lốc hay lặp lại câu hỏi gốc.
    - "suggested_action": Object điều hướng như mô tả ở trên hoặc null nếu không cần thiết.
 
 NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
@@ -1212,6 +1300,10 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                 result_json["suggested_action"] = {"label": "Giới thiệu bạn bè", "route": "/referral"}
             elif any(k in q_lower for k in ["voucher", "khuyen mai", "khuyến mại", "uu dai", "ưu đãi", "giam gia", "giảm giá", "cashback"]):
                 result_json["suggested_action"] = {"label": "Kho Voucher & Ưu đãi", "route": "/promotions"}
+            elif any(k in q_lower for k in ["nap the", "nạp thẻ", "nap the dien thoai", "nạp thẻ điện thoại", "the cao", "thẻ cào", "viettel", "vinaphone", "mobifone"]):
+                result_json["suggested_action"] = {"label": "Nạp điện thoại", "route": "/bills/phone-recharge"}
+            elif any(k in q_lower for k in ["sinh trac hoc", "sinh trắc học", "ekyc", "dinh danh", "định danh"]):
+                result_json["suggested_action"] = {"label": "Xác thực eKYC", "route": "/profile/ekyc"}
             is_pin_rec = any(k in q_lower for k in [
                 "quên", "quen", "lấy lại", "lay lai", "cấp lại", "cap lai", "cài lại", "cai lai",
                 "khôi phục", "khoi phuc", "reset", "mất mã pin", "mat ma pin"
@@ -1277,6 +1369,10 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                 result_json["suggested_action"] = {"label": "Quét mã VietQR", "route": "/scan-qr"}
             elif any(k in q_lower for k in ["vietlott", "xo so", "xổ số", "keno", "mega"]):
                 result_json["suggested_action"] = {"label": "Vé số Vietlott", "route": "/bills/lottery"}
+            elif any(k in q_lower for k in ["gioi thieu ban be", "giới thiệu bạn bè", "link gioi thieu", "link giới thiệu", "ma gioi thieu", "mã giới thiệu", "nhan 50k", "nhận 50k", "friend50k", "referral"]):
+                result_json["suggested_action"] = {"label": "Giới thiệu bạn bè", "route": "/referral"}
+            elif any(k in q_lower for k in ["voucher", "khuyen mai", "khuyến mại", "khuyến mãi", "uu dai", "ưu đãi", "giam gia", "giảm giá", "senpoint", "sen point", "tich diem", "tích điểm", "doi diem", "đổi điểm", "doi qua", "đổi quà", "xinchao50", "freego", "welcome100k"]):
+                result_json["suggested_action"] = {"label": "Kho Voucher & Ưu đãi", "route": "/promotions"}
         latency = (time.time() - start_time) * 1000
         result_json["latency_ms"] = round(latency, 2)
 
@@ -1287,6 +1383,32 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         return result_json
 
     # ==================== INTEGRATION CHO TOÀN BỘ ECOSYSTEM ====================
+    def _fetch_active_promotions(self) -> List[Dict[str, Any]]:
+        """Lấy danh sách mã voucher khuyến mãi đang có hiệu lực trực tiếp từ notification-service"""
+        try:
+            url = f"{settings.NOTIFICATION_SERVICE_URL}/api/v1/promotions"
+            resp = requests.get(url, timeout=2.5)
+            if resp.status_code == 200:
+                body = resp.json()
+                return body.get("data", [])
+        except Exception as e:
+            logger.warning("Error calling notification-service promotions: %s", e)
+        return []
+
+    def _fetch_user_vouchers(self, user_id: str) -> List[Dict[str, Any]]:
+        """Lấy danh sách voucher cá nhân của người dùng từ notification-service"""
+        if not user_id:
+            return []
+        try:
+            url = f"{settings.NOTIFICATION_SERVICE_URL}/api/v1/promotions/my-vouchers"
+            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=2.5)
+            if resp.status_code == 200:
+                body = resp.json()
+                return body.get("data", [])
+        except Exception as e:
+            logger.warning("Error calling notification-service my-vouchers: %s", e)
+        return []
+
     def _fetch_user_wallet_balance(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Gọi nội bộ sang wallet-service để lấy số dư (Zero-LLM leak)"""
         if not user_id:
@@ -1313,6 +1435,75 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                 return body.get("data", {}).get("content", [])
         except Exception as e:
             logger.warning("Error fetching transactions from payment-service: %s", e)
+        return []
+
+    def _fetch_user_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Lấy thông tin hồ sơ và định danh eKYC từ identity-service (Zero-LLM leak)"""
+        if not user_id:
+            return None
+        try:
+            url = f"{settings.IDENTITY_SERVICE_URL}/api/v1/users/me"
+            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            if resp.status_code == 200:
+                return resp.json().get("data")
+        except Exception as e:
+            logger.warning("Error fetching user profile from identity-service: %s", e)
+        return None
+
+    def _fetch_user_cards(self, user_id: str) -> List[Dict[str, Any]]:
+        """Lấy danh sách thẻ thanh toán (Visa/E-Card) từ payment-service (Zero-LLM leak)"""
+        if not user_id:
+            return []
+        try:
+            url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/cards"
+            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            if resp.status_code == 200:
+                data = resp.json().get("data")
+                return data if isinstance(data, list) else []
+        except Exception as e:
+            logger.warning("Error fetching cards from payment-service: %s", e)
+        return []
+
+    def _fetch_user_bank_accounts(self, user_id: str) -> List[Dict[str, Any]]:
+        """Lấy danh sách tài khoản ngân hàng liên kết từ payment-service (Zero-LLM leak)"""
+        if not user_id:
+            return []
+        try:
+            url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/bank-accounts"
+            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            if resp.status_code == 200:
+                data = resp.json().get("data")
+                return data if isinstance(data, list) else []
+        except Exception as e:
+            logger.warning("Error fetching linked bank accounts from payment-service: %s", e)
+        return []
+
+    def _fetch_user_savings(self, user_id: str) -> List[Dict[str, Any]]:
+        """Lấy danh sách sổ tiết kiệm đang gửi từ payment-service (Zero-LLM leak)"""
+        if not user_id:
+            return []
+        try:
+            url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/savings/accounts"
+            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            if resp.status_code == 200:
+                data = resp.json().get("data")
+                return data if isinstance(data, list) else []
+        except Exception as e:
+            logger.warning("Error fetching savings accounts from payment-service: %s", e)
+        return []
+
+    def _fetch_user_loans(self, user_id: str) -> List[Dict[str, Any]]:
+        """Lấy danh sách hợp đồng vay tiêu dùng từ payment-service (Zero-LLM leak)"""
+        if not user_id:
+            return []
+        try:
+            url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/loans"
+            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            if resp.status_code == 200:
+                data = resp.json().get("data")
+                return data if isinstance(data, list) else []
+        except Exception as e:
+            logger.warning("Error fetching loans from payment-service: %s", e)
         return []
 
     def _resolve_counterparty_info(self, wallet_id: Optional[str]) -> Optional[Dict[str, str]]:
@@ -1435,6 +1626,235 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         lines.append("Quý khách có thể bấm nút **Xem tất cả giao dịch** bên dưới để tra cứu đầy đủ sao kê chi tiết hoặc tải biên lai giao dịch PDF ạ!")
         return "\n".join(lines)
 
+    def _build_profile_response(self, profile: Dict[str, Any], wallet: Optional[Dict[str, Any]]) -> str:
+        """Định dạng phản hồi hồ sơ cá nhân và eKYC chuẩn văn phong ngân hàng bảo mật cao"""
+        full_name = profile.get("fullName", "Quý khách")
+        phone = profile.get("phoneNumber", "Chưa cập nhật")
+        email = profile.get("email", "Chưa liên kết")
+        alias = profile.get("accountAlias") or "Chưa tạo (Quý khách có thể tạo Biệt danh chuyển tiền miễn phí)"
+        
+        kyc_tier = profile.get("kycTier", "TIER_1")
+        if kyc_tier in ["VERIFIED", "TIER_2"]:
+            kyc_desc = "Đã định danh eKYC Cấp 2 (Xác thực Sinh trắc học & NFC CCCD)"
+        elif kyc_tier == "TIER_1":
+            kyc_desc = "Đã xác thực Cấp 1 (Chờ bổ sung xác thực khuôn mặt sinh trắc học)"
+        else:
+            kyc_desc = "Chưa định danh đầy đủ"
+
+        daily_limit = wallet.get("dailyLimit", 50000000) if wallet else 50000000
+        formatted_limit = f"{daily_limit:,.0f} VNĐ/ngày".replace(",", ".")
+        status_text = "Đang hoạt động bình thường" if profile.get("status") == "ACTIVE" else "Tạm khóa"
+
+        return (
+            f"Dạ em xin gửi Quý khách thông tin hồ sơ tài khoản tại **Sen Hồng Bank**:\n\n"
+            f"- 👤 **Chủ tài khoản:** **{full_name}**\n"
+            f"- 📱 **Số điện thoại:** `{phone}`\n"
+            f"- 📧 **Email:** `{email}`\n"
+            f"- 🏷️ **Biệt danh tài khoản (Alias):** **{alias}**\n"
+            f"- 🛡️ **Cấp độ eKYC:** **{kyc_desc}**\n"
+            f"- ⚡ **Hạn mức giao dịch ngày:** **{formatted_limit}**\n"
+            f"- 🟢 **Trạng thái tài khoản:** **{status_text}**\n\n"
+            f"Quý khách có thể cập nhật thông tin CCCD gắn chip, đổi mã PIN hoặc nâng hạn mức chữ ký số tại mục **Hồ sơ cá nhân** ạ!"
+        )
+
+    def _build_cards_response(self, cards: List[Dict[str, Any]], bank_accounts: List[Dict[str, Any]]) -> str:
+        """Định dạng phản hồi danh sách thẻ Visa và Ngân hàng liên kết"""
+        lines = ["Dạ em xin gửi Quý khách danh sách thẻ thanh toán và ngân hàng liên kết tại **Sen Hồng Bank**:\n"]
+        if cards:
+            lines.append("💳 **Thẻ thanh toán (Visa / E-Card):**")
+            # Hiển thị tối đa 3 thẻ tiêu biểu nếu có nhiều thẻ
+            for idx, c in enumerate(cards[:3], 1):
+                title = c.get("title", "Thẻ Sen Hồng Visa")
+                tier = c.get("tier", "Thẻ thanh toán")
+                masked = c.get("maskedNumber", "•••• •••• •••• ••••")
+                status = "🟢 Đang hoạt động" if c.get("status") == "ACTIVE" else "🔴 Đang khóa"
+                online = "Bật" if c.get("onlinePayment", True) else "Tắt"
+                avail = c.get("available", 0)
+                formatted_avail = f"{avail:,.0f} VNĐ".replace(",", ".")
+                lines.append(f"{idx}. **{title}** (`{masked}`)")
+                lines.append(f"   - Phân hạng: *{tier}*")
+                lines.append(f"   - Trạng thái: **{status}**")
+                lines.append(f"   - Hạn mức khả dụng: **{formatted_avail}**")
+                lines.append(f"   - Thanh toán trực tuyến: **{online}**\n")
+            if len(cards) > 3:
+                lines.append(f"*(Quý khách đang sở hữu tổng cộng **{len(cards)}** thẻ thanh toán)*\n")
+        else:
+            lines.append("💳 **Thẻ thanh toán:** Quý khách hiện chưa phát hành thẻ Visa. Quý khách có thể mở Thẻ ảo Visa E-Card miễn phí 100% trong 30 giây để mua sắm quốc tế ạ!\n")
+
+        if bank_accounts:
+            lines.append("🏦 **Tài khoản ngân hàng liên kết:**")
+            for idx, b in enumerate(bank_accounts, 1):
+                b_name = b.get("bankName", "Ngân hàng liên kết")
+                acc_num = b.get("accountNumber", "••••")
+                acc_name = b.get("accountName", "")
+                is_def = " (Mặc định)" if b.get("isDefault") else ""
+                lines.append(f"- **{b_name}** - Số TK: `{acc_num}` - Chủ TK: **{acc_name}**{is_def}")
+            lines.append("")
+        else:
+            lines.append("🏦 **Tài khoản ngân hàng liên kết:** Quý khách chưa liên kết tài khoản ngân hàng nào. Quý khách có thể liên kết để nạp/rút tiền 24/7 hoàn toàn miễn phí ạ!\n")
+
+        lines.append("Quý khách có thể bấm nút **Quản lý thẻ** bên dưới để kích hoạt, khóa thẻ hoặc đổi mã PIN thẻ tức thì ạ!")
+        return "\n".join(lines)
+
+    def _build_savings_response(self, savings: List[Dict[str, Any]]) -> str:
+        """Định dạng phản hồi danh sách sổ tiết kiệm đang gửi sinh lời"""
+        if not savings:
+            return (
+                "Dạ Quý khách hiện chưa có sổ tiết kiệm nào đang mở tại Sen Hồng Bank ạ.\n\n"
+                "Hiện ngân hàng đang áp dụng chương trình **Tiết kiệm Phát Lộc Online** với lãi suất hấp dẫn lên đến **6.8%/năm**, "
+                "gửi tích lũy linh hoạt từ 1.000.000 VNĐ, kỳ hạn đa dạng từ 1 đến 36 tháng.\n\n"
+                "Quý khách có muốn em hỗ trợ mở sổ tiết kiệm online ngay bây giờ không ạ?"
+            )
+
+        total_principal = 0.0
+        total_expected_interest = 0.0
+        lines = ["Dạ em xin gửi Quý khách danh sách các sổ tiết kiệm đang sinh lời tại **Sen Hồng Bank**:\n"]
+
+        for s in savings:
+            principal = float(s.get("principal", 0))
+            exp_interest = float(s.get("expectedInterest", 0))
+            total_principal += principal
+            total_expected_interest += exp_interest
+
+        for idx, s in enumerate(savings[:3], 1):
+            acc_num = s.get("accountNumber", f"TK-{idx}")
+            prod = s.get("productType", "TIET_KIEM_PHAT_LOC")
+            prod_name = "Tiết kiệm Phát Lộc" if "PHAT_LOC" in str(prod) else "Tiết kiệm Tích lũy"
+            principal = float(s.get("principal", 0))
+            rate = float(s.get("interestRate", 0))
+            term = s.get("termMonths", 0)
+            exp_interest = float(s.get("expectedInterest", 0))
+            maturity = s.get("maturityDate", "Đang cập nhật")
+            status = "Đang sinh lời" if s.get("status") == "ACTIVE" else s.get("status", "Đang hoạt động")
+
+            fmt_principal = f"{principal:,.0f} VNĐ".replace(",", ".")
+            fmt_interest = f"{exp_interest:,.0f} VNĐ".replace(",", ".")
+
+            lines.append(f"**{idx}. Sổ {prod_name}** — Số TK: `{acc_num}`")
+            lines.append(f"   - 💰 Tiền gốc gửi: **{fmt_principal}**")
+            lines.append(f"   - 📈 Lãi suất: **{rate}%/năm** (Kỳ hạn {term} tháng)")
+            lines.append(f"   - 🎁 Tiền lãi dự kiến nhận: **{fmt_interest}**")
+            lines.append(f"   - 📅 Ngày đáo hạn: **{maturity}**")
+            lines.append(f"   - 🟢 Trạng thái: **{status}**\n")
+
+        if len(savings) > 3:
+            lines.append(f"*(Hiển thị 3 sổ tiêu biểu gần nhất trong tổng số **{len(savings)}** sổ tiết kiệm)*\n")
+
+        fmt_total_principal = f"{total_principal:,.0f} VNĐ".replace(",", ".")
+        fmt_total_interest = f"{total_expected_interest:,.0f} VNĐ".replace(",", ".")
+        lines.append(f"📊 **Tổng kết tài sản tiết kiệm:**")
+        lines.append(f"- Tổng số sổ tiết kiệm: **{len(savings)} sổ**")
+        lines.append(f"- Tổng tiền gửi gốc: **{fmt_total_principal}**")
+        lines.append(f"- Tổng tiền lãi dự kiến: **{fmt_total_interest}**\n")
+        lines.append("Quý khách có thể bấm nút **Sổ tiết kiệm** bên dưới để xem chi tiết từng hợp đồng hoặc gửi thêm tiết kiệm ạ!")
+        return "\n".join(lines)
+
+    def _build_loans_response(self, loans: List[Dict[str, Any]]) -> str:
+        """Định dạng phản hồi hợp đồng vay và dư nợ cá nhân"""
+        # Lọc các khoản vay đang có hiệu lực / giải ngân
+        active_loans = [l for l in loans if l.get("status") in ["ACTIVE", "DISBURSED"]]
+        if not active_loans:
+            return (
+                "Dạ Quý khách hiện không có dư nợ hoặc khoản vay nào tại Sen Hồng Bank ạ! "
+                "Lịch sử tín dụng của Quý khách rất tốt (CIC Chuẩn Nhóm 1 - Nợ đủ tiêu chuẩn).\n\n"
+                "Quý khách đang đủ điều kiện được phê duyệt trước gói **Vay nhanh Quick Loan** "
+                "với hạn mức lên đến **50.000.000 VNĐ**, lãi suất ưu đãi từ **1.2%/tháng**, "
+                "giải ngân tự động về ví chỉ sau 3-5 phút mà không cần thế chấp tài sản.\n\n"
+                "Quý khách có muốn tham khảo thông tin hoặc đăng ký vay không ạ?"
+            )
+
+        total_debt = sum(float(l.get("remainingPrincipal", l.get("principalAmount", 0))) for l in active_loans)
+        lines = ["Dạ em xin gửi Quý khách thông tin hợp đồng vay và lịch trả nợ tại **Sen Hồng Bank**:\n"]
+        for idx, l in enumerate(active_loans[:3], 1):
+            contract = l.get("contractNumber", f"LN-{idx}")
+            prod = l.get("productType", "VAY_TIEU_DUNG_NHANH")
+            prod_name = "Vay tiêu dùng Quick Loan" if "NHANH" in str(prod) or "QUICK" in str(prod) else "Khoản vay tín chấp"
+            principal = float(l.get("principalAmount", 0))
+            remaining = float(l.get("remainingPrincipal", principal))
+            monthly = float(l.get("monthlyPayment", 0))
+            rate = float(l.get("annualInterestRate", l.get("interestRate", 0)))
+            term = l.get("termMonths", 0)
+            due_date = l.get("firstDueDate", "Đang cập nhật")
+            cic = l.get("cicGroupName", "Nhóm 1 - Nợ đủ tiêu chuẩn")
+            status = "Đang giải ngân" if l.get("status") == "DISBURSED" else "Đang hiệu lực"
+
+            fmt_principal = f"{principal:,.0f} VNĐ".replace(",", ".")
+            fmt_remaining = f"{remaining:,.0f} VNĐ".replace(",", ".")
+            fmt_monthly = f"{monthly:,.0f} VNĐ/tháng".replace(",", ".")
+
+            lines.append(f"**{idx}. Hợp đồng {prod_name}** — Mã HĐ: `{contract}`")
+            lines.append(f"   - 💵 Số tiền vay ban đầu: **{fmt_principal}**")
+            lines.append(f"   - 📉 Dư nợ gốc: **{fmt_remaining}**")
+            lines.append(f"   - 🗓️ Trả góp định kỳ: **{fmt_monthly}**")
+            lines.append(f"   - 📈 Lãi suất: **{rate}%/năm** (Kỳ hạn {term} tháng)")
+            lines.append(f"   - ⏰ Ngày đến hạn thanh toán: **{due_date}**")
+            lines.append(f"   - 🛡️ Xếp hạng tín dụng: **{cic}**")
+            lines.append(f"   - 🟢 Trạng thái: **{status}**\n")
+
+        if len(active_loans) > 3:
+            lines.append(f"*(Hiển thị 3 hợp đồng tiêu biểu trong tổng số **{len(active_loans)}** khoản vay)*\n")
+
+        fmt_total_debt = f"{total_debt:,.0f} VNĐ".replace(",", ".")
+        lines.append(f"📊 **Tổng dư nợ các khoản vay:** **{fmt_total_debt}**\n")
+        lines.append("Quý khách lưu ý thanh toán đúng hạn vào ngày đến hạn định kỳ để duy trì điểm tín dụng tốt nhất nhé!")
+        return "\n".join(lines)
+
+    def _build_financial_overview_response(
+        self,
+        profile: Optional[Dict[str, Any]],
+        wallet: Optional[Dict[str, Any]],
+        cards: List[Dict[str, Any]],
+        savings: List[Dict[str, Any]],
+        loans: List[Dict[str, Any]]
+    ) -> str:
+        """Định dạng Báo cáo Tổng quan Tài chính 360 độ cá nhân toàn diện trên ứng dụng Mobile"""
+        full_name = profile.get("fullName", "Quý khách") if profile else "Quý khách"
+        alias = profile.get("accountAlias") if profile else None
+        alias_str = f" (@{alias})" if alias else ""
+        
+        # 1. Ví thanh toán
+        bal = float(wallet.get("balance", 0)) if wallet else 0.0
+        fmt_bal = f"{bal:,.0f} VNĐ".replace(",", ".")
+        daily_limit = float(wallet.get("dailyLimit", 50000000)) if wallet else 50000000.0
+        fmt_limit = f"{daily_limit:,.0f} VNĐ/ngày".replace(",", ".")
+
+        # 2. Tiết kiệm
+        total_savings = sum(float(s.get("principal", 0)) for s in savings)
+        fmt_savings = f"{total_savings:,.0f} VNĐ".replace(",", ".")
+
+        # 3. Dư nợ vay
+        active_loans = [l for l in loans if l.get("status") in ["ACTIVE", "DISBURSED"]]
+        total_loans = sum(float(l.get("remainingPrincipal", l.get("principalAmount", 0))) for l in active_loans)
+        fmt_loans = f"{total_loans:,.0f} VNĐ".replace(",", ".")
+
+        # 4. Thẻ
+        active_cards = [c for c in cards if c.get("status") == "ACTIVE"]
+        cards_summary = f"{len(active_cards)}/{len(cards)} thẻ đang hoạt động" if cards else "Chưa phát hành thẻ"
+
+        # 5. Giá trị tài sản ròng ước tính (Net Worth)
+        net_worth = (bal + total_savings) - total_loans
+        fmt_net_worth = f"{net_worth:,.0f} VNĐ".replace(",", ".")
+
+        lines = [
+            f"Dạ em xin gửi Quý khách **{full_name}**{alias_str} **Báo cáo Tổng quan Tài chính 360°** tại Sen Hồng Bank:\n",
+            f"🌟 **TỔNG TÀI SẢN TÍCH LŨY RÒNG:** **{fmt_net_worth}**\n",
+            f"💳 **1. Tài khoản thanh toán & Ví:**",
+            f"- Số dư ví khả dụng: **{fmt_bal}**",
+            f"- Hạn mức giao dịch ngày: **{fmt_limit}**\n",
+            f"📈 **2. Sổ tiết kiệm sinh lời:**",
+            f"- Số lượng sổ đang mở: **{len(savings)} sổ**",
+            f"- Tổng tiền gửi gốc: **{fmt_savings}**\n",
+            f"💳 **3. Thẻ thanh toán (Visa / E-Card):**",
+            f"- Tình trạng: **{cards_summary}**\n",
+            f"💼 **4. Dư nợ vay tiêu dùng (Quick Loan):**",
+            f"- Tổng dư nợ hiện tại: **{fmt_loans}**\n",
+            f"🛡️ **5. An toàn & Bảo mật:**",
+            f"- Chuẩn tuân thủ: **Quyết định 2345/QĐ-NHNN & PCI-DSS Quốc tế**",
+            f"- Xác thực sinh trắc học: **Sẵn sàng**\n",
+            f"Quý khách có thể bấm vào các mục bên dưới để quản lý chi tiết từng dịch vụ tài chính của mình ạ!"
+        ]
+        return "\n".join(lines)
+
     def answer_query(
         self, 
         question: str, 
@@ -1449,7 +1869,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         - Bảo mật Zero-PII Leak tuyệt đối cho thông tin tài chính cá nhân
         """
         start_time = time.time()
-        q_clean = question.strip()
+        q_clean = normalize_vietnamese_query(question.strip())
         embed_model = self._get_embed_model()
 
         # =========================================================================
@@ -1459,11 +1879,15 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         # =========================================================================
         is_triggered, guardrail_msg = check_security_guardrails(q_clean)
         if is_triggered:
+            q_lower_check = q_clean.lower()
+            is_card_emergency = any(k in q_lower_check for k in ["thẻ", "the", "visa", "napas", "atm"])
+            action_route = "/cards" if is_card_emergency else "/settings/security"
+            action_label = "Khóa thẻ ngay" if is_card_emergency else "Cài đặt bảo mật"
             return ChatResponse(
                 answer=guardrail_msg or "Cảnh báo bảo mật từ Sen Hồng Bank.",
                 sources=[],
-                quick_replies=["Hướng dẫn bảo mật", "Liên hệ tổng đài"],
-                suggested_action=ActionItem(type="NAVIGATE", label="Cài đặt bảo mật", route="/settings/security"),
+                quick_replies=["Khóa thẻ khẩn cấp" if is_card_emergency else "Hướng dẫn bảo mật", "Liên hệ tổng đài 1900-SENHONG"],
+                suggested_action=ActionItem(type="NAVIGATE", label=action_label, route=action_route),
                 latency_ms=round((time.time() - start_time) * 1000, 2)
             )
 
@@ -1495,6 +1919,113 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                 latency_ms=round((time.time() - start_time) * 1000, 2)
             )
 
+        # Rẽ nhánh 2B-1: Báo cáo Tổng quan Tài chính 360 độ (Zero-PII Leak)
+        if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_OVERVIEW:
+            if user_id:
+                profile = self._fetch_user_profile(user_id)
+                wallet = self._fetch_user_wallet_balance(user_id)
+                cards = self._fetch_user_cards(user_id)
+                savings = self._fetch_user_savings(user_id)
+                loans = self._fetch_user_loans(user_id)
+                answer_text = self._build_financial_overview_response(profile, wallet, cards, savings, loans)
+                return ChatResponse(
+                    answer=answer_text,
+                    sources=["senhong_core_banking_overview"],
+                    quick_replies=["Số dư ví", "Sổ tiết kiệm", "Quản lý thẻ", "Khoản vay"],
+                    suggested_action=ActionItem(type="NAVIGATE", label="Tổng quan tài chính", route="/profile"),
+                    latency_ms=round((time.time() - start_time) * 1000, 2)
+                )
+            return ChatResponse(
+                answer="Dạ để bảo mật thông tin tài khoản, Quý khách vui lòng đăng nhập vào ứng dụng để xem báo cáo tổng quan tài chính ạ.",
+                sources=[],
+                quick_replies=["Đăng nhập", "Xem biểu phí"],
+                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/auth/login"),
+                latency_ms=round((time.time() - start_time) * 1000, 2)
+            )
+
+        # Rẽ nhánh 2B-2: Tra cứu Hồ sơ cá nhân, eKYC, Alias (Zero-PII Leak)
+        if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_PROFILE:
+            if user_id:
+                profile = self._fetch_user_profile(user_id)
+                wallet = self._fetch_user_wallet_balance(user_id)
+                if profile:
+                    answer_text = self._build_profile_response(profile, wallet)
+                    return ChatResponse(
+                        answer=answer_text,
+                        sources=["identity_service_internal_api"],
+                        quick_replies=["Số dư ví", "Quản lý thẻ", "Sổ tiết kiệm"],
+                        suggested_action=ActionItem(type="NAVIGATE", label="Hồ sơ cá nhân", route="/profile"),
+                        latency_ms=round((time.time() - start_time) * 1000, 2)
+                    )
+            return ChatResponse(
+                answer="Dạ để bảo mật thông tin tài khoản, Quý khách vui lòng đăng nhập vào ứng dụng để tra cứu hồ sơ cá nhân và eKYC ạ.",
+                sources=[],
+                quick_replies=["Đăng nhập", "Xem biểu phí"],
+                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/auth/login"),
+                latency_ms=round((time.time() - start_time) * 1000, 2)
+            )
+
+        # Rẽ nhánh 2B-3: Tra cứu Thẻ Visa & Ngân hàng liên kết (Zero-PII Leak)
+        if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_CARDS:
+            if user_id:
+                cards = self._fetch_user_cards(user_id)
+                bank_accounts = self._fetch_user_bank_accounts(user_id)
+                answer_text = self._build_cards_response(cards, bank_accounts)
+                return ChatResponse(
+                    answer=answer_text,
+                    sources=["payment_service_cards_api"],
+                    quick_replies=["Số dư ví", "Mở thẻ Visa ảo", "Lịch sử giao dịch"],
+                    suggested_action=ActionItem(type="NAVIGATE", label="Quản lý thẻ", route="/cards"),
+                    latency_ms=round((time.time() - start_time) * 1000, 2)
+                )
+            return ChatResponse(
+                answer="Dạ để bảo mật thông tin thẻ, Quý khách vui lòng đăng nhập vào ứng dụng để tra cứu danh sách thẻ ạ.",
+                sources=[],
+                quick_replies=["Đăng nhập", "Xem biểu phí"],
+                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/auth/login"),
+                latency_ms=round((time.time() - start_time) * 1000, 2)
+            )
+
+        # Rẽ nhánh 2B-4: Tra cứu Sổ tiết kiệm của tôi (Zero-PII Leak)
+        if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_SAVINGS:
+            if user_id:
+                savings = self._fetch_user_savings(user_id)
+                answer_text = self._build_savings_response(savings)
+                return ChatResponse(
+                    answer=answer_text,
+                    sources=["payment_service_savings_api"],
+                    quick_replies=["Mở sổ tiết kiệm", "Xem lãi suất", "Số dư ví"],
+                    suggested_action=ActionItem(type="NAVIGATE", label="Sổ tiết kiệm của tôi", route="/savings"),
+                    latency_ms=round((time.time() - start_time) * 1000, 2)
+                )
+            return ChatResponse(
+                answer="Dạ để bảo mật thông tin tiền gửi tiết kiệm, Quý khách vui lòng đăng nhập vào ứng dụng để tra cứu sổ tiết kiệm ạ.",
+                sources=[],
+                quick_replies=["Đăng nhập", "Xem biểu phí"],
+                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/auth/login"),
+                latency_ms=round((time.time() - start_time) * 1000, 2)
+            )
+
+        # Rẽ nhánh 2B-5: Tra cứu Khoản vay của tôi (Zero-PII Leak)
+        if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_LOANS:
+            if user_id:
+                loans = self._fetch_user_loans(user_id)
+                answer_text = self._build_loans_response(loans)
+                return ChatResponse(
+                    answer=answer_text,
+                    sources=["payment_service_loans_api"],
+                    quick_replies=["Vay nhanh Quick Loan", "Lãi suất vay", "Lịch sử giao dịch"],
+                    suggested_action=ActionItem(type="NAVIGATE", label="Khoản vay của tôi", route="/bills/quick-loan"),
+                    latency_ms=round((time.time() - start_time) * 1000, 2)
+                )
+            return ChatResponse(
+                answer="Dạ để bảo mật thông tin tín dụng, Quý khách vui lòng đăng nhập vào ứng dụng để tra cứu hợp đồng vay ạ.",
+                sources=[],
+                quick_replies=["Đăng nhập", "Xem biểu phí"],
+                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/auth/login"),
+                latency_ms=round((time.time() - start_time) * 1000, 2)
+            )
+
         # Rẽ nhánh 2B: Hỏi số dư ví cá nhân (Zero-PII Leak)
         if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_WALLET:
             if user_id:
@@ -1518,11 +2049,19 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                         suggested_action=ActionItem(type="NAVIGATE", label="Xem chi tiết ví", route="/profile"),
                         latency_ms=round((time.time() - start_time) * 1000, 2)
                     )
+                else:
+                    return ChatResponse(
+                        answer="Dạ tài khoản của Quý khách hiện chưa liên kết hoặc chưa kích hoạt ví điện tử cá nhân. Quý khách vui lòng kiểm tra tại mục Hồ sơ hoặc liên hệ tổng đài 1900-SENHONG để được hỗ trợ kích hoạt ví tức thì ạ!",
+                        sources=[],
+                        quick_replies=["Thông tin tài khoản", "Xem biểu phí", "Mở thẻ Visa"],
+                        suggested_action=ActionItem(type="NAVIGATE", label="Thông tin tài khoản", route="/profile"),
+                        latency_ms=round((time.time() - start_time) * 1000, 2)
+                    )
             return ChatResponse(
                 answer="Dạ để bảo mật thông tin tài khoản, Quý khách vui lòng đăng nhập vào ứng dụng để tra cứu số dư chi tiết ạ.",
                 sources=[],
                 quick_replies=["Đăng nhập", "Xem biểu phí"],
-                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/login"),
+                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/auth/login"),
                 latency_ms=round((time.time() - start_time) * 1000, 2)
             )
 
@@ -1530,19 +2069,22 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_TRANSACTIONS:
             if user_id:
                 recent_txs = self._fetch_user_recent_transactions(user_id, limit=5)
-                answer_text = self._build_transaction_history_response(recent_txs, user_id)
+                if recent_txs:
+                    answer_text = self._build_transaction_history_response(recent_txs, user_id)
+                else:
+                    answer_text = "Dạ tài khoản của Quý khách hiện chưa phát sinh giao dịch nào gần đây ạ. Quý khách có thể thực hiện nạp tiền, chuyển tiền hoặc thanh toán hóa đơn để trải nghiệm dịch vụ của Sen Hồng Bank nhé!"
                 return ChatResponse(
                     answer=answer_text,
-                    sources=["payment_service_internal_api"],
+                    sources=["payment_service_internal_api"] if recent_txs else [],
                     quick_replies=["Kiểm tra số dư ví", "Chuyển tiền ngay", "Biểu phí dịch vụ"],
-                    suggested_action=ActionItem(type="NAVIGATE", label="Xem tất cả giao dịch", route="/history"),
+                    suggested_action=ActionItem(type="NAVIGATE", label="Xem tất cả giao dịch" if recent_txs else "Chuyển tiền ngay", route="/history" if recent_txs else "/transfer"),
                     latency_ms=round((time.time() - start_time) * 1000, 2)
                 )
             return ChatResponse(
                 answer="Dạ để bảo mật thông tin tài khoản, Quý khách vui lòng đăng nhập vào ứng dụng để tra cứu lịch sử giao dịch chi tiết ạ.",
                 sources=[],
                 quick_replies=["Đăng nhập", "Xem biểu phí"],
-                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/login"),
+                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/auth/login"),
                 latency_ms=round((time.time() - start_time) * 1000, 2)
             )
 
@@ -1591,7 +2133,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         # Chỉ gọi khi Jev xác nhận GateAction.ALLOW_RAG
         # =========================================================================
         masked_q, token_map = tokenize_pii(q_clean)
-        res_dict = self.query(masked_q, history=history)
+        res_dict = self.query(masked_q, history=history, user_id=user_id)
 
         raw_ans = res_dict.get("answer") or res_dict.get("Answer") or res_dict.get("response") or ""
         answer_final = detokenize_pii(str(raw_ans), token_map)
@@ -1605,7 +2147,21 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             title = clean_source_title(str(s))
             if title and title not in sources_final and not title.lower().endswith(".md"):
                 sources_final.append(title)
-        quick_replies = res_dict.get("quick_replies", [])
+        raw_qr = res_dict.get("quick_replies", [])
+        quick_replies = []
+        if isinstance(raw_qr, list):
+            for qr in raw_qr:
+                if isinstance(qr, str) and qr.strip():
+                    quick_replies.append(qr.strip())
+                elif isinstance(qr, dict):
+                    lbl = qr.get("label") or qr.get("text") or qr.get("title") or ""
+                    if lbl:
+                        quick_replies.append(str(lbl).strip())
+                elif qr is not None:
+                    quick_replies.append(str(qr).strip())
+        elif isinstance(raw_qr, str) and raw_qr.strip():
+            quick_replies = [raw_qr.strip()]
+        quick_replies = enrich_smart_quick_replies(q_clean, quick_replies, max_items=3)
 
         # Ghép suggested action từ LLM hoặc fallback tối ưu từ Jev System One
         action_data = res_dict.get("suggested_action")
@@ -1646,6 +2202,10 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                 "thẻ ngân hàng liên kết", "thêm ngân hàng", "ngân hàng liên kết"
             ])
 
+            is_alias_reg = any(k in q_lower_clean for k in [
+                "alias", "biệt danh", "biet danh", "đặt tên tài khoản", "dat ten tai khoan", "tên tài khoản"
+            ])
+
             if is_pwd_recovery:
                 final_route = "/auth/forgot-password"
                 action_label = "Quên mật khẩu"
@@ -1655,6 +2215,9 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             elif is_bank_linking:
                 final_route = "/bank-cards"
                 action_label = "Thẻ & Ngân hàng liên kết"
+            elif is_alias_reg:
+                final_route = "/profile"
+                action_label = "Cài đặt Biệt danh Alias"
             elif raw_route in valid_routes:
                 final_route = raw_route
                 action_label = action_data.get("label", "Xem chi tiết")
@@ -1694,6 +2257,12 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             elif any(k in raw_route.lower() for k in ["device", "thiết bị", "thiet_bi"]):
                 final_route = "/settings/devices"
                 action_label = action_data.get("label", "Quản lý thiết bị")
+            elif any(k in raw_route.lower() for k in ["promo", "voucher", "ưu đãi", "uu_dai", "khuyến mại", "khuyen_mai", "senpoint"]):
+                final_route = "/promotions"
+                action_label = action_data.get("label", "Kho Voucher & Ưu đãi")
+            elif any(k in raw_route.lower() for k in ["referral", "giới thiệu", "gioi_thieu"]):
+                final_route = "/referral"
+                action_label = action_data.get("label", "Giới thiệu bạn bè")
             elif any(k in raw_route.lower() for k in ["history", "lịch sử", "lich_su"]):
                 final_route = "/history"
                 action_label = action_data.get("label", "Xem tất cả giao dịch")

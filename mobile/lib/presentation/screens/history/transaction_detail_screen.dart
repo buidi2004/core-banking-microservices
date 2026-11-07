@@ -230,6 +230,12 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
         onTap: () async {
           Navigator.pop(ctx);
           try {
+            await TransactionRemoteDataSource().createDispute(
+              transactionId: currentTxId,
+              reason: text,
+            );
+          } catch (_) {}
+          try {
             await SupportRemoteDataSource().createTicket(
               subject:
                   'Tra soát GD #${currentTxId.substring(0, currentTxId.length.clamp(0, 8))}: $text',
@@ -241,7 +247,7 @@ class _TransactionDetailScreenState extends State<TransactionDetailScreen> {
           if (mounted) {
             AppAlerts.showSuccess(
               context,
-              'Đã tạo phiếu tra soát và gửi tới Cán bộ quầy: "$text". Mã phiếu đã lưu trong Trung tâm hỗ trợ.',
+              'Đã gửi yêu cầu tra soát và tạo phiếu tới Cán bộ quầy: "$text". Mã tra soát đang được xử lý.',
               title: 'Tiếp nhận tra soát',
             );
           }

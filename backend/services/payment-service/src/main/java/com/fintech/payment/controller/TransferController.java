@@ -104,10 +104,21 @@ public class TransferController {
             }
         }
 
-        // Xác thực pinToken nếu được cung cấp
-        if (pinToken != null && !pinToken.isBlank()) {
+        // Xác thực pinToken: bắt buộc đối với khách hàng cá nhân (!isStaff)
+        if (!isStaff) {
+            if (pinToken == null || pinToken.isBlank()) {
+                log.warn("Chuyển tiền P2P bị từ chối: thiếu pinToken cho sourceUserId={}", sourceUserId);
+                ApiResponse<TransferResponse> err = ApiResponse.error("MISSING_PIN_TOKEN", "Mã xác thực giao dịch (PIN) là bắt buộc");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
             if (!pinTokenValidator.validatePinToken(pinToken, sourceUserId)) {
                 log.warn("Chuyển tiền P2P bị từ chối: pinToken không hợp lệ cho sourceUserId={}", sourceUserId);
+                ApiResponse<TransferResponse> err = ApiResponse.error("INVALID_PIN_TOKEN", "Mã xác thực giao dịch (PIN) không hợp lệ hoặc đã hết hạn");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+            }
+        } else if (pinToken != null && !pinToken.isBlank()) {
+            if (!pinTokenValidator.validatePinToken(pinToken, sourceUserId)) {
+                log.warn("Chuyển tiền P2P cán bộ bị từ chối: pinToken không hợp lệ cho sourceUserId={}", sourceUserId);
                 ApiResponse<TransferResponse> err = ApiResponse.error("INVALID_PIN_TOKEN", "Mã xác thực giao dịch (PIN) không hợp lệ hoặc đã hết hạn");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
             }

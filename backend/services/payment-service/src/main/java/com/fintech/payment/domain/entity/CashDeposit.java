@@ -29,6 +29,7 @@ public class CashDeposit {
     public static final String STATUS_APPROVED = "APPROVED";
     public static final String STATUS_REJECTED = "REJECTED";
     public static final String STATUS_COMPLETED = "COMPLETED";
+    public static final String STATUS_FAILED = "FAILED";
 
     @Id
     @Column(length = 36)

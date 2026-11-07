@@ -23,5 +23,7 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, String
 
     boolean existsByAggregateTypeAndAggregateIdAndEventType(String aggregateType, String aggregateId, String eventType);
 
+    long countByStatus(String status);
+
     List<OutboxEvent> findByAggregateId(String aggregateId);
 }

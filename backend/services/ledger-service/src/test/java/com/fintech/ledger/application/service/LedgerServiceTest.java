@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
@@ -176,6 +177,106 @@ class LedgerServiceTest {
 
         assertThat(result.balanced()).isTrue();
         assertThat(result.totalDebit()).isEqualByComparingTo(result.totalCredit());
+    }
+
+    @Test
+    void verifyAccountChecksums_whenMatches_shouldReturnValid() {
+        LedgerAccount acc = LedgerAccount.of(UUID.randomUUID().toString(), "1011001", "CASH", AccountType.ASSET, new BigDecimal("500.00"), "VND");
+        when(persistencePort.findAllAccounts()).thenReturn(List.of(acc));
+        when(persistencePort.sumAmountByAccountIdAndSide(acc.getId(), PostingSide.DEBIT))
+                .thenReturn(new BigDecimal("500.00"));
+        when(persistencePort.sumAmountByAccountIdAndSide(acc.getId(), PostingSide.CREDIT))
+                .thenReturn(BigDecimal.ZERO);
+
+        LedgerService.AccountChecksumReport report = ledgerService.verifyAccountChecksums();
+
+        assertThat(report.allChecksumsValid()).isTrue();
+        assertThat(report.validAccountsCount()).isEqualTo(1);
+        assertThat(report.corruptedAccountsCount()).isEqualTo(0);
+    }
+
+    @Test
+    void verifyAccountChecksums_whenMismatch_shouldFlagCorrupted() {
+        LedgerAccount acc = LedgerAccount.of(UUID.randomUUID().toString(), "1011001", "CASH", AccountType.ASSET, new BigDecimal("999.00"), "VND");
+        when(persistencePort.findAllAccounts()).thenReturn(List.of(acc));
+        when(persistencePort.sumAmountByAccountIdAndSide(acc.getId(), PostingSide.DEBIT))
+                .thenReturn(new BigDecimal("500.00"));
+        when(persistencePort.sumAmountByAccountIdAndSide(acc.getId(), PostingSide.CREDIT))
+                .thenReturn(BigDecimal.ZERO);
+
+        LedgerService.AccountChecksumReport report = ledgerService.verifyAccountChecksums();
+
+        assertThat(report.allChecksumsValid()).isFalse();
+        assertThat(report.corruptedAccountsCount()).isEqualTo(1);
+        assertThat(report.mismatchedAccountCodes()).isNotEmpty();
+    }
+
+    @Test
+    void closeEndOfDay_whenBalanced_shouldSucceed() {
+        when(persistencePort.sumAmount(PostingSide.DEBIT)).thenReturn(new BigDecimal("1000.00"));
+        when(persistencePort.sumAmount(PostingSide.CREDIT)).thenReturn(new BigDecimal("1000.00"));
+        when(persistencePort.sumAccountCodePrefix(any(), any())).thenReturn(BigDecimal.ZERO);
+        when(persistencePort.findAllAccounts()).thenReturn(List.of());
+
+        LedgerService.EndOfDayResult result = ledgerService.closeEndOfDay("test-manager", false, "Test notes");
+
+        assertThat(result.balanced()).isTrue();
+        assertThat(result.status()).isEqualTo("SUCCESS");
+        assertThat(result.totalDebit()).isEqualByComparingTo(new BigDecimal("1000.00"));
+    }
+
+    @Test
+    void closeEndOfDay_whenUnbalanced_shouldThrowException() {
+        when(persistencePort.sumAmount(PostingSide.DEBIT)).thenReturn(new BigDecimal("1000.00"));
+        when(persistencePort.sumAmount(PostingSide.CREDIT)).thenReturn(new BigDecimal("900.00"));
+
+        assertThatThrownBy(() -> ledgerService.closeEndOfDay("test-manager", false, null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Sổ cái không cân bằng");
+    }
+
+    @Test
+    void exportAccountsCsv_shouldContainHeaderAndAccounts() {
+        LedgerAccount acc = LedgerAccount.create("1011", "Quỹ tiền mặt", AccountType.ASSET, "VND");
+        when(persistencePort.findAllAccounts()).thenReturn(List.of(acc));
+
+        byte[] csv = ledgerService.exportAccountsCsv();
+        String content = new String(csv, java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThat(content).contains("Mã tài khoản (ID)");
+        assertThat(content).contains("1011");
+        assertThat(content).contains("Quỹ tiền mặt");
+    }
+
+    @Test
+    void exportJournalEntriesCsv_shouldContainHeaderAndPostings() {
+        LedgerAccount acc = LedgerAccount.create("1011", "Quỹ tiền mặt", AccountType.ASSET, "VND");
+        when(persistencePort.findAllAccounts()).thenReturn(List.of(acc));
+
+        JournalEntry entry = JournalEntry.createOriginal(
+                "tx-1", "Test desc", "ref-1",
+                List.of(
+                        new LedgerPosting(null, null, acc.getId(), PostingSide.DEBIT, new BigDecimal("1000.00"), "VND"),
+                        new LedgerPosting(null, null, acc.getId(), PostingSide.CREDIT, new BigDecimal("1000.00"), "VND")
+                )
+        );
+        when(persistencePort.findAllEntries()).thenReturn(List.of(entry));
+
+        byte[] csv = ledgerService.exportJournalEntriesCsv();
+        String content = new String(csv, java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThat(content).contains("Mã chứng từ,Mã giao dịch");
+        assertThat(content).contains("tx-1");
+        assertThat(content).contains("ref-1");
+        assertThat(content).contains("1000.00");
+    }
+
+    @Test
+    void exportEodBatchesCsv_shouldContainHeader() {
+        byte[] csv = ledgerService.exportEodBatchesCsv();
+        String content = new String(csv, java.nio.charset.StandardCharsets.UTF_8);
+
+        assertThat(content).contains("Mã lô EOD,Ngày giá trị");
     }
 
     private TransactionEventMessage event(String type, String status, String source,

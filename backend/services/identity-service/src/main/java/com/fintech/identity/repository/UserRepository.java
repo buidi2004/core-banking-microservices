@@ -33,6 +33,24 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
            "ORDER BY u.role DESC, u.fullName ASC")
     List<UserEntity> findStaffByBranchId(@Param("branchId") String branchId);
 
+    @Query("SELECT u FROM UserEntity u WHERE " +
+           "(u.role IN ('ROLE_TELLER', 'ROLE_MANAGER', 'ROLE_ADMIN', 'TELLER', 'MANAGER', 'ADMIN') OR u.role NOT IN ('ROLE_USER', 'USER')) " +
+           "ORDER BY u.branchId ASC, u.role DESC, u.fullName ASC")
+    List<UserEntity> findAllStaff();
+
+    // Tham số đã chuẩn hoá chữ hoa ở tầng service; không dùng UPPER()/CONCAT() trên
+    // tham số nullable vì PostgreSQL JDBC bind null thành bytea -> "upper(bytea)" không tồn tại.
+    @Query("SELECT u FROM UserEntity u WHERE " +
+           "(:branchId IS NULL OR UPPER(u.branchId) = :branchId) AND " +
+           "(:role IS NULL OR UPPER(u.role) = :role OR UPPER(u.role) = :roleWithPrefix) AND " +
+           "(:status IS NULL OR UPPER(u.status) = :status) AND " +
+           "(u.role IN ('ROLE_TELLER', 'ROLE_MANAGER', 'ROLE_ADMIN', 'TELLER', 'MANAGER', 'ADMIN') OR u.role NOT IN ('ROLE_USER', 'USER')) " +
+           "ORDER BY u.branchId ASC, u.role DESC, u.fullName ASC")
+    List<UserEntity> findStaffFiltered(@Param("branchId") String branchId,
+                                       @Param("role") String role,
+                                       @Param("roleWithPrefix") String roleWithPrefix,
+                                       @Param("status") String status);
+
     boolean existsByPhoneNumber(String phoneNumber);
 
     boolean existsByUsername(String username);

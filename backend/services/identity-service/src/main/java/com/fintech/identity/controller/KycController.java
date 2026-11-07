@@ -7,9 +7,11 @@ import com.fintech.identity.service.KycService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -23,6 +25,9 @@ import java.util.List;
 public class KycController {
 
     private final KycService kycService;
+
+    @Value("${internal.api.key:senhong-internal-ekyc-key-2026}")
+    private String expectedInternalKey;
 
     @PostMapping("/submit")
     public ResponseEntity<ApiResponse<KycResponse>> submitKyc(
@@ -56,5 +61,18 @@ public class KycController {
         log.info("Admin {} đánh giá hồ sơ eKYC kycId={}: status={}", adminId, kycId, status);
         KycResponse response = kycService.reviewKyc(kycId, status, reason, adminId);
         return ResponseEntity.ok(ApiResponse.ok(response, "Đã cập nhật trạng thái duyệt eKYC"));
+    }
+
+    @PostMapping("/internal/auto-approve")
+    public ResponseEntity<ApiResponse<KycResponse>> autoApproveKyc(
+            @RequestHeader(value = "X-Internal-Key", required = false) String internalKey,
+            @Valid @RequestBody com.fintech.identity.dto.KycAutoApproveRequest request) {
+        if (internalKey == null || !expectedInternalKey.equals(internalKey)) {
+            log.warn("Cảnh báo bảo mật: Lệnh auto-approve eKYC bị từ chối do sai X-Internal-Key (userId={})", request.getUserId());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Khóa nội bộ X-Internal-Key không hợp lệ");
+        }
+        log.info("Nhận yêu cầu duyệt tự động eKYC từ AI Service cho userId={}", request.getUserId());
+        KycResponse response = kycService.autoApproveKyc(request);
+        return ResponseEntity.ok(ApiResponse.ok(response, "eKYC đã được AI phê duyệt tự động"));
     }
 }

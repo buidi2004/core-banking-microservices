@@ -62,9 +62,10 @@ class ApiConstants {
   // Transactions & Statement
   static const String transactions = '/transactions';
   static String transactionDetail(String id) => '/transactions/$id';
-  // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static String receiptPdf(String id) => '/transactions/$id/receipt.pdf';
   static String exportTransactions(String format) => '/transactions/export/$format';
+  static const String disputes = '/payments/disputes';
+  static String disputeDetail(String id) => '/payments/disputes/$id';
 
   // QR Code
   // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
@@ -74,12 +75,11 @@ class ApiConstants {
   static const String myQrCode = '/users/me/qrcode';
 
   // Bills & Utilities
-  // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String billLookup = '/bills/lookup';
-  // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String billPay = '/bills/pay';
-  // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String billTopup = '/bills/topup';
+  static const String billSubscriptions = '/bills/subscriptions';
+  static String billSubscriptionDetail(String id) => '/bills/subscriptions/$id';
 
   // Sources & Banks
   static const String banks = '/banks';
@@ -96,6 +96,19 @@ class ApiConstants {
   static const String userAvatar = '/users/me/avatar';
   static const String kycSubmit = '/kyc/submit';
   static const String kycStatus = '/kyc/status';
+  static const String ekycAiSession = '/ekyc/ai/session';
+  static const String ekycAiVerify = '/ekyc/ai/verify';
+  static const String ekycAiHealth = '/ekyc/ai/health';
+
+  static const String ekycServerPublicKeyPem = '''-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuzyHR+zayzca2BUUyx+O
+ByAq9NGEqidBjZGX0NNf4cRW9im+SRffnkLB+Iku8zZnvoCIMCCEjVYawIJS2XRK
+bqbQCAKCbE1Q/lITdEaDaPDvaCd5Mr8aIsKY9LewTFKy57JdAvSdvoSOidNMn4R6
+y86oA9F+YHHj2L1KtskhpV4uZFwhUfjsA/wQOgZgMXzcGu/xD7jh9m9K0PswRwPq
+l9PIozREDnN8sCLnUllE3E/jf05TI++94E+DrAd0GRljhIzufWI+3F97z9OWAPh6
+YLvBXJ00qIERcfgVcqtrpKBK2K7bYM5PEoyJMMjccxSya2ZEtt+2KYPSr6s3AtG/
+wQIDAQAB
+-----END PUBLIC KEY-----''';
   // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String limitStatus = '/config/limits/status';
 
@@ -112,11 +125,9 @@ class ApiConstants {
   static const String tickets = '/support/tickets';
 
   // Bank Accounts Link & Unlink
-  // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static const String bankAccountsLink = '/bank-accounts/link';
-  // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
-  // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
   static String bankAccountDetail(String id) => '/bank-accounts/$id';
+  static String bankAccountDefault(String id) => '/bank-accounts/$id/default';
 
   // Config & Legal
   // BE-GAP (BE-REQ-06): backend baseline (75bf273) chưa có endpoint này — mọi call site phải gate bằng BackendCapabilities.showFeatureUnavailable
@@ -142,6 +153,7 @@ class ApiConstants {
 
   // Promotions & Referrals & Feedback
   static const String promotions = '/promotions';
+  static const String promotionCampaigns = '/promotions/campaigns';
   static const String myVouchers = '/promotions/my-vouchers';
   static const String redeemPromotion = '/promotions/redeem';
   static const String applyPromotion = '/promotions/apply';

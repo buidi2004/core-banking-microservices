@@ -5,6 +5,7 @@ import lombok.*;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class TransferResponse {
+    private String id;
     private String transactionId;
     private String transactionCode;
     private String sourceWalletId;
@@ -15,6 +16,7 @@ public class TransferResponse {
 
     public static TransferResponse from(com.fintech.payment.saga.SagaContext ctx) {
         return TransferResponse.builder()
+                .id(ctx.getTransactionId())
                 .transactionId(ctx.getTransactionId())
                 .transactionCode(ctx.getTransactionCode())
                 .sourceWalletId(ctx.getSourceWalletId())

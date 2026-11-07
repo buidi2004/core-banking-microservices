@@ -7,6 +7,9 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
+import 'animated_tab_icon.dart';
+
+export 'animated_tab_icon.dart' show AnimatedTabType;
 
 /// Item dữ liệu cho từng tab trong thanh điều hướng iOS Liquid Glass
 class IOSLiquidGlassTabItem {
@@ -15,6 +18,7 @@ class IOSLiquidGlassTabItem {
   final IconData? selectedIcon;
   final int? badgeCount;
   final bool hasDotBadge;
+  final AnimatedTabType tabType;
 
   const IOSLiquidGlassTabItem({
     required this.label,
@@ -22,6 +26,7 @@ class IOSLiquidGlassTabItem {
     this.selectedIcon,
     this.badgeCount,
     this.hasDotBadge = false,
+    this.tabType = AnimatedTabType.generic,
   });
 }
 
@@ -589,10 +594,6 @@ class _IOSLiquidGlassTabBarState extends State<IOSLiquidGlassTabBar>
     required Color accentColor,
     required bool isInsideLens,
   }) {
-    final iconData = (isSelected && item.selectedIcon != null)
-        ? item.selectedIcon!
-        : item.icon;
-
     return Center(
       child: Semantics(
         label: item.label,
@@ -601,10 +602,13 @@ class _IOSLiquidGlassTabBarState extends State<IOSLiquidGlassTabBar>
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Icon(
-              iconData,
-              size: 24,
+            AnimatedTabIcon(
+              icon: item.icon,
+              selectedIcon: item.selectedIcon,
+              isSelected: isSelected,
               color: accentColor,
+              tabType: item.tabType,
+              size: 24,
             ),
             if (item.badgeCount != null && item.badgeCount! > 0)
               Positioned(

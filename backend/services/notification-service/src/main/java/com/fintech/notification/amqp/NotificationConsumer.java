@@ -116,8 +116,17 @@ public class NotificationConsumer {
         String amount = format(displayAmount);
         String balance = format(balanceValue);
         String currency = hasText(event.getCurrency()) ? event.getCurrency() : "VND";
+        // Phân giải userId nếu chưa có để đảm bảo định danh đúng chủ tài khoản (cho FCM push & DB query)
+        String resolvedUserId = hasText(userId) ? userId : userPhoneResolver.resolveUserIdByWalletId(walletId);
+        if (!hasText(resolvedUserId)) {
+            resolvedUserId = walletId;
+        }
+
         // Hiển thị số điện thoại thật của chủ ví (tra từ identity-service, có cache).
-        String recipient = hasText(phone) ? phone : userPhoneResolver.resolve(userId);
+        String recipient = hasText(phone) ? phone : userPhoneResolver.resolve(resolvedUserId);
+        if (!hasText(recipient)) {
+            recipient = userPhoneResolver.resolvePhoneByWalletId(walletId);
+        }
         if (!hasText(recipient)) {
             recipient = walletId;
         }
@@ -129,8 +138,13 @@ public class NotificationConsumer {
         body.append(String.format("TK %s %s. PS: %s%s %s. SD: %s %s",
                 recipient, resultLabel, sign, amount, currency, balance, currency));
 
+        String resolvedCounterpartyUserId = hasText(counterpartyUserId) ? counterpartyUserId
+                : (hasText(counterpartyWalletId) ? userPhoneResolver.resolveUserIdByWalletId(counterpartyWalletId) : null);
         String counterparty = hasText(counterpartyPhone) ? counterpartyPhone
-                : userPhoneResolver.resolve(counterpartyUserId);
+                : userPhoneResolver.resolve(resolvedCounterpartyUserId);
+        if (!hasText(counterparty) && hasText(counterpartyWalletId)) {
+            counterparty = userPhoneResolver.resolvePhoneByWalletId(counterpartyWalletId);
+        }
         if (!hasText(counterparty)) {
             counterparty = counterpartyWalletId;
         }
@@ -145,11 +159,11 @@ public class NotificationConsumer {
         String payloadType = reversal ? "TRANSFER_IN" : payloadType(event.getType(), isDeduct);
         String status = hasText(event.getStatus()) ? event.getStatus().toUpperCase() : "SUCCESS";
         Instant occurredAt = event.getOccurredAt() != null ? event.getOccurredAt() : Instant.now();
+        String formattedTime = TIME_FORMATTER.format(occurredAt);
 
         Map<String, String> data = buildData(event, walletId, payloadType, displayAmount, balanceValue,
-                currency, title, bodyText);
+                currency, title, bodyText, recipient, formattedTime);
         String dataPayload = writeJson(data);
-        String resolvedUserId = hasText(userId) ? userId : walletId;
 
         NotificationPayload payload = new NotificationPayload(
                 event.getTransactionId(),
@@ -161,25 +175,46 @@ public class NotificationConsumer {
                 currency,
                 balanceValue,
                 currency,
-                TIME_FORMATTER.format(occurredAt),
+                formattedTime,
                 event.getNote(),
                 title,
-                bodyText
+                bodyText,
+                recipient,
+                recipient,
+                displayAmount,
+                formattedTime
         );
 
         // Idempotency bền vững ở DB: chống trùng khi Rabbit + Kafka cùng giao 1 event
         // hoặc khi service restart / consumer replay sau khi mất in-memory cache.
-        boolean alreadyDelivered;
+        java.util.Optional<com.fintech.notification.entity.Notification> existingOpt = java.util.Optional.empty();
         try {
-            alreadyDelivered = notificationService.existsForTransaction(
+            existingOpt = notificationService.findByUserAndTransaction(
                     resolvedUserId, event.getTransactionId(), status);
         } catch (Exception e) {
             log.warn("Cannot check notification duplicate for userId={} txId={}: {}",
                     resolvedUserId, event.getTransactionId(), e.getMessage());
-            alreadyDelivered = false;
         }
-        if (alreadyDelivered) {
-            log.info("Duplicate notification skipped: userId={} txId={}", resolvedUserId, event.getTransactionId());
+
+        if (existingOpt.isPresent()) {
+            com.fintech.notification.entity.Notification existing = existingOpt.get();
+            boolean isRicher = (hasText(event.getNote()) && (existing.getBody() == null || !existing.getBody().contains(event.getNote())))
+                    || ("TRANSFER".equalsIgnoreCase(event.getType()) && (existing.getTitle() != null && !existing.getTitle().toLowerCase().contains("chuyển tiền")));
+            if (isRicher) {
+                existing.setTitle(title);
+                existing.setBody(bodyText);
+                existing.setDataPayload(dataPayload);
+                notificationService.save(existing);
+                webSocketNotifier.pushToWallet(walletId, payload);
+                if (hasText(resolvedUserId)) {
+                    webSocketNotifier.pushToUser(resolvedUserId, payload);
+                }
+                webSocketNotifier.pushToAdmin(payload);
+                fcmPushSender.sendPushNotification(resolvedUserId, title, bodyText, data);
+                log.info("Enriched existing notification with richer event details: userId={} txId={}", resolvedUserId, event.getTransactionId());
+            } else {
+                log.info("Duplicate notification skipped: userId={} txId={}", resolvedUserId, event.getTransactionId());
+            }
             return;
         }
 
@@ -196,8 +231,8 @@ public class NotificationConsumer {
         }
 
         webSocketNotifier.pushToWallet(walletId, payload);
-        if (hasText(userId)) {
-            webSocketNotifier.pushToUser(userId, payload);
+        if (hasText(resolvedUserId)) {
+            webSocketNotifier.pushToUser(resolvedUserId, payload);
         }
         webSocketNotifier.pushToAdmin(payload);
 
@@ -215,7 +250,8 @@ public class NotificationConsumer {
 
     private Map<String, String> buildData(TransactionEvent event, String walletId, String payloadType,
                                           BigDecimal displayAmount, BigDecimal balanceValue,
-                                          String currency, String title, String body) {
+                                          String currency, String title, String body,
+                                          String accountNumber, String formattedTime) {
         Map<String, String> data = new HashMap<>();
         data.put("transactionId", nullSafe(event.getTransactionId()));
         data.put("type", payloadType);
@@ -230,6 +266,9 @@ public class NotificationConsumer {
         data.put("note", nullSafe(event.getNote()));
         data.put("title", title);
         data.put("body", body);
+        data.put("accountNumber", nullSafe(accountNumber));
+        data.put("phoneNumber", nullSafe(accountNumber));
+        data.put("formattedTime", nullSafe(formattedTime));
         return data;
     }
 

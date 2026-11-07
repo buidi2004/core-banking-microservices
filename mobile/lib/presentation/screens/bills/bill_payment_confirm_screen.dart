@@ -138,9 +138,14 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
     setState(() => _isSubmitting = true);
     try {
       final wallet = await WalletRemoteDataSource().getMyWallet();
+      final effectiveBillId = widget.billId.isNotEmpty
+          ? widget.billId
+          : (widget.customerCode.isNotEmpty
+              ? widget.customerCode
+              : 'BILL-${DateTime.now().millisecondsSinceEpoch}');
       final result = await BillRemoteDataSource().pay(
         walletId: wallet.walletId,
-        billId: widget.billId,
+        billId: effectiveBillId,
         amount: widget.amount,
       );
       if (!mounted) return;
@@ -175,9 +180,14 @@ class _BillPaymentConfirmScreenState extends State<BillPaymentConfirmScreen> {
     try {
       final wallet = await WalletRemoteDataSource().getMyWallet();
       await WalletTransactionRemoteDataSource().verifyPin(pin);
+      final effectiveBillId = widget.billId.isNotEmpty
+          ? widget.billId
+          : (widget.customerCode.isNotEmpty
+              ? widget.customerCode
+              : 'BILL-${DateTime.now().millisecondsSinceEpoch}');
       final result = await BillRemoteDataSource().pay(
         walletId: wallet.walletId,
-        billId: widget.billId,
+        billId: effectiveBillId,
         amount: widget.amount,
       );
       if (!mounted) return;

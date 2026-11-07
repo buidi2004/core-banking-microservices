@@ -56,13 +56,19 @@ public class TransactionHistoryController {
             @PathVariable String id,
             @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Id", required = false)
             String headerUserId,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Role", required = false)
+            String headerUserRole,
             @RequestParam(required = false) String walletId) {
-        Transaction tx = requireTransactionAccess(id, headerUserId, walletId);
+        Transaction tx = requireTransactionAccess(id, headerUserId, headerUserRole, walletId);
         byte[] pdf = receiptExportService.generateReceiptPdf(id);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=receipt-" + id + ".pdf")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdf);
+    }
+
+    public ResponseEntity<byte[]> getReceiptPdf(String id, String headerUserId, String walletId) {
+        return getReceiptPdf(id, headerUserId, null, walletId);
     }
 
     public ResponseEntity<byte[]> getReceiptPdf(String id) {
@@ -74,15 +80,27 @@ public class TransactionHistoryController {
     }
 
     public ResponseEntity<byte[]> exportTransactions(String format, String walletId) {
-        return exportTransactions(format, null, walletId);
+        return exportTransactions(format, null, null, walletId);
+    }
+
+    public ResponseEntity<byte[]> exportTransactions(String format, String headerUserId, String walletId) {
+        return exportTransactions(format, headerUserId, null, walletId);
     }
 
     @GetMapping(value = "/export/{format}")
     public ResponseEntity<byte[]> exportTransactions(
             @PathVariable String format,
             @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Id", required = false) String headerUserId,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Role", required = false) String headerUserRole,
             @RequestParam(required = false) String walletId) {
-        String targetWalletId = resolveOwnedWallet(headerUserId, walletId);
+        String targetWalletId;
+        if (isStaff(headerUserRole)) {
+            targetWalletId = (walletId != null && !walletId.isBlank() && !"ALL".equalsIgnoreCase(walletId.trim()))
+                    ? walletId.trim()
+                    : null;
+        } else {
+            targetWalletId = resolveOwnedWallet(headerUserId, walletId);
+        }
         byte[] data = receiptExportService.exportTransactions(targetWalletId, format);
         String mediaType = "pdf".equalsIgnoreCase(format) ? MediaType.APPLICATION_PDF_VALUE : "text/csv; charset=UTF-8";
         String ext = "pdf".equalsIgnoreCase(format) ? "pdf" : "csv";
@@ -93,9 +111,19 @@ public class TransactionHistoryController {
                 .body(data);
     }
 
+    public ResponseEntity<ApiResponse<Map<String, Object>>> list(
+            String headerUserId,
+            String walletId,
+            String type,
+            int page,
+            int size) {
+        return list(headerUserId, null, walletId, type, page, size);
+    }
+
     @GetMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> list(
             @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Id", required = false) String headerUserId,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Role", required = false) String headerUserRole,
             @RequestParam(required = false) String walletId,
             @RequestParam(required = false) String type,
             @RequestParam(defaultValue = "0") int page,
@@ -103,27 +131,41 @@ public class TransactionHistoryController {
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
-        String targetWalletId = resolveOwnedWallet(headerUserId, walletId);
-
-        if (targetWalletId == null || targetWalletId.isBlank()) {
-            Map<String, Object> emptyData = new LinkedHashMap<>();
-            emptyData.put("content", List.of());
-            emptyData.put("page", safePage);
-            emptyData.put("size", safeSize);
-            emptyData.put("totalElements", 0L);
-            emptyData.put("totalPages", 0);
-            emptyData.put("last", true);
-            return ResponseEntity.ok(ApiResponse.success("Transactions retrieved", emptyData));
+        String targetWalletId;
+        if (isStaff(headerUserRole)) {
+            targetWalletId = (walletId != null && !walletId.isBlank() && !"ALL".equalsIgnoreCase(walletId.trim()))
+                    ? walletId.trim()
+                    : null;
+        } else {
+            targetWalletId = resolveOwnedWallet(headerUserId, walletId);
         }
 
         String normalizedType = type != null ? type.trim().toUpperCase() : "";
 
-        Page<Transaction> result = transactionRepository.findWalletHistory(
-                targetWalletId, normalizedType, PageRequest.of(safePage, safeSize));
+        Page<Transaction> result;
+        if (targetWalletId == null || targetWalletId.isBlank()) {
+            if (isStaff(headerUserRole)) {
+                result = (normalizedType.isEmpty())
+                        ? transactionRepository.findAll(PageRequest.of(safePage, safeSize))
+                        : transactionRepository.findByType(normalizedType, PageRequest.of(safePage, safeSize));
+            } else {
+                Map<String, Object> emptyData = new LinkedHashMap<>();
+                emptyData.put("content", List.of());
+                emptyData.put("page", safePage);
+                emptyData.put("size", safeSize);
+                emptyData.put("totalElements", 0L);
+                emptyData.put("totalPages", 0);
+                emptyData.put("last", true);
+                return ResponseEntity.ok(ApiResponse.success("Transactions retrieved", emptyData));
+            }
+        } else {
+            result = transactionRepository.findWalletHistory(
+                    targetWalletId, normalizedType, PageRequest.of(safePage, safeSize));
+        }
 
         final String finalWalletId = targetWalletId;
         List<Map<String, Object>> content = result.getContent().stream()
-                .map(tx -> toView(tx, finalWalletId))
+                .map(tx -> toView(tx, finalWalletId != null ? finalWalletId : tx.getSourceWalletId()))
                 .toList();
 
         Map<String, Object> data = new LinkedHashMap<>();
@@ -138,21 +180,35 @@ public class TransactionHistoryController {
     }
 
     public ResponseEntity<ApiResponse<Map<String, Object>>> detail(String id, String walletId) {
-        return detail(id, null, walletId);
+        return detail(id, null, null, walletId);
+    }
+
+    public ResponseEntity<ApiResponse<Map<String, Object>>> detail(String id, String headerUserId, String walletId) {
+        return detail(id, headerUserId, null, walletId);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> detail(
             @PathVariable String id,
             @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Id", required = false) String headerUserId,
+            @org.springframework.web.bind.annotation.RequestHeader(value = "X-User-Role", required = false) String headerUserRole,
             @RequestParam(required = false) String walletId) {
 
-        Transaction tx = requireTransactionAccess(id, headerUserId, walletId);
-        String perspective = resolveOwnedWallet(headerUserId, walletId);
+        Transaction tx = requireTransactionAccess(id, headerUserId, headerUserRole, walletId);
+        String perspective;
+        if (isStaff(headerUserRole)) {
+            perspective = (walletId != null && !walletId.isBlank()) ? walletId : tx.getSourceWalletId();
+        } else {
+            perspective = resolveOwnedWallet(headerUserId, walletId);
+        }
         return ResponseEntity.ok(ApiResponse.success("Transaction retrieved", toView(tx, perspective)));
     }
 
     private Transaction requireTransactionAccess(String id, String userId, String requestedWalletId) {
+        return requireTransactionAccess(id, userId, null, requestedWalletId);
+    }
+
+    private Transaction requireTransactionAccess(String id, String userId, String userRole, String requestedWalletId) {
         if (userId == null || userId.isBlank()) {
             if (hasHttpRequest() || requestedWalletId == null || requestedWalletId.isBlank()) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing trusted header X-User-Id");
@@ -161,6 +217,9 @@ public class TransactionHistoryController {
         Transaction tx = transactionRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Không tìm thấy giao dịch: " + id));
+        if (isStaff(userRole)) {
+            return tx;
+        }
         String ownedWallet = resolveOwnedWallet(userId, requestedWalletId);
         if (ownedWallet == null
                 || (!ownedWallet.equals(tx.getSourceWalletId()) && !ownedWallet.equals(tx.getTargetWalletId()))) {
@@ -283,5 +342,11 @@ public class TransactionHistoryController {
         view.put("counterpartyBankName", "SenHong");
         view.put("isInternal", true);
         return view;
+    }
+
+    private boolean isStaff(String role) {
+        if (role == null) return false;
+        String r = role.toUpperCase();
+        return r.contains("TELLER") || r.contains("MANAGER") || r.contains("ADMIN");
     }
 }

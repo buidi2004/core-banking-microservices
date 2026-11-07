@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/utils/currency_formatter.dart';
 import 'package:sen_hong_bank/data/datasources/remote/promotion_remote_datasource.dart';
@@ -29,6 +29,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   List<Map<String, dynamic>> _apiVouchers = [];
   bool _isApplyingVoucher = false;
   bool _bannerAutoScrollEnabled = true;
+  bool _loadingContent = true;
 
   final List<String> _tabs = [
     'Ưu Đãi',
@@ -76,568 +77,32 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   // ===========================================================================
   // 1. MEGA HERO BANNERS (HỆ THỐNG BANNER CHÍNH - HÌNH ẢNH THỰC TẾ & ĐIỆN ẢNH)
   // ===========================================================================
-  final List<Map<String, dynamic>> _heroBanners = const [
-    {
-      'title': 'Mở Thẻ SenBank Visa Platinum - Hoàn 2 Triệu',
-      'subtitle':
-          'Hoàn tiền 50% chi tiêu kỳ đầu, miễn phí thường niên trọn đời',
-      'tag': 'SENBANK PREMIER',
-      'tagIcon': LucideIcons.creditCard,
-      'accentColor': Color(0xFFF59E0B),
-      'image': 'assets/images/banners/banner_gucci_luxury.jpg',
-      'cardImage': 'assets/images/banners/real_featured_visa_exact.png',
-      'gradient': [Color(0xFF0F2B48), AppColors.brandBlue],
-      'route': '/cards',
-    },
-    {
-      'title': 'Vay Mua Ô Tô VinFast VF3 - Lãi Suất 0%',
-      'subtitle':
-          'Hỗ trợ 85% giá trị xe, ân hạn nợ gốc 12 tháng, góp chỉ từ 2.9 triệu/tháng',
-      'tag': 'XE HOT 2026',
-      'tagIcon': LucideIcons.car,
-      'accentColor': Color(0xFF38BDF8),
-      'image': 'assets/images/banners/banner_car_loan_couple.png',
-      'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
-      'route': '/bills/quick-loan',
-    },
-    {
-      'title': 'Vi Vu Hè Cùng Vietnam Airlines & Cầu Vàng',
-      'subtitle':
-          'Giảm 500.000đ vé máy bay & vé cáp treo Sun World Bà Nà Hills',
-      'tag': 'DU LỊCH 5 SAO',
-      'tagIcon': LucideIcons.plane,
-      'accentColor': Color(0xFF2DD4BF),
-      'image': 'assets/images/banners/vietnam_danang_golden_bridge.jpg',
-      'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
-      'route': '/digital-flight',
-    },
-    {
-      'title': 'Gói Vay Mua Nhà An Cư - Lãi Suất 5.2%/Năm',
-      'subtitle':
-          'Vinhomes & Masterise: Cố định 24 tháng, thời hạn vay 35 năm, 0đ phạt trả trước',
-      'tag': 'BẤT ĐỘNG SẢN',
-      'tagIcon': LucideIcons.home,
-      'accentColor': Color(0xFF60A5FA),
-      'image': 'assets/images/banners/vietnam_phu_quoc.jpg',
-      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
-      'route': '/bills/quick-loan',
-    },
-    {
-      'title': 'Trả Góp 0% iPhone 16 Pro Max & MacBook',
-      'subtitle':
-          '0 đồng trả trước tại FPT Shop & Thế Giới Di Động qua thẻ SenBank',
-      'tag': 'TRẢ GÓP 0%',
-      'tagIcon': LucideIcons.smartphone,
-      'accentColor': Color(0xFFA78BFA),
-      'image': 'assets/images/banners/banner_zara_uniqlo.jpg',
-      'cardImage': 'assets/images/banners/real_featured_jcb_exact.png',
-      'gradient': [AppColors.brandNavy, AppColors.bottomBarOcean],
-      'route': '/cards',
-    },
-    {
-      'title': 'Du Thuyền Hạ Long Heritage Cruise 5 Sao',
-      'subtitle':
-          'Nghỉ dưỡng thượng lưu trên Vịnh Di Sản, ưu đãi 35% cho chủ thẻ SenBank',
-      'tag': 'DI SẢN VIỆT NAM',
-      'tagIcon': LucideIcons.anchor,
-      'accentColor': Color(0xFF34D399),
-      'image': 'assets/images/banners/vietnam_halong_bay.jpg',
-      'gradient': [Color(0xFF0F2B48), Color(0xFF0D5C75)],
-      'route': '/promotions',
-    },
-    {
-      'title': 'Nike & Adidas Sport Fest 2026 - Hoàn 20%',
-      'subtitle':
-          'Hoàn tiền khi thanh toán không tiếp xúc Apple Pay / SenBank Pay',
-      'tag': 'THỂ THAO NĂNG ĐỘNG',
-      'tagIcon': LucideIcons.flame,
-      'accentColor': Color(0xFFFB7185),
-      'image': 'assets/images/banners/banner_nike_adidas.jpg',
-      'gradient': [Color(0xFF1E1B4B), Color(0xFF831843)],
-      'route': '/promotions',
-    },
-  ];
+  // Nội dung được tải động từ Backend (notification-service) — KHÔNG dùng dữ liệu cứng
+  final List<Map<String, dynamic>> _heroBanners = [];
 
   // ===========================================================================
   // 2. GÓI VAY & TRẢ GÓP XE, NHÀ, ĐIỆN MÁY ĐẶC QUYỀN
   // ===========================================================================
-  final List<Map<String, dynamic>> _installmentDeals = const [
-    {
-      'title': 'Gói Vay Mua Nhà An Cư SenBank',
-      'partner': 'Vinhomes, Masterise Homes, Novaland',
-      'interest': '5.2%/năm',
-      'maxLimit': 'Tối đa 30 Tỷ',
-      'duration': 'Thời hạn 35 năm',
-      'tag': 'Ân hạn gốc 3 năm',
-      'desc':
-          'Tài trợ tới 85% giá trị hợp đồng mua bán nhà ở, căn hộ. Thủ tục thẩm định trực tuyến trong 24h.',
-      'gradient': [Color(0xFF0A2540), AppColors.brandBlue],
-      'image': 'assets/images/banners/vietnam_phu_quoc.jpg',
-      'icon': LucideIcons.home,
-      'type': 'house',
-      'badgeColor': AppColors.bottomBarOcean,
-    },
-    {
-      'title': 'Vay Trả Góp Ô Tô VinFast & Hyundai',
-      'partner': 'VinFast VF3, VF5, VF8, VF9, Hyundai Tucson',
-      'interest': '0% 12 tháng đầu',
-      'maxLimit': 'Hỗ trợ 85% xe',
-      'duration': 'Thời hạn 8 năm',
-      'tag': 'Góp từ 2.9tr/tháng',
-      'desc':
-          'Ưu đãi tặng gói bảo hiểm vật chất 2 năm và miễn phí trạm sạc pin toàn quốc 1 năm.',
-      'gradient': [AppColors.brandNavy, AppColors.bottomBarOcean],
-      'image': 'assets/images/banners/banner_car_loan_couple.png',
-      'icon': LucideIcons.car,
-      'type': 'car',
-      'badgeColor': AppColors.bottomBarOcean,
-    },
-    {
-      'title': 'Trả Góp Xe Máy Điện VinFast Thông Minh',
-      'partner': 'VinFast Feliz S, Evo200, Klara S',
-      'interest': '0% Lãi suất',
-      'maxLimit': '0đ Trả trước',
-      'duration': 'Kỳ hạn 12 - 24 tháng',
-      'tag': 'Góp từ 390k/tháng',
-      'desc':
-          'Sở hữu ngay xe máy điện bảo vệ môi trường, chi phí sạc siêu tiết kiệm chỉ bằng 1/5 tiền xăng.',
-      'gradient': [AppColors.royalBlue, AppColors.bottomBarOcean],
-      'image': 'assets/images/banners/banner_car_driver_raw.jpg',
-      'icon': LucideIcons.zap,
-      'type': 'bike',
-      'badgeColor': AppColors.bottomBarCyan,
-    },
-    {
-      'title': 'Trả Góp 0% Điện Máy & Công Nghệ Flagship',
-      'partner': 'FPT Shop, Thế Giới Di Động, CellphoneS, Di Động Việt',
-      'interest': '0% Lãi suất',
-      'maxLimit': 'Hạn mức 100 Triệu',
-      'duration': '3 - 6 - 9 - 12 tháng',
-      'tag': 'Miễn phí chuyển đổi',
-      'desc':
-          'Áp dụng cho iPhone 16 Pro Max, MacBook Air M3, TV Sony OLED, Tủ lạnh Samsung Bespoke.',
-      'gradient': [AppColors.brandNavy, AppColors.brandBlue],
-      'image': 'assets/images/banners/banner_zara_uniqlo.jpg',
-      'icon': LucideIcons.smartphone,
-      'type': 'tech',
-      'badgeColor': AppColors.bottomBarOcean,
-    },
-    {
-      'title': 'Vay Tiêu Dùng Tín Chấp Siêu Tốc',
-      'partner': 'SenBank FastLoan 24/7',
-      'interest': '0.99%/tháng',
-      'maxLimit': 'Đến 150 Triệu',
-      'duration': 'Duyệt 3 phút',
-      'tag': 'Không thế chấp',
-      'desc':
-          'Giải ngân tiền mặt trực tiếp vào tài khoản ví SenBank. Không cần chứng minh thu nhập phức tạp.',
-      'gradient': [Color(0xFF005C8A), AppColors.oceanCyan],
-      'image': 'assets/images/banners/banner_nike_adidas.jpg',
-      'icon': LucideIcons.banknote,
-      'type': 'loan',
-      'badgeColor': AppColors.bottomBarCyan,
-    },
-  ];
+  // Nội dung được tải động từ Backend (notification-service) — KHÔNG dùng dữ liệu cứng
+  final List<Map<String, dynamic>> _installmentDeals = [];
 
   // ===========================================================================
   // 3. FLASH DEALS (GIỜ VÀNG SĂN DEAL)
   // ===========================================================================
-  final List<Map<String, dynamic>> _flashDeals = const [
-    {
-      'brand': 'Highlands Coffee',
-      'title': 'Giảm 50% Freeze\nTrà Sen Vàng',
-      'code': 'HLCOFFEE50',
-      'discount': '-50%',
-      'progress': 0.88,
-      'left': 'Còn 12 mã',
-      'gradient': [AppColors.royalBlue, AppColors.brandBlue],
-      'icon': LucideIcons.coffee,
-      'route': '/scan-qr',
-    },
-    {
-      'brand': 'Shopee Mall',
-      'title': 'Voucher Giảm\n100K Đơn 250K',
-      'code': 'SHOPEE100',
-      'discount': 'GIẢM 100K',
-      'progress': 0.94,
-      'left': 'Còn 6 mã',
-      'gradient': [AppColors.brandBlue, AppColors.oceanCyan],
-      'icon': LucideIcons.shoppingBag,
-      'route': '/cards',
-    },
-    {
-      'brand': 'GrabCar / BeCar',
-      'title': 'Giảm 40.000đ\nChuyến Đi',
-      'code': 'BEGRAB40',
-      'discount': '-40.000đ',
-      'progress': 0.72,
-      'left': 'Còn 28 mã',
-      'gradient': [AppColors.oceanCyan, AppColors.bottomBarOcean],
-      'icon': LucideIcons.car,
-      'route': '/transfer',
-    },
-    {
-      'brand': 'Phúc Long Tea',
-      'title': 'Giảm 30.000đ\nTrà Đào Sữa',
-      'code': 'PHUCLONG30',
-      'discount': '-30.000đ',
-      'progress': 0.82,
-      'left': 'Còn 15 mã',
-      'gradient': [AppColors.brandBlue, AppColors.bottomBarCyan],
-      'icon': LucideIcons.cupSoda,
-      'route': '/scan-qr',
-    },
-    {
-      'brand': 'CGV Cinemas',
-      'title': 'Mua 1 Vé Tặng\n1 Bắp Rang Bơ',
-      'code': 'CGVPOPCORN',
-      'discount': 'MUA 1 TẶNG 1',
-      'progress': 0.65,
-      'left': 'Còn 35 mã',
-      'gradient': [Color(0xFF0F2B48), AppColors.brandBlue],
-      'icon': LucideIcons.film,
-      'route': '/scan-qr',
-    },
-    {
-      'brand': 'Pizza Hut',
-      'title': 'Combo 2 Pizza\nGiảm 35%',
-      'code': 'PIZZA35',
-      'discount': '-35%',
-      'progress': 0.55,
-      'left': 'Còn 45 mã',
-      'gradient': [Color(0xFF0A2540), AppColors.oceanCyan],
-      'icon': LucideIcons.pizza,
-      'route': '/scan-qr',
-    },
-  ];
+  // Nội dung được tải động từ Backend (notification-service) — KHÔNG dùng dữ liệu cứng
+  final List<Map<String, dynamic>> _flashDeals = [];
 
   // ===========================================================================
   // 4. DANH SÁCH TẤT CẢ ƯU ĐÃI KHUYẾN MÃI (16 ITEMS)
   // ===========================================================================
-  final List<Map<String, dynamic>> _allPromotions = const [
-    {
-      'id': 'promo_1',
-      'brand': 'Highlands Coffee',
-      'category': 'Ẩm thực & Cafe',
-      'title': 'Mua 1 Tặng 1 Toàn Bộ Freeze & Trà Sen Vàng',
-      'desc':
-          'Áp dụng cho đồ uống cỡ Lớn khi thanh toán thẻ contactless hoặc quét VietQR SenBank.',
-      'discount': 'MUA 1 TẶNG 1',
-      'code': 'HLCOFFEE',
-      'expiry': 'HSD: 30/09/2026',
-      'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
-      'icon': LucideIcons.coffee,
-      'route': '/scan-qr',
-      'condition': 'Tối đa 2 lần/tuần cho mỗi chủ tài khoản SenBank.',
-      'rating': 4.8,
-      'used': '12.200',
-    },
-    {
-      'id': 'promo_2',
-      'brand': 'BeCar & GrabCar',
-      'category': 'Di chuyển & Xe',
-      'title': 'Giảm Ngay 50.000đ Cho Chuyến Đi Sân Bay & Đi Làm',
-      'desc': 'Áp dụng cho mọi chuyến BeCar/GrabCar từ 90.000đ trên toàn quốc.',
-      'discount': 'GIẢM 50.000đ',
-      'code': 'SENBE50',
-      'expiry': 'HSD: 15/10/2026',
-      'gradient': [AppColors.royalBlue, AppColors.brandBlue],
-      'icon': LucideIcons.car,
-      'route': '/transfer',
-      'condition': 'Áp dụng cho mọi khung giờ, kể cả giờ cao điểm.',
-      'rating': 4.6,
-      'used': '18.400',
-    },
-    {
-      'id': 'promo_3',
-      'brand': 'VinFast Auto',
-      'category': 'Di chuyển & Xe',
-      'title': 'Vay Mua Ô Tô Điện VinFast VF3, VF5, VF8 Lãi Suất 0%',
-      'desc':
-          'SenBank tài trợ 85% giá trị xe, tặng 1 năm sạc pin miễn phí tại tất cả trạm sạc V-Green.',
-      'discount': '0% LÃI SUẤT',
-      'code': 'VINFAST0',
-      'expiry': 'HSD: 31/12/2026',
-      'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
-      'icon': LucideIcons.carFront,
-      'route': '/bills/quick-loan',
-      'condition':
-          'Kỳ hạn vay tối đa 8 năm, xét duyệt hồ sơ online trong 15 phút.',
-      'rating': 4.9,
-      'used': '4.100',
-    },
-    {
-      'id': 'promo_4',
-      'brand': 'SenBank Home Loan',
-      'category': 'Trả góp & Vay',
-      'title': 'Gói Vay Mua Nhà An Cư - Lãi Suất 5.2%/Năm Cố Định',
-      'desc':
-          'Vay mua chung cư, nhà phố Vinhomes, Masterise, Novaland với ân hạn nợ gốc 36 tháng.',
-      'discount': 'LÃI 5.2%',
-      'code': 'HOMELOAN52',
-      'expiry': 'HSD: 31/12/2026',
-      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
-      'icon': LucideIcons.home,
-      'route': '/bills/quick-loan',
-      'condition':
-          'Hạn mức vay lên đến 30 tỷ VNĐ, thời hạn linh hoạt tới 35 năm.',
-      'rating': 4.9,
-      'used': '2.800',
-    },
-    {
-      'id': 'promo_5',
-      'brand': 'FPT Shop & Thế Giới Di Động',
-      'category': 'Trả góp & Vay',
-      'title': 'Trả Góp 0% iPhone 16 Pro Max & Laptop Gaming',
-      'desc':
-          'Trả trước 0 đồng, kỳ hạn 6-12 tháng qua thẻ tín dụng SenBank, tặng voucher 1 triệu.',
-      'discount': 'TRẢ GÓP 0%',
-      'code': 'TECH0PERCENT',
-      'expiry': 'HSD: 31/10/2026',
-      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
-      'icon': LucideIcons.smartphone,
-      'route': '/cards',
-      'condition':
-          'Áp dụng cho đơn hàng từ 3.000.000đ tại chuỗi cửa hàng đối tác.',
-      'rating': 4.7,
-      'used': '15.900',
-    },
-    {
-      'id': 'promo_6',
-      'brand': 'Shopee Mall & Lazada',
-      'category': 'Mua sắm',
-      'title': 'Hoàn Tiền 100.000đ Trực Tiếp Vào Tài Khoản',
-      'desc':
-          'Tự động hoàn 100k vào tài khoản thanh toán cho đơn hàng từ 300k liên kết thẻ SenBank.',
-      'discount': 'HOÀN 100K',
-      'code': 'SENSHOPEE100',
-      'expiry': 'HSD: 30/09/2026',
-      'gradient': [Color(0xFF0A2540), AppColors.brandBlue],
-      'icon': LucideIcons.shoppingBag,
-      'route': '/cards',
-      'condition': 'Tiền hoàn sẽ vào tài khoản trong vòng 24 giờ.',
-      'rating': 4.9,
-      'used': '35.000',
-    },
-    {
-      'id': 'promo_7',
-      'brand': 'Vietnam Airlines',
-      'category': 'Du lịch',
-      'title': 'Giảm 300.000đ Vé Máy Bay Khứ Hồi Toàn Quốc',
-      'desc':
-          'Ưu đãi dành riêng cho khách hàng SenBank khi đặt vé máy bay đi Phú Quốc, Đà Nẵng, Nha Trang.',
-      'discount': 'GIẢM 300K',
-      'code': 'VIVUHE300',
-      'expiry': 'HSD: 31/10/2026',
-      'gradient': [AppColors.oceanBlue, AppColors.brandBlue],
-      'icon': LucideIcons.plane,
-      'route': '/bills/input?service=Vé máy bay',
-      'condition': 'Áp dụng cho hạng vé từ Phổ thông tiêu chuẩn trở lên.',
-      'rating': 4.7,
-      'used': '8.600',
-    },
-    {
-      'id': 'promo_8',
-      'brand': 'Phúc Long Tea & Coffee',
-      'category': 'Ẩm thực & Cafe',
-      'title': 'Giảm 25% Toàn Bộ Hóa Đơn Trà & Bánh Mì',
-      'desc':
-          'Tận hưởng trà Ô Long đậm vị cùng bánh tươi với ưu đãi giảm trực tiếp 25% khi quét QR SenBank.',
-      'discount': 'GIẢM 25%',
-      'code': 'PHUCLONG25',
-      'expiry': 'HSD: 15/10/2026',
-      'gradient': [AppColors.tealNavy, AppColors.oceanBlue],
-      'icon': LucideIcons.cupSoda,
-      'route': '/scan-qr',
-      'condition': 'Áp dụng hóa đơn từ 80.000đ, không giới hạn số lần.',
-      'rating': 4.8,
-      'used': '21.300',
-    },
-    {
-      'id': 'promo_9',
-      'brand': 'VinFast Xe Máy Điện',
-      'category': 'Di chuyển & Xe',
-      'title': 'Trả Góp Xe Máy Điện Feliz S, Evo200 - 390K/Tháng',
-      'desc':
-          'Không cần trả trước, hỗ trợ hồ sơ online qua app SenBank, nhận xe ngay tại showroom.',
-      'discount': 'GÓP 390K',
-      'code': 'EVO390K',
-      'expiry': 'HSD: 30/11/2026',
-      'gradient': [AppColors.tealNavy, AppColors.oceanBlue],
-      'icon': LucideIcons.zap,
-      'route': '/bills/quick-loan',
-      'condition': 'Áp dụng cho dòng xe Evo200 và Feliz S thế hệ mới.',
-      'rating': 4.9,
-      'used': '7.400',
-    },
-    {
-      'id': 'promo_10',
-      'brand': 'Golden Gate - Gogi & Kichi',
-      'category': 'Ẩm thực & Cafe',
-      'title': 'Tặng 1 Suất Buffet Miễn Phí Cho Nhóm 4 Người',
-      'desc':
-          'Áp dụng tại chuỗi nhà hàng Gogi House, Kichi-Kichi, Manwah, Isushi toàn quốc.',
-      'discount': 'ĐI 4 TẶNG 1',
-      'code': 'GOLDENGATE4',
-      'expiry': 'HSD: 20/10/2026',
-      'gradient': [AppColors.brandBlue, AppColors.bottomBarCyan],
-      'icon': LucideIcons.utensils,
-      'route': '/scan-qr',
-      'condition': 'Áp dụng vào tất cả các ngày trong tuần (trừ ngày Lễ).',
-      'rating': 4.8,
-      'used': '14.100',
-    },
-    {
-      'id': 'promo_11',
-      'brand': 'Điện Lực EVN & Nước Sinh Hoạt',
-      'category': 'Hóa đơn',
-      'title': 'Hoàn Tiền 50.000đ Khi Đặt Lịch Tự Động Trừ Cước',
-      'desc':
-          'Cài đặt tự động thanh toán hóa đơn tiền điện EVN và tiền nước qua ví SenBank.',
-      'discount': 'HOÀN 50K',
-      'code': 'AUTOBILL50',
-      'expiry': 'HSD: 31/10/2026',
-      'gradient': [AppColors.brandNavy, AppColors.oceanBlue],
-      'icon': LucideIcons.receipt,
-      'route': '/bills/input?service=ELECTRICITY',
-      'condition':
-          'Hoàn tiền sau khi chu kỳ cước đầu tiên được trích nợ thành công.',
-      'rating': 4.5,
-      'used': '28.900',
-    },
-    {
-      'id': 'promo_12',
-      'brand': 'SenBank Visa Platinum',
-      'category': 'Hoàn tiền',
-      'title': 'Hoàn Tiền 10% Mọi Chi Tiêu Quốc Tế & Ăn Uống',
-      'desc':
-          'Tối đa 1.500.000đ/tháng, tích lũy điểm SenPoint đổi dặm bay Bông Sen Vàng.',
-      'discount': 'HOÀN 10%',
-      'code': 'PLATINUM2026',
-      'expiry': 'HSD: 31/12/2026',
-      'gradient': [AppColors.bottomBarOcean, AppColors.brandBlue],
-      'icon': LucideIcons.creditCard,
-      'route': '/cards',
-      'condition':
-          'Chi tiêu tối thiểu 1.000.000đ trong 30 ngày kể từ khi kích hoạt.',
-      'rating': 4.9,
-      'used': '5.200',
-    },
-    {
-      'id': 'promo_13',
-      'brand': 'Booking.com & Agoda',
-      'category': 'Du lịch',
-      'title': 'Đặt Khách Sạn Resort 5 Sao Hoàn 15% Không Giới Hạn',
-      'desc':
-          'Đặt phòng khách sạn qua SenBank Travel Hub, hoàn tiền 15% không giới hạn.',
-      'discount': 'HOÀN 15%',
-      'code': 'HOTEL15',
-      'expiry': 'HSD: 30/10/2026',
-      'gradient': [Color(0xFF03045E), AppColors.brandBlue],
-      'icon': LucideIcons.hotel,
-      'route': '/bills/input?service=Khách sạn',
-      'condition': 'Đặt phòng tối thiểu 1 đêm, giá trị phòng từ 500.000đ/đêm.',
-      'rating': 4.6,
-      'used': '6.800',
-    },
-    {
-      'id': 'promo_14',
-      'brand': 'Petrolimex & Xăng Dầu',
-      'category': 'Di chuyển & Xe',
-      'title': 'Hoàn 5% Khi Đổ Xăng Quét VietQR SenBank',
-      'desc':
-          'Áp dụng tại hơn 3.000 cây xăng Petrolimex và PVOIL trên toàn quốc.',
-      'discount': 'HOÀN 5%',
-      'code': 'XANGDAU5',
-      'expiry': 'HSD: 31/10/2026',
-      'gradient': [AppColors.brandNavy, AppColors.oceanBlue],
-      'icon': LucideIcons.fuel,
-      'route': '/scan-qr',
-      'condition': 'Tối đa hoàn 50.000đ mỗi lần giao dịch, 4 lần/tháng.',
-      'rating': 4.8,
-      'used': '42.000',
-    },
-    {
-      'id': 'promo_15',
-      'brand': 'The Coffee House',
-      'category': 'Ẩm thực & Cafe',
-      'title': 'Giảm 30% Toàn Bộ Menu Cà Phê Buổi Sáng',
-      'desc':
-          'Áp dụng từ 6h-10h hàng ngày khi thanh toán qua ứng dụng SenBank.',
-      'discount': 'GIẢM 30%',
-      'code': 'COFFEE30',
-      'expiry': 'HSD: 31/10/2026',
-      'gradient': [Color(0xFF005F73), Color(0xFF0A9396)],
-      'icon': LucideIcons.coffee,
-      'route': '/scan-qr',
-      'condition': 'Áp dụng tất cả cửa hàng The Coffee House, từ 6h-10h.',
-      'rating': 4.7,
-      'used': '29.600',
-    },
-    {
-      'id': 'promo_16',
-      'brand': 'Pizza Hut & KFC',
-      'category': 'Ẩm thực & Cafe',
-      'title': 'Combo Đôi Pizza + Gà Rán Giảm 35%',
-      'desc':
-          'Thưởng thức combo 2 pizza + 2 phần gà với giá cực ưu đãi khi quét VietQR.',
-      'discount': 'GIẢM 35%',
-      'code': 'PIZZA35',
-      'expiry': 'HSD: 15/10/2026',
-      'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
-      'icon': LucideIcons.pizza,
-      'route': '/scan-qr',
-      'condition': 'Áp dụng tại tất cả cửa hàng Pizza Hut và KFC toàn quốc.',
-      'rating': 4.5,
-      'used': '13.300',
-    },
-  ];
+  // Nội dung được tải động từ Backend (notification-service) — KHÔNG dùng dữ liệu cứng
+  final List<Map<String, dynamic>> _allPromotions = [];
 
   // ===========================================================================
   // 5. SỰ KIỆN QUAY THƯỞNG & HOT EVENTS
   // ===========================================================================
-  final List<Map<String, dynamic>> _events = const [
-    {
-      'title': 'Ngày Hội Thanh Toán Không Tiền Mặt - Rinh iPhone 16 Pro',
-      'date': '15/09 - 30/09/2026',
-      'reward': 'Vòng quay may mắn trúng iPhone 16 Pro & Vàng 9999',
-      'badge': 'SIÊU HOT',
-      'badgeColor': AppColors.bottomBarOcean,
-      'gradient': [AppColors.bottomBarOcean, AppColors.brandBlue],
-      'icon': CupertinoIcons.rosette,
-      'participants': '24.450 người tham gia',
-    },
-    {
-      'title': 'Thách Thức Tiết Kiệm Mua Nhà & Mua Xe 30 Ngày',
-      'date': '01/09 - 30/09/2026',
-      'reward': 'Tặng thêm 1.5% lãi suất và voucher 5.000.000đ khi giải ngân',
-      'badge': 'MỚI',
-      'badgeColor': AppColors.bottomBarOcean,
-      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
-      'icon': CupertinoIcons.chart_bar_alt_fill,
-      'participants': '18.320 người tham gia',
-    },
-    {
-      'title': 'Giới Thiệu Bạn Bè - Nhận Ngay 50.000đ & Điểm Thưởng',
-      'date': 'Không giới hạn thời gian',
-      'reward': '50.000đ tiền tươi vào ví cho mỗi lượt mở tài khoản',
-      'badge': 'THƯỜNG XUYÊN',
-      'badgeColor': AppColors.brandBlue,
-      'gradient': [AppColors.royalBlue, AppColors.oceanBlue],
-      'icon': CupertinoIcons.person_2_fill,
-      'participants': '65.200 người tham gia',
-    },
-    {
-      'title': 'Tuần Lễ Vàng Trả Góp Ô Tô Điện & Xe Máy VinFast',
-      'date': '10/09 - 25/09/2026',
-      'reward': 'Tặng gói phụ kiện cao cấp 15 triệu & miễn phí bảo hiểm',
-      'badge': 'ĐẶC QUYỀN',
-      'badgeColor': AppColors.bottomBarCyan,
-      'gradient': [AppColors.brandNavy, AppColors.oceanBlue],
-      'icon': CupertinoIcons.car_fill,
-      'participants': '12.100 người tham gia',
-    },
-  ];
+  // Nội dung được tải động từ Backend (notification-service) — KHÔNG dùng dữ liệu cứng
+  final List<Map<String, dynamic>> _events = [];
 
   @override
   void initState() {
@@ -646,19 +111,167 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
         WidgetsBinding.instance.runtimeType.toString().contains('Test');
     if (!isTest) {
       _startBannerTimer();
-      _loadApiVouchers();
+      _loadPromotionContent();
     }
   }
 
-  Future<void> _loadApiVouchers() async {
+  /// Tải toàn bộ nội dung tab Ưu đãi từ Backend (100% dữ liệu thật):
+  /// - /promotions/campaigns → banner chính + sự kiện (số người tham gia thật)
+  /// - /promotions → danh mục voucher + tab voucher cá nhân
+  Future<void> _loadPromotionContent() async {
+    final ds = PromotionRemoteDataSource();
     try {
-      final list = await PromotionRemoteDataSource().getPromotions();
-      if (mounted) setState(() => _apiVouchers = list);
-    } catch (_) {}
+      final results = await Future.wait([
+        ds.getCampaigns().catchError((_) => <Map<String, dynamic>>[]),
+        ds.getPromotions().catchError((_) => <Map<String, dynamic>>[]),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _heroBanners.addAll(results[0].map(_campaignToBanner));
+        _events.addAll(results[0].map(_campaignToEvent));
+        final catalog = results[1];
+        _allPromotions.addAll(
+            catalog.asMap().entries.map((e) => _voucherToPromotion(e.value, e.key)));
+        _apiVouchers.addAll(catalog);
+        _loadingContent = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingContent = false);
+    }
   }
+
+  Map<String, dynamic> _parseRulesJson(dynamic raw) {
+    if (raw is! String || raw.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? decoded : const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  static const Map<String, Map<String, Object>> _campaignVisuals = {
+    'deposit': {
+      'icon': CupertinoIcons.money_dollar_circle_fill,
+      'accent': Color(0xFF38BDF8),
+      'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
+    },
+    'referral': {
+      'icon': CupertinoIcons.person_2_fill,
+      'accent': Color(0xFF2DD4BF),
+      'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
+    },
+    'savings': {
+      'icon': CupertinoIcons.gift_fill,
+      'accent': Color(0xFFF59E0B),
+      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
+    },
+    'bills': {
+      'icon': CupertinoIcons.doc_text_fill,
+      'accent': Color(0xFF60A5FA),
+      'gradient': [AppColors.brandNavy, AppColors.bottomBarOcean],
+    },
+    'p2p': {
+      'icon': CupertinoIcons.paperplane_fill,
+      'accent': Color(0xFFA78BFA),
+      'gradient': [AppColors.brandBlue, AppColors.oceanCyan],
+    },
+    'default': {
+      'icon': CupertinoIcons.rosette,
+      'accent': AppColors.primary,
+      'gradient': [AppColors.brandNavy, AppColors.brandBlue],
+    },
+  };
+
+  Map<String, dynamic> _campaignToBanner(Map<String, dynamic> c) {
+    final rules = _parseRulesJson(c['rulesJson']);
+    final category =
+        ((rules['category'] as String?) ?? (c['type'] as String? ?? ''))
+            .toLowerCase();
+    final visual = _campaignVisuals[category] ?? _campaignVisuals['default']!;
+    return {
+      'title': (c['name'] as String?) ?? '',
+      'subtitle': (c['description'] as String?) ?? '',
+      'tag': ((rules['badge'] as String?) ??
+              (c['type'] as String? ?? 'SEN HỒNG'))
+          .toUpperCase(),
+      'tagIcon': visual['icon'] as IconData,
+      'accentColor': visual['accent'] as Color,
+      'gradient': visual['gradient'] as List<Color>,
+      'route': (rules['route'] as String?) ?? '/promotions',
+    };
+  }
+
+  Map<String, dynamic> _campaignToEvent(Map<String, dynamic> c) {
+    final rules = _parseRulesJson(c['rulesJson']);
+    final category =
+        ((rules['category'] as String?) ?? (c['type'] as String? ?? ''))
+            .toLowerCase();
+    final visual = _campaignVisuals[category] ?? _campaignVisuals['default']!;
+    final participants = (c['participantsCount'] as num?)?.toInt() ?? 0;
+    final rewardAmount = (c['rewardAmount'] as num?)?.toInt() ?? 0;
+    final end = DateTime.tryParse((c['endDate'] ?? '').toString());
+    final dateText = end != null
+        ? 'Đến ${end.day}/${end.month}/${end.year}'
+        : 'Diễn ra liên tục';
+    return {
+      'title': (c['name'] as String?) ?? '',
+      'date': dateText,
+      'badge': ((rules['badge'] as String?) ?? (c['type'] as String? ?? ''))
+          .toUpperCase(),
+      'badgeColor': visual['accent'] as Color,
+      'icon': visual['icon'] as IconData,
+      'gradient': visual['gradient'] as List<Color>,
+      'route': (rules['route'] as String?) ?? '/promotions',
+      'reward': rewardAmount > 0
+          ? CurrencyFormatter.formatVND(rewardAmount.toDouble())
+          : 'Theo quy định chương trình',
+      'participants': participants > 0
+          ? '$participants người đã tham gia'
+          : 'Mới mở — hãy là người đầu tiên',
+    };
+  }
+
+  Map<String, dynamic> _voucherToPromotion(Map<String, dynamic> v, int index) {
+    final discountValue = (v['discountValue'] as num?)?.toInt() ?? 0;
+    final isPercent =
+        ((v['discountType'] as String?) ?? 'FIXED').toUpperCase() == 'PERCENT';
+    final discount = isPercent
+        ? 'GIẢM $discountValue%'
+        : 'GIẢM ${(discountValue / 1000).round()}K';
+    final minOrder = (v['minOrderAmount'] as num?)?.toInt() ?? 0;
+    final validUntil = DateTime.tryParse((v['validUntil'] ?? '').toString());
+    final expiry = validUntil != null
+        ? 'HSD: ${validUntil.day}/${validUntil.month}/${validUntil.year}'
+        : 'HSD: liên tục';
+    final visual = _promoVisualPalette[index % _promoVisualPalette.length];
+    return {
+      'id': (v['id'] ?? '').toString(),
+      'brand': 'Sen Hồng Bank',
+      'category': 'Ưu đãi Sen Hồng',
+      'title': (v['title'] as String?) ?? '',
+      'desc': (v['description'] as String?) ?? '',
+      'discount': discount,
+      'code': (v['code'] as String?) ?? '',
+      'condition': minOrder > 0
+          ? 'Đơn tối thiểu ${CurrencyFormatter.formatVND(minOrder.toDouble())}'
+          : 'Áp dụng mọi đơn hàng',
+      'expiry': expiry,
+      'gradient': visual,
+      'icon': CupertinoIcons.ticket_fill,
+      'route': '/scan-qr',
+    };
+  }
+
+  static const List<List<Color>> _promoVisualPalette = [
+    [AppColors.brandBlue, AppColors.bottomBarOcean],
+    [AppColors.royalBlue, AppColors.oceanCyan],
+    [AppColors.brandNavy, AppColors.tealNavy],
+  ];
 
   void _startBannerTimer() {
     _bannerTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_heroBanners.isEmpty) return;
       if (_bannerController.hasClients) {
         final nextPage = (_currentBannerIndex + 1) % _heroBanners.length;
         _bannerController.animateToPage(
@@ -1118,7 +731,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
       children: [
-        // Highlight Intro Banner
+        // Highlight Intro Banner — nội dung theo chương trình thật từ Backend
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -1150,7 +763,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Gói Vay An Cư & Lăn Bánh',
+                      'Chương Trình Tài Chính Sen Hồng',
                       style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -1158,7 +771,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Lãi suất ưu đãi từ 5.2%/năm, thẩm định hồ sơ online nhận kết quả trong 15 phút.',
+                      'Các chương trình trả góp & tín dụng sẽ được cập nhật tại đây khi có thông báo chính thức.',
                       style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   ],
@@ -1169,18 +782,47 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
         ),
 
         const SizedBox(height: 20),
-        const Text('Danh Mục Gói Vay Trả Góp Ưu Đãi',
+        const Text('Chương Trình Đang Áp Dụng',
             style: TextStyle(
                 color: AppColors.textPrimaryLight,
                 fontSize: 17,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
 
-        ..._installmentDeals.map((deal) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _buildFullInstallmentCard(deal),
-            )),
+        if (_installmentDeals.isEmpty)
+          _buildEmptyContentHint(
+            icon: CupertinoIcons.doc_text_fill,
+            message: 'Chưa có chương trình trả góp nào đang diễn ra.\nVui lòng quay lại sau.',
+          )
+        else
+          ..._installmentDeals.map((deal) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildFullInstallmentCard(deal),
+              )),
       ],
+    );
+  }
+
+  /// Gợi ý trung thực khi chưa có nội dung từ Backend (không còn dữ liệu cứng)
+  Widget _buildEmptyContentHint({required IconData icon, required String message}) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: const Color(0xF20C1E36),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.12)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white24, size: 40),
+          const SizedBox(height: 10),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white38, fontSize: 13, height: 1.5),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1231,7 +873,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
           ],
         ),
         const SizedBox(height: 14),
-        ..._events.map((e) => Padding(
+        if (_events.isEmpty && !_loadingContent)
+          _buildEmptyContentHint(
+            icon: CupertinoIcons.sparkles,
+            message: 'Chưa có sự kiện nào đang diễn ra.\nCác chương trình mới sẽ xuất hiện tại đây.',
+          )
+        else
+          ..._events.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: 14),
               child: _buildEventCard(e),
             )),
@@ -1396,7 +1044,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
               style: const TextStyle(
                   color: AppColors.textPrimaryLight, fontSize: 13.5),
               decoration: const InputDecoration(
-                hintText: 'Tìm ưu đãi Highlands, Be, Shopee...',
+                hintText: 'Tìm ưu đãi, mã giảm giá...',
                 hintStyle:
                     TextStyle(color: AppColors.textMutedLight, fontSize: 13),
                 border: InputBorder.none,
@@ -1449,6 +1097,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   }
 
   Widget _buildHeroBannerCarousel() {
+    if (_loadingContent) {
+      return const SizedBox(
+        height: 202,
+        child: Center(
+            child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
+    if (_heroBanners.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Column(
       children: [
         SizedBox(
@@ -2181,6 +1839,15 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   }
 
   Widget _buildFlashSaleList() {
+    if (!_loadingContent && _flashDeals.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: _buildEmptyContentHint(
+          icon: CupertinoIcons.clock_fill,
+          message: 'Chưa có deal nào trong giờ vàng.\nTheo dõi để không bỏ lỡ chương trình tiếp theo.',
+        ),
+      );
+    }
     return SizedBox(
       height: 148,
       child: ListView.builder(
@@ -3034,13 +2701,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Sự Kiện Lễ Hội SenBank 2026',
+                Text('Chương Trình Sen Hồng Bank',
                     style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16)),
                 SizedBox(height: 2),
-                Text('Quay thưởng mỗi ngày - Nhận vàng 9999 và quà tặng',
+                Text('Các sự kiện & ưu đãi đang diễn ra từ ngân hàng',
                     style: TextStyle(color: Colors.white70, fontSize: 12)),
               ],
             ),
@@ -3144,10 +2811,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                   style: const TextStyle(color: Colors.white54, fontSize: 11)),
               ElevatedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Đã tham gia sự kiện thành công!')),
-                  );
+                  // Điều hướng tới tính năng thật của chương trình (không giả lập tham gia)
+                  final route = (event['route'] as String?) ?? '/promotions';
+                  try {
+                    context.push(route);
+                  } catch (_) {
+                    Navigator.of(context).pushNamed(route);
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.bottomBarCyan,

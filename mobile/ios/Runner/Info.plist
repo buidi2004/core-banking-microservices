@@ -32,6 +32,14 @@
 	<string>Sen Hồng cần truy cập thư viện ảnh để tải mã QR thanh toán từ thiết bị.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Sen Hồng cần gửi thông báo để cập nhật biến động số dư, xác nhận giao dịch chuyển tiền và các thông tin quan trọng từ tài khoản của bạn.</string>
+	<key>NFCReaderUsageDescription</key>
+	<string>Sen Hồng cần truy cập NFC để đọc chip trên thẻ Căn cước công dân đối soát sinh trắc học theo QĐ 2345/QĐ-NHNN.</string>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>A0000002471001</string>
+		<string>A0000002472001</string>
+		<string>00000000000000</string>
+	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

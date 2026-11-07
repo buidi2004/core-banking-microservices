@@ -112,10 +112,12 @@ def check_security_guardrails(text: str) -> Tuple[bool, Optional[str]]:
     """
     lower_text = text.lower()
 
-    # Nhận diện thắc mắc hướng dẫn lấy lại/đổi mã PIN hoặc mật khẩu hợp lệ (Whitelist)
+    # Nhận diện thắc mắc hướng dẫn lấy lại/đổi/mở khóa mã PIN hoặc mật khẩu hợp lệ (Whitelist)
     is_safe_pin_or_pwd_query = any(k in lower_text for k in [
         "quên", "quen", "lấy lại", "lay lai", "cấp lại", "cap lai", "cài lại", "cai lai",
-        "đổi", "doi", "thay đổi", "thay doi", "khôi phục", "khoi phuc", "reset", "hướng dẫn", "huong dan", "cách", "cach"
+        "đổi", "doi", "thay đổi", "thay doi", "khôi phục", "khoi phuc", "reset", "hướng dẫn", "huong dan", "cách", "cach",
+        "bị khóa", "bi khoa", "mở lại", "mo lai", "mở khóa", "mo khoa", "nhập sai", "nhap sai",
+        "sai 3 lần", "sai 5 lần", "sai mã pin", "sai pin", "khóa mã pin", "khoa ma pin", "khóa pin", "khoa pin"
     ]) and any(p in lower_text for p in ["pin", "mã pin", "ma pin", "mật khẩu", "mat khau", "password"])
 
     # 0. Phát hiện hành vi Prompt Injection / Jailbreak / Đòi hiển thị System Prompt

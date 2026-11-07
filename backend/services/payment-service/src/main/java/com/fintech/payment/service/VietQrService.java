@@ -242,7 +242,7 @@ public class VietQrService {
             case "970415" -> "VietinBank";
             case "970418" -> "BIDV";
             case "970423" -> "TPBank";
-            case "970488" -> "SenBank";
+            case "970488", "970499" -> "Ví Sen Hồng (SenBank)";
             default -> "Ngân hàng liên kết (" + bin + ")";
         };
     }

@@ -13,5 +13,6 @@ public interface CashInTransitRepository extends JpaRepository<CashInTransitOrde
     List<CashInTransitOrder> findAllByOrderByCreatedAtDesc();
     List<CashInTransitOrder> findByStatusOrderByCreatedAtDesc(String status);
     Optional<CashInTransitOrder> findByOrderCode(String orderCode);
+    long countByStatusIn(java.util.Collection<String> statuses);
 }
 

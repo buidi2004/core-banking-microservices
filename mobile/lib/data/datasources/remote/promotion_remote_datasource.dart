@@ -15,6 +15,14 @@ class PromotionRemoteDataSource {
     return (json['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
+  /// Danh mục chiến dịch khuyến mãi đang chạy (notification-service /campaigns).
+  Future<List<Map<String, dynamic>>> getCampaigns() async {
+    final response = await _dio.get(ApiConstants.promotionCampaigns);
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! List) throw apiException(json);
+    return (json['data'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
   Future<List<Map<String, dynamic>>> getMyVouchers() async {
     final response = await _dio.get(ApiConstants.myVouchers);
     final json = Map<String, dynamic>.from(response.data as Map);

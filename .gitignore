@@ -82,7 +82,7 @@ mobile/scratch/
 graphify-out/
 .graphify/
 
-
+gui-test-screenshots/
 
 __pycache__/
 *.pyc

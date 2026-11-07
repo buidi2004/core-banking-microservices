@@ -250,7 +250,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
   }
 
   void _showWithdrawPartialModal(Map<String, dynamic> pb) {
-    final principal = pb['principal'] as double;
+    final principal = (pb['principal'] as num?)?.toDouble() ?? 0.0;
     final partialCtrl = TextEditingController(text: '10000000');
     showModalBottomSheet(
       context: context,
@@ -442,7 +442,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     _buildCertRow('Mã sổ tiết kiệm:', pb['code']),
                     _buildCertRow('Sản phẩm:', pb['product']),
                     _buildCertRow('Tiền gửi gốc:',
-                        CurrencyFormatter.formatVND(pb['principal'] as double),
+                        CurrencyFormatter.formatVND((pb['principal'] as num?)?.toDouble() ?? 0.0),
                         isBold: true),
                     _buildCertRow('Lãi suất áp dụng:', pb['term']),
                     _buildCertRow('Ngày phát hành:', pb['openDate']),
@@ -1416,7 +1416,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                   Text('Tiền gốc gửi tiết kiệm',
                       style: AppTypography.bodySmall(
                           color: AppColors.textSecondaryLight)),
-                  Text(CurrencyFormatter.formatVND(pb['principal'] as double),
+                  Text(CurrencyFormatter.formatVND((pb['principal'] as num?)?.toDouble() ?? 0.0),
                       style: const TextStyle(
                           color: AppColors.primaryDark,
                           fontSize: 24,
@@ -1434,7 +1434,7 @@ class _SavingsScreenState extends State<SavingsScreen> {
                               color: AppColors.textSecondaryLight)),
                       Text(
                           CurrencyFormatter.formatVND(
-                              pb['accruedInterest'] as double),
+                              (pb['accruedInterest'] as num?)?.toDouble() ?? 0.0),
                           style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -1443,18 +1443,18 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     ],
                   ),
                   const Divider(height: 24, color: AppColors.cardBorderLight),
-                  _buildRow('Kỳ hạn & Lãi suất', pb['term'] as String),
+                  _buildRow('Kỳ hạn & Lãi suất', pb['term']?.toString() ?? ''),
                   const SizedBox(height: 6),
-                  _buildRow('Ngày gửi', pb['openDate'] as String),
+                  _buildRow('Ngày gửi', pb['openDate']?.toString() ?? ''),
                   const SizedBox(height: 6),
-                  _buildRow('Ngày đáo hạn', pb['maturityDate'] as String),
+                  _buildRow('Ngày đáo hạn', pb['maturityDate']?.toString() ?? ''),
                   const SizedBox(height: 6),
-                  _buildRow('Phương thức tái tục', pb['rollover'] as String),
+                  _buildRow('Phương thức tái tục', pb['rollover']?.toString() ?? ''),
                   const SizedBox(height: 6),
                   _buildRow(
                       'Lãi dự kiến khi đáo hạn',
                       CurrencyFormatter.formatVND(
-                          pb['expectedInterest'] as double),
+                          (pb['expectedInterest'] as num?)?.toDouble() ?? 0.0),
                       isGreen: true),
                   const SizedBox(height: 18),
 

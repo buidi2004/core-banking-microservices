@@ -63,7 +63,7 @@ void main() {
       await tester.tap(find.text('Chụp ảnh & Tiếp tục'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 700));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Xác Thực eKYC (Bước 3/3)'), findsOneWidget);
       expect(find.text('Quét khuôn mặt (Face Liveness)'), findsOneWidget);
@@ -73,7 +73,7 @@ void main() {
       await tester.tap(find.text('Hoàn tất quét khuôn mặt'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 700));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Xác Thực eKYC'), findsOneWidget);
       expect(find.text('Xác Thực eKYC Thành Công!'), findsOneWidget);

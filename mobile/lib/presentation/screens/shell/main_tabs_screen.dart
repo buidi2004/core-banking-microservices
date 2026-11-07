@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/apple_hig_tokens.dart';
@@ -35,29 +35,34 @@ class MainTabsScreen extends StatelessWidget {
           AppHaptics.selection();
           context.push('/scan-qr');
         },
+        centerIcon: LucideIcons.scanLine,
         centerLabel: 'Quét QR',
         accentColor: AppColors.primary,
         items: const [
           IOSLiquidGlassTabItem(
             label: 'Trang chủ',
-            icon: CupertinoIcons.house,
-            selectedIcon: CupertinoIcons.house_fill,
+            icon: LucideIcons.house,
+            selectedIcon: LucideIcons.house,
+            tabType: AnimatedTabType.home,
           ),
           IOSLiquidGlassTabItem(
             label: 'Thẻ',
-            icon: CupertinoIcons.creditcard,
-            selectedIcon: CupertinoIcons.creditcard_fill,
+            icon: LucideIcons.creditCard,
+            selectedIcon: LucideIcons.creditCard,
+            tabType: AnimatedTabType.cards,
           ),
           IOSLiquidGlassTabItem(
             label: 'Ưu đãi',
-            icon: CupertinoIcons.gift,
-            selectedIcon: CupertinoIcons.gift_fill,
+            icon: LucideIcons.gift,
+            selectedIcon: LucideIcons.gift,
             hasDotBadge: true,
+            tabType: AnimatedTabType.gift,
           ),
           IOSLiquidGlassTabItem(
             label: 'Xem thêm',
-            icon: CupertinoIcons.ellipsis_circle,
-            selectedIcon: CupertinoIcons.ellipsis_circle_fill,
+            icon: LucideIcons.layoutGrid,
+            selectedIcon: LucideIcons.layoutGrid,
+            tabType: AnimatedTabType.more,
           ),
         ],
       ),

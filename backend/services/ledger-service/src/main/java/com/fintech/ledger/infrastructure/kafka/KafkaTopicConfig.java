@@ -59,4 +59,31 @@ public class KafkaTopicConfig {
         factory.setCommonErrorHandler(errorHandler);
         return factory;
     }
+
+    /**
+     * Factory riêng cho Audit trail: các producer (identity/wallet/payment/notification)
+     * publish AuditEvent dạng JSON thuần, KHÔNG bọc KafkaEventEnvelope
+     * → cần StringDeserializer để consumer nhận đúng chuỗi JSON gốc.
+     */
+    @Bean
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public ConcurrentKafkaListenerContainerFactory<String, String> auditStringListenerContainerFactory(
+            ConsumerFactory consumerFactory,
+            KafkaOperations deadLetterKafkaTemplate) {
+
+        java.util.Map<String, Object> props = new java.util.HashMap<>(consumerFactory.getConfigurationProperties());
+        props.put(org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
+                org.apache.kafka.common.serialization.StringDeserializer.class);
+
+        ConcurrentKafkaListenerContainerFactory<String, String> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(new org.springframework.kafka.core.DefaultKafkaConsumerFactory<>(props));
+        factory.setConcurrency(1);
+
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(
+                new DeadLetterPublishingRecoverer(deadLetterKafkaTemplate),
+                new FixedBackOff(1000L, 3L));
+        factory.setCommonErrorHandler(errorHandler);
+        return factory;
+    }
 }

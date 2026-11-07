@@ -52,4 +52,47 @@ class UserControllerTest {
 
         verify(userService).getProfile(testUserId);
     }
+
+    @Test
+    @DisplayName("PUT /api/v1/users/me/alias - Thiết lập alias qua request parameter")
+    void shouldSetAccountAliasViaRequestParam() throws Exception {
+        String testUserId = "usr-test-123456";
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/users/me/alias")
+                        .header("X-User-Id", testUserId)
+                        .param("alias", "SHOP_ALICE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.accountAlias", is("SHOP_ALICE")));
+
+        verify(userService).setAccountAlias(testUserId, "SHOP_ALICE");
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/users/me/alias - Thiết lập alias qua JSON request body")
+    void shouldSetAccountAliasViaRequestBody() throws Exception {
+        String testUserId = "usr-test-123456";
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/users/me/alias")
+                        .header("X-User-Id", testUserId)
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"alias\":\"SHOP_BOB\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success", is(true)))
+                .andExpect(jsonPath("$.data.accountAlias", is("SHOP_BOB")));
+
+        verify(userService).setAccountAlias(testUserId, "SHOP_BOB");
+    }
+
+    @Test
+    @DisplayName("PUT /api/v1/users/me/alias - Từ chối alias không hợp lệ (< 3 ký tự)")
+    void shouldRejectInvalidAccountAlias() throws Exception {
+        String testUserId = "usr-test-123456";
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/users/me/alias")
+                        .header("X-User-Id", testUserId)
+                        .param("alias", "AB"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success", is(false)));
+    }
 }

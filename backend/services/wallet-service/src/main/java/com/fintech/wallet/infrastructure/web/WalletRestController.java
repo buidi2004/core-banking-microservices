@@ -369,7 +369,9 @@ public class WalletRestController {
     private Map<String, Object> walletData(Wallet wallet) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("id", wallet.getId());
+        data.put("walletId", wallet.getId());
         data.put("ownerId", wallet.getOwnerId());
+        data.put("userId", wallet.getOwnerId());
         data.put("balance", wallet.getBalance().getAmount());
         data.put("currency", wallet.getBalance().getCurrency());
         data.put("status", wallet.getStatus() != null ? wallet.getStatus().name() : "ACTIVE");

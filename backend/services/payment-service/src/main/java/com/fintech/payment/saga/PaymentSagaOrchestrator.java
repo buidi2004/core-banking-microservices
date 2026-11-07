@@ -7,6 +7,7 @@ import com.fintech.payment.grpc.dto.WalletBalanceResult;
 import com.fintech.payment.repository.OutboxEventRepository;
 import com.fintech.payment.repository.TransactionRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.Nullable;
@@ -31,6 +32,7 @@ import java.util.function.Supplier;
  *
  * Auto-Reversal đảm bảo tiền không bị mất khi bước Credit thất bại sau khi Debit đã thành công.
  */
+@Slf4j
 @Service
 public class PaymentSagaOrchestrator {
 
@@ -116,14 +118,21 @@ public class PaymentSagaOrchestrator {
         ctx.setStatus("INITIATED");
         ctx.setCurrentStep("RESOLVE_WALLET");
 
-        // Bước 0: Tra cứu ví nguồn & đích từ Wallet Service (gRPC ngoài DB TX)
-        resolveWallets(ctx);
+        Transaction transaction;
+        try {
+            // Bước 0: Tra cứu ví nguồn & đích từ Wallet Service (gRPC ngoài DB TX)
+            resolveWallets(ctx);
 
-        // Bước 1: Tạo transaction + outbox Initiated (cục bộ 1 DB transaction)
-        Transaction transaction = executeInTx(() -> createTransactionAndOutbox(ctx, "INITIATED", "TransactionInitiatedEvent"));
-        ctx.setTransactionId(transaction.getId());
-        ctx.setTransactionCode(transaction.getTransactionCode());
-        ctx.setStatus("INITIATED");
+            // Bước 1: Tạo transaction + outbox Initiated (cục bộ 1 DB transaction)
+            transaction = executeInTx(() -> createTransactionAndOutbox(ctx, "INITIATED", "TransactionInitiatedEvent"));
+            ctx.setTransactionId(transaction.getId());
+            ctx.setTransactionCode(transaction.getTransactionCode());
+            ctx.setStatus("INITIATED");
+        } catch (Exception e) {
+            redisTemplate.delete(lockKey);
+            if (e instanceof RuntimeException re) throw re;
+            throw new IllegalStateException("Saga P2P khởi tạo thất bại: " + e.getMessage(), e);
+        }
 
         try {
             // Bước 2: Debit ví người gửi (gRPC ngoài DB TX)
@@ -203,21 +212,28 @@ public class PaymentSagaOrchestrator {
 
         String transactionCode = "DEP_" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
         final String finalWalletId = resolvedWalletId;
-        Transaction tx = executeInTx(() -> {
-            Transaction t = Transaction.builder()
-                    .transactionCode(transactionCode)
-                    .targetWalletId(finalWalletId)
-                    .receiverId(userId)
-                    .amount(amount)
-                    .fee(0L)
-                    .currency(currency != null ? currency : "VND")
-                    .type("DEPOSIT")
-                    .status("INITIATED")
-                    .idempotencyKey(actualIdemKey)
-                    .note("Nạp tiền vào ví")
-                    .build();
-            return transactionRepository.save(t);
-        });
+        Transaction tx;
+        try {
+            tx = executeInTx(() -> {
+                Transaction t = Transaction.builder()
+                        .transactionCode(transactionCode)
+                        .targetWalletId(finalWalletId)
+                        .receiverId(userId)
+                        .amount(amount)
+                        .fee(0L)
+                        .currency(currency != null ? currency : "VND")
+                        .type("DEPOSIT")
+                        .status("INITIATED")
+                        .idempotencyKey(actualIdemKey)
+                        .note("Nạp tiền vào ví")
+                        .build();
+                return transactionRepository.save(t);
+            });
+        } catch (Exception e) {
+            redisTemplate.delete(lockKey);
+            if (e instanceof RuntimeException re) throw re;
+            throw new IllegalStateException("Nạp tiền khởi tạo thất bại: " + e.getMessage(), e);
+        }
         ctx.setTransactionId(tx.getId());
         ctx.setTransactionCode(transactionCode);
 
@@ -294,21 +310,28 @@ public class PaymentSagaOrchestrator {
 
         String transactionCode = "WDR_" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
         final String finalSourceWalletId = resolvedWalletId;
-        Transaction tx = executeInTx(() -> {
-            Transaction t = Transaction.builder()
-                    .transactionCode(transactionCode)
-                    .sourceWalletId(finalSourceWalletId)
-                    .senderId(userId)
-                    .amount(amount)
-                    .fee(0L)
-                    .currency(currency != null ? currency : "VND")
-                    .type("WITHDRAWAL")
-                    .status("INITIATED")
-                    .idempotencyKey(actualIdemKey)
-                    .note("Rút tiền về tài khoản: " + bankAccountId)
-                    .build();
-            return transactionRepository.save(t);
-        });
+        Transaction tx;
+        try {
+            tx = executeInTx(() -> {
+                Transaction t = Transaction.builder()
+                        .transactionCode(transactionCode)
+                        .sourceWalletId(finalSourceWalletId)
+                        .senderId(userId)
+                        .amount(amount)
+                        .fee(0L)
+                        .currency(currency != null ? currency : "VND")
+                        .type("WITHDRAWAL")
+                        .status("INITIATED")
+                        .idempotencyKey(actualIdemKey)
+                        .note("Rút tiền về tài khoản: " + bankAccountId)
+                        .build();
+                return transactionRepository.save(t);
+            });
+        } catch (Exception e) {
+            redisTemplate.delete(lockKey);
+            if (e instanceof RuntimeException re) throw re;
+            throw new IllegalStateException("Rút tiền khởi tạo thất bại: " + e.getMessage(), e);
+        }
         ctx.setTransactionId(tx.getId());
         ctx.setTransactionCode(transactionCode);
 
@@ -439,25 +462,37 @@ public class PaymentSagaOrchestrator {
         WalletBalanceResult refund = walletGrpcClient.credit(
                 ctx.getSourceWalletId(), refundAmount, ctx.getTransactionId() + ":reversal", ctx.getIdempotencyKey() + ":reversal");
 
-        if (refund.isSuccess() && refund.getBalanceAfter() != null) {
-            ctx.setSourceBalanceAfter(String.valueOf(refund.getBalanceAfter()));
-        }
+        if (refund.isSuccess()) {
+            if (refund.getBalanceAfter() != null) {
+                ctx.setSourceBalanceAfter(String.valueOf(refund.getBalanceAfter()));
+            }
 
-        executeInTx(() -> {
-            transactionRepository.findById(ctx.getTransactionId()).ifPresent(tx -> {
-                tx.setStatus("REVERSED");
-                tx.setFailureReason(reason);
-                tx.setSourceBalanceAfter(toLong(ctx.getSourceBalanceAfter()));
-                transactionRepository.save(tx);
+            executeInTx(() -> {
+                transactionRepository.findById(ctx.getTransactionId()).ifPresent(tx -> {
+                    tx.setStatus("REVERSED");
+                    tx.setFailureReason(reason);
+                    tx.setSourceBalanceAfter(toLong(ctx.getSourceBalanceAfter()));
+                    transactionRepository.save(tx);
+                });
+                outboxEventRepository.save(OutboxEvent.pending(
+                        "Transaction", ctx.getTransactionId(), "TransactionReversedEvent",
+                        serialize(event(ctx, "REVERSED"))));
             });
-            outboxEventRepository.save(OutboxEvent.pending(
-                    "Transaction", ctx.getTransactionId(), "TransactionReversedEvent",
-                    serialize(event(ctx, "REVERSED"))));
-        });
-        ctx.reversed();
-
-        if (!refund.isSuccess()) {
-            ctx.setFailureReason(reason + " | Hoàn tiền thất bại: " + (refund.getErrorMessage() != null ? refund.getErrorMessage() : refund.getErrorCode()));
+            ctx.reversed();
+        } else {
+            String reversalError = reason + " | Hoàn tiền thất bại: " + (refund.getErrorMessage() != null ? refund.getErrorMessage() : refund.getErrorCode());
+            log.error("CRITICAL: Auto-reversal failed for transaction {}: {}", ctx.getTransactionId(), reversalError);
+            executeInTx(() -> {
+                transactionRepository.findById(ctx.getTransactionId()).ifPresent(tx -> {
+                    tx.setStatus("REVERSAL_FAILED");
+                    tx.setFailureReason(reversalError);
+                    transactionRepository.save(tx);
+                });
+                outboxEventRepository.save(OutboxEvent.pending(
+                        "Transaction", ctx.getTransactionId(), "TransactionReversalFailedEvent",
+                        serialize(event(ctx, "REVERSAL_FAILED"))));
+            });
+            ctx.failed(reversalError);
         }
         return ctx;
     }

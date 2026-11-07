@@ -51,6 +51,35 @@ public class CashDepositController {
     private final ObjectMapper objectMapper;
     private final com.fintech.payment.repository.CashInTransitRepository cashInTransitRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${identity.service.url:http://identity-service:8081}")
+    private String identityServiceUrl;
+
+    private String resolveUserIdByAccount(String account) {
+        if (account == null || account.isBlank()) return null;
+        String clean = account.trim();
+        if (clean.matches("^[0-9a-fA-F\\-]{36}$")) {
+            return clean;
+        }
+        try {
+            var client = org.springframework.web.client.RestClient.builder()
+                    .baseUrl(identityServiceUrl != null ? identityServiceUrl : "http://identity-service:8081")
+                    .build();
+            java.util.Map<?, ?> identity = client.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/internal/users/by-phone")
+                            .queryParam("phoneNumber", clean)
+                            .build())
+                    .retrieve()
+                    .body(java.util.Map.class);
+            if (identity != null && identity.get("id") != null) {
+                return identity.get("id").toString();
+            }
+        } catch (Exception e) {
+            log.debug("Không thể phân giải số điện thoại {} qua identity-service: {}", clean, e.getMessage());
+        }
+        return null;
+    }
+
     /**
      * POST /api/v1/cash/deposits
      * Lập lệnh nạp tiền mặt tại quầy bởi Giao dịch viên (Maker).
@@ -67,7 +96,17 @@ public class CashDepositController {
             @RequestHeader(value = "Idempotency-Key", required = false) String headerIdemKey) {
 
         if (headerMakerId == null || headerMakerId.isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            headerMakerId = request.getMakerId();
+        }
+        if (headerMakerId == null || headerMakerId.isBlank()) {
+            headerMakerId = DEFAULT_TELLER_ID;
+        }
+
+        if (trustedBranchId == null || trustedBranchId.isBlank()) {
+            trustedBranchId = request.getBranchId();
+        }
+        if (trustedBranchId == null || trustedBranchId.isBlank()) {
+            trustedBranchId = "BR_Q1";
         }
 
         // 1. Kiểm tra khóa Idempotency chống trùng lặp giao dịch
@@ -114,19 +153,26 @@ public class CashDepositController {
         if (requiresApproval) {
             // Vượt hạn mức 50M -> Chuyển sang trạng thái PENDING_APPROVAL
             depositBuilder.status(CashDeposit.STATUS_PENDING_APPROVAL);
+            CashDeposit deposit = cashDepositRepository.save(depositBuilder.build());
+            return ResponseEntity.ok(ApiResponse.success("Lệnh nạp tiền đã tạo, chờ Kiểm soát viên phê duyệt", CashDepositResponse.from(deposit)));
         } else {
             // Trong hạn mức <= 50M -> Tự động duyệt hoàn tất (COMPLETED)
             depositBuilder.status(CashDeposit.STATUS_COMPLETED)
                     .checkerId("AUTO_RULE")
                     .approvedAt(Instant.now())
                     .completedAt(Instant.now());
-        }
 
-        CashDeposit deposit = cashDepositRepository.save(depositBuilder.build());
+            CashDeposit deposit = depositBuilder.build();
+            boolean credited = creditWalletBalance(deposit);
+            if (!credited && walletGrpcClient != null) {
+                log.error("Tự động duyệt nạp tiền thất bại do không thể cộng tiền ví: {}", deposit.getDepositCode());
+                depositBuilder.status(CashDeposit.STATUS_FAILED);
+                cashDepositRepository.save(depositBuilder.build());
+                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                        .body(ApiResponse.error("Không thể cộng tiền vào ví người nhận. Vui lòng kiểm tra lại tài khoản ví."));
+            }
 
-        // Nếu hoàn tất, cộng tiền vào ví người dùng và bắn sự kiện Kafka sang Ledger & Notification
-        if (CashDeposit.STATUS_COMPLETED.equals(deposit.getStatus())) {
-            creditWalletBalance(deposit);
+            deposit = cashDepositRepository.save(deposit);
             paymentKafkaProducer.sendCashDepositCompleted(
                     deposit.getDepositCode(),
                     deposit.getAccountNumber(),
@@ -134,13 +180,8 @@ public class CashDepositController {
                     deposit.getAmount(),
                     deposit.getBranchId()
             );
+            return ResponseEntity.ok(ApiResponse.success("Nạp tiền thành công (Tự động duyệt do số tiền <= 50,000,000 VND)", CashDepositResponse.from(deposit)));
         }
-
-        String message = requiresApproval
-                ? "Lệnh nạp tiền đã tạo, chờ Kiểm soát viên phê duyệt"
-                : "Nạp tiền thành công (Tự động duyệt do số tiền <= 50,000,000 VND)";
-
-        return ResponseEntity.ok(ApiResponse.success(message, CashDepositResponse.from(deposit)));
     }
 
     /**
@@ -192,13 +233,18 @@ public class CashDepositController {
                     .body(ApiResponse.error("Chỉ có thể phê duyệt giao dịch ở trạng thái PENDING_APPROVAL. Hiện tại: " + deposit.getStatus()));
         }
 
-        // 6. Thực hiện phê duyệt & hoàn tất
+        // 6. Cộng tiền vào ví người dùng qua gRPC sang Wallet Service TRƯỚC KHI hoàn tất
+        boolean credited = creditWalletBalance(deposit);
+        if (!credited && walletGrpcClient != null) {
+            log.error("Cộng tiền vào ví thất bại cho lệnh nạp: {}", deposit.getDepositCode());
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .body(ApiResponse.error("Không thể cộng tiền vào ví người nhận. Vui lòng kiểm tra lại tài khoản ví hoặc hệ thống lõi ví."));
+        }
+
+        // 7. Thực hiện phê duyệt & hoàn tất
         makerCheckerRule.approveDeposit(deposit, checkerId);
         deposit.complete();
         deposit = cashDepositRepository.save(deposit);
-
-        // 7. Cộng tiền vào ví người dùng qua gRPC sang Wallet Service
-        creditWalletBalance(deposit);
 
         // 8. Gửi sự kiện Kafka hoàn tất sang Ledger Service hạch toán Sổ cái kép
         paymentKafkaProducer.sendCashDepositCompleted(
@@ -412,9 +458,12 @@ public class CashDepositController {
         return null;
     }
 
-    private void creditWalletBalance(CashDeposit deposit) {
-        if (walletGrpcClient == null || deposit.getAccountNumber() == null || deposit.getAccountNumber().isBlank()) {
-            return;
+    private boolean creditWalletBalance(CashDeposit deposit) {
+        if (walletGrpcClient == null) {
+            return true;
+        }
+        if (deposit.getAccountNumber() == null || deposit.getAccountNumber().isBlank()) {
+            return false;
         }
 
         String inputAccount = deposit.getAccountNumber().trim();
@@ -426,11 +475,16 @@ public class CashDepositController {
         String targetUserId = null;
 
         try {
-            // Tra cứu thông tin ví và người dùng qua gRPC để đảm bảo có đủ walletId và userId
-            var userInfo = walletGrpcClient.getWalletByUserId(inputAccount);
+            // Tra cứu thông tin ví: nếu inputAccount là số điện thoại hoặc alias, phân giải sang userId trước
+            String resolvedUserId = resolveUserIdByAccount(inputAccount);
+            String searchKey = (resolvedUserId != null) ? resolvedUserId : inputAccount;
+
+            var userInfo = walletGrpcClient.getWalletByUserId(searchKey);
             if (userInfo != null && userInfo.isFound() && userInfo.getWalletId() != null) {
                 targetWalletId = userInfo.getWalletId();
                 targetUserId = userInfo.getUserId();
+            } else if (resolvedUserId != null) {
+                targetUserId = resolvedUserId;
             }
 
             WalletBalanceResult creditRes = walletGrpcClient.credit(
@@ -440,9 +494,9 @@ public class CashDepositController {
                     idemKey
             );
 
-            // Nếu không tìm thấy theo walletId, thử tra cứu lại theo userId
+            // Nếu không tìm thấy theo walletId, thử tra cứu lại theo searchKey
             if (creditRes != null && !creditRes.isSuccess() && "WALLET_NOT_FOUND".equalsIgnoreCase(creditRes.getErrorCode())) {
-                userInfo = walletGrpcClient.getWalletByUserId(inputAccount);
+                userInfo = walletGrpcClient.getWalletByUserId(searchKey);
                 if (userInfo != null && userInfo.isFound() && userInfo.getWalletId() != null) {
                     targetWalletId = userInfo.getWalletId();
                     targetUserId = userInfo.getUserId();
@@ -462,13 +516,16 @@ public class CashDepositController {
 
                 // Ghi nhận Transaction và OutboxEvent để OutboxRelay đẩy sang Notification Service & Mobile
                 recordDepositTransactionAndOutbox(deposit, targetWalletId, targetUserId, balanceAfter);
+                return true;
             } else {
                 String err = creditRes != null ? creditRes.getErrorMessage() : "Unknown gRPC error";
                 log.error("Cộng tiền ví thất bại: walletId={} error={}", targetWalletId, err);
+                return false;
             }
         } catch (Exception e) {
             log.error("Lỗi khi gọi gRPC credit sang Wallet Service cho walletId={}: {}",
                     targetWalletId, e.getMessage(), e);
+            return false;
         }
     }
 

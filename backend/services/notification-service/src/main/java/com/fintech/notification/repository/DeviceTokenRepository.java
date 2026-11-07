@@ -17,5 +17,7 @@ public interface DeviceTokenRepository extends JpaRepository<DeviceToken, UUID> 
 
     List<DeviceToken> findByUserIdAndActiveTrue(String userId);
 
+    long countByActiveTrue();
+
     void deleteByToken(String token);
 }

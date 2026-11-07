@@ -92,6 +92,7 @@ class TransferRemoteDataSource {
     String? targetWalletId,
     String? bankCode,
     String? pinToken,
+    String? biometricToken,
   }) async {
     if (!_serverSideTransferAuth) {
       throw UnsupportedError(
@@ -115,6 +116,10 @@ class TransferRemoteDataSource {
     final key = idempotencyKey ??
         'MOBILE-$resolvedSourceUserId-$resolvedTargetUserId-${DateTime.now().microsecondsSinceEpoch}';
 
+    final headers = <String, dynamic>{};
+    if (pinToken != null && pinToken.isNotEmpty) headers['X-Pin-Token'] = pinToken;
+    if (biometricToken != null && biometricToken.isNotEmpty) headers['X-Biometric-Token'] = biometricToken;
+
     final response = await _dio.post(
       ApiConstants.paymentTransfer,
       data: {
@@ -125,10 +130,9 @@ class TransferRemoteDataSource {
         'note': note,
         'idempotencyKey': key,
         if (pinToken != null && pinToken.isNotEmpty) 'pinToken': pinToken,
+        if (biometricToken != null && biometricToken.isNotEmpty) 'biometricToken': biometricToken,
       },
-      options: (pinToken != null && pinToken.isNotEmpty)
-          ? Options(headers: {'X-Pin-Token': pinToken})
-          : null,
+      options: headers.isNotEmpty ? Options(headers: headers) : null,
     );
     final data = _unwrap(response.data);
     final status = (data['status'] ?? '').toString().toUpperCase();

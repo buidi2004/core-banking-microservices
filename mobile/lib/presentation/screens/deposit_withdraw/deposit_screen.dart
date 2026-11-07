@@ -1033,7 +1033,7 @@ class _DepositScreenState extends State<DepositScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            '+${CurrencyFormatter.formatVND(item['amount'] as double)}',
+                            '+${CurrencyFormatter.formatVND((item['amount'] as num?)?.toDouble() ?? 0.0)}',
                             style: const TextStyle(
                               color: AppColors.successTextLight,
                               fontWeight: FontWeight.bold,

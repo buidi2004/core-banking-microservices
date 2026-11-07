@@ -196,4 +196,27 @@ class PaymentSagaOrchestratorTest {
         verify(outboxEventRepository, atLeastOnce()).save(captor.capture());
         assertThat(outboxHas(captor, "TransactionReversedEvent")).isTrue();
     }
+
+    @Test
+    @DisplayName("TC-SAGA-05: Auto-Reversal khi hoàn tiền thất bại -> REVERSAL_FAILED, không gửi TransactionReversedEvent")
+    void shouldHandleFailedReversalGracefully() {
+        givenWalletsResolved();
+        givenDebitSucceeds();
+        givenReceiverCreditFails("WALLET_STATUS_LOCKED");
+        when(walletGrpcClient.credit(eq(SENDER_WALLET), eq(AMOUNT), anyString(), anyString()))
+            .thenReturn(WalletBalanceResult.builder().success(false)
+                .errorCode("WALLET_LOCKED")
+                .errorMessage("Sender wallet locked during reversal")
+                .build());
+
+        SagaContext ctx = saga.transferP2p(SENDER_USER, RECEIVER_USER, AMOUNT, "VND", null, IDEM_KEY);
+
+        assertThat(ctx.getStatus()).isEqualTo("FAILED");
+        assertThat(ctx.getFailureReason()).contains("Hoàn tiền thất bại");
+
+        ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
+        verify(outboxEventRepository, atLeastOnce()).save(captor.capture());
+        assertThat(outboxHas(captor, "TransactionReversedEvent")).isFalse();
+        assertThat(outboxHas(captor, "TransactionReversalFailedEvent")).isTrue();
+    }
 }

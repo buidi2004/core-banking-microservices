@@ -6,72 +6,42 @@ import 'package:sen_hong_bank/presentation/widgets/curved_promo_banner.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  group('CurvedPromoBanner Carousel Configuration Tests', () {
-    testWidgets('renders FlutterCarousel with responsive ad banner options',
+  group('CurvedPromoBanner (nội dung thật từ Backend /campaigns)', () {
+    testWidgets('ẩn banner khi chưa tải được campaign (không còn quảng cáo giả)',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
-            body: CurvedPromoBanner(
-              onRegisterTap: () {},
-            ),
+            body: CurvedPromoBanner(),
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      // Cho phép future lỗi mạng hoàn tất (không có backend trong môi trường test)
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
-      // Find FlutterCarousel widget
-      final carouselFinder = find.byType(FlutterCarousel);
-      expect(carouselFinder, findsOneWidget);
-
-      final FlutterCarousel carousel =
-          tester.widget<FlutterCarousel>(carouselFinder);
-
-      // Verify options match exactly the screenshot specification:
-      // Wide cards keep the campaign photo, offer and CTA readable.
-      expect(carousel.viewportFraction, equals(0.86));
-
-      // 2. Infinite = true
-      expect(carousel.infinite, isTrue);
-
-      // 3. Pad ends = true
-      expect(carousel.padEnds, isTrue);
-
-      // 4. Flush edges = false (aligned center)
-      expect(carousel.edgeAlignment, equals(CarouselEdgeAlignment.center));
-
-      // Keep neighboring cards close to the same scale for legible artwork.
-      expect(carousel.effect, isA<EnlargeEffect>());
-      final enlargeEffect = carousel.effect as EnlargeEffect;
-      expect(enlargeEffect.factor, closeTo(0.08, 0.001));
-
-      // 6. Indicator is CircularSlideIndicator (overlay, not below)
-      expect(carousel.indicator, isNotNull);
-      expect(carousel.indicator!.painter, isA<CircularSlideIndicator>());
-      expect(carousel.indicator!.placement,
-          equals(CarouselIndicatorPlacement.overlay));
-
-      // 7. Autoplay is active
-      expect(carousel.autoPlay, isNotNull);
-      expect(carousel.autoPlay!.interval, equals(const Duration(seconds: 4)));
-      expect(find.byType(BackdropFilter), findsNothing);
+      // Dữ liệu mock đã bị loại bỏ: khi API không khả dụng, banner ẩn đi
+      // thay vì hiển thị quảng cáo thương hiệu hardcode (ZARA/NIKE/GUCCI...).
+      expect(find.byType(FlutterCarousel), findsNothing);
+      expect(find.textContaining('ZARA'), findsNothing);
+      expect(find.textContaining('NIKE'), findsNothing);
+      expect(find.textContaining('GUCCI'), findsNothing);
     });
 
-    testWidgets('renders diagonal slanted banner variant correctly',
+    testWidgets('biến thể diagonal slanted cũng ẩn khi không có dữ liệu',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
-            body: CurvedPromoBanner(
-              isDiagonalSlanted: true,
-              onRegisterTap: () {},
-            ),
+            body: CurvedPromoBanner(isDiagonalSlanted: true),
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
 
       expect(find.byType(CurvedPromoBanner), findsOneWidget);
+      expect(find.byType(FlutterCarousel), findsNothing);
     });
   });
 }

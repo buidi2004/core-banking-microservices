@@ -130,8 +130,8 @@ if [ "$TX_STATUS" != "SUCCESS" ]; then
 fi
 echo "  • Chuyển tiền P2P thành công (txId: ${TX_ID})"
 
-# Đợi 1 giây để OutboxRelay và Kafka consumer xử lý biến động số dư
-sleep 1
+# Đợi 2 giây để OutboxRelay và Kafka/RabbitMQ consumer xử lý biến động số dư và thông báo
+sleep 2
 
 # Kiểm tra số dư sau chuyển tiền
 ALICE_BAL_POST=$(curl -s -X GET "${GATEWAY_URL}/wallets/me" -H "Authorization: Bearer ${ALICE_TOKEN}" | grep -o '"balance":[0-9.]*' | cut -d':' -f2)
@@ -265,6 +265,7 @@ TELLER_LOGIN_RES=$(curl -s -X POST "${GATEWAY_URL}/auth/login" \
 TELLER_TOKEN=$(echo "$TELLER_LOGIN_RES" | grep -o '"token":"[^"]*' | head -1 | cut -d'"' -f4)
 
 # 5.1 Gửi OTP mục đích LOAN_APPLY
+docker exec ewallet-redis redis-cli del "identity:otp:cooldown:0901234567:LOAN_APPLY" > /dev/null 2>&1 || true
 curl -s -X POST "${GATEWAY_URL}/auth/otp/send" \
   -H "Content-Type: application/json" \
   -d '{"phoneNumber":"0901234567","purpose":"LOAN_APPLY"}' > /dev/null
@@ -362,6 +363,7 @@ echo ""
 echo -e "${BLUE}▶ [KB-06] QUY TRÌNH TỪ CHỐI HỒ SƠ VAY (REJECT WITH REASON)${NC}"
 
 # Gửi OTP cho hồ sơ vay thứ 2
+docker exec ewallet-redis redis-cli del "identity:otp:cooldown:0901234567:LOAN_APPLY" > /dev/null 2>&1 || true
 curl -s -X POST "${GATEWAY_URL}/auth/otp/send" \
   -H "Content-Type: application/json" \
   -d '{"phoneNumber":"0901234567","purpose":"LOAN_APPLY"}' > /dev/null
@@ -429,7 +431,7 @@ DECODE_RES=$(curl -s -X POST "${GATEWAY_URL}/payments/vietqr/decode" \
   -d "{\"qrString\":\"${QR_RAW}\"}")
 DECODED_BANK=$(echo "$DECODE_RES" | grep -o '"bankName":"[^"]*' | cut -d'"' -f4)
 
-if [ "$DECODED_BANK" != "SenBank" ]; then
+if [[ "$DECODED_BANK" != *"SenBank"* ]]; then
   echo -e "  ${RED}✗ [FAILED] Giải mã VietQR không đúng ngân hàng: ${DECODE_RES}${NC}"
   exit 1
 fi

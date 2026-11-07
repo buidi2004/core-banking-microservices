@@ -135,6 +135,11 @@ public class LedgerPersistenceAdapter implements LedgerPersistencePort {
     }
 
     @Override
+    public BigDecimal sumAmountByAccountIdAndSide(String accountId, PostingSide side) {
+        return postingRepository.sumAmountByAccountIdAndSide(UUID.fromString(accountId), side.name());
+    }
+
+    @Override
     public boolean existsJournalEntryByReference(String referenceNumber) {
         return journalEntryRepository.findByReferenceNumber(referenceNumber).isPresent();
     }

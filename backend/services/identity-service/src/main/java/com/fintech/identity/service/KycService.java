@@ -116,6 +116,57 @@ public class KycService {
         return mapToResponse(kyc, user.getKycTier());
     }
 
+    @Transactional
+    public KycResponse autoApproveKyc(com.fintech.identity.dto.KycAutoApproveRequest request) {
+        String userId = request.getUserId();
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng với ID: " + userId));
+
+        UserKycEntity kyc = userKycRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
+                .orElseGet(() -> {
+                    String newId = UUID.randomUUID().toString();
+                    return UserKycEntity.builder()
+                            .id(newId)
+                            .userId(userId)
+                            .documentType("CHIP_ID_CARD")
+                            .documentNumber(request.getDocumentNumber() != null ? request.getDocumentNumber() : "NFC_VERIFIED")
+                            .frontImageUrl("NFC_DG2_CHIP_PHOTO")
+                            .faceImageUrl("BIOMETRIC_LIVENESS_SELFIE")
+                            .build();
+                });
+
+        String reviewer = request.getVerifiedBy() != null ? request.getVerifiedBy() : "AI_EKYC_PIPELINE";
+        String note = String.format("Duyệt tự động bởi AI eKYC Pipeline (Liveness: %.2f, Sim: %.2f, Session: %s)",
+                request.getLivenessScore() != null ? request.getLivenessScore() : 1.0,
+                request.getSimilarity() != null ? request.getSimilarity() : 1.0,
+                request.getSessionId() != null ? request.getSessionId() : "N/A");
+
+        kyc.setVerificationStatus("APPROVED");
+        kyc.setRejectReason(note);
+        kyc.setVerifiedBy(reviewer);
+        kyc.setVerifiedAt(Instant.now());
+        if (request.getDocumentNumber() != null) {
+            kyc.setDocumentNumber(request.getDocumentNumber());
+            // Đồng bộ số CCCD vào UserProfile khi duyệt tự động qua AI
+            if (!"NFC_VERIFIED".equals(request.getDocumentNumber())) {
+                UserProfileEntity profile = userProfileRepository.findByUserId(userId)
+                        .orElseGet(() -> UserProfileEntity.builder()
+                                .id(UUID.randomUUID().toString())
+                                .userId(userId)
+                                .build());
+                profile.setIdentityCardNumber(request.getDocumentNumber());
+                userProfileRepository.save(profile);
+            }
+        }
+        userKycRepository.save(kyc);
+
+        user.setKycTier("VERIFIED");
+        userRepository.save(user);
+        log.info("eKYC tự động phê duyệt thành công qua AI Pipeline cho userId={} (Session: {})", userId, request.getSessionId());
+
+        return mapToResponse(kyc, user.getKycTier());
+    }
+
     private KycResponse mapToResponse(UserKycEntity kyc, String currentKycTier) {
         return KycResponse.builder()
                 .id(kyc.getId())

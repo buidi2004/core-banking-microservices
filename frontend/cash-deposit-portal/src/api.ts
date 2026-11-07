@@ -1,4 +1,4 @@
-import { CashDeposit, LoggedInStaff, LoanApplication, VaultSummary, AdminAccount, LedgerReconciliation, LedgerJournalEntry, KycApplication, AdminSavingsAccount, SupportTicket, TicketMessage, AmlTransaction, AmlReportResponse } from './types';
+import { CashDeposit, LoggedInStaff, LoanApplication, VaultSummary, AdminAccount, LedgerReconciliation, LedgerJournalEntry, KycApplication, AdminSavingsAccount, SupportTicket, TicketMessage, AmlTransaction, AmlReportResponse, DisputeCase, DisputeEvent, NotificationDlqStats, NotificationProviderHealth, TestPushRequest, StaffMember, CreateStaffPayload, ResilienceDashboardData, AmlCase, AmlCaseEvent, CreateAmlCasePayload, LedgerAuditLog, AuditLogFilter } from './types';
 
 const API_BASE = ''; // Proxied by Vite to http://localhost:8080
 
@@ -454,11 +454,48 @@ export const ApiService = {
     }
   },
 
-  async closeEndOfDay(staff?: LoggedInStaff | null): Promise<{ success: boolean; message: string; data?: any }> {
+  async fetchEodReadiness(staff?: LoggedInStaff | null): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/ledger/admin/eod/readiness`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchEodReadiness error:', e);
+      return null;
+    }
+  },
+
+  async fetchEodChecksum(staff?: LoggedInStaff | null): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/ledger/admin/eod/checksum`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchEodChecksum error:', e);
+      return null;
+    }
+  },
+
+  async closeEndOfDay(
+    staff?: LoggedInStaff | null,
+    force: boolean = false,
+    notes?: string
+  ): Promise<{ success: boolean; message: string; data?: any }> {
     try {
       const res = await fetch(`${API_BASE}/api/v1/ledger/admin/eod/close-day`, {
         method: 'POST',
         headers: getAuthHeaders(staff),
+        body: JSON.stringify({ force, notes }),
       });
       const json = await res.json();
       if (res.ok && json.success) {
@@ -467,6 +504,35 @@ export const ApiService = {
       return { success: false, message: json.message || 'Lỗi khóa sổ cuối ngày' };
     } catch (e: any) {
       return { success: false, message: e.message || 'Lỗi kết nối khóa sổ cuối ngày' };
+    }
+  },
+
+  async fetchPaymentEodGate(staff?: LoggedInStaff | null): Promise<any> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/payments/ops/eod-gate`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchPaymentEodGate error:', e);
+      return null;
+    }
+  },
+
+  async drainPaymentOutbox(staff?: LoggedInStaff | null): Promise<{ success: boolean; message?: string; data?: any }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/payments/ops/outbox/drain`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi xả outbox' };
     }
   },
 
@@ -780,6 +846,510 @@ export const ApiService = {
     } catch (e) {
       console.error('fetchAmlLargeTransactions error:', e);
       return null;
+    }
+  },
+
+  // --- Dispute & Refund Operations (Tra soát & Hoàn tiền) ---
+  async fetchDisputes(
+    staff?: LoggedInStaff | null,
+    status?: string,
+    page: number = 0,
+    size: number = 20
+  ): Promise<{ content: DisputeCase[]; totalElements: number } | null> {
+    try {
+      const query = new URLSearchParams({ page: String(page), size: String(size) });
+      if (status && status !== 'ALL') query.set('status', status);
+      const res = await fetch(`${API_BASE}/api/v1/payments/disputes?${query}`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchDisputes error:', e);
+      return null;
+    }
+  },
+
+  async fetchDisputeDetail(
+    staff: LoggedInStaff | null,
+    disputeId: string
+  ): Promise<DisputeCase | null> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/payments/disputes/${disputeId}`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchDisputeDetail error:', e);
+      return null;
+    }
+  },
+
+  async fetchDisputeEvents(
+    staff: LoggedInStaff | null,
+    disputeId: string
+  ): Promise<DisputeEvent[]> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/payments/disputes/${disputeId}/events`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || [];
+      }
+      return [];
+    } catch (e) {
+      console.error('fetchDisputeEvents error:', e);
+      return [];
+    }
+  },
+
+  async assignDispute(
+    staff: LoggedInStaff,
+    disputeId: string,
+    assigneeId: string,
+    note?: string
+  ): Promise<{ success: boolean; data?: DisputeCase; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/payments/disputes/${disputeId}/assign`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify({ assigneeId, note }),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi phân công tra soát' };
+    }
+  },
+
+  async resolveDispute(
+    staff: LoggedInStaff,
+    disputeId: string,
+    action: 'REFUND' | 'REJECT',
+    resolutionNote: string
+  ): Promise<{ success: boolean; data?: DisputeCase; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/payments/disputes/${disputeId}/resolve`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify({ action, resolutionNote }),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi xử lý kết luận tra soát' };
+    }
+  },
+
+  async executeManualReversal(
+    staff: LoggedInStaff,
+    transactionId: string,
+    reason: string
+  ): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/payments/transactions/${transactionId}/reversal`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify({ reason }),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi đảo bút toán thủ công' };
+    }
+  },
+
+  // --- Notification Operations (DLQ, Health, Test Push) ---
+  async fetchNotificationDlqStats(
+    staff: LoggedInStaff
+  ): Promise<NotificationDlqStats | null> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/notifications/ops/dlq/stats`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchNotificationDlqStats error:', e);
+      return null;
+    }
+  },
+
+  async retryNotificationDlq(
+    staff: LoggedInStaff,
+    maxMessages: number = 50
+  ): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/notifications/ops/dlq/retry?maxMessages=${maxMessages}`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi xử lý retry DLQ' };
+    }
+  },
+
+  async purgeNotificationDlq(
+    staff: LoggedInStaff
+  ): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/notifications/ops/dlq/purge`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi dọn sạch DLQ' };
+    }
+  },
+
+  async fetchNotificationProviderHealth(
+    staff: LoggedInStaff
+  ): Promise<NotificationProviderHealth | null> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/notifications/ops/providers/health`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || null;
+      }
+      return null;
+    } catch (e) {
+      console.error('fetchNotificationProviderHealth error:', e);
+      return null;
+    }
+  },
+
+  async sendTestNotification(
+    staff: LoggedInStaff,
+    req: TestPushRequest
+  ): Promise<{ success: boolean; data?: any; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/notifications/ops/test-push`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify(req),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi gửi thông báo kiểm thử' };
+    }
+  },
+
+  // --- Staff IAM Administration (Quản trị nhân sự chi nhánh) ---
+  async fetchStaffMembers(
+    staff: LoggedInStaff,
+    branchId?: string,
+    role?: string,
+    status?: string
+  ): Promise<StaffMember[]> {
+    try {
+      const params = new URLSearchParams();
+      if (branchId && branchId !== 'ALL') params.set('branchId', branchId);
+      if (role && role !== 'ALL') params.set('role', role);
+      if (status && status !== 'ALL') params.set('status', status);
+
+      const url = `${API_BASE}/api/v1/staff${params.toString() ? `?${params}` : ''}`;
+      const res = await fetch(url, { headers: getAuthHeaders(staff) });
+      if (res.ok) {
+        const json = await res.json();
+        return json.data || [];
+      }
+      return [];
+    } catch (e) {
+      console.error('fetchStaffMembers error:', e);
+      return [];
+    }
+  },
+
+  async createStaffMember(
+    staff: LoggedInStaff,
+    payload: CreateStaffPayload
+  ): Promise<{ success: boolean; data?: StaffMember; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/staff`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi tạo mới cán bộ' };
+    }
+  },
+
+  async updateStaffMember(
+    staff: LoggedInStaff,
+    staffId: string,
+    payload: { fullName: string; email: string; role: string; branchId: string }
+  ): Promise<{ success: boolean; data?: StaffMember; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/staff/${staffId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi cập nhật cán bộ' };
+    }
+  },
+
+  async lockStaffMember(
+    staff: LoggedInStaff,
+    staffId: string,
+    reason: string
+  ): Promise<{ success: boolean; data?: StaffMember; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/staff/${staffId}/lock`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify({ reason }),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi khóa tài khoản cán bộ' };
+    }
+  },
+
+  async unlockStaffMember(
+    staff: LoggedInStaff,
+    staffId: string
+  ): Promise<{ success: boolean; data?: StaffMember; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/staff/${staffId}/unlock`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi mở khóa tài khoản cán bộ' };
+    }
+  },
+
+  async resetStaffPassword(
+    staff: LoggedInStaff,
+    staffId: string,
+    newPassword: string
+  ): Promise<{ success: boolean; data?: StaffMember; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/staff/${staffId}/reset-password`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify({ newPassword }),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi đặt lại mật khẩu cán bộ' };
+    }
+  },
+
+  // --- RESILIENCE & OBSERVABILITY ---
+  async fetchResilienceDashboard(staff: LoggedInStaff): Promise<ResilienceDashboardData | null> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/payments/ops/resilience`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data || null;
+    } catch {
+      return null;
+    }
+  },
+
+  // --- REPORTING & EXPORT DOWNLOAD ---
+  async downloadExportFile(staff: LoggedInStaff, endpointUrl: string, suggestedFilename: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}${endpointUrl}`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (!res.ok) {
+        return { success: false, message: `Lỗi tải file (${res.status} ${res.statusText})` };
+      }
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = suggestedFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi tải xuống báo cáo' };
+    }
+  },
+
+  // --- AML Case Management (Luật PCRT 2022) ---
+  async fetchAmlCases(staff: LoggedInStaff | null, status?: string): Promise<AmlCase[]> {
+    try {
+      const query = status && status !== 'ALL' ? `?status=${encodeURIComponent(status)}` : '';
+      const res = await fetch(`${API_BASE}/api/v1/aml/cases${query}`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data)) {
+          return json.data.map((item: any) => ({
+            id: item.id,
+            transactionId: item.transactionId,
+            customerId: item.customerId,
+            status: item.status,
+            reason: item.reason,
+            assignedTo: item.assignedTo,
+            createdBy: item.createdBy,
+            slaDueAt: item.slaDueAt,
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt,
+            closedAt: item.closedAt,
+            version: item.version,
+          }));
+        }
+      }
+      return [];
+    } catch (e) {
+      console.error('fetchAmlCases error:', e);
+      return [];
+    }
+  },
+
+  async createAmlCase(
+    staff: LoggedInStaff,
+    payload: CreateAmlCasePayload
+  ): Promise<{ success: boolean; data?: AmlCase; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/aml/cases`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi tạo hồ sơ AML' };
+    }
+  },
+
+  async assignAmlCase(
+    staff: LoggedInStaff,
+    caseId: string,
+    assigneeId: string,
+    reason: string
+  ): Promise<{ success: boolean; data?: AmlCase; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/aml/cases/${caseId}/assign`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify({ assigneeId, reason }),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi phân công điều tra AML' };
+    }
+  },
+
+  async updateAmlCaseStatus(
+    staff: LoggedInStaff,
+    caseId: string,
+    status: string,
+    reason: string
+  ): Promise<{ success: boolean; data?: AmlCase; message?: string }> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/aml/cases/${caseId}/status`, {
+        method: 'POST',
+        headers: getAuthHeaders(staff),
+        body: JSON.stringify({ status, reason }),
+      });
+      const json = await res.json();
+      return { success: res.ok && json.success, data: json.data, message: json.message };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Lỗi chuyển trạng thái hồ sơ AML' };
+    }
+  },
+
+  async fetchAmlCaseEvents(staff: LoggedInStaff | null, caseId: string): Promise<AmlCaseEvent[]> {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/aml/cases/${caseId}/events`, {
+        headers: getAuthHeaders(staff),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data)) {
+          return json.data;
+        }
+      }
+      return [];
+    } catch (e) {
+      console.error('fetchAmlCaseEvents error:', e);
+      return [];
+    }
+  },
+
+  // --- Ledger Audit Logs (Nhật ký kiểm toán sổ cái) ---
+  async fetchLedgerAuditLogs(
+    staff: LoggedInStaff | null,
+    filters?: AuditLogFilter
+  ): Promise<LedgerAuditLog[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filters?.correlationId?.trim()) params.set('correlationId', filters.correlationId.trim());
+      else {
+        if (filters?.actorId?.trim()) params.set('actorId', filters.actorId.trim());
+        if (filters?.entityType?.trim() && filters?.entityId?.trim()) {
+          params.set('entityType', filters.entityType.trim());
+          params.set('entityId', filters.entityId.trim());
+        }
+      }
+      const url = `${API_BASE}/api/v1/ledger/admin/audit-logs${params.toString() ? '?' + params.toString() : ''}`;
+      const res = await fetch(url, { headers: getAuthHeaders(staff) });
+      if (res.ok) {
+        const json = await res.json();
+        if (Array.isArray(json.data)) {
+          return json.data.map((item: any) => ({
+            id: item.id,
+            eventType: item.eventType,
+            entityType: item.entityType,
+            entityId: item.entityId,
+            description: item.description,
+            performedBy: item.performedBy,
+            performedAt: item.performedAt,
+            serviceName: item.serviceName,
+            actorRole: item.actorRole,
+            branchId: item.branchId,
+            correlationId: item.correlationId,
+            clientIp: item.clientIp,
+            deviceId: item.deviceId,
+          }));
+        }
+      }
+      return [];
+    } catch (e) {
+      console.error('fetchLedgerAuditLogs error:', e);
+      return [];
     }
   },
 };

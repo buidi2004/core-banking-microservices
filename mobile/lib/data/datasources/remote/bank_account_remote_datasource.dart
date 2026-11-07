@@ -38,4 +38,11 @@ class BankAccountRemoteDataSource {
     final json = Map<String, dynamic>.from(response.data as Map);
     if (json['success'] != true) throw apiException(json);
   }
+
+  Future<Map<String, dynamic>> setDefault(String bankAccountId) async {
+    final response = await _dio.patch(ApiConstants.bankAccountDefault(bankAccountId));
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
+  }
 }

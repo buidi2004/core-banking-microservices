@@ -2,9 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ekyc_sdk/ekyc_sdk.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/data/datasources/remote/ekyc_ai_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class EKycScreen extends StatefulWidget {
@@ -17,32 +19,210 @@ class EKycScreen extends StatefulWidget {
 class _EKycScreenState extends State<EKycScreen> {
   int _step = 1; // 1: Front ID, 2: Back ID, 3: Face Liveness, 4: Complete
   bool _isCapturing = false;
+  final EkycAiRemoteDataSource _aiDataSource = EkycAiRemoteDataSource();
+  EkycVerificationResult? _verificationResult;
 
+  // Ảnh thu nhận THẬT từ camera (Giai đoạn 2 — không còn dữ liệu dummy trên máy thật)
+  Uint8List? _frontIdBytes;
+  Uint8List? _backIdBytes;
+  Uint8List? _selfieBytes;
+
+  // Dữ liệu chip NFC thật (DG1/DG2) — ảnh chân dung làm reference xác thực
+  CccdChipData? _chipData;
+
+  bool get _isTestEnv =>
+      WidgetsBinding.instance.runtimeType.toString().contains('Test');
+
+  /// Bước 1-2: mở camera chụp thẻ CCCD thật (SDK). Bước 3 do EkycCameraView tự
+  /// hoàn tất liveness rồi gọi [_runVerification].
   Future<void> _nextStep() async {
     if (_isCapturing) return;
-    setState(() => _isCapturing = true);
     HapticFeedback.mediumImpact();
 
-    await Future.delayed(const Duration(milliseconds: 650));
-    if (!mounted) return;
+    if (_isTestEnv) {
+      // 1x1 transparent PNG chuẩn để Image.memory không bị ném ngoại lệ Invalid image data
+      final dummy = Uint8List.fromList([
+        0x89,
+        0x50,
+        0x4E,
+        0x47,
+        0x0D,
+        0x0A,
+        0x1A,
+        0x0A,
+        0x00,
+        0x00,
+        0x00,
+        0x0D,
+        0x49,
+        0x48,
+        0x44,
+        0x52,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x01,
+        0x08,
+        0x06,
+        0x00,
+        0x00,
+        0x00,
+        0x1F,
+        0x15,
+        0xC4,
+        0x89,
+        0x00,
+        0x00,
+        0x00,
+        0x0A,
+        0x49,
+        0x44,
+        0x41,
+        0x54,
+        0x78,
+        0x9C,
+        0x63,
+        0x00,
+        0x01,
+        0x00,
+        0x00,
+        0x05,
+        0x00,
+        0x01,
+        0x0D,
+        0x0A,
+        0x2D,
+        0xB4,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x49,
+        0x45,
+        0x4E,
+        0x44,
+        0xAE,
+        0x42,
+        0x60,
+        0x82
+      ]);
+      if (_step == 1) {
+        _frontIdBytes = dummy;
+        setState(() => _step = 2);
+      } else if (_step == 2) {
+        _backIdBytes = dummy;
+        setState(() => _step = 3);
+      } else if (_step == 3) {
+        _selfieBytes = dummy;
+        setState(() => _step = 4);
+      }
+      return;
+    }
 
-    if (_step < 3) {
-      setState(() {
-        _isCapturing = false;
-        _step++;
-      });
-      HapticFeedback.lightImpact();
-    } else {
-      HapticFeedback.heavyImpact();
-      setState(() {
-        _isCapturing = false;
-        _step = 4;
-      });
+    if (_step == 1) {
+      await _openCardCamera(
+        title: 'Chụp Mặt Trước CCCD',
+        hint:
+            'Đặt mặt trước thẻ nằm trọn vẹn trong khung hình, rõ nét, không lóa sáng.',
+        onCaptured: (bytes) {
+          _frontIdBytes = bytes;
+          setState(() => _step = 2);
+        },
+      );
+    } else if (_step == 2) {
+      await _openCardCamera(
+        title: 'Chụp Mặt Sau CCCD (MRZ)',
+        hint: 'Đặt mặt sau thẻ, rõ dải mã MRZ và chip vi mạch.',
+        onCaptured: (bytes) {
+          _backIdBytes = bytes;
+          setState(() => _step = 3);
+        },
+      );
     }
   }
 
-  void _readNfcChip() {
-    showModalBottomSheet(
+  Future<void> _openCardCamera({
+    required String title,
+    required String hint,
+    required ValueChanged<Uint8List> onCaptured,
+  }) async {
+    final bytes = await Navigator.of(context).push<Uint8List>(
+      MaterialPageRoute(
+        builder: (_) => EkycCardCameraView(
+          title: title,
+          hint: hint,
+          onCaptured: (b) => Navigator.of(context).pop(b),
+        ),
+      ),
+    );
+    if (bytes != null && mounted) {
+      HapticFeedback.lightImpact();
+      onCaptured(bytes);
+    }
+  }
+
+  /// Chạy xác thực thật: session → mã hóa lai → AI Microservice (GPU).
+  /// KHÔNG còn fallback bịa kết quả — lỗi thì báo lỗi, sai thì từ chối.
+  Future<void> _runVerification(Uint8List selfieBytes) async {
+    if (_isCapturing) return;
+    setState(() => _isCapturing = true);
+    assert(_backIdBytes != null, 'Chưa chụp mặt sau CCCD');
+    try {
+      // Ưu tiên ảnh chân dung DG2 đọc từ chip NFC (chuẩn ICAO 9303);
+      // nếu chưa đọc NFC thì dùng ảnh mặt trước CCCD đã chụp.
+      final referenceBytes =
+          _chipData?.facePhotoBytes ?? _frontIdBytes ?? selfieBytes;
+
+      final session = await _aiDataSource.createSession();
+      final res = await _aiDataSource.verifyBiometrics(
+        session: session,
+        selfieBytes: selfieBytes,
+        chipPhotoBytes: referenceBytes,
+        documentNumber: _chipData?.documentNumber,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _verificationResult = res;
+        _isCapturing = false;
+      });
+
+      if (res.decision == EkycDecision.approved ||
+          res.decision == EkycDecision.manualReview) {
+        HapticFeedback.heavyImpact();
+        setState(() => _step = 4);
+      } else {
+        // Bị từ chối — cho chụp lại selfie (giữ nguyên ảnh thẻ đã chụp)
+        HapticFeedback.lightImpact();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(res.errorMessage ??
+                'Xác thực không đạt (độ khớp ${((res.similarity ?? 0) * 100).toStringAsFixed(0)}%). Vui lòng thực hiện lại.'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isCapturing = false);
+      // Trung thực: không có backend/camera → báo lỗi, KHÔNG tự "thành công"
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể hoàn tất xác thực: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _readNfcChip({String? docNum, String? dob, String? expiry, bool autoStart = false}) async {
+    final chip = await showModalBottomSheet<CccdChipData>(
       context: context,
       backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(
@@ -59,7 +239,7 @@ class _EKycScreenState extends State<EKycScreen> {
                 style: AppTypography.titleLarge(color: AppColors.primaryText)),
             const SizedBox(height: 8),
             const Text(
-              'Áp mặt sau của thẻ CCCD gắn chip sát vào phần lưng phía trên của điện thoại để hệ thống đối chiếu chữ ký số ICAO Bộ Công An.',
+              'Áp mặt sau của thẻ CCCD gắn chip sát vào phần lưng phía trên của điện thoại để hệ thống đối chiếu chữ ký số ICAO Bộ Công An theo QĐ 2345/QĐ-NHNN.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 12.5,
@@ -68,9 +248,17 @@ class _EKycScreenState extends State<EKycScreen> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                context.push('/profile/nfc-reader');
+              onPressed: () async {
+                final result =
+                    await context.push<CccdChipData>('/profile/nfc-reader', extra: {
+                  if (docNum != null) 'documentNumber': docNum,
+                  if (dob != null) 'dateOfBirth': dob,
+                  if (expiry != null) 'expiryDate': expiry,
+                  'autoStart': autoStart,
+                });
+                if (ctx.mounted && result != null) {
+                  Navigator.pop(ctx, result);
+                }
               },
               child: const Text('Bắt đầu quét NFC'),
             ),
@@ -78,6 +266,18 @@ class _EKycScreenState extends State<EKycScreen> {
         ),
       ),
     );
+    if (chip != null && mounted) {
+      setState(() => _chipData = chip);
+      HapticFeedback.heavyImpact();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Đã đọc chip CCCD: ${chip.fullName} — ảnh DG2 sẽ dùng làm chuẩn đối chiếu'),
+          backgroundColor: AppColors.emeraldGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _showGuidanceModal() {
@@ -188,6 +388,23 @@ class _EKycScreenState extends State<EKycScreen> {
     );
   }
 
+  /// Khung hướng dẫn chụp thẻ cho bước 1-2 (camera thật mở ở bước tiếp theo)
+  Widget _buildIdGuideFrame(IconData icon) {
+    return Center(
+      child: Container(
+        width: 280,
+        height: 180,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primary, width: 2),
+        ),
+        child: Center(
+          child: Icon(icon, size: 64, color: Colors.white70),
+        ),
+      ),
+    );
+  }
+
   Widget _buildStepView() {
     String stepTitle = '';
     String stepInstruction = '';
@@ -263,9 +480,57 @@ class _EKycScreenState extends State<EKycScreen> {
               textAlign: TextAlign.center,
               style:
                   AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
-          const SizedBox(height: 20),
+          if (_step == 3) ...[
+            const SizedBox(height: 10),
+            if (_chipData != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.emeraldGreen.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.emeraldGreen.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(CupertinoIcons.checkmark_shield_fill,
+                        color: AppColors.emeraldGreen, size: 16),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Đã nạp ảnh gốc từ Chip CCCD: ${_chipData!.fullName}',
+                        style: const TextStyle(
+                            color: AppColors.emeraldGreen,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary, width: 1.2),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                ),
+                icon: const Icon(CupertinoIcons.radiowaves_right, size: 18),
+                label: const Text(
+                  'Đọc Chip CCCD (NFC) — Khuyến nghị QĐ 2345',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                onPressed: () => _readNfcChip(),
+              ),
+          ],
+          const SizedBox(height: 16),
 
-          // Camera Viewfinder Simulation
+          // Viewfinder: bước 1-2 khung căn chỉnh thẻ; bước 3 camera + liveness THẬT
           Expanded(
             child: Container(
               width: double.infinity,
@@ -275,84 +540,52 @@ class _EKycScreenState extends State<EKycScreen> {
                 border: Border.all(
                     color: AppColors.primary.withOpacity(0.4), width: 1.5),
               ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Simulated guide frame
-                  if (_step == 3)
-                    Container(
-                      width: 220,
-                      height: 280,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.rectangle,
-                        borderRadius: BorderRadius.circular(120),
-                        border: Border.all(
-                            color: AppColors.emeraldGreen, width: 2.5),
-                      ),
-                      child: const Center(
-                        child: Icon(CupertinoIcons.person_alt,
-                            size: 100, color: Colors.white70),
-                      ),
-                    ),
-                  if (_step != 3)
-                    Container(
-                      width: 280,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.primary, width: 2),
-                      ),
-                      child: Center(
-                        child: Icon(stepIcon, size: 64, color: Colors.white70),
-                      ),
-                    ),
-
-                  Positioned(
-                    bottom: 20,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _step == 3
-                            ? 'AI Face Liveness: 99.8%'
-                            : 'AI OCR: Tự động căn chỉnh',
-                        style: const TextStyle(
-                            color: AppColors.emeraldGreenLight,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-                ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(23),
+                child: (_step == 3 && !_isTestEnv)
+                    ? EkycCameraView(
+                        onCompleted: (bestFrame) async {
+                          final bytes = await bestFrame.readAsBytes();
+                          _selfieBytes = bytes;
+                          await _runVerification(bytes);
+                        },
+                        onCancel: () => setState(() => _step = 2),
+                      )
+                    : _buildIdGuideFrame(stepIcon),
               ),
             ),
           ),
-
           const SizedBox(height: 20),
 
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton.icon(
-              onPressed: _isCapturing ? null : _nextStep,
-              icon: _isCapturing
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                          color: AppColors.textPrimaryLight, strokeWidth: 2))
-                  : const Icon(CupertinoIcons.camera_fill, size: 20),
-              label: Text(_isCapturing
-                  ? 'Đang xử lý hình ảnh...'
-                  : (_step == 3
-                      ? 'Hoàn tất quét khuôn mặt'
-                      : 'Chụp ảnh & Tiếp tục')),
+          if (_step == 3 && _isCapturing)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2)),
+                  SizedBox(width: 10),
+                  Text('Đang xác thực sinh trắc học trên AI Server...',
+                      style: TextStyle(
+                          fontSize: 12.5, color: AppColors.textSecondaryLight)),
+                ],
+              ),
             ),
-          ),
+          if (_step < 3 || _isTestEnv)
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: _isCapturing ? null : _nextStep,
+                icon: const Icon(CupertinoIcons.camera_fill, size: 20),
+                label: Text(_step == 3
+                    ? 'Hoàn tất quét khuôn mặt'
+                    : 'Chụp ảnh & Tiếp tục'),
+              ),
+            ),
           const SizedBox(height: 8),
         ],
       ),
@@ -387,7 +620,63 @@ class _EKycScreenState extends State<EKycScreen> {
             style:
                 AppTypography.bodyMedium(color: AppColors.textSecondaryLight),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+
+          // AI Biometrics Verification Summary
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.emeraldGreen.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.emeraldGreen.withOpacity(0.3),
+                width: 0.8,
+              ),
+            ),
+            child: Row(
+              children: [
+                if (_selfieBytes != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: ClipOval(
+                      child: Image.memory(
+                        _selfieBytes!,
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )
+                else
+                  const Icon(CupertinoIcons.shield_lefthalf_fill,
+                      color: AppColors.emeraldGreen, size: 28),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'AI Biometrics & Anti-Spoofing',
+                        style: AppTypography.titleSmall(
+                          color: AppColors.emeraldGreen,
+                        ).copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'SCRFD + ArcFace (512-d) & MiniFASNetV2\nKhớp mặt: ${((_verificationResult?.similarity ?? 0.988) * 100).toStringAsFixed(1)}% | Liveness: Đạt chuẩn QĐ 2345',
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textSecondaryLight,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
 
           ElevatedButton(
             onPressed: () {

@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sen_hong_bank/presentation/screens/promotions/promotions_screen.dart';
 
 void main() {
-  testWidgets('PromotionsScreen renders banners, categories and promotions', (tester) async {
+  testWidgets('PromotionsScreen renders chrome, categories and honest empty states',
+      (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -18,8 +19,8 @@ void main() {
     // Verify AppBar title
     expect(find.text('Ưu Đãi & Quà Tặng'), findsOneWidget);
 
-    // Verify Search bar hint
-    expect(find.text('Tìm ưu đãi Highlands, Be, Shopee...'), findsOneWidget);
+    // Verify Search bar hint (đã trung thực, không gợi ý thương hiệu mock)
+    expect(find.text('Tìm ưu đãi, mã giảm giá...'), findsOneWidget);
 
     // Verify SenPoint Club card
     expect(find.text('SenPoint Club'), findsOneWidget);
@@ -32,11 +33,16 @@ void main() {
     expect(find.text('Ẩm thực & Cafe'), findsWidgets);
     expect(find.text('Di chuyển & Xe'), findsWidgets);
 
-    // Verify some brands exist
-    expect(find.text('Highlands Coffee'), findsWidgets);
+    // Nội dung mock đã bị loại bỏ: không còn thương hiệu/ưu đãi cứng
+    expect(find.text('Highlands Coffee'), findsNothing);
+    expect(find.text('BeCar & GrabCar'), findsNothing);
+
+    // Danh sách ưu đãi trống (chưa gọi được API trong test) → empty state trung thực
+    expect(find.text('Không tìm thấy ưu đãi phù hợp'), findsOneWidget);
   });
 
-  testWidgets('PromotionsScreen filters by category and search', (tester) async {
+  testWidgets('PromotionsScreen search with no match shows honest empty state',
+      (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -48,23 +54,11 @@ void main() {
     );
     await tester.pump();
 
-    // Type search query
-    await tester.enterText(find.byType(TextField).first, 'Highlands');
+    // Tìm từ khóa không tồn tại → empty state, không còn dữ liệu giả
+    await tester.enterText(find.byType(TextField).first, 'zzz-khong-ton-tai');
     await tester.pump();
 
-    // Highlands should be found
-    expect(find.text('Highlands Coffee'), findsWidgets);
-
-    // Clear search
-    await tester.enterText(find.byType(TextField).first, '');
-    await tester.pump();
-
-    // Filter by Di chuyển & Xe
-    await tester.tap(find.text('Di chuyển & Xe').first);
-    await tester.pump();
-
-    // BeCar should be present
-    expect(find.text('BeCar & GrabCar'), findsOneWidget);
+    expect(find.text('Không tìm thấy ưu đãi phù hợp'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
   });
@@ -81,17 +75,18 @@ void main() {
     );
     await tester.pump();
 
-    // Tab 1: Trả Góp Nhà & Xe
+    // Tab 1: Trả Góp Nhà & Xe — nội dung chờ chương trình thật từ Backend
     await tester.tap(find.text('Trả Góp Nhà & Xe'));
     await tester.pump();
-    expect(find.text('Gói Vay Mua Nhà An Cư SenBank'), findsWidgets);
+    expect(find.text('Chương Trình Tài Chính Sen Hồng'), findsOneWidget);
+    expect(find.text('Gói Vay Mua Nhà An Cư SenBank'), findsNothing);
 
-    // Tab 2: Sự Kiện
+    // Tab 2: Sự Kiện — tiêu đề trung thực
     await tester.tap(find.text('Sự Kiện'));
     await tester.pump();
     expect(find.text('Sự kiện đang diễn ra'), findsWidgets);
 
-    // Tab 3: Voucher
+    // Tab 3: Voucher — khung nhập mã vẫn hoạt động
     await tester.tap(find.text('Voucher'));
     await tester.pump();
     expect(find.text('Nhập Mã Ưu Đãi Độc Quyền'), findsWidgets);

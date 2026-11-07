@@ -10,6 +10,7 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/notification_remote_datasource.dart';
 import 'package:flutter/rendering.dart';
 import 'package:sen_hong_bank/presentation/widgets/curved_promo_banner.dart';
 import 'package:sen_hong_bank/presentation/widgets/sen_hong_smart_sliver_app_bar.dart';
@@ -40,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen>
   double _overdraftLimit = 0;
   String _displayName = '';
   String _accountNumber = '';
+  int _unreadNotifCount = 0;
   StreamSubscription? _notifSub;
   Timer? _refreshTimer;
   late ScrollController _scrollController;
@@ -478,7 +480,17 @@ class _HomeScreenState extends State<HomeScreen>
     await Future.wait([
       _loadProfile(),
       _loadWallet(),
+      _loadUnreadNotifications(),
     ]);
+  }
+
+  Future<void> _loadUnreadNotifications() async {
+    try {
+      final count = await NotificationRemoteDataSource().getUnreadCount();
+      if (mounted) {
+        setState(() => _unreadNotifCount = count);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadProfile() async {
@@ -558,6 +570,7 @@ class _HomeScreenState extends State<HomeScreen>
                       balance: _balance,
                       isHidden: _hideBalance,
                       overdraftLimit: _overdraftLimit,
+                      unreadCount: _unreadNotifCount,
                       onToggleVisibility: () {
                         HapticFeedback.selectionClick();
                         setState(() => _hideBalance = !_hideBalance);

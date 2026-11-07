@@ -18,7 +18,9 @@ import { KycManagement } from './components/KycManagement';
 import { SavingsManagement } from './components/SavingsManagement';
 import { SupportDeskManagement } from './components/SupportDeskManagement';
 import { AdminOperations } from './components/AdminOperations';
-import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut, Wallet, FileText, RefreshCw, CheckCircle2, Scale, Users, PiggyBank, Headphones } from 'lucide-react';
+import { AmlCaseManagement } from './components/AmlCaseManagement';
+import { LedgerAuditLogManagement } from './components/LedgerAuditLogManagement';
+import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut, Wallet, FileText, RefreshCw, CheckCircle2, Scale, Users, PiggyBank, Headphones, ShieldAlert, ScrollText } from 'lucide-react';
 import { realtimeNotificationManager, RealtimeNotification } from './realtime';
 import './styles.css';
 
@@ -37,7 +39,7 @@ export default function App() {
     }
   });
 
-  const [activeTab, setActiveTab] = useState<'DEPOSIT' | 'LOANS' | 'LEDGER' | 'ACCOUNTS' | 'KYC' | 'SAVINGS' | 'SUPPORT' | 'OPERATIONS'>('DEPOSIT');
+  const [activeTab, setActiveTab] = useState<'DEPOSIT' | 'LOANS' | 'LEDGER' | 'ACCOUNTS' | 'KYC' | 'SAVINGS' | 'SUPPORT' | 'OPERATIONS' | 'AML' | 'AUDIT'>('DEPOSIT');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [accounts, setAccounts] = useState<CustomerAccount[]>(CUSTOMER_ACCOUNTS);
   const [deposits, setDeposits] = useState<CashDeposit[]>(INITIAL_DEPOSITS);
@@ -614,6 +616,48 @@ export default function App() {
           <Scale size={16} />
           <span>Trung tâm vận hành</span>
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('AML')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'AML' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'AML' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'AML' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <ShieldAlert size={16} />
+          <span>Hồ Sơ AML (PCRT 2022)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('AUDIT')}
+          style={{
+            padding: '10px 20px',
+            fontWeight: 700,
+            fontSize: '13.5px',
+            borderRadius: '8px 8px 0 0',
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: activeTab === 'AUDIT' ? 'var(--bg-card)' : 'transparent',
+            color: activeTab === 'AUDIT' ? 'var(--primary-blue)' : 'var(--text-muted)',
+            borderBottom: activeTab === 'AUDIT' ? '3px solid var(--primary-blue)' : '3px solid transparent'
+          }}
+        >
+          <ScrollText size={16} />
+          <span>Nhật Ký Kiểm Toán Sổ Cái</span>
+        </button>
       </div>
 
       {/* Main Container */}
@@ -676,6 +720,14 @@ export default function App() {
 
         {activeTab === 'OPERATIONS' && (
           <AdminOperations staff={currentStaff} />
+        )}
+
+        {activeTab === 'AML' && (
+          <AmlCaseManagement currentStaff={currentStaff} onRefresh={loadBackendData} />
+        )}
+
+        {activeTab === 'AUDIT' && (
+          <LedgerAuditLogManagement currentStaff={currentStaff} />
         )}
       </div>
 

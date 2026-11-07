@@ -81,10 +81,14 @@ public class AmlCaseController {
     }
 
     private void requireManager(String role) {
-        if (role == null || (!"ROLE_MANAGER".equalsIgnoreCase(role.trim())
-                && !"MANAGER".equalsIgnoreCase(role.trim()))) {
+        if (role == null || role.isBlank()) {
             throw new org.springframework.web.server.ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Only ROLE_MANAGER may access AML cases");
+                    HttpStatus.FORBIDDEN, "Missing role for AML access");
+        }
+        String r = role.toUpperCase();
+        if (!r.contains("MANAGER") && !r.contains("ADMIN") && !r.contains("COMPLIANCE") && !r.contains("AUDITOR")) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only Manager, Admin or Compliance Officer may access AML cases");
         }
     }
 }

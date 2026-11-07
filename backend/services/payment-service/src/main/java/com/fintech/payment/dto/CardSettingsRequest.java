@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -14,5 +16,6 @@ public class CardSettingsRequest {
     private Boolean intlPayment;
     private Boolean contactless;
     private Boolean atmWithdraw;
+    private BigDecimal limit;
 }
 

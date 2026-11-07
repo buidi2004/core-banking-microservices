@@ -24,7 +24,8 @@ public class AuditKafkaConsumer {
 
     @Transactional
     @KafkaListener(topics = KafkaTopicConfig.TOPIC_AUDIT_EVENTS,
-            groupId = "ledger-audit-storage-group")
+            groupId = "ledger-audit-storage-group",
+            containerFactory = "auditStringListenerContainerFactory")
     public void onAuditEvent(@Payload String payload) {
         final AuditEvent event;
         try {

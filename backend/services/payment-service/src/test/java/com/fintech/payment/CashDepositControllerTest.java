@@ -114,6 +114,8 @@ class CashDepositControllerTest {
 
             when(cashDepositRepository.findByIdempotencyKey("idem_5m_test")).thenReturn(Optional.empty());
             when(cashDepositRepository.save(any(CashDeposit.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(walletGrpcClient.credit(any(), any(), any(), any()))
+                    .thenReturn(com.fintech.payment.grpc.dto.WalletBalanceResult.builder().success(true).balanceAfter(5_000_000L).build());
 
             mockMvc.perform(post("/api/v1/cash/deposits")
                             .header("X-User-Id", TELLER_A_ID)
@@ -234,6 +236,8 @@ class CashDepositControllerTest {
 
             when(cashDepositRepository.findById("dep-200m")).thenReturn(Optional.of(deposit));
             when(cashDepositRepository.save(any(CashDeposit.class))).thenAnswer(invocation -> invocation.getArgument(0));
+            when(walletGrpcClient.credit(any(), any(), any(), any()))
+                    .thenReturn(com.fintech.payment.grpc.dto.WalletBalanceResult.builder().success(true).balanceAfter(200_000_000L).build());
 
             mockMvc.perform(post("/api/v1/cash/deposits/dep-200m/approve")
                             .header("X-User-Id", MANAGER_C_ID)

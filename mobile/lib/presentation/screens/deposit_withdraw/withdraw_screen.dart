@@ -664,14 +664,14 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 Text(
-                                  '-${CurrencyFormatter.formatVND(item['amount'] as double)}',
+                                  '-${CurrencyFormatter.formatVND((item['amount'] as num?)?.toDouble() ?? 0.0)}',
                                   style: const TextStyle(
                                       color: AppColors.primaryText,
                                       fontWeight: FontWeight.bold,
                                       fontSize: 13),
                                 ),
                                 Text(
-                                  item['status'] as String,
+                                  item['status']?.toString() ?? 'SUCCESS',
                                   style: const TextStyle(
                                       color: AppColors.successTextLight,
                                       fontSize: 10,

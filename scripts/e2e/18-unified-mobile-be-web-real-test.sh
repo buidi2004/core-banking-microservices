@@ -14,6 +14,7 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 BOLD='\033[1m'
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TIMESTAMP=$(date +%s%N | cut -b1-13)
 GATEWAY_URL="http://localhost:8080/api/v1"
 NGROK_URL="https://mutation-tubby-overstock.ngrok-free.dev/api/v1"
@@ -169,10 +170,8 @@ step "3" "TẦNG WEB QUẢN TRỊ: Giao dịch viên Nạp tiền Quầy vào V�
 # ==============================================================================
 
 # Đăng nhập Cán bộ Giao dịch viên (Teller) trên Web Portal
-if [ ! -f "scripts/e2e/.staff_tokens.env" ]; then
-  bash scripts/e2e/generate-staff-tokens.sh >/dev/null 2>&1
-fi
-source scripts/e2e/.staff_tokens.env
+bash "$SCRIPT_DIR/generate-staff-tokens.sh" >/dev/null 2>&1
+source "$SCRIPT_DIR/.staff_tokens.env"
 TELLER_TOKEN="$TELLER1_TOKEN"
 
 if [ -n "$TELLER_TOKEN" ] && [ "$TELLER_TOKEN" != "None" ]; then
@@ -189,9 +188,11 @@ echo "  • Teller lập phiếu thu tiền mặt 15.000.000 VND tại quầy...
 DEPOSIT_RESP=$(curl -s -X POST "$GATEWAY_URL/cash/deposits" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TELLER_TOKEN" \
+  -H "X-User-Id: teller1" \
+  -H "X-Branch-Id: BR_Q1" \
   -H "Idempotency-Key: $IDEM_KEY" \
   -d "{
-    \"accountNumber\": \"$MOBILE_PHONE\",
+    \"accountNumber\": \"$WALLET_ID\",
     \"customerName\": \"$MOBILE_NAME\",
     \"amount\": $DEPOSIT_AMOUNT,
     \"currency\": \"VND\",
@@ -201,8 +202,8 @@ DEPOSIT_RESP=$(curl -s -X POST "$GATEWAY_URL/cash/deposits" \
     \"idempotencyKey\": \"$IDEM_KEY\"
   }")
 
-DEP_CODE=$(echo "$DEPOSIT_RESP" | python3 -c "import sys, json; print(json.load(sys.stdin).get('data', {}).get('depositCode', ''))")
-DEP_STATUS=$(echo "$DEPOSIT_RESP" | python3 -c "import sys, json; print(json.load(sys.stdin).get('data', {}).get('status', ''))")
+DEP_CODE=$(echo "$DEPOSIT_RESP" | python3 -c "import sys, json; d=json.load(sys.stdin); print((d.get('data') or {}).get('depositCode', ''))")
+DEP_STATUS=$(echo "$DEPOSIT_RESP" | python3 -c "import sys, json; d=json.load(sys.stdin); print((d.get('data') or {}).get('status', ''))")
 
 if [ "$DEP_STATUS" == "COMPLETED" ]; then
   pass "Phiếu thu tiền mặt $DEP_CODE được duyệt tự động thành công (Trạng thái: $DEP_STATUS)"
@@ -210,10 +211,8 @@ else
   fail "Nạp tiền quầy thất bại: $DEPOSIT_RESP"
 fi
 
-# Kích hoạt số dư ví trong Database
-docker exec -e PGPASSWORD="WalletDb#Secure2025!" ewallet-postgres-wallet psql -U wallet_db_user -d ewallet_wallet_db -c \
-  "UPDATE wallets SET balance = balance + $DEPOSIT_AMOUNT, updated_at = NOW() WHERE id = '$WALLET_ID';" >/dev/null 2>&1
-pass "Đã kích hoạt hạn mức 15.000.000 VND vào số dư ví của khách hàng"
+# Số dư ví đã được cộng tự động qua gRPC Credit
+pass "Đã cộng hạn mức 15.000.000 VND vào số dư ví của khách hàng qua gRPC"
 
 # ==============================================================================
 step "4" "ĐỐI SOÁT CHÉO TẦNG MOBILE: Kiểm tra Số dư Tức thời & Thông báo"

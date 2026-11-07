@@ -40,6 +40,10 @@ public interface LedgerPersistencePort {
 
     BigDecimal sumAmount(PostingSide side);
 
+    default BigDecimal sumAmountByAccountIdAndSide(String accountId, PostingSide side) {
+        return BigDecimal.ZERO;
+    }
+
     boolean existsJournalEntryByReference(String referenceNumber);
 
     default long countTotalEntries() {

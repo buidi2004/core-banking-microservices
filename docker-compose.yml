@@ -311,6 +311,7 @@ services:
       DB_PORT: 5432
       REDIS_HOST: redis
       RABBITMQ_HOST: rabbitmq
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       # Gmail SMTP cho tính năng gửi OTP qua Email
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-buidi7170@gmail.com}
       SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-hoykscffvyeesbox}
@@ -405,6 +406,7 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       # Tra cứu số điện thoại chủ ví để hiển thị trong nội dung thông báo
       IDENTITY_SERVICE_URL: http://identity-service:8081
+      WALLET_SERVICE_URL: http://wallet-service:8082
     depends_on:
       postgres-notification:
         condition: service_healthy
@@ -443,6 +445,48 @@ services:
     depends_on:
       postgres-chatbot:
         condition: service_healthy
+    networks:
+      - microservices-network
+
+  # ----------------------------------------------------------------------------
+  # eKYC AI SERVICE — Anti-spoofing & Face Matching (ONNX Runtime GPU, GTX 1650)
+  # Yêu cầu host đã cài nvidia-container-toolkit
+  # ----------------------------------------------------------------------------
+  ekyc-ai-service:
+    build: ./backend/services/ekyc-ai-service
+    container_name: ewallet-ekyc-ai-service
+    restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8900", "--workers", "1"]
+    mem_limit: 2g
+    environment:
+      EKYC_REDIS_URL: redis://redis:6379/2
+      EKYC_SESSION_TTL: "240"
+      EKYC_FACE_MATCH_THRESHOLD: "0.68"
+      EKYC_ONNX_PROVIDERS: CUDAExecutionProvider,CPUExecutionProvider
+      IDENTITY_SERVICE_URL: http://identity-service:8081
+      INTERNAL_API_KEY: senhong-internal-ekyc-key-2026
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+    volumes:
+      - ./backend/services/ekyc-ai-service/certs:/app/certs:ro
+    ports:
+      - "8900:8900"
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8900/api/v1/ekyc/ai/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     networks:
       - microservices-network
 

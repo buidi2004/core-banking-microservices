@@ -39,6 +39,12 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(message.isBlank() ? "Validation failed" : message, "VALIDATION_ERROR"));
     }
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatus(org.springframework.web.server.ResponseStatusException e) {
+        return ResponseEntity.status(e.getStatusCode())
+                .body(ApiResponse.error(e.getReason() != null ? e.getReason() : e.getMessage(), e.getStatusCode().toString()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneric(Exception e) {
         log.error("Unhandled error in notification-service", e);

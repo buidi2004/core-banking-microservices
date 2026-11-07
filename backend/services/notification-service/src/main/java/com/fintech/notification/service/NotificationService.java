@@ -31,10 +31,51 @@ public class NotificationService {
     public PageResponse<Notification> getNotifications(String userId, String type, int page, int size) {
         PageRequest pageRequest = PageRequest.of(Math.max(page, 0), size > 0 ? size : 20,
                 Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        if (userId != null && !userId.isBlank() && type != null && !type.isBlank()) {
+            ensurePromoAndSystemNotifications(userId, type.trim().toUpperCase());
+        }
+
         Page<Notification> result = (type != null && !type.isBlank())
                 ? notificationRepository.findByUserIdAndType(userId, type, pageRequest)
                 : notificationRepository.findByUserId(userId, pageRequest);
         return PageResponse.of(result.getContent(), page, pageRequest.getPageSize(), result.getTotalElements());
+    }
+
+    private void ensurePromoAndSystemNotifications(String userId, String normalizedType) {
+        try {
+            if ("PROMOTION".equals(normalizedType)) {
+                PageRequest p0 = PageRequest.of(0, 1);
+                if (notificationRepository.findByUserIdAndType(userId, "PROMOTION", p0).isEmpty()) {
+                    Notification n1 = Notification.create(userId, "PROMOTION",
+                            "Ưu đãi chào bạn mới: Tặng voucher 25.000đ hóa đơn",
+                            "Nhập mã SENHONG5 để được giảm ngay 15.000đ khi thanh toán tiền điện, nước, internet qua Sen Hồng Bank.",
+                            "IN_APP", "{\"voucherCode\":\"SENHONG5\",\"discount\":15000}");
+                    Notification n2 = Notification.create(userId, "PROMOTION",
+                            "Chiết khấu 3% nạp tiền điện thoại mọi nhà mạng",
+                            "Nạp thẻ điện thoại Viettel, VinaPhone, MobiFone trực tiếp trên ứng dụng được chiết khấu ngay 3% giá trị giao dịch.",
+                            "IN_APP", "{\"discountPercent\":3}");
+                    notificationRepository.save(n1);
+                    notificationRepository.save(n2);
+                }
+            } else if ("SYSTEM".equals(normalizedType)) {
+                PageRequest p0 = PageRequest.of(0, 1);
+                if (notificationRepository.findByUserIdAndType(userId, "SYSTEM", p0).isEmpty()) {
+                    Notification n1 = Notification.create(userId, "SYSTEM",
+                            "Quyết định 2345/QĐ-NHNN về an toàn thanh toán trực tuyến",
+                            "Từ ngày 01/07/2026, các giao dịch chuyển tiền từ 10.000.000đ/lần hoặc tổng giá trị trên 20.000.000đ/ngày bắt buộc phải xác thực sinh trắc học khuôn mặt.",
+                            "IN_APP", "{\"standard\":\"QĐ 2345/QĐ-NHNN\"}");
+                    Notification n2 = Notification.create(userId, "SYSTEM",
+                            "Cảnh báo bảo mật thông tin tài khoản ngân hàng",
+                            "Sen Hồng Bank không bao giờ yêu cầu khách hàng cung cấp mã OTP, mã PIN hay mật khẩu dưới bất kỳ hình thức nào. Vui lòng cảnh giác trước các đường link lạ.",
+                            "IN_APP", "{\"securityLevel\":\"HIGH\"}");
+                    notificationRepository.save(n1);
+                    notificationRepository.save(n2);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Không thể seed thông báo {} cho {}: {}", normalizedType, userId, e.getMessage());
+        }
     }
 
     @Transactional
@@ -55,6 +96,15 @@ public class NotificationService {
         }
         return notificationRepository.countByUserAndTransaction(userId, transactionId,
                 (status == null || status.isBlank()) ? "SUCCESS" : status.toUpperCase()) > 0;
+    }
+
+    /** Tìm notification theo transactionId để kiểm tra hoặc làm giàu dữ liệu chi tiết. */
+    public java.util.Optional<Notification> findByUserAndTransaction(String userId, String transactionId, String status) {
+        if (userId == null || userId.isBlank() || transactionId == null || transactionId.isBlank()) {
+            return java.util.Optional.empty();
+        }
+        return notificationRepository.findByUserAndTransaction(userId, transactionId,
+                (status == null || status.isBlank()) ? "SUCCESS" : status.toUpperCase());
     }
 
     @Transactional

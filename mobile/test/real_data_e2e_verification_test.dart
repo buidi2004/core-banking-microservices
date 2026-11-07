@@ -473,10 +473,18 @@ void main() {
     });
 
     test('17. Yêu Cầu Chuyển Tiền / Chia Tiền P2P (Money Request)', () async {
-      final targetUser = receiverUserId.isNotEmpty ? receiverUserId : '497260ee-3b16-4199-9675-fb8a5f8e15d1';
+      // Bob đăng nhập & lấy thông tin Bob
+      final bobDio = DioClient().dio;
+      final bobLogin = await bobDio.post(
+        ApiConstants.login,
+        data: {'username': '0909876543', 'password': 'DemoPass#2026!'},
+      );
+      final bobToken = bobLogin.data['data']['accessToken'] as String;
+      final bobUserId = (bobLogin.data['data']['userId'] ?? 'b0b00000-0000-0000-0000-000000000002') as String;
+
       final reqRes = await MoneyRequestRemoteDataSource().create(
         requesterId: customerUserId,
-        targetUserId: targetUser,
+        targetUserId: bobUserId,
         amount: 150000,
         note: 'Tiền ăn trưa E2E',
       );
@@ -488,16 +496,10 @@ void main() {
       expect(detailRes.data['data']['id'], reqId);
       expect(detailRes.data['data']['status'], 'PENDING');
 
-      // Bob đăng nhập & chấp nhận yêu cầu
-      final bobDio = DioClient().dio;
-      final bobLogin = await bobDio.post(
-        ApiConstants.login,
-        data: {'username': '0909876543', 'password': 'DemoPass#2026!'},
-      );
-      final bobToken = bobLogin.data['data']['accessToken'] as String;
+      // Bob chấp nhận yêu cầu
       final acceptRes = await bobDio.post(
         ApiConstants.moneyRequestAccept(reqId),
-        queryParameters: {'payerUserId': targetUser},
+        queryParameters: {'payerUserId': bobUserId},
         options: Options(headers: {'Authorization': 'Bearer $bobToken'}),
       );
       expect(acceptRes.data['success'], isTrue);

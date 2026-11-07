@@ -1,0 +1,6 @@
+.venv/
+models/
+certs/*.pem
+certs/*.key
+__pycache__/
+*.pyc

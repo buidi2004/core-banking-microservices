@@ -1,10 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_carousel_widget/flutter_carousel_widget.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../data/datasources/remote/promotion_remote_datasource.dart';
 
-/// Dữ liệu mẫu cho các banner quảng cáo thời trang & phong cách sống chân thực
+/// Mô tả một banner khuyến mãi (nội dung từ Backend /promotions/campaigns)
 class _PromoData {
   final String badgeText;
   final IconData badgeIcon;
@@ -50,90 +53,104 @@ class CurvedPromoBanner extends StatefulWidget {
 }
 
 class _CurvedPromoBannerState extends State<CurvedPromoBanner> {
-  static const List<_PromoData> _promos = [
-    // Quảng cáo 1: ZARA & UNIQLO - BST Thời trang Hè (Ảnh người thật mua sắm)
-    _PromoData(
-      badgeText: 'ZARA × UNIQLO',
-      badgeIcon: CupertinoIcons.bag_fill,
-      title: 'BST THỜI TRANG HÈ',
-      highlightValue: 'GIẢM 300K',
-      highlightText: 'ĐƠN TỪ 1.5TR',
-      buttonText: 'SĂN DEAL NGAY',
-      gradientColors: [
+  // Nội dung banner được tải động từ Backend (/promotions/campaigns) — KHÔNG dùng dữ liệu cứng
+  List<_PromoData> _promos = [];
+  bool _loadingPromos = true;
+
+  static const Map<String, Map<String, Object>> _campaignVisuals = {
+    'deposit': {
+      'asset': 'assets/images/banners/clean_visa_banner.png',
+      'accent': Color(0xFF38BDF8),
+    },
+    'referral': {
+      'asset': 'assets/images/banners/vietnam_halong_bay.jpg',
+      'accent': Color(0xFF2DD4BF),
+    },
+    'savings': {
+      'asset': 'assets/images/banners/clean_stellar_banner.png',
+      'accent': Color(0xFFF59E0B),
+    },
+    'bills': {
+      'asset': 'assets/images/banners/clean_jcb_banner.png',
+      'accent': Color(0xFF60A5FA),
+    },
+    'p2p': {
+      'asset': 'assets/images/banners/vietnam_phu_quoc.jpg',
+      'accent': Color(0xFFA78BFA),
+    },
+    'default': {
+      'asset': 'assets/images/banners/clean_visa_banner.png',
+      'accent': Color(0xFFF2B84B),
+    },
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCampaignPromos();
+  }
+
+  Future<void> _loadCampaignPromos() async {
+    try {
+      final list = await PromotionRemoteDataSource().getCampaigns();
+      if (!mounted) return;
+      setState(() {
+        _promos = list.map(_campaignToPromo).toList();
+        _loadingPromos = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loadingPromos = false);
+    }
+  }
+
+  Map<String, dynamic> _parseRulesJson(dynamic raw) {
+    if (raw is! String || raw.isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map<String, dynamic> ? decoded : const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  _PromoData _campaignToPromo(Map<String, dynamic> c) {
+    final rules = _parseRulesJson(c['rulesJson']);
+    final category =
+        ((rules['category'] as String?) ?? (c['type'] as String? ?? ''))
+            .toLowerCase();
+    final visual = _campaignVisuals[category] ?? _campaignVisuals['default']!;
+    final reward = (c['rewardAmount'] as num?)?.toInt() ?? 0;
+    final rewardText = reward >= 1000000
+        ? 'THƯỞNG ${(reward / 1000000).toStringAsFixed(1)} TRIỆU'
+        : reward > 0
+            ? 'THƯỞNG ${(reward / 1000).round()}K'
+            : 'ƯU ĐÃI THẬT';
+    return _PromoData(
+      badgeText: ((rules['badge'] as String?) ?? (c['type'] as String? ?? 'SEN HỒNG'))
+          .toUpperCase(),
+      badgeIcon: CupertinoIcons.rosette,
+      title: ((c['name'] as String?) ?? '').toUpperCase(),
+      highlightValue: rewardText,
+      highlightText: 'TỪ SEN HỒNG BANK',
+      buttonText: ((rules['buttonText'] as String?) ?? 'KHÁM PHÁ').toUpperCase(),
+      gradientColors: const [
         Color(0xFF0F172A),
         Color(0xF01E293B),
         Color(0x99334155),
         Color(0x000F172A),
       ],
-      shadowColor: Color(0xFF0F172A),
-      route: '/promotions',
-      imageAsset: 'assets/images/banners/banner_zara_uniqlo.jpg',
-      accentColor: Color(0xFFF2B84B),
-    ),
-
-    // Quảng cáo 2: NIKE & ADIDAS - Sport Fest (Ảnh người mẫu thể thao năng động)
-    _PromoData(
-      badgeText: 'NIKE × ADIDAS',
-      badgeIcon: CupertinoIcons.bolt_fill,
-      title: 'SPORT FEST 2026',
-      highlightValue: 'HOÀN 20%',
-      highlightText: 'VISA PLATINUM',
-      buttonText: 'MỞ THẺ NGAY',
-      gradientColors: [
-        Color(0xFF020C1B),
-        Color(0xF00A192F),
-        Color(0x88172A45),
-        Color(0x000A192F),
-      ],
-      shadowColor: Color(0xFF0A192F),
-      route: '/cards',
-      imageAsset: 'assets/images/banners/banner_nike_adidas.jpg',
-      accentColor: Color(0xFFFF6B5F),
-    ),
-
-    // Quảng cáo 3: GUCCI & CHANEL - Luxury Runway Boutique (Ảnh người mẫu thời trang cao cấp)
-    _PromoData(
-      badgeText: 'GUCCI × CHANEL',
-      badgeIcon: CupertinoIcons.star_fill,
-      title: 'LUXURY BOUTIQUE',
-      highlightValue: 'HOÀN 10%',
-      highlightText: 'ĐẶC QUYỀN VIP',
-      buttonText: 'KHÁM PHÁ NGAY',
-      gradientColors: [
-        Color(0xFF1A120B),
-        Color(0xF0271E18),
-        Color(0x883E2723),
-        Color(0x001A120B),
-      ],
-      shadowColor: Color(0xFF271E18),
-      route: '/cards',
-      imageAsset: 'assets/images/banners/banner_gucci_luxury.jpg',
-      accentColor: Color(0xFFE8C98A),
-    ),
-
-    // Quảng cáo 4: GENTLE MONSTER & RESORT - Du lịch & Nghỉ dưỡng
-    _PromoData(
-      badgeText: 'GENTLE MONSTER',
-      badgeIcon: CupertinoIcons.sun_max_fill,
-      title: 'DU LỊCH & RESORT',
-      highlightValue: 'TẶNG 1TR',
-      highlightText: 'VOUCHER 5 SAO',
-      buttonText: 'NHẬN ƯU ĐÃI',
-      gradientColors: [
-        Color(0xFF00222C),
-        Color(0xF0003847),
-        Color(0x88005A6F),
-        Color(0x0000222C),
-      ],
-      shadowColor: Color(0xFF003847),
-      route: '/promotions',
-      imageAsset: 'assets/images/banners/banner_travel_resort.jpg',
-      accentColor: Color(0xFF54D6C8),
-    ),
-  ];
+      shadowColor: const Color(0xFF0F172A),
+      route: (rules['route'] as String?) ?? '/promotions',
+      imageAsset: visual['asset'] as String,
+      accentColor: visual['accent'] as Color,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_loadingPromos || _promos.isEmpty) {
+      return const SizedBox.shrink();
+    }
     if (widget.isDiagonalSlanted) {
       return _buildDiagonalSlantedBanner(context);
     }

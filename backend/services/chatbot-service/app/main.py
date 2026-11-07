@@ -1,6 +1,9 @@
+import base64
+import json
 import logging
+from typing import Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Header, HTTPException, Depends, status
+from fastapi import FastAPI, Header, HTTPException, Depends, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
@@ -88,22 +91,50 @@ def health_check():
         configured_keys_count=len(settings.api_keys)
     )
 
+def _extract_jwt_sub(auth_header: Optional[str]) -> Optional[str]:
+    """Tự động trích xuất userId từ JWT Bearer token mà không phụ thuộc thư viện ngoài"""
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return None
+    try:
+        token = auth_header.split(" ")[1]
+        parts = token.split(".")
+        if len(parts) >= 2:
+            payload_b64 = parts[1]
+            padding = 4 - (len(payload_b64) % 4)
+            if padding != 4:
+                payload_b64 += "=" * padding
+            decoded_bytes = base64.urlsafe_b64decode(payload_b64)
+            payload = json.loads(decoded_bytes)
+            return payload.get("sub") or payload.get("userId") or payload.get("user_id")
+    except Exception as e:
+        logger.debug("Could not parse JWT payload: %s", e)
+    return None
+
 @app.post("/api/v1/chat", response_model=ChatResponse, tags=["Chat"])
+@app.post("/chat", response_model=ChatResponse, tags=["Chat"])
 def chat(
     request: ChatRequest,
-    x_user_id: str = Header(None, alias="X-User-Id"),
+    req_raw: Request,
+    x_user_id: Optional[str] = Header(None, alias="X-User-Id"),
+    authorization: Optional[str] = Header(None, alias="Authorization"),
     _auth: bool = Depends(verify_internal_key)
 ):
     """
     Điểm tiếp nhận câu hỏi của khách hàng:
-    - Nhận câu hỏi và lịch sử trò chuyện
+    - Nhận diện người dùng linh hoạt qua Header X-User-Id, Bearer JWT token hoặc request body
     - Lọc PII và kiểm tra Guardrails bảo mật
-    - Tìm kiếm Top-K vector tương đồng trong ChromaDB
-    - Gọi LLM qua OpenAI SDK và trả về câu trả lời kèm trích dẫn nguồn
+    - Định tuyến Jev System One siêu tốc (< 10ms)
+    - Hybrid Search trên PostgreSQL pgvector và Grounded LLM
     """
-    effective_user_id = x_user_id or request.user_id
+    header_user_id = x_user_id or req_raw.headers.get("x-user-id") or req_raw.headers.get("X-User-Id")
+    jwt_user_id = _extract_jwt_sub(authorization or req_raw.headers.get("authorization"))
+    effective_user_id = header_user_id or jwt_user_id or request.user_id
     logger.info("Received chat query from user %s: '%s'", effective_user_id or "Anonymous", request.question)
-    return rag_engine.answer_query(request.question, request.history, user_id=effective_user_id)
+    try:
+        return rag_engine.answer_query(request.question, request.history, user_id=effective_user_id)
+    except Exception as e:
+        logger.exception("Error in answer_query: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/admin/ingest", response_model=IngestResponse, tags=["Admin"])
 def admin_ingest(_auth: bool = Depends(verify_internal_key)):

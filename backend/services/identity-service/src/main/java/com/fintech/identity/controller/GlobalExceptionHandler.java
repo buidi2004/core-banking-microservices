@@ -107,6 +107,20 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("NOT_FOUND", "Không tìm thấy tài nguyên yêu cầu: " + e.getResourcePath()));
     }
 
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(org.springframework.web.server.ResponseStatusException e) {
+        log.warn("ResponseStatusException: status={}, reason={}", e.getStatusCode(), e.getReason());
+        return ResponseEntity.status(e.getStatusCode())
+                .body(ApiResponse.error(e.getStatusCode().toString(), e.getReason() != null ? e.getReason() : e.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException e) {
+        log.warn("Xung đột toàn vẹn dữ liệu (trùng khóa UNIQUE): {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error("DATA_CONFLICT", "Thông tin giấy tờ định danh (CCCD/CMND) hoặc tài khoản đã tồn tại trong hệ thống"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception e) {
         log.error("Lỗi hệ thống ngoài dự kiến: {}", e.getMessage(), e);

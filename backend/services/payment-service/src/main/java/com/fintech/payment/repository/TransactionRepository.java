@@ -24,6 +24,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
 
     List<Transaction> findByStatus(String status);
 
+    Page<Transaction> findByType(String type, Pageable pageable);
+
     @Query("SELECT t FROM Transaction t WHERE t.idempotencyKey = :idempotencyKey")
     Optional<Transaction> findByIdempotencyKeyNamed(@Param("idempotencyKey") String idempotencyKey);
 

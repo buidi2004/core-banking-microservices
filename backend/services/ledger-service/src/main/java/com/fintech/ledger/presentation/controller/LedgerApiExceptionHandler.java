@@ -37,6 +37,13 @@ public class LedgerApiExceptionHandler {
                 .body(new ApiErrorResponse(400, e.getMessage(), Instant.now().toString()));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiErrorResponse> handleConflict(IllegalStateException e) {
+        log.warn("Ledger state conflict: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiErrorResponse(409, e.getMessage(), Instant.now().toString()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneric(Exception e) {
         log.error("Unhandled error on ledger API", e);

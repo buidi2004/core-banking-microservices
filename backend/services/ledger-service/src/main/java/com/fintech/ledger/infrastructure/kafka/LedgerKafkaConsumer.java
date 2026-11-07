@@ -49,9 +49,19 @@ public class LedgerKafkaConsumer {
                                        @Header(name = "kafka_receivedMessageKey", required = false) String messageKey,
                                        Acknowledgment acknowledgment) {
         log.info("Kafka wallet.balance-changed received: key={}, {}", messageKey, envelope);
-        TransactionEventMessage event = translator.fromWalletBalanceChanged(envelope);
-        // Balance-changed event luôn là kết quả thực tế → luôn hạch toán (direction CREDIT/DEBIT)
-        postAndAck(envelope, event, acknowledgment);
+        try {
+            TransactionEventMessage event = translator.fromWalletBalanceChanged(envelope);
+            if (event == null) {
+                log.debug("Skipping non-posting wallet balance change (e.g. RESERVE/RELEASE): key={}", messageKey);
+                acknowledgment.acknowledge();
+                return;
+            }
+            // Balance-changed event luôn là kết quả thực tế → luôn hạch toán (direction CREDIT/DEBIT)
+            postAndAck(envelope, event, acknowledgment);
+        } catch (IllegalArgumentException e) {
+            log.warn("Malformed or non-ledger wallet balance-changed event (skipping): key={}, error={}", messageKey, e.getMessage());
+            acknowledgment.acknowledge();
+        }
     }
 
     /** Topic vòng đời giao dịch Saga (Agent 3) + Quầy nạp tiền mặt (Cash Deposit): chỉ hạch toán COMPLETED / SUCCESS / REVERSED. */

@@ -31,6 +31,16 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
                                    @Param("transactionId") String transactionId,
                                    @Param("status") String status);
 
+    /** Tìm notification của giao dịch theo transactionId + status để kiểm tra và làm giàu thông tin. */
+    @Query(value = "SELECT * FROM notifications "
+            + "WHERE user_id = :userId AND data_payload->>'transactionId' = :transactionId "
+            + "AND data_payload->>'status' = :status "
+            + "ORDER BY created_at DESC LIMIT 1",
+            nativeQuery = true)
+    java.util.Optional<Notification> findByUserAndTransaction(@Param("userId") String userId,
+                                                              @Param("transactionId") String transactionId,
+                                                              @Param("status") String status);
+
     @Transactional
     @Modifying
     @Query("UPDATE Notification n SET n.read = true, n.readAt = :readAt "

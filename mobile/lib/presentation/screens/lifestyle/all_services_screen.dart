@@ -1,10 +1,9 @@
-import 'package:sen_hong_bank/presentation/widgets/vietnam_destination_carousel.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
-import 'package:sen_hong_bank/core/theme/app_typography.dart';
+import 'package:sen_hong_bank/presentation/widgets/vietnam_destination_carousel.dart';
 
 /// Màn hình Tất Cả Dịch Vụ & Tiện Ích Số - Trung tâm dịch vụ hệ sinh thái Sen Hồng Bank
 class AllServicesScreen extends StatefulWidget {
@@ -25,50 +24,43 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
         {
           'name': 'Vua Xổ Số',
           'sub': 'XSMB, XSMN, XSMT trực tiếp',
-          'icon': CupertinoIcons.sparkles,
-          'color': const Color(0xFFDC2626),
+          'icon': LucideIcons.sparkles,
           'route': '/vua-xo-so',
         },
         {
           'name': 'Vé số Vietlott',
           'sub': 'Power 6/55, Mega 6/45, Keno',
-          'icon': CupertinoIcons.tickets_fill,
-          'color': const Color(0xFFEA580C),
+          'icon': LucideIcons.ticket,
           'route': '/vietlott',
         },
         {
           'name': 'Data 4G / Nạp tiền',
           'sub': 'Chiết khấu 3.5%, Data 4G/5G',
-          'icon': CupertinoIcons.antenna_radiowaves_left_right,
-          'color': const Color(0xFF0284C7),
+          'icon': LucideIcons.smartphone,
           'route': '/data-topup',
         },
         {
           'name': 'Vé Máy Bay Số',
           'sub': 'Vé điện tử IATA, Check-in',
-          'icon': CupertinoIcons.airplane,
-          'color': const Color(0xFF0D9488),
+          'icon': LucideIcons.plane,
           'route': '/digital-flight',
         },
         {
           'name': 'Vé máy bay iMedia',
           'sub': 'Giá tốt nhất, bảo hiểm trễ',
-          'icon': CupertinoIcons.paperplane_fill,
-          'color': const Color(0xFF2563EB),
+          'icon': LucideIcons.send,
           'route': '/imedia-flight',
         },
         {
           'name': 'Data 4G / Thẻ Game',
           'sub': 'Garena, Zing, VTC chiết khấu 5%',
-          'icon': CupertinoIcons.gamecontroller_fill,
-          'color': const Color(0xFF7C3AED),
+          'icon': LucideIcons.gamepad2,
           'route': '/game-cards',
         },
         {
           'name': 'Vận Số Phong Thủy',
           'sub': 'Hoàng đạo, Giờ tốt, Quẻ tài lộc',
-          'icon': CupertinoIcons.sun_max_fill,
-          'color': const Color(0xFFB45309),
+          'icon': LucideIcons.sun,
           'route': '/van-so',
         },
       ],
@@ -79,43 +71,37 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
         {
           'name': 'Chuyển tiền Napas 24/7',
           'sub': 'Miễn phí chuyển liên ngân hàng',
-          'icon': CupertinoIcons.arrow_right_arrow_left,
-          'color': AppColors.primary,
+          'icon': LucideIcons.arrowLeftRight,
           'route': '/transfer',
         },
         {
           'name': 'Rút tiền ATM không thẻ',
           'sub': 'Mã PIN bảo mật, rút nhanh tại ATM',
-          'icon': CupertinoIcons.money_dollar_circle_fill,
-          'color': const Color(0xFF059669),
+          'icon': LucideIcons.banknote,
           'route': '/atm-withdrawal',
         },
         {
           'name': 'Mở tài khoản số đẹp',
           'sub': 'Tứ quý, lộc phát, ngũ quý',
-          'icon': CupertinoIcons.star_fill,
-          'color': const Color(0xFFD97706),
+          'icon': LucideIcons.star,
           'route': '/lucky-account',
         },
         {
           'name': 'Chuyển tiền quốc tế',
           'sub': 'Swift Code, tỷ giá ưu đãi',
-          'icon': CupertinoIcons.globe,
-          'color': const Color(0xFF2563EB),
+          'icon': LucideIcons.globe,
           'route': '/international-transfer',
         },
         {
           'name': 'Quản lý thẻ ngân hàng',
           'sub': 'Thẻ ghi nợ, thẻ tín dụng Quốc tế',
-          'icon': CupertinoIcons.creditcard_fill,
-          'color': const Color(0xFF475569),
+          'icon': LucideIcons.creditCard,
           'route': '/cards',
         },
         {
           'name': 'Gửi tiết kiệm Phát Lộc',
           'sub': 'Lãi suất tới 7.4%/năm',
-          'icon': CupertinoIcons.briefcase_fill,
-          'color': const Color(0xFF059669),
+          'icon': LucideIcons.landmark,
           'route': '/savings',
         },
       ],
@@ -126,22 +112,19 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
         {
           'name': 'Tiền điện EVN',
           'sub': 'Tự động trích nợ hàng tháng',
-          'icon': CupertinoIcons.bolt_fill,
-          'color': const Color(0xFFF59E0B),
+          'icon': LucideIcons.zap,
           'route': '/bills',
         },
         {
           'name': 'Tiền nước sinh hoạt',
           'sub': 'Các công ty cấp nước toàn quốc',
-          'icon': CupertinoIcons.drop_fill,
-          'color': const Color(0xFF0284C7),
+          'icon': LucideIcons.droplets,
           'route': '/bills',
         },
         {
           'name': 'Bảo hiểm xã hội',
           'sub': 'Đóng VssID, gia hạn BHYT',
-          'icon': CupertinoIcons.shield_fill,
-          'color': const Color(0xFF0D9488),
+          'icon': LucideIcons.shieldCheck,
           'route': '/social-insurance',
         },
       ],
@@ -161,18 +144,22 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFDF9),
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(CupertinoIcons.arrow_left, color: Color(0xFF1E293B)),
+          icon: const Icon(LucideIcons.arrowLeft, color: Color(0xFF1E293B)),
           onPressed: () {
             HapticFeedback.lightImpact();
             Navigator.maybePop(context);
           },
         ),
-        title: Text(
+        title: const Text(
           'Tất Cả Dịch Vụ',
-          style: AppTypography.titleMedium(
-            color: const Color(0xFF1E293B),
-          ).copyWith(fontWeight: FontWeight.w700, fontSize: 17),
+          style: TextStyle(
+            color: Color(0xFF111827),
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+            letterSpacing: -0.3,
+          ),
         ),
       ),
       body: CustomScrollView(
@@ -181,19 +168,33 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
           // Thanh tìm kiếm dịch vụ
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (val) =>
                     setState(() => _searchKeyword = val.toLowerCase().trim()),
+                style: const TextStyle(
+                  fontSize: 14.5,
+                  color: Color(0xFF1F2937),
+                ),
                 decoration: InputDecoration(
                   hintText: 'Tìm kiếm nhanh dịch vụ, tiện ích...',
-                  prefixIcon: const Icon(CupertinoIcons.search,
-                      size: 20, color: Color(0xFF64748B)),
+                  hintStyle: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF94A3B8),
+                  ),
+                  prefixIcon: const Icon(
+                    LucideIcons.search,
+                    size: 19,
+                    color: Color(0xFF64748B),
+                  ),
                   suffixIcon: _searchKeyword.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(CupertinoIcons.clear_circled_solid,
-                              size: 18, color: Color(0xFF94A3B8)),
+                          icon: const Icon(
+                            LucideIcons.circleX,
+                            size: 17,
+                            color: Color(0xFF94A3B8),
+                          ),
                           onPressed: () {
                             _searchCtrl.clear();
                             setState(() => _searchKeyword = '');
@@ -206,25 +207,31 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide:
-                        BorderSide(color: Colors.black.withOpacity(0.08)),
+                    borderSide: BorderSide(
+                      color: Colors.black.withOpacity(0.07),
+                      width: 0.5,
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide:
-                        BorderSide(color: Colors.black.withOpacity(0.08)),
+                    borderSide: BorderSide(
+                      color: Colors.black.withOpacity(0.07),
+                      width: 0.5,
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide:
-                        const BorderSide(color: AppColors.primary, width: 1.2),
+                    borderSide: const BorderSide(
+                      color: AppColors.primary,
+                      width: 1.2,
+                    ),
                   ),
                 ),
               ),
             ),
           ),
 
-          // Các danh mục dịch vụ
+          // Các danh mục dịch vụ theo phong cách Tối Giản (Minimalist Grouped List)
           ..._sections.map((section) {
             final items =
                 (section['items'] as List<Map<String, dynamic>>).where((item) {
@@ -243,12 +250,15 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
               slivers: [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    padding: const EdgeInsets.fromLTRB(16, 22, 16, 6),
                     child: Text(
                       section['title'] as String,
-                      style: AppTypography.titleSmall(
-                              color: const Color(0xFF1E293B))
-                          .copyWith(fontWeight: FontWeight.w700),
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111827),
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
                 ),
@@ -258,67 +268,66 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
                         final item = items[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Material(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            child: InkWell(
-                              onTap: () {
-                                HapticFeedback.lightImpact();
-                                context.push(item['route'] as String);
-                              },
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                      color: Colors.black.withOpacity(0.06),
-                                      width: 0.5),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 44,
-                                      height: 44,
-                                      decoration: BoxDecoration(
-                                        color: (item['color'] as Color)
-                                            .withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Icon(item['icon'] as IconData,
-                                          color: item['color'] as Color,
-                                          size: 22),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            item['name'] as String,
-                                            style: AppTypography.bodyMedium(
-                                                    color:
-                                                        const Color(0xFF1E293B))
-                                                .copyWith(
-                                                    fontWeight:
-                                                        FontWeight.w700),
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              context.push(item['route'] as String);
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                                horizontal: 4,
+                              ),
+                              child: Row(
+                                children: [
+                                  // Icon nét đơn tối giản (không ô màu bao bọc)
+                                  Icon(
+                                    item['icon'] as IconData,
+                                    size: 22,
+                                    color: const Color(0xFF616161),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Khối nội dung Tiêu đề & Chú thích
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          item['name'] as String,
+                                          style: const TextStyle(
+                                            fontSize: 15.5,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF1F2937),
+                                            letterSpacing: -0.2,
+                                            height: 1.3,
                                           ),
-                                          const SizedBox(height: 2),
-                                          Text(
-                                            item['sub'] as String,
-                                            style: AppTypography.bodySmall(
-                                                color: const Color(0xFF64748B)),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          item['sub'] as String,
+                                          style: const TextStyle(
+                                            fontSize: 12.5,
+                                            fontWeight: FontWeight.w400,
+                                            color: Color(0xFF6B7280),
+                                            height: 1.3,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                    const Icon(CupertinoIcons.chevron_right,
-                                        size: 14, color: Color(0xFFCBD5E1)),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Mũi tên dẫn hướng mảnh
+                                  const Icon(
+                                    LucideIcons.chevronRight,
+                                    size: 16,
+                                    color: Color(0xFF9E9E9E),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -332,7 +341,7 @@ class _AllServicesScreenState extends State<AllServicesScreen> {
             );
           }),
 
-          // Đệm 110dp chống cấn Bottom Bar
+          // Đệm 110dp chống cấn Bottom Bar chuẩn Apple HIG
           const SliverToBoxAdapter(
             child: SizedBox(height: 110),
           ),

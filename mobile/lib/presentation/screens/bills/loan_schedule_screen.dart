@@ -227,7 +227,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                               TextStyle(color: Colors.white60, fontSize: 13)),
                       Text(
                           CurrencyFormatter.formatVND(
-                              dueTerm['principal'] as double),
+                              (dueTerm['principal'] as num?)?.toDouble() ?? 0.0),
                           style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600)),
@@ -242,7 +242,7 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                               TextStyle(color: Colors.white60, fontSize: 13)),
                       Text(
                           CurrencyFormatter.formatVND(
-                              dueTerm['interest'] as double),
+                              (dueTerm['interest'] as num?)?.toDouble() ?? 0.0),
                           style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600)),
@@ -258,7 +258,8 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
                               fontWeight: FontWeight.bold,
                               fontSize: 14)),
                       Text(
-                        CurrencyFormatter.formatVND(dueTerm['total'] as double),
+                        CurrencyFormatter.formatVND(
+                            (dueTerm['total'] as num?)?.toDouble() ?? 0.0),
                         style: const TextStyle(
                             color: AppColors.bottomBarCyan,
                             fontWeight: FontWeight.w800,
@@ -1026,13 +1027,13 @@ class _LoanScheduleScreenState extends State<LoanScheduleScreen> {
   }
 
   Widget _buildScheduleItem(Map<String, dynamic> item) {
-    final term = item['term'] as int;
-    final dueDate = item['dueDate'] as String;
-    final principal = item['principal'] as double;
-    final interest = item['interest'] as double;
-    final total = item['total'] as double;
-    final remaining = item['remaining'] as double;
-    final status = item['status'] as String;
+    final term = (item['term'] as num?)?.toInt() ?? 1;
+    final dueDate = item['dueDate']?.toString() ?? '';
+    final principal = (item['principal'] as num?)?.toDouble() ?? 0.0;
+    final interest = (item['interest'] as num?)?.toDouble() ?? 0.0;
+    final total = (item['total'] as num?)?.toDouble() ?? 0.0;
+    final remaining = (item['remaining'] as num?)?.toDouble() ?? 0.0;
+    final status = item['status']?.toString() ?? 'UPCOMING';
 
     Color badgeBg;
     Color badgeText;

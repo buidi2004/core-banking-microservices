@@ -6,6 +6,8 @@ from enum import Enum
 from typing import Dict, Any, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
+from app.vietnamese_nlp import normalize_vietnamese_query, strip_vietnamese_accents
+
 logger = logging.getLogger("jev_system_one")
 
 
@@ -21,6 +23,11 @@ def strip_accents(text: str) -> str:
 class IntentChoice(str, Enum):
     BALANCE_INQUIRY = "BALANCE_INQUIRY"         # Tra cứu số dư ví / tài khoản cá nhân
     TRANSACTION_HISTORY = "TRANSACTION_HISTORY" # Tra cứu lịch sử giao dịch, biến động số dư, người gửi/nhận
+    PROFILE_INQUIRY = "PROFILE_INQUIRY"         # Tra cứu thông tin hồ sơ cá nhân, eKYC, SĐT, Alias
+    CARDS_INQUIRY = "CARDS_INQUIRY"             # Tra cứu thẻ Visa, thẻ ngân hàng cá nhân
+    SAVINGS_INQUIRY = "SAVINGS_INQUIRY"         # Tra cứu sổ tiết kiệm cá nhân đang gửi
+    LOANS_INQUIRY = "LOANS_INQUIRY"             # Tra cứu khoản vay cá nhân và lịch trả nợ
+    FINANCIAL_OVERVIEW = "FINANCIAL_OVERVIEW"   # Tổng quan tài chính 360 độ cá nhân
     POLICY_RAG = "POLICY_RAG"                   # Tra cứu biểu phí, lãi suất, quy định QĐ 2345
     ACTION_NAVIGATION = "ACTION_NAVIGATION"     # Yêu cầu thực hiện hành động (chuyển tiền, mở thẻ, gửi tiết kiệm)
     SECURITY_EMERGENCY = "SECURITY_EMERGENCY"   # Báo mất tiền, nghi lừa đảo, khóa thẻ khẩn cấp
@@ -32,6 +39,11 @@ class GateAction(str, Enum):
     ALLOW_RAG = "ALLOW_RAG"                             # Cho phép chuyển tiếp sang System Two (LLM Gemini)
     DIVERT_INTERNAL_WALLET = "DIVERT_INTERNAL_WALLET"   # Rẽ nhánh sang microservice nội bộ ví (Zero-LLM leak)
     DIVERT_INTERNAL_TRANSACTIONS = "DIVERT_INTERNAL_TRANSACTIONS" # Rẽ nhánh sang microservice giao dịch & đối tác
+    DIVERT_INTERNAL_PROFILE = "DIVERT_INTERNAL_PROFILE" # Rẽ nhánh sang microservice hồ sơ & eKYC cá nhân
+    DIVERT_INTERNAL_CARDS = "DIVERT_INTERNAL_CARDS"     # Rẽ nhánh sang microservice thẻ cá nhân
+    DIVERT_INTERNAL_SAVINGS = "DIVERT_INTERNAL_SAVINGS" # Rẽ nhánh sang microservice sổ tiết kiệm cá nhân
+    DIVERT_INTERNAL_LOANS = "DIVERT_INTERNAL_LOANS"     # Rẽ nhánh sang microservice khoản vay cá nhân
+    DIVERT_INTERNAL_OVERVIEW = "DIVERT_INTERNAL_OVERVIEW" # Rẽ nhánh tổng quan tài chính 360 độ
     INTERCEPT_EMERGENCY = "INTERCEPT_EMERGENCY"         # Kích hoạt quy trình khóa tài khoản khẩn cấp
     BLOCK_CREDENTIAL_THEFT = "BLOCK_CREDENTIAL_THEFT"   # Chặn câu hỏi đòi/cung cấp thông tin nhạy cảm
     FAST_NAVIGATE = "FAST_NAVIGATE"                     # Trả ngay nút điều hướng nhanh không cần qua LLM
@@ -158,7 +170,7 @@ class JevSystemOneGatekeeper:
         start = time.time()
         self.initialize_embeddings(embed_model)
 
-        q_clean = user_question.strip()
+        q_clean = normalize_vietnamese_query(user_question.strip())
         q_lower = q_clean.lower()
         q_no_accent = strip_accents(q_clean)
 
@@ -187,9 +199,24 @@ class JevSystemOneGatekeeper:
             "ve so", "vietlott", "xo so", "vua xo so"
         ])
 
+        is_referral_keyword = any(k in q_lower or k in q_no_accent for k in [
+            "gioi thieu ban be", "giới thiệu bạn bè", "link gioi thieu", "link giới thiệu", "ma gioi thieu", "mã giới thiệu", "nhan 50k", "nhận 50k", "friend50k"
+        ])
+
+        is_promotion_keyword = any(k in q_lower or k in q_no_accent for k in [
+            "voucher", "khuyen mai", "khuyến mại", "khuyến mãi", "uu dai", "ưu đãi", "giam gia", "giảm giá",
+            "ma giam gia", "mã giảm giá", "ma qua tang", "mã quà tặng", "cashback", "hoan tien", "hoàn tiền",
+            "senpoint", "sen point", "tich diem", "tích điểm", "doi diem", "đổi điểm", "doi qua", "đổi quà",
+            "xinchao50", "freego", "welcome100k", "senbank9", "hlcoffee50", "shopee100", "begrab40",
+            "phuclong30", "cgvpopcorn", "pizza35", "vinfast0", "homeloan52", "tech0percent", "senshopee100",
+            "vivuhe300", "phuclong25", "evo390k", "goldengate4", "autobill50", "platinum2026", "hotel15", "xangdau5",
+            "coffee30", "tra gop 0%", "trả góp 0%", "vay mua xe", "vay mua nha"
+        ])
+
         has_financial_keyword = (
             is_loan_keyword or is_topup_keyword or is_savings_keyword or 
             is_security_policy_keyword or is_bill_keyword or is_lottery_keyword or
+            is_referral_keyword or is_promotion_keyword or
             any(k in q_no_accent for k in [
                 "chuyen", "rut", "nap", "lai suat", "bieu phi", "han muc",
                 "the", "visa", "so du", "giao dich", "sao ke", "otp", "pin"
@@ -211,11 +238,13 @@ class JevSystemOneGatekeeper:
         # Phân biệt yêu cầu trợ giúp đổi/cài lại PIN hoặc mật khẩu với hành vi đòi/lộ mã nhạy cảm
         is_pin_recovery = (any(r in q_lower or r in q_no_accent for r in [
             "quên", "quen", "lấy lại", "lay lai", "cấp lại", "cap lai", "cài lại", "cai lai",
-            "khôi phục", "khoi phuc", "reset", "mất mã pin", "mat ma pin", "mất pin", "mat pin"
+            "khôi phục", "khoi phuc", "reset", "mất mã pin", "mat ma pin", "mất pin", "mat pin",
+            "bị khóa", "bi khoa", "mở lại", "mo lai", "mở khóa", "mo khoa", "nhập sai", "nhap sai",
+            "sai 3 lần", "sai 5 lần", "sai mã pin", "sai pin", "khóa mã pin", "khoa ma pin", "khóa pin", "khoa pin"
         ]) and any(p in q_lower or p in q_no_accent for p in ["pin", "mã pin", "ma pin"])) or (
             any(r in q_lower or r in q_no_accent for r in [
                 "quên", "quen", "lấy lại", "lay lai", "cấp lại", "cap lai", "cài lại", "cai lai",
-                "khôi phục", "khoi phuc", "reset"
+                "khôi phục", "khoi phuc", "reset", "bị khóa", "bi khoa", "mở lại", "mo lai", "mở khóa", "mo khoa"
             ]) and any(p in q_lower or p in q_no_accent for p in ["mật khẩu", "mat khau", "password"])
         )
 
@@ -226,7 +255,8 @@ class JevSystemOneGatekeeper:
         is_pin_change_or_reset = is_pin_recovery or is_pin_change or is_pwd_recovery or any(w in q_lower or w in q_no_accent for w in [
             "đổi mã pin", "doi ma pin", "đổi pin", "doi pin", "cách đổi pin", "hướng dẫn đổi pin",
             "quên mã pin", "quen ma pin", "quên pin", "quen pin", "lấy lại pin", "lay lai pin",
-            "đổi mật khẩu", "doi mat khau", "quên mật khẩu", "quen mat khau", "cài lại pin", "cai lai pin"
+            "đổi mật khẩu", "doi mat khau", "quên mật khẩu", "quen mat khau", "cài lại pin", "cai lai pin",
+            "mở khóa pin", "mo khoa pin", "mở lại pin", "mo lai pin", "sai mã pin", "sai ma pin"
         ])
 
         # Nhận diện chào hỏi / cảm ơn / giao tiếp xã giao (chỉ đúng khi KHÔNG chứa từ khóa tài chính)
@@ -300,8 +330,86 @@ class JevSystemOneGatekeeper:
             "nuốt thẻ", "nuot the", "bị nuốt", "bi nuot", "kẹt thẻ", "ket the"
         ])
 
+        has_self_ref = any(s in q_lower or s in q_no_accent for s in [
+            "cua toi", "của tôi", "cua minh", "của mình", "cua em", "của em",
+            "toi dang co", "tôi đang có", "toi co", "tôi có", "cho toi xem", "cho tôi xem",
+            "xem giup toi", "xem giúp tôi", "kiem tra giup toi", "kiểm tra giúp tôi",
+            "toi dang", "tôi đang", "hien tai cua toi", "hiện tại của tôi", "cua ban than", "của bản thân"
+        ])
+
+        q_no_spaced = f" {q_no_accent} "
+        is_card_word = (
+            any(w in q_lower for w in ["thẻ", "visa", "ecard", "mastercard", "napas"]) or
+            (any(w in q_no_spaced for w in [" the ", " the-", " visa ", " ecard "]) and not any(e in q_no_accent for e in ["the nao", "co the", "thay the"]))
+        )
+
+        is_advisory_or_simulation = any(w in q_lower or w in q_no_accent for w in [
+            "neu toi", "nếu tôi", "gia su", "giả sử",
+            "nen gui", "nên gửi", "tu van", "tư vấn", "loi khuyen", "lời khuyên", "khuyen toi", "khuyên tôi",
+            "hay chia", "chia nho", "chia nhỏ", "chia ra", "linh hoat", "linh hoạt",
+            "so sanh", "so sánh", "khac gi", "khác gì", "tot hon", "tốt hơn", "loi hon", "lợi hơn",
+            "may thang", "mấy tháng", "ky han nao", "kỳ hạn nào", "lai cao nhat", "lãi cao nhất",
+            "cach tinh", "cách tính", "tinh lai", "tính lãi", "cong thuc", "công thức",
+            "muon gui", "muốn gửi", "dinh gui", "định gửi", "du dinh", "dự định",
+            "muon vay", "muốn vay", "dinh vay", "định vay", "du dinh vay", "dự định vay",
+            "dieu kien", "điều kiện", "thu tuc", "thủ tục", "moi thang tra bao nhieu", "mỗi tháng trả bao nhiêu",
+            "du no giam dan", "dư nợ giảm dần", "co dinh", "cố định", "rut tien o atm duoc khong", "rút tiền ở atm",
+            "phi bao nhieu", "phí bao nhiêu", "phi doi ngoai te", "phí đổi ngoại tệ"
+        ])
+
+        is_personal_profile = any(k in q_lower or k in q_no_accent for k in [
+            "thông tin tài khoản", "thong tin tai khoan", "hồ sơ của tôi", "ho so cua toi",
+            "thông tin của tôi", "thong tin cua toi", "tôi đã ekyc chưa", "toi da ekyc chua",
+            "tình trạng ekyc", "tinh trang ekyc", "cấp độ ekyc", "cap do ekyc", "định danh của tôi",
+            "tên tài khoản của tôi", "số điện thoại của tôi", "so dien thoai cua toi", "sđt của tôi", "sdt cua toi",
+            "alias của tôi", "biệt danh của tôi", "biet danh cua toi", "hạn mức giao dịch của tôi", "hồ sơ cá nhân", "ho so ca nhan"
+        ])
+
+        is_personal_cards = (not is_advisory_or_simulation) and ((any(k in q_no_accent for k in [
+            "the cua toi", "the cua minh", "the cua em", "the dang dung", "the dang mo", "the dang hoat dong",
+            "the lien ket", "ngan hang lien ket", "danh sach the"
+        ]) or (has_self_ref and is_card_word and any(k in q_no_accent for k in ["co", "nao", "gi", "xem", "danh sach", "bao nhieu"]))) and not any(k in q_lower for k in ["hướng dẫn mở", "phí phát hành", "cách mở thẻ", "làm thẻ mới", "khóa thẻ"]))
+
+        is_personal_savings = (not is_advisory_or_simulation) and ((any(k in q_no_accent for k in [
+            "so tiet kiem cua toi", "tien tiet kiem cua toi", "so tiet kiem dang gui", "tien gui cua toi",
+            "so cua toi", "xem so tiet kiem cua toi", "danh sach so tiet kiem", "so tiet kiem hien tai"
+        ]) or (has_self_ref and any(k in q_no_accent for k in ["so tiet kiem", "tiet kiem", "tien gui"]) and any(k in q_no_accent for k in ["co", "nao", "gi", "xem", "danh sach", "bao nhieu", "dang gui"]))) and not any(k in q_lower for k in ["lãi suất tiết kiệm", "biểu lãi", "cách mở sổ", "hướng dẫn gửi tiết kiệm"]))
+
+        is_personal_loans = (not is_advisory_or_simulation) and ((any(k in q_no_accent for k in [
+            "khoan vay cua toi", "khoan vay hien tai", "du no cua toi", "hop dong vay cua toi",
+            "lich tra no cua toi", "no cua toi", "vay cua toi", "tien no cua toi", "tien vay cua toi", "du no hien tai"
+        ]) or (has_self_ref and any(k in q_no_accent for k in ["khoan vay", "vay", "du no", "tien no", "hop dong vay", "no"]) and any(k in q_no_accent for k in ["co", "nao", "gi", "xem", "the nao", "bao nhieu", "hien tai"]))) and not any(k in q_lower for k in ["điều kiện vay", "hướng dẫn vay", "lãi suất vay"]))
+
+        is_personal_overview = any(k in q_lower or k in q_no_accent for k in [
+            "tổng quan tài chính", "tong quan tai chinh", "tóm tắt tài khoản", "tom tat tai khoan",
+            "tổng tài sản của tôi", "tong tai san cua toi", "tổng tài sản", "tong tai san",
+            "tổng quan tài khoản", "tong quan tai khoan", "tài sản của tôi", "tai san cua toi",
+            "báo cáo tài chính của tôi", "tất cả dịch vụ tôi đang có", "tôi đang có những gì trên app",
+            "tổng thể tài sản", "báo cáo tài sản"
+        ])
+
         if is_chitchat:
             best_choice = IntentChoice.GENERAL_CHITCHAT
+            confidence = 0.99
+            risk_score = 0.0
+        elif is_personal_overview:
+            best_choice = IntentChoice.FINANCIAL_OVERVIEW
+            confidence = 0.99
+            risk_score = 0.0
+        elif is_personal_profile:
+            best_choice = IntentChoice.PROFILE_INQUIRY
+            confidence = 0.99
+            risk_score = 0.0
+        elif is_personal_cards:
+            best_choice = IntentChoice.CARDS_INQUIRY
+            confidence = 0.99
+            risk_score = 0.0
+        elif is_personal_savings:
+            best_choice = IntentChoice.SAVINGS_INQUIRY
+            confidence = 0.99
+            risk_score = 0.0
+        elif is_personal_loans:
+            best_choice = IntentChoice.LOANS_INQUIRY
             confidence = 0.99
             risk_score = 0.0
         elif is_loan_keyword:
@@ -320,6 +428,12 @@ class JevSystemOneGatekeeper:
             best_choice = IntentChoice.POLICY_RAG
             confidence = 0.98
         elif is_lottery_keyword:
+            best_choice = IntentChoice.POLICY_RAG
+            confidence = 0.98
+        elif is_referral_keyword:
+            best_choice = IntentChoice.POLICY_RAG
+            confidence = 0.98
+        elif is_promotion_keyword:
             best_choice = IntentChoice.POLICY_RAG
             confidence = 0.98
         elif is_device_support:
@@ -377,6 +491,49 @@ class JevSystemOneGatekeeper:
             suggested_route = None
             suggested_label = None
 
+        elif best_choice == IntentChoice.FINANCIAL_OVERVIEW or is_personal_overview:
+            # Gác cổng Zero-PII Leak: Báo cáo tài chính 360 độ từ Microservices nội bộ
+            gate_action = GateAction.DIVERT_INTERNAL_OVERVIEW
+            suggested_route = "/profile"
+            suggested_label = "Tổng quan tài chính"
+
+        elif best_choice == IntentChoice.PROFILE_INQUIRY or is_personal_profile:
+            # Gác cổng Zero-PII Leak: Hồ sơ, eKYC, SĐT, Alias từ identity-service & wallet-service
+            gate_action = GateAction.DIVERT_INTERNAL_PROFILE
+            suggested_route = "/profile"
+            suggested_label = "Hồ sơ cá nhân"
+
+        elif best_choice == IntentChoice.CARDS_INQUIRY or is_personal_cards:
+            # Gác cổng Zero-PII Leak: Thẻ Visa & Ngân hàng liên kết từ payment-service
+            gate_action = GateAction.DIVERT_INTERNAL_CARDS
+            suggested_route = "/cards"
+            suggested_label = "Quản lý thẻ"
+
+        elif best_choice == IntentChoice.SAVINGS_INQUIRY or is_personal_savings:
+            # Gác cổng Zero-PII Leak: Sổ tiết kiệm & lãi suất thực tế từ payment-service
+            gate_action = GateAction.DIVERT_INTERNAL_SAVINGS
+            suggested_route = "/savings"
+            suggested_label = "Sổ tiết kiệm của tôi"
+
+        elif best_choice == IntentChoice.LOANS_INQUIRY or is_personal_loans:
+            # Gác cổng Zero-PII Leak: Khoản vay & lịch trả nợ từ payment-service
+            gate_action = GateAction.DIVERT_INTERNAL_LOANS
+            suggested_route = "/bills/quick-loan"
+            suggested_label = "Khoản vay của tôi"
+
+        elif best_choice == IntentChoice.TRANSACTION_HISTORY and is_transaction_keyword:
+            # Gác cổng Zero-PII Leak: Lấy trực tiếp từ payment-service & identity-service
+            gate_action = GateAction.DIVERT_INTERNAL_TRANSACTIONS
+            suggested_route = "/history"
+            suggested_label = "Xem tất cả giao dịch"
+
+        elif best_choice == IntentChoice.BALANCE_INQUIRY and is_balance_keyword:
+            # Gác cổng Zero-PII Leak: Không bao giờ cho phép gọi System Two LLM
+            gate_action = GateAction.DIVERT_INTERNAL_WALLET
+            suggested_route = "/profile"
+            suggested_label = "Xem chi tiết ví"
+
+
         elif is_pwd_recovery:
             gate_action = GateAction.ALLOW_RAG
             suggested_route = "/auth/forgot-password"
@@ -402,6 +559,21 @@ class JevSystemOneGatekeeper:
             suggested_route = "/settings/security"
             suggested_label = "Cài đặt bảo mật"
 
+        elif is_lottery_keyword:
+            gate_action = GateAction.ALLOW_RAG
+            suggested_route = "/bills/lottery"
+            suggested_label = "Vé số Vietlott"
+
+        elif is_referral_keyword:
+            gate_action = GateAction.ALLOW_RAG
+            suggested_route = "/referral"
+            suggested_label = "Giới thiệu bạn bè"
+
+        elif is_promotion_keyword:
+            gate_action = GateAction.ALLOW_RAG
+            suggested_route = "/promotions"
+            suggested_label = "Kho Voucher & Ưu đãi"
+
         elif is_device_support:
             gate_action = GateAction.ALLOW_RAG
             suggested_route = "/settings/devices"
@@ -414,31 +586,21 @@ class JevSystemOneGatekeeper:
 
         elif is_pin_change_or_reset:
             gate_action = GateAction.ALLOW_RAG
-            if is_pin_recovery or any(k in q_lower or k in q_no_accent for k in ["quên", "quen", "lay lai", "lấy lại", "cấp lại", "cap lai", "khôi phục", "khoi phuc", "reset"]):
+            if is_pin_recovery or any(k in q_lower or k in q_no_accent for k in ["quên", "quen", "lay lai", "lấy lại", "cấp lại", "cap lai", "khôi phục", "khoi phuc", "reset", "mở lại", "mo lai", "mở khóa", "mo khoa", "bị khóa", "bi khoa", "nhập sai", "nhap sai"]):
                 suggested_route = "/auth/forgot-pin"
                 suggested_label = "Lấy lại mã PIN"
             else:
                 suggested_route = "/settings/change-pin"
                 suggested_label = "Đổi mã PIN giao dịch"
 
-        elif best_choice == IntentChoice.TRANSACTION_HISTORY and is_transaction_keyword:
-            # Gác cổng Zero-PII Leak: Lấy trực tiếp từ payment-service & identity-service
-            gate_action = GateAction.DIVERT_INTERNAL_TRANSACTIONS
-            suggested_route = "/history"
-            suggested_label = "Xem tất cả giao dịch"
-
-        elif best_choice == IntentChoice.BALANCE_INQUIRY and is_balance_keyword:
-            # Gác cổng Zero-PII Leak: Không bao giờ cho phép gọi System Two LLM
-            gate_action = GateAction.DIVERT_INTERNAL_WALLET
-            suggested_route = "/profile"
-            suggested_label = "Xem chi tiết ví"
 
         elif best_choice == IntentChoice.SECURITY_EMERGENCY and (
-            risk_score >= 0.5 or any(k in q_lower or k in q_no_accent for k in ["lừa đảo", "lua dao", "bị hack", "bi hack", "khóa khẩn cấp", "khoa khan cap"])
+            risk_score >= 0.5 or any(k in q_lower or k in q_no_accent for k in ["lừa đảo", "lua dao", "bị hack", "bi hack", "khóa khẩn cấp", "khoa khan cap", "khóa thẻ", "khoa the"])
         ):
             gate_action = GateAction.INTERCEPT_EMERGENCY
-            suggested_route = "/settings/security"
-            suggested_label = "Khóa khẩn cấp"
+            is_card_emergency = any(k in q_lower or k in q_no_accent for k in ["thẻ", "the", "visa", "napas", "atm"])
+            suggested_route = "/cards" if is_card_emergency else "/settings/security"
+            suggested_label = "Khóa thẻ ngay" if is_card_emergency else "Khóa khẩn cấp"
 
         elif best_choice == IntentChoice.CREDENTIAL_EXPOSURE and risk_score > 0.5:
             gate_action = GateAction.BLOCK_CREDENTIAL_THEFT

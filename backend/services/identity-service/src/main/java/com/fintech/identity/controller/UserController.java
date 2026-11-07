@@ -51,15 +51,25 @@ public class UserController {
     @PutMapping("/me/alias")
     public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> setAccountAlias(
             @RequestHeader(value = "X-User-Id") String userId,
-            @RequestParam String alias) {
-        String cleanAlias = alias.trim().toUpperCase();
+            @RequestParam(required = false) String alias,
+            @RequestBody(required = false) java.util.Map<String, String> body) {
+        String targetAlias = (alias != null && !alias.isBlank()) ? alias
+                : (body != null ? (body.get("alias") != null ? body.get("alias") : body.get("accountAlias")) : null);
+        if (targetAlias == null || targetAlias.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Biệt danh tài khoản không được để trống"));
+        }
+        String cleanAlias = targetAlias.trim().toUpperCase();
         if (cleanAlias.length() < 3 || cleanAlias.length() > 30) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Biệt danh tài khoản phải từ 3 đến 30 ký tự"));
         }
         if (!cleanAlias.matches("^[A-Z0-9._-]+$")) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Biệt danh chỉ bao gồm chữ cái in hoa không dấu, chữ số và dấu . _ -"));
         }
-        userService.setAccountAlias(userId, cleanAlias);
-        return ResponseEntity.ok(ApiResponse.ok(java.util.Map.of("userId", userId, "accountAlias", cleanAlias), "Thiết lập biệt danh tài khoản nhận tiền thành công"));
+        try {
+            userService.setAccountAlias(userId, cleanAlias);
+            return ResponseEntity.ok(ApiResponse.ok(java.util.Map.of("userId", userId, "accountAlias", cleanAlias), "Thiết lập biệt danh tài khoản nhận tiền thành công"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
     }
 }

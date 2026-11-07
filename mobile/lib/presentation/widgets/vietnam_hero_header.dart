@@ -28,6 +28,7 @@ class VietnamHeroHeader extends StatelessWidget {
   final VoidCallback? onProfileTap;
   final String displayName;
   final String accountNumber;
+  final int unreadCount;
 
   const VietnamHeroHeader({
     super.key,
@@ -35,6 +36,7 @@ class VietnamHeroHeader extends StatelessWidget {
     required this.isHidden,
     required this.onToggleVisibility,
     this.overdraftLimit = 0,
+    this.unreadCount = 0,
     this.onDeposit,
     this.onWithdraw,
     this.onTransfer,
@@ -205,18 +207,29 @@ class VietnamHeroHeader extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            Positioned(
-                              right: 3,
-                              top: 3,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFEF4444),
-                                  shape: BoxShape.circle,
+                            if (unreadCount > 0)
+                              Positioned(
+                                right: 2,
+                                top: 2,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                  constraints: const BoxConstraints(minWidth: 10, minHeight: 10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: Colors.white, width: 1),
+                                  ),
+                                  child: Text(
+                                    unreadCount > 99 ? '99+' : '$unreadCount',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.1,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                         const SizedBox(width: 6),

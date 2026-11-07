@@ -42,6 +42,10 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
     expect(find.text('Nhập tin nhắn hỗ trợ...'), findsOneWidget);
 
+    // Verify Full Black Obsidian background
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.backgroundColor, const Color(0xFF000000));
+
     // Verify zero technical leaks of .md extension anywhere on screen
     expect(find.textContaining('.md'), findsNothing);
   });

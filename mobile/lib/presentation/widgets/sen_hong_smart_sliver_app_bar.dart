@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'animated_hint_ticker.dart';
+import 'border_beam.dart';
 import 'smart_search_modal_sheet.dart';
 
 /// Nội dung thanh công cụ thông minh chuẩn giao diện mẫu:
@@ -100,33 +101,34 @@ class _SenHongSmartHeaderBarState extends State<SenHongSmartHeaderBar> {
                     child: InkWell(
                       onTap: () => _handleSearchBoxTap(context),
                       borderRadius: BorderRadius.circular(24),
-                      child: Container(
-                        height: 44,
-                        padding: const EdgeInsets.all(1.5),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF14B885), // Xanh lục bảo
-                              Color(0xFF2B44D6), // Xanh hoàng gia
-                            ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF14B885).withOpacity(0.12),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                      child: BorderBeam(
+                        borderRadius: 24,
+                        strokeWidth: 1.5,
+                        duration: const Duration(seconds: 4),
+                        beamLength: 0.28,
+                        glowSigma: 6.0,
+                        glowOpacity: 0.40,
+                        colors: const [
+                          Color(0xFF00C9A7), // Xanh Ngọc Sen Hồng
+                          Color(0xFF3BB2FF), // Xanh Cyan Napas
+                          Color(0xFF7C5CFF), // Tím AI Futuristic
+                          Color(0xFFFF6BCB), // Hồng Sen Hồng Rose
+                        ],
+                        baseBorderColor: const Color(0x1A2C3E50),
                         child: Container(
+                          height: 44,
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           alignment: Alignment.centerLeft,
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(22.5),
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF00C9A7).withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Row(
                             children: [

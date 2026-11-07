@@ -71,6 +71,14 @@ public class UserService {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng với ID: " + userId));
 
+        if (alias.matches("^0[0-9]{8,11}$")) {
+            throw new IllegalArgumentException("Biệt danh tài khoản không được có định dạng số điện thoại");
+        }
+
+        if (userRepository.findByPhoneNumber(alias).isPresent()) {
+            throw new IllegalArgumentException("Biệt danh tài khoản không được trùng với số điện thoại đã tồn tại trong hệ thống");
+        }
+
         if (userRepository.existsByAccountAlias(alias)) {
             UserEntity existing = userRepository.findByAccountAlias(alias).orElse(null);
             if (existing != null && !existing.getId().equals(userId)) {

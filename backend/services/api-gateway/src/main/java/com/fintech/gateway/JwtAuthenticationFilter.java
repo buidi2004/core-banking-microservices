@@ -70,6 +70,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             "/api/v1/payments/banks",
             "/api/v1/savings/products",
             "/api/v1/loans/products",
+            "/api/v1/config/limits",
+            "/api/v1/lottery/results",
+            "/api/v1/ekyc/ai/",
             "/actuator/health",
             "/fallback/",
             "/ws",
@@ -91,7 +94,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
-        String path = request.getURI().getPath();
+        String rawPath = request.getURI().getRawPath();
+        String path = org.springframework.util.StringUtils.cleanPath(rawPath != null ? rawPath : request.getURI().getPath());
 
         // Bước 0: Strip header X-User-* giả mạo từ client (chống spoofing)
         ServerHttpRequest sanitizedRequest = request.mutate()
@@ -111,6 +115,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
         String bearerToken = extractBearerToken(sanitizedRequest);
         if (bearerToken == null) {
+            // Hỗ trợ Trợ lý AI CSKH 24/7 cho khách vãng lai / chưa đăng nhập (Anonymous Support)
+            if (path.startsWith("/api/v1/chat")) {
+                return chain.filter(exchange.mutate().request(sanitizedRequest).build());
+            }
             return unauthorized(exchange, "Missing Authorization: Bearer <JWT>");
         }
 
@@ -123,6 +131,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                     .parseSignedClaims(bearerToken)
                     .getPayload();
         } catch (JwtException | IllegalArgumentException e) {
+            if (path.startsWith("/api/v1/chat")) {
+                log.info("Gateway JWT invalid on chat path -> allowing as guest: {}", e.getMessage());
+                return chain.filter(exchange.mutate().request(sanitizedRequest).build());
+            }
             log.warn("Gateway JWT invalid: {}", e.getMessage());
             return unauthorized(exchange, "Invalid or expired JWT");
         }
@@ -218,8 +230,21 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         return chain.filter(exchange.mutate().request(authenticatedRequest).build());
     }
 
-    private boolean isPublicPath(String path) {
-        return PUBLIC_PATH_PREFIXES.stream().anyMatch(path::startsWith);
+    private boolean isPublicPath(String rawPath) {
+        if (rawPath == null) return false;
+        String path = org.springframework.util.StringUtils.cleanPath(rawPath);
+        for (String prefix : PUBLIC_PATH_PREFIXES) {
+            if (prefix.endsWith("/")) {
+                if (path.startsWith(prefix) || path.equals(prefix.substring(0, prefix.length() - 1))) {
+                    return true;
+                }
+            } else {
+                if (path.equals(prefix) || path.equals(prefix + "/")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private String extractBearerToken(ServerHttpRequest request) {

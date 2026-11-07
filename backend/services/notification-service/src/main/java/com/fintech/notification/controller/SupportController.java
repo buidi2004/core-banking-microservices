@@ -49,10 +49,13 @@ public class SupportController {
 
     @GetMapping("/admin/tickets")
     public ResponseEntity<ApiResponse<List<SupportTicket>>> getAllTickets(
-           @RequestHeader(name = "X-User-Id", required = false) String userId,
-           @RequestHeader(name = "X-User-Role", required = false) String userRole) {
+            @RequestHeader(name = "X-User-Id", required = false) String userId,
+            @RequestHeader(name = "X-User-Role", required = false) String userRole) {
         requireUser(userId);
-        requireManager(userRole);
+        if (!isStaffOrManager(userRole)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only Bank Staff (Teller, Manager, Admin) may access admin tickets");
+        }
         return ResponseEntity.ok(ApiResponse.success("All tickets retrieved", supportService.getAllTickets()));
     }
 
@@ -80,24 +83,32 @@ public class SupportController {
     @PostMapping("/tickets/{id}/resolve")
     public ResponseEntity<ApiResponse<SupportTicket>> resolveTicket(
             @RequestHeader(name = "X-User-Id", required = false) String userId,
-           @RequestHeader(name = "X-User-Role", required = false) String userRole,
-           @PathVariable String id,
-           @RequestParam(required = false, defaultValue = "Đã giải quyết yêu cầu") String resolutionNotes) {
+            @RequestHeader(name = "X-User-Role", required = false) String userRole,
+            @PathVariable String id,
+            @RequestParam(required = false, defaultValue = "Đã giải quyết yêu cầu") String resolutionNotes) {
         String uid = requireUser(userId);
-        requireManager(userRole);
-        SupportTicket ticket = supportService.resolveTicket(id, uid, resolutionNotes);
-        return ResponseEntity.ok(ApiResponse.success("Ticket resolved successfully", ticket));
+        SupportTicket ticket = supportService.getTicketById(id);
+        if (!uid.equalsIgnoreCase(String.valueOf(ticket.getUserId())) && !isStaffOrManager(userRole)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only ticket owner or bank staff may resolve ticket");
+        }
+        SupportTicket updated = supportService.resolveTicket(id, uid, resolutionNotes);
+        return ResponseEntity.ok(ApiResponse.success("Ticket resolved successfully", updated));
     }
 
     @PostMapping("/tickets/{id}/close")
     public ResponseEntity<ApiResponse<SupportTicket>> closeTicket(
             @RequestHeader(name = "X-User-Id", required = false) String userId,
-           @RequestHeader(name = "X-User-Role", required = false) String userRole,
-           @PathVariable String id) {
+            @RequestHeader(name = "X-User-Role", required = false) String userRole,
+            @PathVariable String id) {
         String uid = requireUser(userId);
-        requireManager(userRole);
-        SupportTicket ticket = supportService.closeTicket(id, uid);
-        return ResponseEntity.ok(ApiResponse.success("Ticket closed successfully", ticket));
+        SupportTicket ticket = supportService.getTicketById(id);
+        if (!uid.equalsIgnoreCase(String.valueOf(ticket.getUserId())) && !isStaffOrManager(userRole)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.FORBIDDEN, "Only ticket owner or bank staff may close ticket");
+        }
+        SupportTicket updated = supportService.closeTicket(id, uid);
+        return ResponseEntity.ok(ApiResponse.success("Ticket closed successfully", updated));
     }
 
     @GetMapping("/faq")
@@ -112,12 +123,12 @@ public class SupportController {
         return userId;
     }
 
-    private void requireManager(String role) {
-        if (role == null
-                || (!"ROLE_MANAGER".equalsIgnoreCase(role.trim())
-                && !"MANAGER".equalsIgnoreCase(role.trim()))) {
-            throw new org.springframework.web.server.ResponseStatusException(
-                    HttpStatus.FORBIDDEN, "Only ROLE_MANAGER may access admin tickets");
+    private boolean isStaffOrManager(String role) {
+        if (role == null || role.isBlank()) {
+            return false;
         }
+        String r = role.toUpperCase();
+        return r.contains("TELLER") || r.contains("MANAGER") || r.contains("ADMIN")
+                || r.contains("SUPPORT") || r.contains("STAFF");
     }
 }

@@ -16,4 +16,6 @@ public interface AmlCaseRepository extends JpaRepository<AmlCase, UUID> {
 
     @Query("SELECT c FROM AmlCase c WHERE c.slaDueAt < :now AND c.status != :closedStatus")
     List<AmlCase> findAllOverdueBefore(@Param("now") Instant now, @Param("closedStatus") String closedStatus);
+
+    long countByStatusIn(java.util.Collection<String> statuses);
 }

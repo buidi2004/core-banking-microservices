@@ -10,6 +10,8 @@
 spring:
   application:
     name: ewallet-api-gateway
+  codec:
+    max-in-memory-size: 16MB
   data:
     redis:
       host: ${REDIS_HOST:localhost}
@@ -37,11 +39,21 @@ spring:
               - "http://127.0.0.1:5173"
               - "http://localhost:3000"
               - "http://localhost:8080"
+              - "https://mutation-tubby-overstock.ngrok-free.dev"
             allowedOriginPatterns:
               - "http://localhost:[*]"
               - "http://127.0.0.1:[*]"
               - "https://*.app.github.dev"
               - "https://*.github.dev"
+              - "https://*.ngrok-free.dev"
+              - "https://*.ngrok-free.app"
+              - "https://*.ngrok.io"
+              - "https://*.ngrok.app"
+              - "http://192.168.*:[*]"
+              - "http://10.*:[*]"
+              - "http://172.16.*:[*]"
+              - "http://172.18.*:[*]"
+              - "http://172.20.*:[*]"
             allowedMethods:
               - GET
               - POST
@@ -63,6 +75,8 @@ spring:
               - X-User-Role
               - X-Branch-Id
               - Cache-Control
+              - ngrok-skip-browser-warning
+              - X-Tunnel-Skip-AntiPhishing-Page
               - "*"
             exposedHeaders:
               - Authorization
@@ -94,10 +108,24 @@ spring:
                 name: notificationServiceCb
                 fallbackUri: forward:/fallback/notification
 
+        # ----------------------------------------------------------------------------
+        # eKYC AI SERVICE (:8900) — Anti-spoofing & Face Matching ONNX/GPU (GTX 1650)
+        # ----------------------------------------------------------------------------
+        - id: ekyc-ai-service
+          uri: http://ekyc-ai-service:8900
+          predicates:
+            - Path=/api/v1/ekyc/ai/**
+          filters:
+            - name: JwtAuthenticationFilter
+            - name: CircuitBreaker
+              args:
+                name: ekycAiServiceCb
+                fallbackUri: forward:/fallback/default
+
         - id: notification-service-devices
           uri: http://notification-service:8085
           predicates:
-            - Path=/api/v1/devices/**
+            - Path=/api/v1/devices/**, /api/v1/devices
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -108,7 +136,7 @@ spring:
         - id: notification-service-support
           uri: http://notification-service:8085
           predicates:
-            - Path=/api/v1/support/**
+            - Path=/api/v1/support/**, /api/v1/support
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -119,7 +147,7 @@ spring:
         - id: notification-service-promotions
           uri: http://notification-service:8085
           predicates:
-            - Path=/api/v1/promotions/**
+            - Path=/api/v1/promotions/**, /api/v1/promotions
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -138,7 +166,7 @@ spring:
         - id: ledger-service-api
           uri: ${LEDGER_SERVICE_URI:http://ledger-service:8084}
           predicates:
-            - Path=/api/v1/ledger/**
+            - Path=/api/v1/ledger/**, /api/v1/ledger
           filters:
             - name: JwtAuthenticationFilter
 
@@ -201,7 +229,7 @@ spring:
         - id: identity-service-staff
           uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
-            - Path=/api/v1/staff/**
+            - Path=/api/v1/staff/**, /api/v1/staff
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -212,7 +240,7 @@ spring:
         - id: identity-service-security
           uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
-            - Path=/api/v1/security/**
+            - Path=/api/v1/security/**, /api/v1/security
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -223,7 +251,7 @@ spring:
         - id: identity-service-referrals
           uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
-            - Path=/api/v1/referrals/**
+            - Path=/api/v1/referrals/**, /api/v1/referrals
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -234,7 +262,7 @@ spring:
         - id: identity-service-legal
           uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
-            - Path=/api/v1/legal/**
+            - Path=/api/v1/legal/**, /api/v1/legal
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -245,7 +273,7 @@ spring:
         - id: identity-service-feedback
           uri: ${IDENTITY_SERVICE_URI:http://identity-service:8081}
           predicates:
-            - Path=/api/v1/feedback/**
+            - Path=/api/v1/feedback/**, /api/v1/feedback
           filters:
             - name: JwtAuthenticationFilter
             - name: CircuitBreaker
@@ -327,7 +355,7 @@ spring:
         - id: payment-service-loans
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/loans/**
+            - Path=/api/v1/loans/**, /api/v1/loans
           filters:
             - name: JwtAuthenticationFilter
 
@@ -337,7 +365,7 @@ spring:
         - id: payment-service-cards
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/cards/**
+            - Path=/api/v1/cards/**, /api/v1/cards
           filters:
             - name: JwtAuthenticationFilter
 
@@ -347,7 +375,7 @@ spring:
         - id: payment-service-bank-accounts
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/bank-accounts/**
+            - Path=/api/v1/bank-accounts/**, /api/v1/bank-accounts
           filters:
             - name: JwtAuthenticationFilter
 
@@ -357,7 +385,7 @@ spring:
         - id: payment-service-funding-sources
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/funding-sources/**
+            - Path=/api/v1/funding-sources/**, /api/v1/funding-sources
           filters:
             - name: JwtAuthenticationFilter
 
@@ -367,7 +395,7 @@ spring:
         - id: payment-service-bills
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/bills/**
+            - Path=/api/v1/bills/**, /api/v1/bills
           filters:
             - name: JwtAuthenticationFilter
 
@@ -377,7 +405,7 @@ spring:
         - id: payment-service-beneficiaries
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/beneficiaries/**
+            - Path=/api/v1/beneficiaries/**, /api/v1/beneficiaries
           filters:
             - name: JwtAuthenticationFilter
 
@@ -387,7 +415,7 @@ spring:
         - id: payment-service-config-limits
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/config/**
+            - Path=/api/v1/config/**, /api/v1/config
           filters:
             - name: JwtAuthenticationFilter
 
@@ -397,7 +425,17 @@ spring:
         - id: payment-service-lottery
           uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
           predicates:
-            - Path=/api/v1/lottery/**
+            - Path=/api/v1/lottery/**, /api/v1/lottery
+          filters:
+            - name: JwtAuthenticationFilter
+
+        # ----------------------------------------------------------------------------
+        # AML SERVICE: QUẢN LÝ CASE PHÒNG CHỐNG RỬA TIỀN -> payment-service:8083
+        # ----------------------------------------------------------------------------
+        - id: payment-service-aml
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/v1/aml/**, /api/v1/aml
           filters:
             - name: JwtAuthenticationFilter
 
@@ -435,6 +473,11 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 5
+      ekycAiServiceCb:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 5
   timelimiter:
     instances:
       default:
@@ -443,3 +486,5 @@ resilience4j:
         timeoutDuration: 15s
       identityServiceCb:
         timeoutDuration: 15s
+      ekycAiServiceCb:
+        timeoutDuration: 5s

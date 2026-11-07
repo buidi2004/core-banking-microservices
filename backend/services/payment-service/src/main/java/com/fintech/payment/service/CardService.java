@@ -256,6 +256,10 @@ public class CardService {
         if (request.getIntlPayment() != null) card.setIntlPayment(request.getIntlPayment());
         if (request.getContactless() != null) card.setContactless(request.getContactless());
         if (request.getAtmWithdraw() != null) card.setAtmWithdraw(request.getAtmWithdraw());
+        if (request.getLimit() != null && request.getLimit().compareTo(BigDecimal.ZERO) >= 0) {
+            card.setCreditLimit(request.getLimit());
+            card.setAvailableLimit(request.getLimit());
+        }
 
         card = cardRepository.save(card);
         log.info("Updated settings for card {}", cardId);

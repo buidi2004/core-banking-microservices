@@ -84,9 +84,8 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 
   List<Map<String, dynamic>> _getAllCatalogItems(BuildContext context) {
-    const Color defaultIconBg =
-        Color(0x1400A896); // AppColors.primary with 8% tint
-    const Color defaultIconColor = AppColors.primaryDark;
+    const Color defaultIconBg = Colors.transparent;
+    const Color defaultIconColor = Color(0xFF616161);
 
     return [
       // 1. Quản lý thẻ
@@ -661,7 +660,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
                   // Group 1: Tài chính, Thẻ & Tiết kiệm
                   _buildGroupedSection(
-                    sectionTitle: 'TÀI CHÍNH & NGUỒN TIỀN',
+                    sectionTitle: 'Tài chính & Nguồn tiền',
                     items: catalog
                         .where((i) => i['category'] == 'Tài chính & Nguồn tiền')
                         .toList(),
@@ -670,7 +669,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
                   // Group 2: Dịch vụ & Đời sống
                   _buildGroupedSection(
-                    sectionTitle: 'TIỆN ÍCH ĐỜI SỐNG',
+                    sectionTitle: 'Tiện ích đời sống',
                     items: catalog
                         .where((i) =>
                             i['category'] == 'Dịch vụ & Tiện ích đời sống')
@@ -680,7 +679,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
                   // Group 3: Bảo mật & Cài đặt
                   _buildGroupedSection(
-                    sectionTitle: 'BẢO MẬT & HỆ THỐNG',
+                    sectionTitle: 'Cài đặt chung',
                     items: catalog
                         .where((i) =>
                             i['category'] == 'Bảo mật & Cấu hình ứng dụng')
@@ -690,7 +689,7 @@ class _MoreScreenState extends State<MoreScreen> {
 
                   // Group 4: Chăm sóc khách hàng & Pháp lý
                   _buildGroupedSection(
-                    sectionTitle: 'HỖ TRỢ & PHÁP LÝ',
+                    sectionTitle: 'Hỗ trợ & Hợp tác',
                     items: catalog
                         .where((i) =>
                             i['category'] == 'Trợ giúp & Pháp lý ngân hàng')
@@ -792,77 +791,84 @@ class _MoreScreenState extends State<MoreScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8, top: 4),
+          padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
           child: Text(
             'KẾT QUẢ TÌM KIẾM (${filtered.length})',
             style: const TextStyle(
-              fontSize: 11.5,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: AppColors.textSecondaryLight,
+              letterSpacing: 0.5,
+              color: Color(0xFF6B7280),
             ),
           ),
         ),
-        GlassCard(
-          quality: GlassQuality.minimal,
-          child: Column(
-            children: filtered.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final item = entry.value;
-              final isLast = idx == filtered.length - 1;
-              return Column(
-                children: [
-                  Material(
-                    type: MaterialType.transparency,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 2),
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        (item['onTap'] as VoidCallback)();
-                      },
-                      leading: Container(
-                        width: 38,
-                        height: 38,
-                        decoration: BoxDecoration(
-                          color: item['iconBg'] as Color,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0x1F00A896)),
-                        ),
-                        child: item['iconAsset'] != null
-                            ? Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Image.asset(
-                                  item['iconAsset'] as String,
-                                  fit: BoxFit.contain,
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: filtered.length,
+          itemBuilder: (context, idx) {
+            final item = filtered[idx];
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  (item['onTap'] as VoidCallback)();
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        item['icon'] as IconData,
+                        size: 22,
+                        color: const Color(0xFF616161),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              item['title'] as String,
+                              style: const TextStyle(
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                                letterSpacing: -0.2,
+                                height: 1.3,
+                              ),
+                            ),
+                            if (item['sub'] != null &&
+                                (item['sub'] as String).isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                item['sub'] as String,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF6B7280),
+                                  height: 1.3,
                                 ),
-                              )
-                            : Icon(item['icon'] as IconData,
-                                color: item['iconColor'] as Color, size: 19),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                      title: Text(
-                        item['title'] as String,
-                        style: AppTypography.bodyMedium(
-                                color: AppColors.textPrimaryLight)
-                            .copyWith(
-                                fontWeight: FontWeight.w600, fontSize: 13.5),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        LucideIcons.chevronRight,
+                        size: 16,
+                        color: Color(0xFF9E9E9E),
                       ),
-                      subtitle: Text(
-                        item['sub'] as String,
-                        style: const TextStyle(
-                            fontSize: 11, color: AppColors.textSecondaryLight),
-                      ),
-                      trailing: const Icon(LucideIcons.chevronRight,
-                          color: AppColors.textMutedLight, size: 16),
-                    ),
+                    ],
                   ),
-                  if (!isLast)
-                    const Divider(
-                        height: 1, indent: 64, color: AppColors.dividerLight),
-                ],
-              );
-            }).toList(),
-          ),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );
@@ -1043,10 +1049,6 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 
   Widget _buildQuickActionsGrid(BuildContext context) {
-    const Color defaultBg = Color(0x1000A896); // primary 6% subtle system tint
-    const Color defaultBorder = Color(0x1F00A896); // primary 12% subtle border
-    const Color defaultIconColor = AppColors.primaryDark;
-
     final quickActions = [
       {
         'label': 'Thẻ Sen Hồng',
@@ -1094,71 +1096,59 @@ class _MoreScreenState extends State<MoreScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.only(left: 4, bottom: 8),
+          padding: EdgeInsets.fromLTRB(4, 16, 4, 8),
           child: Text(
-            'TIỆN ÍCH TRỌNG TÂM',
+            'Tiện ích trọng tâm',
             style: TextStyle(
-              fontSize: 11.5,
+              fontSize: 17,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: AppColors.textSecondaryLight,
+              color: Color(0xFF111827),
+              letterSpacing: -0.3,
             ),
           ),
         ),
-        GlassCard(
-          quality: GlassQuality.minimal,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: quickActions.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 8,
-                childAspectRatio: 0.88,
-              ),
-              itemBuilder: (ctx, index) {
-                final item = quickActions[index];
-                return InkWell(
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    (item['onTap'] as VoidCallback)();
-                  },
-                  borderRadius: BorderRadius.circular(14),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: defaultBg,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: defaultBorder),
-                        ),
-                        child: Icon(item['icon'] as IconData,
-                            color: defaultIconColor, size: 22),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item['label'] as String,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimaryLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: quickActions.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 4,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 8,
+            childAspectRatio: 0.95,
           ),
+          itemBuilder: (ctx, index) {
+            final item = quickActions[index];
+            return InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                (item['onTap'] as VoidCallback)();
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    item['icon'] as IconData,
+                    color: const Color(0xFF616161),
+                    size: 24,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    item['label'] as String,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
@@ -1171,72 +1161,88 @@ class _MoreScreenState extends State<MoreScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 6),
+          padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
           child: Text(
             sectionTitle,
             style: const TextStyle(
-              fontSize: 11.5,
+              fontSize: 17,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.8,
-              color: AppColors.textSecondaryLight,
+              color: Color(0xFF111827),
+              letterSpacing: -0.3,
             ),
           ),
         ),
-        GlassCard(
-          quality: GlassQuality.minimal,
-          child: Column(
-            children: items.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final item = entry.value;
-              final isLast = idx == items.length - 1;
-              return Column(
-                children: [
-                  Material(
-                    type: MaterialType.transparency,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 2),
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        (item['onTap'] as VoidCallback)();
-                      },
-                      leading: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: item['iconBg'] as Color,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0x1F00A896)),
-                        ),
-                        child: Icon(item['icon'] as IconData,
-                            color: item['iconColor'] as Color, size: 18),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: items.length,
+          itemBuilder: (context, idx) {
+            final item = items[idx];
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  (item['onTap'] as VoidCallback)();
+                },
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                  child: Row(
+                    children: [
+                      // Icon nét đơn độc lập (Bare Icon) màu xám chì trung tính #616161
+                      Icon(
+                        item['icon'] as IconData,
+                        size: 22,
+                        color: const Color(0xFF616161),
                       ),
-                      title: Text(
-                        item['title'] as String,
-                        style: AppTypography.bodyMedium(
-                                color: AppColors.textPrimaryLight)
-                            .copyWith(
-                                fontWeight: FontWeight.w600, fontSize: 13.5),
-                      ),
-                      subtitle: item['sub'] != null
-                          ? Text(
-                              item['sub'] as String,
+                      const SizedBox(width: 16),
+                      // Khối văn bản Tiêu đề & Chú thích chuẩn Typography
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              item['title'] as String,
                               style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textSecondaryLight),
-                            )
-                          : null,
-                      trailing: const Icon(LucideIcons.chevronRight,
-                          color: AppColors.textMutedLight, size: 16),
-                    ),
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1F2937),
+                                letterSpacing: -0.2,
+                                height: 1.3,
+                              ),
+                            ),
+                            if (item['sub'] != null &&
+                                (item['sub'] as String).isNotEmpty) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                item['sub'] as String,
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFF6B7280),
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Mũi tên điều hướng mảnh #9E9E9E
+                      const Icon(
+                        LucideIcons.chevronRight,
+                        size: 16,
+                        color: Color(0xFF9E9E9E),
+                      ),
+                    ],
                   ),
-                  if (!isLast)
-                    const Divider(
-                        height: 1, indent: 62, color: AppColors.dividerLight),
-                ],
-              );
-            }).toList(),
-          ),
+                ),
+              ),
+            );
+          },
         ),
       ],
     );

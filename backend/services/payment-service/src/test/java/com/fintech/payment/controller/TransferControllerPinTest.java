@@ -91,6 +91,28 @@ class TransferControllerPinTest {
     }
 
     @Test
+    @DisplayName("P2P Transfer: Khách hàng thiếu pinToken -> từ chối với MISSING_PIN_TOKEN và không chạy saga")
+    void p2pTransfer_MissingPinToken_ShouldReject() throws Exception {
+        TransferRequest request = TransferRequest.builder()
+                .sourceUserId("user-source")
+                .targetUserId("user-target")
+                .amount(100_000L)
+                .currency("VND")
+                .idempotencyKey("idem-p2p-missing-pin")
+                .build();
+
+        mockMvc.perform(post("/api/v1/payments/transfer")
+                        .header("X-User-Id", "user-source")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.errorCode").value("MISSING_PIN_TOKEN"));
+
+        verify(sagaOrchestrator, never()).transferP2p(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
     @DisplayName("P2P Transfer: pinToken hợp lệ -> chạy saga và thành công")
     void p2pTransfer_ValidPinToken_ShouldSucceed() throws Exception {
         TransferRequest request = TransferRequest.builder()

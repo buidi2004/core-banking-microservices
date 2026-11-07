@@ -40,7 +40,7 @@ public class DepositWithdrawController {
                 request.resolveIdempotencyKey()
         );
 
-        Long balanceAfter = ctx.getTargetBalanceAfter() != null ? Long.parseLong(ctx.getTargetBalanceAfter()) : null;
+        Long balanceAfter = parseBalance(ctx.getTargetBalanceAfter());
 
         DepositResponse response = DepositResponse.builder()
                 .transactionId(ctx.getTransactionId())
@@ -91,7 +91,7 @@ public class DepositWithdrawController {
                     request.resolveIdempotencyKey()
             );
 
-            Long balanceAfter = ctx.getSourceBalanceAfter() != null ? Long.parseLong(ctx.getSourceBalanceAfter()) : null;
+            Long balanceAfter = parseBalance(ctx.getSourceBalanceAfter());
 
             WithdrawResponse response = WithdrawResponse.builder()
                     .transactionId(ctx.getTransactionId())
@@ -109,6 +109,17 @@ public class DepositWithdrawController {
         } catch (IllegalArgumentException e) {
             ApiResponse<WithdrawResponse> err = ApiResponse.error("INSUFFICIENT_FUNDS", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+        }
+    }
+
+    private Long parseBalance(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return new java.math.BigDecimal(value.trim()).longValue();
+        } catch (Exception e) {
+            return null;
         }
     }
 }

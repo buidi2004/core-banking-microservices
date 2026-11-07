@@ -14,6 +14,7 @@ import 'package:sen_hong_bank/presentation/widgets/custom_pin_numpad.dart';
 import 'package:sen_hong_bank/data/datasources/remote/transfer_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/wallet_transaction_remote_datasource.dart';
+import 'package:sen_hong_bank/data/datasources/remote/biometric_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_alerts.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
@@ -164,6 +165,15 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
       // Xác thực mã PIN trước với Identity Service để nhận pinToken
       final pinToken = await WalletTransactionRemoteDataSource().verifyPin(pin);
 
+      // QĐ 2345/QĐ-NHNN: Giao dịch từ 10.000.000 VND trở lên bắt buộc phải có sinh trắc học
+      String? biometricToken;
+      if (widget.amount >= 10000000) {
+        try {
+          final bioRes = await BiometricRemoteDataSource().verify();
+          biometricToken = bioRes['biometricToken']?.toString() ?? bioRes['pinToken']?.toString();
+        } catch (_) {}
+      }
+
       // MOB-014 / OPT-01: dùng userId (session + recipient-info) thay vì tra ví.
       String sourceUserId = _sourceUserId;
       if (sourceUserId.isEmpty) {
@@ -187,6 +197,7 @@ class _ConfirmTransferScreenState extends State<ConfirmTransferScreen> {
         sourceWalletId: _sourceWalletId,
         targetWalletId: _targetWalletId,
         pinToken: pinToken,
+        biometricToken: biometricToken,
       );
       final transactionId =
           (initialized['transactionId'] ?? initialized['id'] ?? '').toString();

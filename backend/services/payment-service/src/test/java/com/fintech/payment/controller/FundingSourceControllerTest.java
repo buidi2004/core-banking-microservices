@@ -29,6 +29,9 @@ class FundingSourceControllerTest {
     @MockBean
     private FundingSourceService fundingSourceService;
 
+    @MockBean
+    private com.fintech.payment.service.BankAccountService bankAccountService;
+
     private final String userId = UUID.randomUUID().toString();
 
     @Test

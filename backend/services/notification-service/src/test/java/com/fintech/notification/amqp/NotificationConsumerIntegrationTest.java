@@ -48,7 +48,11 @@ class NotificationConsumerIntegrationTest {
         registry.add("spring.rabbitmq.port", () -> RABBITMQ.getAmqpPort());
         registry.add("spring.rabbitmq.username", RABBITMQ::getAdminUsername);
         registry.add("spring.rabbitmq.password", RABBITMQ::getAdminPassword);
+        registry.add("spring.kafka.listener.auto-startup", () -> "false");
     }
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.fintech.notification.audit.AuditEventPublisher auditEventPublisher;
 
     @Autowired
     private RabbitTemplate rabbitTemplate;

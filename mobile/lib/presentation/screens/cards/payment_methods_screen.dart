@@ -319,21 +319,45 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   padding: EdgeInsets.all(24),
                   child: CircularProgressIndicator(color: AppColors.primary))),
         ] else if (_bankAccounts.isEmpty) ...[
-          // Mock display bank cards if none returned
-          _buildBankTile(
-            bankCode: 'VCB',
-            bankName: 'Vietcombank (Ngoại Thương Việt Nam)',
-            accountNumber: '•••• 8829',
-            isDefault: true,
-            onTap: () => context.push('/bank-cards'),
-          ),
-          const SizedBox(height: 12),
-          _buildBankTile(
-            bankCode: 'TCB',
-            bankName: 'Techcombank (Kỹ Thương Việt Nam)',
-            accountNumber: '•••• 1902',
-            isDefault: false,
-            onTap: () => context.push('/bank-cards'),
+          // Dữ liệu thật từ Backend — trạng thái rỗng trung thực, mời liên kết thẻ
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.bgSurfaceLight,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+            ),
+            child: Column(
+              children: [
+                const Icon(CupertinoIcons.creditcard,
+                    size: 32, color: AppColors.textMutedLight),
+                const SizedBox(height: 10),
+                const Text(
+                  'Chưa liên kết thẻ / tài khoản ngân hàng nào',
+                  style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryText),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Liên kết ngay để nạp tiền và chuyển khoản nhanh hơn',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMutedLight),
+                ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: () => context.push('/bank-cards'),
+                  icon: const Icon(CupertinoIcons.plus_circle_fill,
+                      size: 15, color: AppColors.primary),
+                  label: const Text('Liên kết thẻ ngay',
+                      style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary)),
+                ),
+              ],
+            ),
           ),
         ] else ...[
           ..._bankAccounts.map((b) => Padding(

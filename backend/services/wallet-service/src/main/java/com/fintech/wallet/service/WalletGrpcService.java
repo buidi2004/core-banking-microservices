@@ -1,13 +1,17 @@
 package com.fintech.wallet.service;
 
 import com.fintech.wallet.domain.entity.Wallet;
+import com.fintech.wallet.infrastructure.kafka.WalletBalanceChangedKafkaProducer;
+import com.fintech.wallet.kafka.WalletBalanceChangedPayload;
 import com.fintech.wallet.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -16,7 +20,6 @@ import java.util.UUID;
  * Sử dụng pessimistic lock (SELECT FOR UPDATE) và Redis idempotency để đảm bảo không trùng xử lý.
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class WalletGrpcService {
 
@@ -25,6 +28,20 @@ public class WalletGrpcService {
 
     private final WalletRepository walletRepository;
     private final StringRedisTemplate redisTemplate;
+    private final WalletBalanceChangedKafkaProducer kafkaProducer;
+
+    public WalletGrpcService(WalletRepository walletRepository, StringRedisTemplate redisTemplate) {
+        this(walletRepository, redisTemplate, null);
+    }
+
+    @Autowired
+    public WalletGrpcService(WalletRepository walletRepository,
+                             StringRedisTemplate redisTemplate,
+                             @Autowired(required = false) WalletBalanceChangedKafkaProducer kafkaProducer) {
+        this.walletRepository = walletRepository;
+        this.redisTemplate = redisTemplate;
+        this.kafkaProducer = kafkaProducer;
+    }
 
     /* ======================== DEBIT ======================== */
 
@@ -36,7 +53,10 @@ public class WalletGrpcService {
         }
 
         Wallet wallet = walletRepository.findByIdForUpdate(walletId)
-                .orElseThrow(() -> new IllegalArgumentException("Wallet not found: " + walletId));
+                .orElseThrow(() -> {
+                    redisTemplate.delete(IDEMPOTENCY_PREFIX + opKey);
+                    return new IllegalArgumentException("Wallet not found: " + walletId);
+                });
 
         if (!wallet.isActive()) {
             redisTemplate.delete(IDEMPOTENCY_PREFIX + opKey);
@@ -54,8 +74,23 @@ public class WalletGrpcService {
             }
         }
 
-        wallet.setBalance(wallet.getBalance() - amount);
+        long previousBalance = wallet.getBalance() != null ? wallet.getBalance() : 0L;
+        wallet.setBalance(previousBalance - amount);
         walletRepository.save(wallet);
+
+        if (kafkaProducer != null) {
+            try {
+                kafkaProducer.publishBalanceChanged(WalletBalanceChangedPayload.debit(
+                        wallet.getId(),
+                        BigDecimal.valueOf(previousBalance),
+                        BigDecimal.valueOf(amount),
+                        wallet.getCurrency() != null ? wallet.getCurrency() : "VND",
+                        transactionId
+                ));
+            } catch (Exception e) {
+                log.warn("Không thể publish sự kiện biến động số dư debit cho ví {}: {}", walletId, e.getMessage());
+            }
+        }
 
         return DebitResult.success(wallet.getBalance());
     }
@@ -70,14 +105,33 @@ public class WalletGrpcService {
         }
 
         Wallet wallet = walletRepository.findByIdForUpdate(walletId)
-                .orElseThrow(() -> new IllegalArgumentException("Wallet not found: " + walletId));
+                .orElseThrow(() -> {
+                    redisTemplate.delete(IDEMPOTENCY_PREFIX + opKey);
+                    return new IllegalArgumentException("Wallet not found: " + walletId);
+                });
 
         if (!wallet.isActive()) {
+            redisTemplate.delete(IDEMPOTENCY_PREFIX + opKey);
             return CreditResult.failure("CREDIT_WALLET_FROZEN", "Ví không hoạt động: " + walletId);
         }
 
-        wallet.setBalance(wallet.getBalance() + amount);
+        long previousBalance = wallet.getBalance() != null ? wallet.getBalance() : 0L;
+        wallet.setBalance(previousBalance + amount);
         walletRepository.save(wallet);
+
+        if (kafkaProducer != null) {
+            try {
+                kafkaProducer.publishBalanceChanged(WalletBalanceChangedPayload.credit(
+                        wallet.getId(),
+                        BigDecimal.valueOf(previousBalance),
+                        BigDecimal.valueOf(amount),
+                        wallet.getCurrency() != null ? wallet.getCurrency() : "VND",
+                        transactionId
+                ));
+            } catch (Exception e) {
+                log.warn("Không thể publish sự kiện biến động số dư credit cho ví {}: {}", walletId, e.getMessage());
+            }
+        }
 
         return CreditResult.success(wallet.getBalance());
     }

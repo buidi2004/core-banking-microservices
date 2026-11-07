@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ekyc_sdk/ekyc_sdk.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
@@ -1082,9 +1083,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 child: ListTile(
                   contentPadding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                  onTap: () {
+                  onTap: () async {
                     HapticFeedback.selectionClick();
-                    context.push(item['route'] as String);
+                    final result = await context.push(item['route'] as String);
+                    if (result is CccdChipData && mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              'Đã đối soát thành công chip CCCD (${result.fullName}) — Hạn mức tài khoản đã kích hoạt theo QĐ 2345'),
+                          backgroundColor: AppColors.emeraldGreen,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
                   },
                   leading: Container(
                     width: 36,

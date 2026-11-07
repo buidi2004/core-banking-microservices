@@ -114,6 +114,57 @@ class TransactionRemoteDataSource {
     return response.data!;
   }
 
+  /// Khởi tạo phiếu tra soát giao dịch lên backend payment-service
+  Future<Map<String, dynamic>> createDispute({
+    required String transactionId,
+    required String reason,
+    String disputeType = 'GENERAL',
+    int? requestedAmount,
+  }) async {
+    final response = await _dio.post(
+      ApiConstants.disputes,
+      data: {
+        'transactionId': transactionId,
+        'reason': reason,
+        'disputeType': disputeType,
+        if (requestedAmount != null) 'requestedAmount': requestedAmount,
+      },
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
+  }
+
+  /// Lấy danh sách các yêu cầu tra soát / khiếu nại giao dịch của người dùng
+  Future<List<Map<String, dynamic>>> getDisputes({String? status, int page = 0, int size = 20}) async {
+    final response = await _dio.get(
+      ApiConstants.disputes,
+      queryParameters: {
+        if (status != null && status.isNotEmpty) 'status': status,
+        'page': page,
+        'size': size,
+      },
+    );
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] == null) throw apiException(json);
+    final data = json['data'];
+    if (data is Map && data['content'] is List) {
+      return (data['content'] as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    if (data is List) {
+      return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    return [];
+  }
+
+  /// Lấy chi tiết yêu cầu tra soát và tiến độ xử lý của ngân hàng
+  Future<Map<String, dynamic>> getDisputeDetail(String id) async {
+    final response = await _dio.get(ApiConstants.disputeDetail(id));
+    final json = Map<String, dynamic>.from(response.data as Map);
+    if (json['success'] != true || json['data'] is! Map) throw apiException(json);
+    return Map<String, dynamic>.from(json['data'] as Map);
+  }
+
   Map<String, dynamic> _mapTransaction(Map<String, dynamic> item) {
     final type = (item['type'] as String? ?? 'TRANSFER_OUT').toUpperCase();
     final rawAmount = (item['amount'] as num?)?.toDouble() ?? 0;

@@ -19,9 +19,14 @@ import org.springframework.stereotype.Component;
 public class WalletGrpcClient {
 
     private static final Logger log = LoggerFactory.getLogger(WalletGrpcClient.class);
+    private static final long DEFAULT_DEADLINE_MS = 5000;
 
     @GrpcClient("wallet-service")
     private WalletInternalServiceGrpc.WalletInternalServiceBlockingStub walletStub;
+
+    private WalletInternalServiceGrpc.WalletInternalServiceBlockingStub getStub() {
+        return walletStub != null ? walletStub.withDeadlineAfter(DEFAULT_DEADLINE_MS, java.util.concurrent.TimeUnit.MILLISECONDS) : null;
+    }
 
     // ======================== DEBIT ========================
 
@@ -33,7 +38,7 @@ public class WalletGrpcClient {
                     .setTransactionId(transactionId)
                     .setIdempotencyKey(idempotencyKey)
                     .build();
-            DebitResponse response = walletStub.debitWallet(request);
+            DebitResponse response = getStub().debitWallet(request);
             return WalletBalanceResult.builder()
                     .success(response.getSuccess())
                     .balanceAfter(response.getBalanceAfter())
@@ -60,7 +65,7 @@ public class WalletGrpcClient {
                     .setTransactionId(transactionId)
                     .setIdempotencyKey(idempotencyKey)
                     .build();
-            CreditResponse response = walletStub.creditWallet(request);
+            CreditResponse response = getStub().creditWallet(request);
             return WalletBalanceResult.builder()
                     .success(response.getSuccess())
                     .balanceAfter(response.getBalanceAfter())
@@ -87,7 +92,7 @@ public class WalletGrpcClient {
                     .setTransactionId(transactionId)
                     .setReserveDurationSeconds(reserveDurationSeconds)
                     .build();
-            ReserveResponse response = walletStub.reserveBalance(request);
+            ReserveResponse response = getStub().reserveBalance(request);
             return WalletReservationResult.builder()
                     .success(response.getSuccess())
                     .reservedAmount(response.getReservedAmount())
@@ -113,7 +118,7 @@ public class WalletGrpcClient {
                     .setReservationId(reservationId)
                     .setTransactionId(transactionId)
                     .build();
-            ReleaseResponse response = walletStub.releaseBalance(request);
+            ReleaseResponse response = getStub().releaseBalance(request);
             return WalletReservationResult.builder()
                     .success(response.getSuccess())
                     .reservationId(reservationId)
@@ -140,7 +145,7 @@ public class WalletGrpcClient {
                     .setTransactionType(transactionType)
                     .setUserId(userId)
                     .build();
-            LimitCheckResponse response = walletStub.checkLimit(request);
+            LimitCheckResponse response = getStub().checkLimit(request);
             return WalletLimitResult.builder()
                     .allowed(response.getAllowed())
                     .availableBalance(response.getAvailableBalance())
@@ -164,7 +169,7 @@ public class WalletGrpcClient {
     public WalletInfoResult getWalletByUserId(String userId) {
         try {
             UserWalletRequest request = UserWalletRequest.newBuilder().setUserId(userId).build();
-            WalletResponse response = walletStub.getWalletByUserId(request);
+            WalletResponse response = getStub().getWalletByUserId(request);
             return WalletInfoResult.builder()
                     .found(response.getFound())
                     .walletId(response.getWalletId())

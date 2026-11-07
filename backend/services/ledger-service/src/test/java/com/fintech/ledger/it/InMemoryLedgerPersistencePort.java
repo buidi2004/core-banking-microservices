@@ -133,6 +133,15 @@ public class InMemoryLedgerPersistencePort implements LedgerPersistencePort {
     }
 
     @Override
+    public synchronized BigDecimal sumAmountByAccountIdAndSide(String accountId, PostingSide side) {
+        return entries.stream()
+                .flatMap(e -> e.getPostings().stream())
+                .filter(p -> p.getAccountId().equals(accountId) && p.getSide() == side)
+                .map(LedgerPosting::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Override
     public synchronized boolean existsJournalEntryByReference(String referenceNumber) {
         return entriesByReference.containsKey(referenceNumber);
     }

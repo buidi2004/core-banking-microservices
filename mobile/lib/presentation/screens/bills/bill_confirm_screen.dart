@@ -341,8 +341,13 @@ class _BillConfirmScreenState extends State<BillConfirmScreen> {
     HapticFeedback.mediumImpact();
 
     final provider = widget.provider ?? 'EVN';
+    final effectiveBillId = (widget.billId != null && widget.billId!.isNotEmpty)
+        ? widget.billId!
+        : (widget.code != null && widget.code!.isNotEmpty
+            ? widget.code!
+            : 'BILL-${DateTime.now().millisecondsSinceEpoch}');
     await context.push(
-      '/bills/payment-confirm?billId=${Uri.encodeComponent(widget.billId ?? '')}&provider=${Uri.encodeComponent(provider)}&code=${Uri.encodeComponent(widget.code ?? '')}&amount=$_finalAmount',
+      '/bills/payment-confirm?billId=${Uri.encodeComponent(effectiveBillId)}&provider=${Uri.encodeComponent(provider)}&code=${Uri.encodeComponent(widget.code ?? '')}&amount=$_finalAmount',
     );
     if (mounted) setState(() => _isSubmitting = false);
   }

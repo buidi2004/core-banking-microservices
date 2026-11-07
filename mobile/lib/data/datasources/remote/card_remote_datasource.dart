@@ -49,6 +49,7 @@ class CardRemoteDataSource {
     bool? intlPayment,
     bool? contactless,
     bool? atmWithdraw,
+    num? limit,
   }) async {
     final response = await _dio.put(
       ApiConstants.cardSettings(cardId),
@@ -57,6 +58,7 @@ class CardRemoteDataSource {
         if (intlPayment != null) 'intlPayment': intlPayment,
         if (contactless != null) 'contactless': contactless,
         if (atmWithdraw != null) 'atmWithdraw': atmWithdraw,
+        if (limit != null) 'limit': limit,
       },
     );
     final json = Map<String, dynamic>.from(response.data as Map);

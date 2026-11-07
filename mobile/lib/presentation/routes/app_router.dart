@@ -116,6 +116,8 @@ final GoRouter appRouter = GoRouter(
     final isAuthRoute = path.startsWith('/auth');
     final isPublicSupport = path == '/support/help-center' ||
         path == '/help-center' ||
+        path == '/support/live-chat' ||
+        path == '/live-chat' ||
         path == '/settings/config';
     final isPublicRoute = isAuthRoute || isPublicSupport;
 
@@ -274,6 +276,11 @@ final GoRouter appRouter = GoRouter(
           expiredMessage: message,
         );
       },
+    ),
+    GoRoute(
+      parentNavigatorKey: _rootNavigatorKey,
+      path: '/login',
+      redirect: (context, state) => '/auth/login',
     ),
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
@@ -800,7 +807,15 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/profile/nfc-reader',
       name: 'profile-nfc-reader',
-      builder: (context, state) => const NfcReaderScreen(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return NfcReaderScreen(
+          initialDocumentNumber: extra?['documentNumber'] as String?,
+          initialDateOfBirth: extra?['dateOfBirth'] as String?,
+          initialExpiryDate: extra?['expiryDate'] as String?,
+          autoStart: extra?['autoStart'] as bool? ?? false,
+        );
+      },
     ),
 
     // ==========================================

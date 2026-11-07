@@ -154,6 +154,7 @@ cmd_apk_cloud() {
         echo -e "   • WebSocket: ${BOLD}${CYAN}$CLOUD_WS_URL${NC}\n"
         cd "$MOBILE_DIR"
         flutter build apk --release \
+            --obfuscate --split-debug-info=build/debug-info \
             --dart-define=API_BASE_URL="$CLOUD_API_URL" \
             --dart-define=API_WS_URL="$CLOUD_WS_URL"
         echo -e "\n${GREEN}✓ Đóng gói Cloud APK thành công!${NC}"
@@ -206,11 +207,13 @@ cmd_build_apk() {
             echo -e "   • REST API : ${BOLD}${CYAN}$CLOUD_API_URL${NC}"
             echo -e "   • WebSocket: ${BOLD}${CYAN}$CLOUD_WS_URL${NC}\n"
             flutter build apk --release \
+                --obfuscate --split-debug-info=build/debug-info \
                 --dart-define=API_BASE_URL="$CLOUD_API_URL" \
                 --dart-define=API_WS_URL="$CLOUD_WS_URL"
         else
             echo -e "${BLUE}📦 Đang đóng gói Android Release APK (Tự động đồng bộ Cloud khi mở App)...${NC}\n"
-            flutter build apk --release
+            flutter build apk --release \
+                --obfuscate --split-debug-info=build/debug-info
         fi
         echo -e "\n${GREEN}✓ Đóng gói APK thành công!${NC}"
         echo -e "👉 File APK: ${BOLD}${CYAN}mobile/build/app/outputs/flutter-apk/app-release.apk${NC}"

@@ -15,8 +15,7 @@
   "files.watcherExclude": {
     "**/.git/objects/**": true,
     "**/node_modules/**": true,
-    "**/mobile/build/**": true,
-    "**/backend/**/target/**": true
+    "**/mobile/build/**": true
   },
   "9router-for-github-copilot.serverUrl": "http://localhost:20128/v1"
 }

@@ -49,7 +49,7 @@ void main() {
       expect(find.byType(CupertinoSearchTextField), findsOneWidget);
 
       // Verify Quick Actions Grid title & items
-      expect(find.text('TIỆN ÍCH TRỌNG TÂM'), findsOneWidget);
+      expect(find.text('Tiện ích trọng tâm'), findsOneWidget);
       expect(find.text('Thẻ Sen Hồng'), findsWidgets);
       expect(find.text('Tiết Kiệm'), findsWidgets);
       expect(find.text('Vay Siêu Tốc'), findsWidgets);
@@ -60,10 +60,10 @@ void main() {
       expect(find.text('Danh Bạ'), findsWidgets);
 
       // Verify Grouped Section Headers
-      expect(find.text('TÀI CHÍNH & NGUỒN TIỀN'), findsOneWidget);
-      expect(find.text('TIỆN ÍCH ĐỜI SỐNG'), findsOneWidget);
-      expect(find.text('BẢO MẬT & HỆ THỐNG'), findsOneWidget);
-      expect(find.text('HỖ TRỢ & PHÁP LÝ'), findsOneWidget);
+      expect(find.text('Tài chính & Nguồn tiền'), findsOneWidget);
+      expect(find.text('Tiện ích đời sống'), findsOneWidget);
+      expect(find.text('Cài đặt chung'), findsOneWidget);
+      expect(find.text('Hỗ trợ & Hợp tác'), findsOneWidget);
 
       // Verify Logout and Footer
       expect(find.text('Đăng xuất tài khoản'), findsOneWidget);
@@ -96,7 +96,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Regular sections restored
-      expect(find.text('TIỆN ÍCH TRỌNG TÂM'), findsOneWidget);
+      expect(find.text('Tiện ích trọng tâm'), findsOneWidget);
     });
   });
 

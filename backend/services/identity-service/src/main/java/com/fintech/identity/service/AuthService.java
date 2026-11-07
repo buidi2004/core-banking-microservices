@@ -170,13 +170,10 @@ public class AuthService {
             log.warn("Không thể kiểm tra Redis lock cho {}: {}", identifier, e.getMessage());
         }
 
-        // Tìm User: đa hình thức định danh (SĐT chuẩn, SĐT gốc, email, username)
+        // Tìm User: đa hình thức định danh (SĐT chuẩn, username/email/alias với functional indexes)
         UserEntity user = userRepository.findByIdentifier(identifier).orElse(null);
         if (user == null && !normalizedPhone.equals(identifier)) {
             user = userRepository.findByIdentifier(normalizedPhone).orElse(null);
-        }
-        if (user == null && !identifier.toLowerCase().equals(identifier)) {
-            user = userRepository.findByIdentifier(identifier.toLowerCase()).orElse(null);
         }
 
         boolean passwordValid = false;
@@ -392,41 +389,61 @@ public class AuthService {
 
     @Transactional
     public void logout(String bearerToken, String userId, String deviceId) {
+        String resolvedUserId = userId;
         if (bearerToken != null && !bearerToken.isBlank()) {
             String token = bearerToken.startsWith("Bearer ") ? bearerToken.substring(7) : bearerToken;
             tokenProvider.blacklistToken(token);
+            if (resolvedUserId == null || resolvedUserId.isBlank()) {
+                try {
+                    Claims claims = tokenProvider.parseAndValidateToken(token);
+                    resolvedUserId = claims.getSubject();
+                } catch (Exception e) {
+                    log.debug("Không thể trích xuất userId từ bearerToken khi logout: {}", e.getMessage());
+                }
+            }
         }
 
-        if (userId != null && deviceId != null) {
-            userSessionRepository.findByUserIdAndDeviceId(userId, deviceId)
+        if (resolvedUserId != null && !resolvedUserId.isBlank() && deviceId != null && !deviceId.isBlank()) {
+            final String finalUserId = resolvedUserId;
+            userSessionRepository.findByUserIdAndDeviceId(resolvedUserId, deviceId)
                     .ifPresent(session -> {
                         session.setIsRevoked(true);
                         userSessionRepository.save(session);
+                        log.info("Thu hồi session thiết bị {} cho user {}", deviceId, finalUserId);
                     });
         }
     }
 
     @Transactional
     public Map<String, Object> emergencyLock(String bearerToken, String userId, String reason) {
+        String resolvedUserId = userId;
         if (bearerToken != null && !bearerToken.isBlank()) {
             String token = bearerToken.startsWith("Bearer ") ? bearerToken.substring(7) : bearerToken;
             tokenProvider.blacklistToken(token);
+            if (resolvedUserId == null || resolvedUserId.isBlank()) {
+                try {
+                    Claims claims = tokenProvider.parseAndValidateToken(token);
+                    resolvedUserId = claims.getSubject();
+                } catch (Exception e) {
+                    log.warn("Không thể trích xuất userId từ bearerToken khi emergencyLock: {}", e.getMessage());
+                }
+            }
         }
 
-        if (userId != null && !userId.isBlank()) {
-            List<UserSessionEntity> sessions = userSessionRepository.findByUserIdAndIsRevokedFalse(userId);
+        if (resolvedUserId != null && !resolvedUserId.isBlank()) {
+            List<UserSessionEntity> sessions = userSessionRepository.findByUserIdAndIsRevokedFalse(resolvedUserId);
             for (UserSessionEntity s : sessions) {
                 s.setIsRevoked(true);
             }
             userSessionRepository.saveAll(sessions);
 
-            userRepository.findById(userId).ifPresent(u -> {
+            userRepository.findById(resolvedUserId).ifPresent(u -> {
                 u.setStatus("BLOCKED");
                 userRepository.save(u);
             });
         }
 
-        log.warn("EMERGENCY LOCK: Tài khoản người dùng {} đã bị KHÓA KHẨN CẤP. Lý do: {}", userId, reason);
+        log.warn("EMERGENCY LOCK: Tài khoản người dùng {} đã bị KHÓA KHẨN CẤP. Lý do: {}", resolvedUserId, reason);
 
         return Map.of(
                 "status", "BLOCKED",

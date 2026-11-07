@@ -115,17 +115,17 @@ void main() {
 
       // Tap on search box
       await tester.tap(find.byType(InkWell).first);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
       expect(pasteAiTapped, isTrue);
 
       // Tap on Notifications icon
       await tester.tap(find.byIcon(Icons.notifications_none_rounded));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
       expect(notifTapped, isTrue);
 
       // Tap on Menu icon
       await tester.tap(find.byIcon(Icons.menu_rounded));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
       expect(menuTapped, isTrue);
     });
   });

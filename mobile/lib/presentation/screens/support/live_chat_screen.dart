@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:sen_hong_bank/core/constants/api_constants.dart';
 import 'package:sen_hong_bank/core/network/dio_client.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
+import 'package:sen_hong_bank/presentation/widgets/border_beam.dart';
+import 'package:sen_hong_bank/presentation/widgets/shader_background.dart';
 
 class LiveChatScreen extends StatefulWidget {
   const LiveChatScreen({super.key});
@@ -58,6 +60,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     '19_dieu_khoan_phap_ly_va_giay_phep_nhnn': 'Điều khoản & Pháp lý',
     '20_cam_nang_toan_dien_cac_man_hinh_va_tinh_nang_app': 'Cẩm nang tính năng',
     '21_kien_truc_he_thong_microservices_va_backend': 'Kiến trúc hệ thống & Backend',
+    '22_cam_nang_chuyen_sau_tinh_nang_mobile_va_tien_ich_so': 'Cẩm nang tính năng Mobile',
+    '23_tong_hop_toan_bo_tinh_nang_mobile_va_backend_huong_dan_khach_hang': 'Cẩm nang toàn diện Mobile & Backend',
+    '24_kho_voucher_uu_dai_doi_tac_va_chuong_trinh_khuyen_mai': 'Kho Voucher & Ưu Đãi Đối Tác',
+    '25_ty_gia_ngoai_te_va_kieu_hoi_quoc_te': 'Tỷ giá & Kiều hối quốc tế',
+    '26_mang_luoi_chi_nhanh_va_diem_giao_dich': 'Mạng lưới Chi nhánh & ATM',
+    '27_huong_dan_biet_danh_tai_khoan_alias_va_vietqr_pro': 'Biệt danh Alias & VietQR Pro',
+    '28_giai_dap_tinh_huong_nghiep_vu_kho_va_tu_van_chuyen_sau': 'Tư vấn nghiệp vụ & Tình huống chuyên sâu',
     'bieu_phi_dich_vu': 'Biểu phí dịch vụ',
     'huong_dan_the_visa': 'Hướng dẫn thẻ Visa',
     'lai_suat_tiet_kiem': 'Lãi suất tiết kiệm',
@@ -89,6 +98,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   }
 
   List<String> _quickReplies = [
+    'Tổng quan tài chính của tôi',
+    'Kiểm tra số dư ví',
+    'Thẻ Visa của tôi',
+    'Sổ tiết kiệm của tôi',
+    'Khoản vay của tôi',
+    'Thông tin eKYC của tôi',
     'Biểu phí chuyển tiền Napas 247',
     'Lãi suất tiết kiệm online',
     'Quy định sinh trắc học QĐ 2345',
@@ -97,7 +112,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
   Future<void> _sendMessage(String text) async {
     final cleanText = text.trim();
-    if (cleanText.isEmpty) return;
+    if (cleanText.isEmpty || _isAgentTyping) return;
 
     final now = DateTime.now();
     final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
@@ -117,7 +132,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
 
     try {
       final dio = DioClient.instance.dio;
-      final historyPayload = _messages.take(_messages.length - 1).map((m) => {
+      final pastMessages = _messages.take(_messages.length - 1).toList();
+      final recentHistory = pastMessages.length > 6
+          ? pastMessages.sublist(pastMessages.length - 6)
+          : pastMessages;
+      final historyPayload = recentHistory.map((m) => {
         'role': m['sender'] == 'user' ? 'user' : 'assistant',
         'content': m['text'] ?? '',
       }).toList();
@@ -174,11 +193,215 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         'sender': 'agent',
         'name': 'Trợ Lý AI Sen Hồng',
         'text':
-            'Dạ hệ thống AI đang cập nhật dữ liệu trực tuyến. Quý khách có thể xem thông tin biểu phí và lãi suất trong mục Cài đặt, hoặc liên hệ Tổng đài CSKH Sen Hồng 1900-SENHONG (1900 736 466) để được hỗ trợ tức thì 24/7 ạ!',
+            'Dạ hệ thống AI đang cập nhật dữ liệu trực tuyến. Quý khách có thể xem thông tin biểu phí và lãi suất trong Trung tâm Trợ giúp, hoặc liên hệ Tổng đài CSKH Sen Hồng 1900-SENHONG (1900 736 466) để được hỗ trợ tức thì 24/7 ạ!',
         'time': timeStr,
-        'sources': <String>[],
+        'sources': <String>['Trung tâm Trợ giúp Sen Hồng'],
+        'action': <String, dynamic>{
+          'type': 'NAVIGATE',
+          'label': 'Trung tâm trợ giúp',
+          'route': '/support/help-center',
+        },
       });
     });
+  }
+
+  void _showHotlineDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF14151E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00C9A7).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.support_agent_rounded,
+                        color: Color(0xFF00C9A7), size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Tổng Đài CSKH 24/7',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white)),
+                        Text('Ngân hàng Số Sen Hồng • Phục vụ toàn quốc',
+                            style: TextStyle(
+                                fontSize: 12, color: Color(0xFF94A3B8))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08), width: 0.8),
+                ),
+                child: const Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Hotline CSKH (Miễn cước):',
+                            style: TextStyle(
+                                fontSize: 13, color: Color(0xFFCBD5E1))),
+                        Text('1900 736 466',
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF00C9A7))),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Khóa thẻ / Sự cố khẩn cấp:',
+                            style: TextStyle(
+                                fontSize: 13, color: Color(0xFFCBD5E1))),
+                        Text('(028) 3822 6688',
+                            style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Clipboard.setData(
+                        const ClipboardData(text: '1900736466'));
+                    HapticFeedback.mediumImpact();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(Icons.phone_in_talk,
+                                color: Color(0xFF00E676), size: 18),
+                            SizedBox(width: 8),
+                            Text('Đã sao chép Hotline: 1900 736 466'),
+                          ],
+                        ),
+                        backgroundColor: const Color(0xFF1E2028),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.copy_rounded, size: 18),
+                  label: const Text('Sao chép Hotline 1900 736 466',
+                      style: TextStyle(
+                          fontSize: 14, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00C9A7),
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showResetConfirmDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF181A24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.refresh_rounded, color: Color(0xFF00C9A7), size: 22),
+            SizedBox(width: 8),
+            Text('Làm mới cuộc trò chuyện',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white)),
+          ],
+        ),
+        content: const Text(
+          'Quý khách có chắc chắn muốn làm mới và bắt đầu một phiên hỗ trợ mới cùng Trợ lý AI Sen Hồng không?',
+          style: TextStyle(fontSize: 13, color: Color(0xFFCBD5E1), height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy',
+                style: TextStyle(color: Color(0xFF94A3B8))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() {
+                _messages.clear();
+                _messages.add({
+                  'sender': 'agent',
+                  'name': 'Trợ Lý AI Sen Hồng',
+                  'text':
+                      'Xin chào quý khách! Em là Trợ lý AI Tài chính Thông minh 24/7 của Ngân hàng Số Sen Hồng. Em có thể giải đáp ngay mọi thông tin về biểu phí, lãi suất tiết kiệm, hạn mức giao dịch hay quản lý thẻ Visa ạ!',
+                  'time': 'Vừa xong',
+                  'sources': ['Cẩm nang Sen Hồng'],
+                });
+                _quickReplies = [
+                  'Tổng quan tài chính của tôi',
+                  'Kiểm tra số dư ví',
+                  'Thẻ Visa của tôi',
+                  'Sổ tiết kiệm của tôi',
+                  'Khoản vay của tôi',
+                  'Thông tin eKYC của tôi',
+                  'Biểu phí chuyển tiền Napas 247',
+                  'Lãi suất tiết kiệm online',
+                  'Quy định sinh trắc học QĐ 2345',
+                  'Cách mở thẻ Visa miễn phí',
+                ];
+              });
+              HapticFeedback.mediumImpact();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00C9A7),
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Xác nhận'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _scrollToBottom() {
@@ -196,8 +419,13 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: const Color(0xFF000000),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Row(
           children: [
             Stack(
@@ -206,17 +434,17 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color(0xFF1E2028),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
+                        color: Colors.black.withValues(alpha: 0.25),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                     border: Border.all(
-                      color: AppColors.primary.withOpacity(0.35),
+                      color: const Color(0xFF00C9A7).withValues(alpha: 0.4),
                       width: 1.2,
                     ),
                   ),
@@ -234,7 +462,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                   bottom: 0,
                   right: 0,
                   child: CircleAvatar(
-                      radius: 5, backgroundColor: AppColors.emeraldGreen),
+                      radius: 5, backgroundColor: Color(0xFF00E676)),
                 ),
               ],
             ),
@@ -245,39 +473,74 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('CSKH Sen Hồng',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white)),
                   Text(
                     'Trực tuyến 24/7 • Phản hồi tức thì',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                        fontSize: 11, color: AppColors.successTextLight),
+                        fontSize: 11,
+                        color: Color(0xFF00E676),
+                        fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
             ),
           ],
         ),
-        backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            tooltip: 'Gọi Tổng đài CSKH 1900-SENHONG',
+            icon: const Icon(Icons.phone_in_talk_outlined,
+                size: 20, color: Color(0xFF00C9A7)),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _showHotlineDialog(context);
+            },
+          ),
+          IconButton(
+            tooltip: 'Làm mới cuộc trò chuyện',
+            icon: const Icon(Icons.refresh_rounded,
+                size: 20, color: Color(0xFF94A3B8)),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _showResetConfirmDialog(context);
+            },
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
-      body: SafeArea(
-        child: Column(
+      body: Stack(
+        children: [
+          const Positioned.fill(child: ShaderBackground()),
+          SafeArea(
+            child: Column(
           children: [
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: AppColors.primary.withOpacity(0.08),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0A0A0E),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    width: 0.5,
+                  ),
+                ),
+              ),
               child: const Row(
                 children: [
                   Icon(CupertinoIcons.info_circle_fill,
-                      size: 16, color: AppColors.primary),
+                      size: 15, color: Color(0xFF00C9A7)),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Kênh Trợ Lý Tự Động. Kênh kết nối trực tiếp chuyên viên CSKH đang được phát triển.',
                       style: TextStyle(
-                          fontSize: 12, color: AppColors.textSecondaryLight),
+                          fontSize: 12, color: Color(0xFFCBD5E1)),
                     ),
                   ),
                 ],
@@ -303,15 +566,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                             height: 32,
                             margin: const EdgeInsets.only(right: 8, top: 2),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: const Color(0xFF1E2028),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.primary.withOpacity(0.25),
+                                color: const Color(0xFF00C9A7).withValues(alpha: 0.35),
                                 width: 1,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
+                                  color: Colors.black.withValues(alpha: 0.2),
                                   blurRadius: 4,
                                   offset: const Offset(0, 1),
                                 ),
@@ -331,18 +594,21 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 10),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: const Color(0xFF181A22),
                               borderRadius: const BorderRadius.only(
                                 topLeft: Radius.circular(16),
                                 topRight: Radius.circular(16),
                                 bottomRight: Radius.circular(16),
                                 bottomLeft: Radius.circular(8),
                               ),
-                              border: Border.all(color: AppColors.borderLight),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.12),
+                                width: 0.8,
+                              ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 6,
+                                  color: Colors.black.withValues(alpha: 0.15),
+                                  blurRadius: 8,
                                   offset: const Offset(0, 2),
                                 ),
                               ],
@@ -354,7 +620,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                                   'Trợ lý AI đang suy nghĩ...',
                                   style: TextStyle(
                                       fontSize: 12,
-                                      color: AppColors.textSecondaryLight,
+                                      color: Color(0xFF94A3B8),
                                       fontStyle: FontStyle.italic),
                                 ),
                                 SizedBox(width: 8),
@@ -363,7 +629,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                                   height: 12,
                                   child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: AppColors.primaryDark),
+                                      color: Color(0xFF00C9A7)),
                                 ),
                               ],
                             ),
@@ -374,15 +640,40 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                   }
                   final msg = _messages[idx];
                   final isUser = msg['sender'] == 'user';
+                  final messageText = msg['text']?.toString() ?? '';
 
-                  final bubbleWidget = Container(
-                    constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.74),
+                  final bubbleWidget = GestureDetector(
+                    onLongPress: () {
+                      if (messageText.isNotEmpty) {
+                        Clipboard.setData(ClipboardData(text: messageText));
+                        HapticFeedback.mediumImpact();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Row(
+                              children: [
+                                Icon(Icons.check_circle_outline,
+                                    color: Color(0xFF00E676), size: 18),
+                                SizedBox(width: 8),
+                                Text('Đã sao chép nội dung tin nhắn'),
+                              ],
+                            ),
+                            behavior: SnackBarBehavior.floating,
+                            backgroundColor: const Color(0xFF1E2028),
+                            duration: const Duration(seconds: 2),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      constraints: BoxConstraints(
+                          maxWidth: MediaQuery.of(context).size.width * 0.76),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
                       gradient: isUser ? AppColors.primaryGradient : null,
-                      color: isUser ? null : Colors.white,
+                      color: isUser ? null : const Color(0xFF14151E),
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
@@ -391,13 +682,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       ),
                       border: isUser
                           ? null
-                          : Border.all(color: AppColors.borderLight),
+                          : Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              width: 0.8,
+                            ),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              Colors.black.withOpacity(isUser ? 0.15 : 0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 10,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
@@ -408,20 +701,20 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                       children: [
                         if (!isUser)
                           Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
+                            padding: const EdgeInsets.only(bottom: 5),
                             child: Text(
                               msg['name']!,
                               style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.primaryDark,
+                                fontSize: 11.5,
+                                color: Color(0xFF00C9A7),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
                         _buildMessageContent(msg['text']!, isUser),
                         if (!isUser &&
-                            msg['sources'] != null &&
-                            (msg['sources'] as List).isNotEmpty) ...[
+                             msg['sources'] != null &&
+                             (msg['sources'] as List).isNotEmpty) ...[
                           Builder(
                             builder: (context) {
                               final rawList = msg['sources'] as List;
@@ -452,27 +745,27 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                                   children: cleanList.map<Widget>((title) {
                                     return Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 7, vertical: 2.5),
+                                          horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primaryDark.withOpacity(0.06),
-                                        borderRadius: BorderRadius.circular(6),
+                                        color: const Color(0xFF00C9A7).withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                          color: AppColors.primaryDark.withOpacity(0.18),
-                                          width: 0.5,
+                                          color: const Color(0xFF00C9A7).withValues(alpha: 0.35),
+                                          width: 0.6,
                                         ),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           const Icon(CupertinoIcons.bookmark_fill,
-                                              size: 9.5, color: AppColors.primaryDark),
-                                          const SizedBox(width: 3.5),
+                                              size: 9.5, color: Color(0xFF00C9A7)),
+                                          const SizedBox(width: 4),
                                           Text(
                                             title,
                                             style: const TextStyle(
-                                              fontSize: 9.5,
+                                              fontSize: 10,
                                               fontWeight: FontWeight.w600,
-                                              color: AppColors.primaryDark,
+                                              color: Color(0xFF00C9A7),
                                             ),
                                           ),
                                         ],
@@ -491,17 +784,23 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                               HapticFeedback.mediumImpact();
                               final route = msg['action']['route']?.toString();
                               if (route != null && route.isNotEmpty) {
-                                context.push(route);
+                                try {
+                                  context.push(route);
+                                } catch (_) {
+                                  try {
+                                    context.push('/more');
+                                  } catch (_) {}
+                                }
                               }
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryDark.withOpacity(0.08),
+                                color: const Color(0xFF00C9A7).withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
-                                  color: AppColors.primaryDark.withOpacity(0.25),
+                                  color: const Color(0xFF00C9A7).withValues(alpha: 0.4),
                                   width: 0.8,
                                 ),
                               ),
@@ -511,7 +810,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                                   const Icon(
                                     CupertinoIcons.arrow_up_right_circle_fill,
                                     size: 15,
-                                    color: AppColors.primaryDark,
+                                    color: Color(0xFF00C9A7),
                                   ),
                                   const SizedBox(width: 6),
                                   Flexible(
@@ -520,7 +819,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                                       style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        color: AppColors.primaryDark,
+                                        color: Color(0xFF00C9A7),
                                       ),
                                     ),
                                   ),
@@ -529,19 +828,20 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 5),
                         Text(
                           msg['time']!,
                           style: TextStyle(
                             color: isUser
-                                ? Colors.white.withOpacity(0.82)
-                                : AppColors.textSecondaryLight,
+                                ? Colors.white.withValues(alpha: 0.82)
+                                : const Color(0xFF94A3B8),
                             fontSize: 10,
                           ),
                         ),
                       ],
                     ),
-                  );
+                  ),
+                );
 
                   if (isUser) {
                     return Align(
@@ -563,15 +863,15 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                           height: 32,
                           margin: const EdgeInsets.only(right: 8, top: 2),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: const Color(0xFF1E2028),
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: AppColors.primary.withOpacity(0.25),
+                              color: const Color(0xFF00C9A7).withValues(alpha: 0.35),
                               width: 1,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
+                                color: Colors.black.withValues(alpha: 0.2),
                                 blurRadius: 4,
                                 offset: const Offset(0, 1),
                               ),
@@ -604,104 +904,182 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: ActionChip(
-                      backgroundColor: Colors.white,
-                      side: const BorderSide(color: AppColors.borderLight),
-                      label: Text(qr,
-                          style: const TextStyle(
-                              color: AppColors.textPrimaryLight,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500)),
-                      onPressed: () => _sendMessage(qr),
+                      backgroundColor: const Color(0xFF12141C),
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        width: 0.8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      avatar: const Icon(
+                        CupertinoIcons.sparkles,
+                        size: 13,
+                        color: Color(0xFF00C9A7),
+                      ),
+                      label: Text(
+                        qr,
+                        style: const TextStyle(
+                          color: Color(0xFFE2E8F0),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        _sendMessage(qr);
+                      },
                     ),
                   );
                 }).toList(),
               ),
             ),
 
-            // Message Composer
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                border: const Border(top: BorderSide(color: AppColors.borderLight)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, -2),
-                  ),
+            // AI Futuristic Pill Message Composer with BorderBeam
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+              child: BorderBeam(
+                borderRadius: 28,
+                strokeWidth: 1.5,
+                duration: const Duration(seconds: 4),
+                beamLength: 0.28,
+                glowSigma: 8,
+                glowOpacity: 0.60,
+                colors: const [
+                  Color(0xFF7C5CFF), // Futuristic Violet
+                  Color(0xFF3BB2FF), // Cyber Cyan
+                  Color(0xFFFF6BCB), // Neon Rose
+                  Color(0xFF00C9A7), // Sen Hồng Emerald
                 ],
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(CupertinoIcons.paperclip,
-                        color: AppColors.primaryText),
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content:
-                              Text('Đã chọn tệp đính kèm hóa đơn/biên lai'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  ),
-                  Expanded(
-                    child: TextField(
-                      controller: _msgCtrl,
-                      style: const TextStyle(color: AppColors.textPrimaryLight),
-                      decoration: InputDecoration(
-                        hintText: 'Nhập tin nhắn hỗ trợ...',
-                        hintStyle:
-                            const TextStyle(color: AppColors.textMutedLight),
-                        filled: true,
-                        fillColor: AppColors.surfaceLight,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 10),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide:
-                                const BorderSide(color: AppColors.borderLight)),
-                        enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            borderSide:
-                                const BorderSide(color: AppColors.borderLight)),
+                baseBorderColor: const Color(0x18FFFFFF),
+                child: Container(
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF12131A),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
                       ),
-                      onSubmitted: _sendMessage,
-                    ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.bottomBarGlow.withOpacity(0.4),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                  child: Row(
+                    children: [
+                      // Attachment / Clip Button
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Đã chọn tệp đính kèm hóa đơn/biên lai'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Icon(
+                              CupertinoIcons.paperclip,
+                              size: 18,
+                              color: Color(0xFF9EA3AE),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: const Icon(CupertinoIcons.paperplane_fill,
-                          color: Colors.white, size: 18),
-                      onPressed: () => _sendMessage(_msgCtrl.text),
-                    ),
+                      ),
+
+                      // Stretched TextField across the pill
+                      Expanded(
+                        child: TextField(
+                          controller: _msgCtrl,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFFF0F2F5),
+                            fontWeight: FontWeight.w400,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
+                            hintText: 'Nhập tin nhắn hỗ trợ...',
+                            hintStyle: TextStyle(
+                              fontSize: 13.5,
+                              color: Color(0xFF717682),
+                            ),
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                          ),
+                          onSubmitted: _sendMessage,
+                        ),
+                      ),
+
+                      // Glowing Circular Send Button with Upward Arrow
+                      GestureDetector(
+                        onTap: () {
+                          if (!_isAgentTyping) {
+                            HapticFeedback.mediumImpact();
+                            _sendMessage(_msgCtrl.text);
+                          }
+                        },
+                        child: Container(
+                          width: 38,
+                          height: 38,
+                          margin: const EdgeInsets.only(right: 2),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                Color(0xFF00C9A7),
+                                Color(0xFF0083B0),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF00C9A7).withValues(alpha: 0.4),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: _isAgentTyping
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.arrow_upward_rounded,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildMessageContent(String text, bool isUser) {
-    final baseColor = isUser ? Colors.white : AppColors.textPrimaryLight;
+    final baseColor = isUser ? Colors.white : const Color(0xFFF1F5F9);
     final lines = text.split('\n');
     final spans = <InlineSpan>[];
 
@@ -748,10 +1126,26 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       final matchedText = match.group(0)!;
       if (matchedText.startsWith('**') && matchedText.endsWith('**')) {
         final inner = matchedText.substring(2, matchedText.length - 2);
+        final isFinancialHighlight = inner.contains('VNĐ') ||
+            inner.contains('đ') ||
+            inner.contains('%') ||
+            inner.contains('triệu') ||
+            inner.contains('tỷ') ||
+            inner.contains('đồng') ||
+            inner.toLowerCase().contains('miễn phí') ||
+            inner.toLowerCase().contains('bước') ||
+            inner.toLowerCase().contains('mã') ||
+            inner.toUpperCase().contains('SEN') ||
+            inner.toUpperCase().contains('VOUCHER') ||
+            RegExp(r'\d').hasMatch(inner);
         spans.add(TextSpan(
           text: inner,
           style: TextStyle(
-            color: isUser ? Colors.white : (inner.contains('VNĐ') ? AppColors.primaryDark : AppColors.textPrimaryLight),
+            color: isUser
+                ? Colors.white
+                : (isFinancialHighlight
+                    ? const Color(0xFF00C9A7)
+                    : const Color(0xFFFFFFFF)),
             fontWeight: FontWeight.bold,
           ),
         ));
@@ -762,7 +1156,9 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
             decoration: BoxDecoration(
-              color: isUser ? Colors.white.withOpacity(0.2) : AppColors.primaryDark.withOpacity(0.08),
+              color: isUser
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
@@ -770,7 +1166,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: isUser ? Colors.white : AppColors.primaryDark,
+                color: isUser ? Colors.white : const Color(0xFF38BDF8),
                 fontFamily: 'monospace',
               ),
             ),
@@ -781,7 +1177,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         spans.add(TextSpan(
           text: inner,
           style: TextStyle(
-            color: baseColor.withOpacity(0.9),
+            color: baseColor.withValues(alpha: 0.9),
             fontStyle: FontStyle.italic,
           ),
         ));

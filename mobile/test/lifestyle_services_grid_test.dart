@@ -21,7 +21,8 @@ void main() {
         home: HomeScreen(),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Verify Section Header
     expect(find.text('Mua sắm - Giải trí - Đầu tư'), findsOneWidget);
@@ -69,10 +70,14 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
-    // Verify promo banners render without errors
-    expect(find.text('GÓI TIẾT KIỆM'), findsWidgets);
-    expect(find.text('100K'), findsWidgets);
+    // Banner giờ tải nội dung từ Backend (/promotions/campaigns).
+    // Trong môi trường test (không có API) banner tự ẩn — KHÔNG còn
+    // hiển thị quảng cáo cứng "GÓI TIẾT KIỆM / 100K" như trước.
+    expect(find.text('GÓI TIẾT KIỆM'), findsNothing);
+    expect(find.text('100K'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 }

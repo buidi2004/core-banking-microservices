@@ -315,7 +315,7 @@ class _SavingsDetailScreenState extends State<SavingsDetailScreen> {
                               TextStyle(color: Colors.white60, fontSize: 13)),
                       Text(
                           CurrencyFormatter.formatVND(
-                              _data['principal'] as double),
+                              (_data['principal'] as num?)?.toDouble() ?? 0.0),
                           style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold)),

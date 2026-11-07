@@ -21,6 +21,10 @@ try:
             "IDENTITY_SERVICE_URL",
             "http://identity-service:8081"
         )
+        NOTIFICATION_SERVICE_URL: str = os.getenv(
+            "NOTIFICATION_SERVICE_URL",
+            "http://notification-service:8085"
+        )
         LLM_BASE_URL: str = os.getenv(
             "LLM_BASE_URL", 
             "https://generativelanguage.googleapis.com/v1beta/openai/"
@@ -78,6 +82,10 @@ except ImportError:
         IDENTITY_SERVICE_URL: str = os.getenv(
             "IDENTITY_SERVICE_URL",
             "http://identity-service:8081"
+        )
+        NOTIFICATION_SERVICE_URL: str = os.getenv(
+            "NOTIFICATION_SERVICE_URL",
+            "http://notification-service:8085"
         )
         LLM_BASE_URL: str = os.getenv(
             "LLM_BASE_URL", 
