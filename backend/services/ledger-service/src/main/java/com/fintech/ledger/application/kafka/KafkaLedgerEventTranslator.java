@@ -52,7 +52,8 @@ public class KafkaLedgerEventTranslator {
         } else if ("DEBIT".equalsIgnoreCase(direction) || "WITHDRAWAL".equalsIgnoreCase(direction) || "TRANSFER_OUT".equalsIgnoreCase(direction)) {
             event.setType("WITHDRAWAL");
             event.setSourceWalletId(walletId);
-        } else if ("RESERVE".equalsIgnoreCase(direction) || "RELEASE".equalsIgnoreCase(direction)) {
+        } else if ("RESERVE".equalsIgnoreCase(direction) || "RELEASE".equalsIgnoreCase(direction)
+                || "OVERDRAFT_LIMIT".equalsIgnoreCase(direction) || "LIMIT_UPDATE".equalsIgnoreCase(direction)) {
             return null;
         } else {
             throw new IllegalArgumentException("Wallet balance-changed event must carry CREDIT or DEBIT direction, got: "

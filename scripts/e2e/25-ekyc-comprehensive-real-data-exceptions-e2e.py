@@ -137,6 +137,7 @@ def encrypt_hybrid_envelope(session_id: str, nonce: str, payload_dict: dict) -> 
 
 
 def create_session(user_id: str) -> tuple[str, str]:
+    subprocess.run(["docker", "exec", "ewallet-redis", "redis-cli", "-n", "2", "del", f"ekyc:fail_count:{user_id}"], capture_output=True)
     code, session = http_req(f"{GATEWAY_URL}/api/v1/ekyc/ai/session", method="POST", data={"userId": user_id})
     if code != 200 or "sessionId" not in session:
         raise RuntimeError(f"Không thể tạo session: {code} - {session}")

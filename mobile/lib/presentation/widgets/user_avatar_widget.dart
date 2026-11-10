@@ -22,6 +22,16 @@ class UserAvatarNotifier {
 
   static Future<void> init() async {
     try {
+      // 1. Ưu tiên số 1: Ảnh chân dung sinh trắc học chuẩn từ Chip CCCD NFC đã quét
+      final chipPhoto = await AppSecureStorage.safeRead(_storage,
+          key: AppConstants.keyChipPhotoBase64);
+      if (chipPhoto != null && chipPhoto.isNotEmpty) {
+        final cleanB64 = chipPhoto.replaceAll(RegExp(r'\s+'), '');
+        avatarNotifier.value = 'data:image/jpeg;base64,$cleanB64';
+        return;
+      }
+
+      // 2. Ảnh từ máy chủ hoặc cache người dùng chọn
       final cached = await AppSecureStorage.safeRead(_storage,
           key: AppConstants.keyAvatarUrl);
       if (cached != null && cached.isNotEmpty) {
@@ -174,7 +184,8 @@ class UserAvatarWidget extends StatelessWidget {
       if (url.startsWith('data:image')) {
         try {
           final base64Data = url.contains(',') ? url.split(',').last : url;
-          final bytes = base64Decode(base64Data);
+          final cleanB64 = base64Data.replaceAll(RegExp(r'\s+'), '');
+          final bytes = base64Decode(cleanB64);
           return Image.memory(
             bytes,
             fit: BoxFit.cover,
@@ -226,20 +237,25 @@ class UserAvatarWidget extends StatelessWidget {
       width: radius * 2,
       height: radius * 2,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        shape: BoxShape.circle,
+        gradient: const LinearGradient(
           colors: [
-            AppColors.primary.withOpacity(0.12),
-            AppColors.bottomBarCyan.withOpacity(0.20),
+            AppColors.primaryDark,
+            AppColors.cardDark,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: AppColors.bottomBarCyan.withOpacity(0.3),
+          width: 0.5,
         ),
       ),
       child: Center(
         child: Icon(
           CupertinoIcons.person_crop_circle_fill,
           size: radius * 1.1,
-          color: AppColors.primary,
+          color: AppColors.bottomBarCyan,
         ),
       ),
     );

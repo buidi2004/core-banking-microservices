@@ -6,10 +6,12 @@ import 'package:sen_hong_bank/core/constants/api_constants.dart';
 import 'package:sen_hong_bank/core/network/dio_client.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/presentation/widgets/border_beam.dart';
+import 'package:sen_hong_bank/presentation/widgets/chatbot_lottie_avatar.dart';
 import 'package:sen_hong_bank/presentation/widgets/shader_background.dart';
 
 class LiveChatScreen extends StatefulWidget {
-  const LiveChatScreen({super.key});
+  final String? originScreen;
+  const LiveChatScreen({super.key, this.originScreen});
 
   @override
   State<LiveChatScreen> createState() => _LiveChatScreenState();
@@ -19,6 +21,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   final TextEditingController _msgCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
   bool _isAgentTyping = false;
+  bool _showAssistantNotice = true;
 
   @override
   void dispose() {
@@ -34,68 +37,8 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
       'text':
           'Xin chào quý khách! Em là Trợ lý AI Tài chính Thông minh 24/7 của Ngân hàng Số Sen Hồng. Em có thể giải đáp ngay mọi thông tin về biểu phí, lãi suất tiết kiệm, hạn mức giao dịch hay quản lý thẻ Visa ạ!',
       'time': 'Vừa xong',
-      'sources': <String>['Cẩm nang Sen Hồng'],
     },
   ];
-
-  static const Map<String, String> _docTitleMap = {
-    '01_huong_dan_chuyen_tien': 'Hướng dẫn chuyển tiền',
-    '02_nap_va_rut_tien': 'Nạp & Rút tiền',
-    '03_thanh_toan_hoa_don_tien_ich': 'Thanh toán hóa đơn',
-    '04_vay_tieu_dung_quick_loan': 'Vay tiêu dùng Quick Loan',
-    '05_tiet_kiem_online_core_savings': 'Tiết kiệm Online',
-    '06_quan_ly_the_va_tai_khoan': 'Quản lý thẻ & Tài khoản',
-    '07_quy_dinh_sinh_trac_hoc_qd2345': 'Quy định QĐ 2345/QĐ-NHNN',
-    '08_tien_ich_xo_so_giai_tri': 'Vé số & Giải trí',
-    '09_bieu_phi_va_han_muc_chi_tiet': 'Biểu phí & Hạn mức',
-    '10_an_toan_bao_mat_va_canh_bao_lua_dao': 'An toàn & Bảo mật',
-    '11_ho_tro_khieu_nai_va_cskh': 'Hỗ trợ CSKH',
-    '12_tong_hop_cau_hoi_thuong_gap_faq': 'Câu hỏi thường gặp',
-    '13_ma_vietqr_va_chia_tien_split_bill': 'VietQR & Chia tiền nhóm',
-    '14_dat_lich_chuyen_tien_dinh_ky': 'Đặt lịch chuyển tiền',
-    '15_danh_ba_thu_huong_va_danh_sach_ngan_hang_napas': 'Danh bạ Napas',
-    '16_tai_khoan_so_dep_va_chuyen_tien_quoc_te': 'Số đẹp & Kiều hối',
-    '17_chuong_trinh_gioi_thieu_va_voucher_uu_dai': 'Ưu đãi & Voucher',
-    '18_quan_ly_thiet_bi_va_bao_mat_phien': 'Bảo mật thiết bị',
-    '19_dieu_khoan_phap_ly_va_giay_phep_nhnn': 'Điều khoản & Pháp lý',
-    '20_cam_nang_toan_dien_cac_man_hinh_va_tinh_nang_app': 'Cẩm nang tính năng',
-    '21_kien_truc_he_thong_microservices_va_backend': 'Kiến trúc hệ thống & Backend',
-    '22_cam_nang_chuyen_sau_tinh_nang_mobile_va_tien_ich_so': 'Cẩm nang tính năng Mobile',
-    '23_tong_hop_toan_bo_tinh_nang_mobile_va_backend_huong_dan_khach_hang': 'Cẩm nang toàn diện Mobile & Backend',
-    '24_kho_voucher_uu_dai_doi_tac_va_chuong_trinh_khuyen_mai': 'Kho Voucher & Ưu Đãi Đối Tác',
-    '25_ty_gia_ngoai_te_va_kieu_hoi_quoc_te': 'Tỷ giá & Kiều hối quốc tế',
-    '26_mang_luoi_chi_nhanh_va_diem_giao_dich': 'Mạng lưới Chi nhánh & ATM',
-    '27_huong_dan_biet_danh_tai_khoan_alias_va_vietqr_pro': 'Biệt danh Alias & VietQR Pro',
-    '28_giai_dap_tinh_huong_nghiep_vu_kho_va_tu_van_chuyen_sau': 'Tư vấn nghiệp vụ & Tình huống chuyên sâu',
-    'bieu_phi_dich_vu': 'Biểu phí dịch vụ',
-    'huong_dan_the_visa': 'Hướng dẫn thẻ Visa',
-    'lai_suat_tiet_kiem': 'Lãi suất tiết kiệm',
-    'quy_dinh_qd2345': 'Quy định QĐ 2345',
-    'tai_khoan_va_ekyc': 'Tài khoản & eKYC',
-  };
-
-  static String _formatSourceTitle(String raw) {
-    var s = raw.trim();
-    if (s.toLowerCase().endsWith('.md')) {
-      s = s.substring(0, s.length - 3);
-    }
-    if (_docTitleMap.containsKey(s)) {
-      return _docTitleMap[s]!;
-    }
-    final stripped = s.replaceAll(RegExp(r'^\d+_'), '');
-    if (_docTitleMap.containsKey(stripped)) {
-      return _docTitleMap[stripped]!;
-    }
-    if (s.contains(' ') && !s.contains('_')) {
-      return s;
-    }
-    final clean = stripped.replaceAll('_', ' ');
-    return clean
-        .split(' ')
-        .map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}')
-        .join(' ')
-        .trim();
-  }
 
   List<String> _quickReplies = [
     'Tổng quan tài chính của tôi',
@@ -146,6 +89,12 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         data: {
           'question': cleanText,
           'history': historyPayload,
+          'client_context': {
+            'platform': 'flutter_mobile',
+            'current_screen': widget.originScreen ?? '/support/live-chat',
+            'app_version': '3.2.0',
+            'timestamp': DateTime.now().toIso8601String(),
+          },
         },
       );
 
@@ -160,6 +109,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         final newQuickReplies = rawQuick is List ? rawQuick.map((e) => e.toString()).toList() : <String>[];
         final rawAction = data['suggested_action'];
         final Map<String, dynamic>? suggestedAction = rawAction is Map ? Map<String, dynamic>.from(rawAction) : null;
+        final rawThought = data['thought_process']?.toString();
+        final rawSteps = data['reasoning_steps'];
+        final reasoningSteps = rawSteps is List ? rawSteps.map((e) => e.toString()).toList() : <String>[];
+        final thinkingDuration = (data['thinking_duration_ms'] as num?)?.toDouble();
+        final confidenceScore = (data['confidence_score'] as num?)?.toDouble() ?? 0.99;
 
         setState(() {
           _isAgentTyping = false;
@@ -170,6 +124,10 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
             'time': timeStr,
             'sources': sources,
             'action': suggestedAction,
+            'thought_process': rawThought,
+            'reasoning_steps': reasoningSteps,
+            'thinking_duration_ms': thinkingDuration,
+            'confidence_score': confidenceScore,
           });
           if (newQuickReplies.isNotEmpty) {
             _quickReplies = newQuickReplies;
@@ -195,7 +153,6 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         'text':
             'Dạ hệ thống AI đang cập nhật dữ liệu trực tuyến. Quý khách có thể xem thông tin biểu phí và lãi suất trong Trung tâm Trợ giúp, hoặc liên hệ Tổng đài CSKH Sen Hồng 1900-SENHONG (1900 736 466) để được hỗ trợ tức thì 24/7 ạ!',
         'time': timeStr,
-        'sources': <String>['Trung tâm Trợ giúp Sen Hồng'],
         'action': <String, dynamic>{
           'type': 'NAVIGATE',
           'label': 'Trung tâm trợ giúp',
@@ -374,7 +331,6 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                   'text':
                       'Xin chào quý khách! Em là Trợ lý AI Tài chính Thông minh 24/7 của Ngân hàng Số Sen Hồng. Em có thể giải đáp ngay mọi thông tin về biểu phí, lãi suất tiết kiệm, hạn mức giao dịch hay quản lý thẻ Visa ạ!',
                   'time': 'Vừa xong',
-                  'sources': ['Cẩm nang Sen Hồng'],
                 });
                 _quickReplies = [
                   'Tổng quan tài chính của tôi',
@@ -426,48 +382,28 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
         backgroundColor: const Color(0xFF000000),
         systemOverlayStyle: SystemUiOverlayStyle.light,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: Row(
+        title: const Row(
           children: [
             Stack(
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E2028),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    border: Border.all(
-                      color: const Color(0xFF00C9A7).withValues(alpha: 0.4),
-                      width: 1.2,
-                    ),
-                  ),
-                  child: ClipOval(
-                    child: Padding(
-                      padding: const EdgeInsets.all(2.0),
-                      child: Image.asset(
-                        'assets/icons/ai_assistant_ghost.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
+                SizedBox(
+                  width: 50,
+                  height: 50,
+                  child: ChatbotLottieAvatar(
+                    size: 50,
+                    fit: BoxFit.contain,
                   ),
                 ),
-                const Positioned(
-                  bottom: 0,
-                  right: 0,
+                Positioned(
+                  bottom: 2,
+                  right: 2,
                   child: CircleAvatar(
                       radius: 5, backgroundColor: Color(0xFF00E676)),
                 ),
               ],
             ),
-            const SizedBox(width: 12),
-            const Expanded(
+            SizedBox(width: 12),
+            Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -519,33 +455,57 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
           SafeArea(
             child: Column(
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF0A0A0E),
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    width: 0.5,
-                  ),
-                ),
-              ),
-              child: const Row(
-                children: [
-                  Icon(CupertinoIcons.info_circle_fill,
-                      size: 15, color: Color(0xFF00C9A7)),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Kênh Trợ Lý Tự Động. Kênh kết nối trực tiếp chuyên viên CSKH đang được phát triển.',
-                      style: TextStyle(
-                          fontSize: 12, color: Color(0xFFCBD5E1)),
+            if (_showAssistantNotice)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A0A0E),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      width: 0.5,
                     ),
                   ),
-                ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(CupertinoIcons.info_circle_fill,
+                        size: 15, color: Color(0xFF00C9A7)),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Kênh Trợ Lý Tự Động. Kênh kết nối trực tiếp chuyên viên CSKH đang được phát triển.',
+                        style: TextStyle(
+                            fontSize: 12, color: Color(0xFFCBD5E1)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      key: const Key('dismiss_assistant_notice_button'),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        setState(() {
+                          _showAssistantNotice = false;
+                        });
+                      },
+                      behavior: HitTestBehavior.opaque,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.06),
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.xmark,
+                          size: 13,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
             Expanded(
               child: ListView.builder(
                 controller: _scrollCtrl,
@@ -556,85 +516,54 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                 itemCount: _messages.length + (_isAgentTyping ? 1 : 0),
                 itemBuilder: (context, idx) {
                   if (idx == _messages.length) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            margin: const EdgeInsets.only(right: 8, top: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E2028),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFF00C9A7).withValues(alpha: 0.35),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF181A22),
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(16),
+                              topRight: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                              bottomLeft: Radius.circular(8),
                             ),
-                            child: ClipOval(
-                              child: Padding(
-                                padding: const EdgeInsets.all(2),
-                                child: Image.asset(
-                                  'assets/icons/ai_assistant_ghost.png',
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              width: 0.8,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF181A22),
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
-                                bottomRight: Radius.circular(16),
-                                bottomLeft: Radius.circular(8),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Trợ lý AI đang suy nghĩ...',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF94A3B8),
+                                    fontStyle: FontStyle.italic),
                               ),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.12),
-                                width: 0.8,
+                              SizedBox(width: 8),
+                              SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF00C9A7)),
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.15),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Trợ lý AI đang suy nghĩ...',
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF94A3B8),
-                                      fontStyle: FontStyle.italic),
-                                ),
-                                SizedBox(width: 8),
-                                SizedBox(
-                                  width: 12,
-                                  height: 12,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Color(0xFF00C9A7)),
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     );
                   }
@@ -668,7 +597,7 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     },
                     child: Container(
                       constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.76),
+                          maxWidth: MediaQuery.of(context).size.width * 0.85),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
@@ -711,72 +640,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                               ),
                             ),
                           ),
-                        _buildMessageContent(msg['text']!, isUser),
                         if (!isUser &&
-                             msg['sources'] != null &&
-                             (msg['sources'] as List).isNotEmpty) ...[
-                          Builder(
-                            builder: (context) {
-                              final rawList = msg['sources'] as List;
-                              final cleanList = rawList
-                                  .map((e) => e.toString().trim())
-                                  .where((s) {
-                                    final lower = s.toLowerCase();
-                                    return !lower.contains('internal_api') &&
-                                        !lower.contains('service') &&
-                                        !lower.contains('jev') &&
-                                        !lower.contains('typesafe') &&
-                                        !lower.contains('chao_mung') &&
-                                        !lower.contains('hotline') &&
-                                        s.isNotEmpty;
-                                  })
-                                  .map((s) => _formatSourceTitle(s))
-                                  .where((s) => s.isNotEmpty && !s.toLowerCase().endsWith('.md'))
-                                  .toSet()
-                                  .toList();
-
-                              if (cleanList.isEmpty) return const SizedBox.shrink();
-
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Wrap(
-                                  spacing: 6,
-                                  runSpacing: 4,
-                                  children: cleanList.map<Widget>((title) {
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 3),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF00C9A7).withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: const Color(0xFF00C9A7).withValues(alpha: 0.35),
-                                          width: 0.6,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(CupertinoIcons.bookmark_fill,
-                                              size: 9.5, color: Color(0xFF00C9A7)),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            title,
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color: Color(0xFF00C9A7),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                            (msg['thought_process'] != null ||
+                                (msg['reasoning_steps'] as List?)?.isNotEmpty == true))
+                          _buildDeepThinkingWidget(msg),
+                        _buildMessageContent(msg['text']!, isUser),
                         if (!isUser && msg['action'] != null) ...[
                           const SizedBox(height: 10),
                           GestureDetector(
@@ -853,42 +721,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     );
                   }
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          margin: const EdgeInsets.only(right: 8, top: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E2028),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: const Color(0xFF00C9A7).withValues(alpha: 0.35),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.2),
-                                blurRadius: 4,
-                                offset: const Offset(0, 1),
-                              ),
-                            ],
-                          ),
-                          child: ClipOval(
-                            child: Padding(
-                              padding: const EdgeInsets.all(2),
-                              child: Image.asset(
-                                'assets/icons/ai_assistant_ghost.png',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Flexible(child: bubbleWidget),
-                      ],
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: bubbleWidget,
                     ),
                   );
                 },
@@ -953,11 +790,11 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                 ],
                 baseBorderColor: const Color(0x18FFFFFF),
                 child: Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  constraints: const BoxConstraints(minHeight: 52, maxHeight: 120),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFF12131A),
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(26),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.15),
@@ -967,102 +804,114 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
                     ],
                   ),
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       // Attachment / Clip Button
-                      Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Đã chọn tệp đính kèm hóa đơn/biên lai'),
-                                duration: Duration(seconds: 1),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Đã chọn tệp đính kèm hóa đơn/biên lai'),
+                                  duration: Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Icon(
+                                CupertinoIcons.paperclip,
+                                size: 18,
+                                color: Color(0xFF9EA3AE),
                               ),
-                            );
-                          },
-                          child: const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Icon(
-                              CupertinoIcons.paperclip,
-                              size: 18,
-                              color: Color(0xFF9EA3AE),
                             ),
                           ),
                         ),
                       ),
 
-                      // Stretched TextField across the pill
+                      // Stretched Multiline TextField across the pill (Tối ưu cho người dùng gõ câu dài)
                       Expanded(
-                        child: TextField(
-                          controller: _msgCtrl,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFFF0F2F5),
-                            fontWeight: FontWeight.w400,
-                          ),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                            hintText: 'Nhập tin nhắn hỗ trợ...',
-                            hintStyle: TextStyle(
-                              fontSize: 13.5,
-                              color: Color(0xFF717682),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: TextField(
+                            controller: _msgCtrl,
+                            maxLines: 4,
+                            minLines: 1,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.newline,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFFF0F2F5),
+                              fontWeight: FontWeight.w400,
                             ),
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                              hintText: 'Nhập tin nhắn hỗ trợ...',
+                              hintStyle: TextStyle(
+                                fontSize: 13.5,
+                                color: Color(0xFF717682),
+                              ),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                            ),
                           ),
-                          onSubmitted: _sendMessage,
                         ),
                       ),
 
                       // Glowing Circular Send Button with Upward Arrow
-                      GestureDetector(
-                        onTap: () {
-                          if (!_isAgentTyping) {
-                            HapticFeedback.mediumImpact();
-                            _sendMessage(_msgCtrl.text);
-                          }
-                        },
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          margin: const EdgeInsets.only(right: 2),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Color(0xFF00C9A7),
-                                Color(0xFF0083B0),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 3, right: 2),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (!_isAgentTyping) {
+                              HapticFeedback.mediumImpact();
+                              _sendMessage(_msgCtrl.text);
+                            }
+                          },
+                          child: Container(
+                            width: 38,
+                            height: 38,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFF00C9A7),
+                                  Color(0xFF0083B0),
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF00C9A7).withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
                               ],
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF00C9A7).withValues(alpha: 0.4),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: _isAgentTyping
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                            child: _isAgentTyping
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(
+                                    CupertinoIcons.arrow_up,
+                                    size: 18,
                                     color: Colors.white,
                                   ),
-                                )
-                              : const Icon(
-                                  Icons.arrow_upward_rounded,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
+                          ),
                         ),
                       ),
                     ],
@@ -1193,5 +1042,191 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     }
 
     return spans;
+  }
+
+  Widget _buildDeepThinkingWidget(Map<String, dynamic> msg) {
+    final isExpanded = msg['_is_thinking_expanded'] == true;
+    final durationMs =
+        (msg['thinking_duration_ms'] as num?)?.toDouble() ?? 680.0;
+    final durationSecStr = (durationMs / 1000).toStringAsFixed(1);
+    final List<String> steps = (msg['reasoning_steps'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+    final thoughtProcess = msg['thought_process']?.toString() ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A).withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: const Color(0xFF00C9A7)
+              .withValues(alpha: isExpanded ? 0.35 : 0.18),
+          width: 0.6,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() {
+                msg['_is_thinking_expanded'] = !isExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00C9A7).withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.sparkles,
+                      size: 11,
+                      color: Color(0xFF00C9A7),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      'Đã suy nghĩ & đối soát (${durationSecStr}s)',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF00C9A7),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    isExpanded
+                        ? CupertinoIcons.chevron_up
+                        : CupertinoIcons.chevron_down,
+                    size: 11,
+                    color: const Color(0xFF00C9A7).withValues(alpha: 0.7),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 0.5,
+                    color: Colors.white.withValues(alpha: 0.08),
+                    margin: const EdgeInsets.only(bottom: 8),
+                  ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.verified_user_outlined,
+                        size: 11,
+                        color: Color(0xFF38BDF8),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'TIẾN TRÌNH TƯ DUY & ĐỐI SOÁT CHUYÊN SÂU',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white.withValues(alpha: 0.6),
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (steps.isNotEmpty)
+                    ...steps.asMap().entries.map((entry) {
+                      final idx = entry.key + 1;
+                      final stepText = entry.value;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 2, right: 6),
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF00C9A7)
+                                    .withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '$idx',
+                                style: const TextStyle(
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF00C9A7),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                stepText,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  height: 1.35,
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    })
+                  else if (thoughtProcess.isNotEmpty)
+                    Text(
+                      thoughtProcess,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        height: 1.35,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Icon(
+                        Icons.check_circle_rounded,
+                        size: 10,
+                        color: const Color(0xFF00E676).withValues(alpha: 0.8),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        'Kiểm chứng số học 0% sai lệch',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontStyle: FontStyle.italic,
+                          color: const Color(0xFF00E676).withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

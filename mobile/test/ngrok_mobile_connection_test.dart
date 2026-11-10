@@ -17,6 +17,11 @@ void main() {
     expect(wsUrl, equals('wss://mutation-tubby-overstock.ngrok-free.dev/ws-native'));
     
     // 3. Khởi tạo Dio với cấu hình mobile chuẩn
+    final isReachable = await DioClient.probeGatewayReachable(ngrokApiUrl);
+    if (!isReachable) {
+      stdout.writeln('Ngrok public tunnel đang offline trong môi trường local test, bỏ qua gửi request.');
+      return;
+    }
     final dio = Dio(
       BaseOptions(
         baseUrl: normalized,

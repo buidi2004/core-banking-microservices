@@ -1,13 +1,13 @@
 {
   "mcpServers": {
     "dart-flutter-analyzer": {
-      "command": "node",
+      "command": "/home/buidi/.gemini/antigravity/bin/node",
       "args": [
-        "/home/buidi/T\u00e0i li\u1ec7u/core-banking-microservices/.agents/servers/dart-flutter-mcp/server.js"
+        "/home/buidi/Tài liệu/core-banking-microservices/.agents/servers/dart-flutter-mcp/server.js"
       ]
     },
     "codebase-memory": {
-      "command": "npx",
+      "command": "/home/buidi/.gemini/antigravity/bin/npx",
       "args": [
         "-y",
         "codebase-memory-mcp"
@@ -16,19 +16,19 @@
     "graphify": {
       "command": "/home/buidi/.local/bin/graphify-mcp",
       "args": [
-        "/home/buidi/T\u00e0i li\u1ec7u/core-banking-microservices/graphify-out/graph.json"
+        "/home/buidi/Tài liệu/core-banking-microservices/graphify-out/graph.json"
       ]
     },
     "filesystem": {
-      "command": "npx",
+      "command": "/home/buidi/.gemini/antigravity/bin/npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "/home/buidi/T\u00e0i li\u1ec7u/core-banking-microservices"
+        "/home/buidi/Tài liệu/core-banking-microservices"
       ]
     },
     "github": {
-      "command": "npx",
+      "command": "/home/buidi/.gemini/antigravity/bin/npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-github"
@@ -42,7 +42,7 @@
       "args": []
     },
     "postgres-ledger": {
-      "command": "npx",
+      "command": "/home/buidi/.gemini/antigravity/bin/npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-postgres",
@@ -50,7 +50,7 @@
       ]
     },
     "postgres-payment": {
-      "command": "npx",
+      "command": "/home/buidi/.gemini/antigravity/bin/npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-postgres",
@@ -58,7 +58,7 @@
       ]
     },
     "postgres-wallet": {
-      "command": "npx",
+      "command": "/home/buidi/.gemini/antigravity/bin/npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-postgres",
@@ -66,7 +66,7 @@
       ]
     },
     "postgres-identity": {
-      "command": "npx",
+      "command": "/home/buidi/.gemini/antigravity/bin/npx",
       "args": [
         "-y",
         "@modelcontextprotocol/server-postgres",
@@ -74,7 +74,7 @@
       ]
     },
     "openapi": {
-      "command": "npx",
+      "command": "/home/buidi/.gemini/antigravity/bin/npx",
       "args": [
         "-y",
         "openapi-mcp-server",

@@ -129,16 +129,28 @@ def check_security_guardrails(text: str) -> Tuple[bool, Optional[str]]:
                 "Trợ lý AI Sen Hồng chỉ hỗ trợ giải đáp các thắc mắc nghiệp vụ tài chính, chính sách dịch vụ và tiện ích ngân hàng chính thống ạ."
             )
 
-    # 1. Phát hiện tình huống khẩn cấp / Gian lận thật sự
-    for kw in FRAUD_EMERGENCY_KEYWORDS:
-        if kw in lower_text:
-            return True, (
-                "🚨 **CẢNH BÁO KHẨN CẤP TỪ SEN HỒNG BANK:**\n\n"
-                "Nếu quý khách nghi ngờ tài khoản bị lộ thông tin hoặc đang bị kẻ gian chiếm quyền kiểm soát:\n"
-                "1. Vui lòng bấm ngay nút **'Khóa Khẩn Cấp'** trên ứng dụng để đóng băng tài khoản tức thì.\n"
-                "2. Hoặc gọi ngay đến Tổng đài Hỗ trợ Khẩn cấp 24/7 của Sen Hồng Bank: **1900-SENHONG** (1900 736 466) để được chuyên viên hỗ trợ khóa tài khoản trong 5 giây.\n"
-                "3. Quý khách tuyệt đối không click vào bất kỳ đường link nào nhận được qua SMS hoặc mạng xã hội."
-            )
+    # Whitelist các câu hỏi thắc mắc nghiệp vụ về mất tiền lãi / cơ chế an toàn dòng tiền hoặc cẩm nang nhận diện lừa đảo (Không coi là khẩn cấp)
+    is_safe_inquiry = any(k in lower_text for k in [
+        "tiền lãi", "tien lai", "mất hết tiền lãi", "mat het tien lai", "mất tiền lãi", "mất lãi", "mat lai",
+        "có bị mất tiền không", "co bi mat tien khong", "có mất tiền không", "co mat tien khong",
+        "tiền có bị mất không", "tien co bi mat khong", "liệu có bị mất tiền", "lieu co bi mat tien",
+        "chống mất tiền", "chong mat tien", "ngăn mất tiền", "ngan mat tien", "tránh mất tiền", "tranh mat tien",
+        "bảo toàn", "bao toan", "hoàn tiền", "hoan tien", "saga", "ledger",
+        "các bước", "cac buoc", "những bước", "nhung buoc", "thủ đoạn", "thu doan", "cảnh báo", "canh bao",
+        "làm gì", "lam gi", "thế nào", "the nao", "là gì", "la gi", "xử lý thế nào", "cần làm gì", "hướng dẫn xử lý"
+    ])
+
+    # 1. Phát hiện tình huống khẩn cấp / Gian lận thật sự (khi không phải thắc mắc thông tin)
+    if not is_safe_inquiry:
+        for kw in FRAUD_EMERGENCY_KEYWORDS:
+            if kw in lower_text:
+                return True, (
+                    "🚨 **CẢNH BÁO KHẨN CẤP TỪ SEN HỒNG BANK:**\n\n"
+                    "Nếu quý khách nghi ngờ tài khoản bị lộ thông tin hoặc đang bị kẻ gian chiếm quyền kiểm soát:\n"
+                    "1. Vui lòng bấm ngay nút **'Khóa Khẩn Cấp'** trên ứng dụng để đóng băng tài khoản tức thì.\n"
+                    "2. Hoặc gọi ngay đến Tổng đài Hỗ trợ Khẩn cấp 24/7 của Sen Hồng Bank: **1900-SENHONG** (1900 736 466) để được chuyên viên hỗ trợ khóa tài khoản trong 5 giây.\n"
+                    "3. Quý khách tuyệt đối không click vào bất kỳ đường link nào nhận được qua SMS hoặc mạng xã hội."
+                )
 
     # 2. Phát hiện hỏi hoặc cung cấp mã OTP / PIN / Password thực tế
     if not is_safe_pin_or_pwd_query:
@@ -159,8 +171,13 @@ QUY TẮC CỐT LÕI (BẮT BUỘC TUÂN THỦ 100%):
 1. CHỈ TRẢ LỜI DỰA TRÊN NGỮ CẢNH ĐƯỢC CUNG CẤP DƯỚI ĐÂY. Tuyệt đối KHÔNG tự ý suy đoán, bịa đặt số liệu về lãi suất, tỷ giá hay biểu phí.
 2. Nếu ngữ cảnh không có thông tin hoặc không chắc chắn, hãy thành thật trả lời: "Dạ hiện tại em chưa có thông tin chính thức về vấn đề này trong hệ thống. Quý khách vui lòng liên hệ Tổng đài CSKH Sen Hồng 1900-SENHONG hoặc đến chi nhánh gần nhất để được hỗ trợ chuyên sâu ạ."
 3. Văn phong: Giọng điệu chuyên nghiệp, nhã nhặn, chuẩn mực ngành ngân hàng Việt Nam, dùng từ xưng hô "Em" và "Quý khách", kết câu bằng "ạ".
-4. TUYỆT ĐỐI KHÔNG BAO GIỜ yêu cầu khách hàng cung cấp mã OTP, mật khẩu hay mã PIN.
-5. Nếu trong câu trả lời có nhiều bước, hãy định dạng danh sách (bullet points) rõ ràng, dễ đọc trên màn hình điện thoại di động.
+4. NGUYÊN TẮC ĐÚNG TRỌNG TÂM (VAY RA VAY, LÃI RA LÃI - TUYỆT ĐỐI KHÔNG TRẢ LỜI LAN MAN):
+   - Khi khách hỏi VAY: Tập trung 100% vào Vay Quick Loan (điều kiện, thủ tục, hạn mức, lịch trả nợ). TUYỆT ĐỐI KHÔNG chèn thông tin gửi tiết kiệm hay khuyên mở sổ tiết kiệm.
+   - Khi khách hỏi TIẾT KIỆM: Tập trung 100% vào Tiết kiệm (kỳ hạn, tiền lãi sinh ra, Thông tư 04 rút gốc một phần bảo toàn lãi). TUYỆT ĐỐI KHÔNG chèn thông tin vay nợ.
+   - Khi khách hỏi LÃI SUẤT VAY: Chỉ trả lời lãi suất vay theo số liệu trong NGỮ CẢNH, không lan man sang lãi suất tiết kiệm.
+   - Khi khách hỏi LÃI SUẤT TIẾT KIỆM: Chỉ trả lời biểu lãi suất tiền gửi có kỳ hạn theo số liệu trong NGỮ CẢNH, không lan man sang lãi suất vay.
+5. TUYỆT ĐỐI KHÔNG BAO GIỜ yêu cầu khách hàng cung cấp mã OTP, mật khẩu hay mã PIN.
+6. Nếu trong câu trả lời có nhiều bước, hãy định dạng danh sách (bullet points) rõ ràng, dễ đọc trên màn hình điện thoại di động.
 
 ---
 NGỮ CẢNH KIẾN THỨC NGÂN HÀNG CHÍNH THỨC:

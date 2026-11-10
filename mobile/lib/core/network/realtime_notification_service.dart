@@ -147,9 +147,6 @@ class RealtimeNotificationService {
       final userTopic = '/topic/users/$_currentUserId/notifications';
       _subscribeTopic(userTopic);
     }
-
-    // 3. Subscribe broadcast giao dịch toàn hệ thống
-    _subscribeTopic('/topic/transactions');
   }
 
   void _subscribeTopic(String destination) {

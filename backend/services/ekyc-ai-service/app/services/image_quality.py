@@ -36,15 +36,16 @@ class ImageQualityAssessment:
         gray = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
 
         # 1. Độ nét bằng phương sai toán tử Laplacian (chống rung tay, mờ sương, dính vân tay)
-        # Sử dụng CV_32F thay vì CV_64F để tiết kiệm 50% RAM & CPU float ops
+        # Sử dụng CV_32F thay vì CV_64F để tiết kiệm 50% RAM & CPU float ops.
+        # Ngưỡng mờ ảnh cho camera selfie điện thoại trong nhà: >= 35.0 (ảnh out-focus / rung tay nặng < 20.0)
         laplacian_var = float(cv2.Laplacian(gray, cv2.CV_32F).var())
-        is_sharp = laplacian_var >= 70.0  # Ngưỡng mờ ảnh ngân hàng
+        is_sharp = laplacian_var >= 35.0  # Ngưỡng mờ ảnh thực tế cho smartphone front camera
 
-        # 2. Độ sáng trung bình vùng mặt (Mean pixel intensity: 70 - 215)
+        # 2. Độ sáng trung bình vùng mặt (Mean pixel intensity: 50 - 220)
         mean_brightness = float(np.mean(gray))
-        is_brightness_ok = 70.0 <= mean_brightness <= 215.0
+        is_brightness_ok = 50.0 <= mean_brightness <= 220.0
 
-        # 3. Độ cân bằng sáng giữa nửa mặt trái và nửa mặt phải (chống đèn tạt ngang chia đôi mặt)
+        # 3. Độ cân bằng sáng giữa nửa mặt trái và nửa mặt phải (chống bóng đổ tạt ngang quá 45%)
         fw = gray.shape[1]
         mid = fw // 2
         left_half = gray[:, :mid]
@@ -53,16 +54,16 @@ class ImageQualityAssessment:
         mean_right = float(np.mean(right_half))
         max_mean = max(mean_left, mean_right, 1.0)
         symmetry_diff = abs(mean_left - mean_right) / max_mean
-        is_symmetric = symmetry_diff <= 0.35  # Lệch tối đa 35%
+        is_symmetric = symmetry_diff <= 0.45  # Chấp nhận góc chiếu thực tế trong phòng
 
         # 4. Kiểm tra ám màu bất thường (HSV Saturation - đèn LED màu, màn hình giả)
         hsv = cv2.cvtColor(face_crop, cv2.COLOR_BGR2HSV)
         sat_mean = float(np.mean(hsv[:, :, 1]))
-        is_natural_color = sat_mean <= 185.0
+        is_natural_color = sat_mean <= 190.0
 
-        # 5. Tỷ lệ kích thước mặt so với khung hình (chống đặt sát camera < 20cm gây méo mắt cá)
+        # 5. Tỷ lệ kích thước mặt so với khung hình (chống đặt quá sát camera < 15cm)
         face_ratio = bw / float(w)
-        is_distance_ok = 0.25 <= face_ratio <= 0.75
+        is_distance_ok = 0.18 <= face_ratio <= 0.85
 
         # Tổng hợp kết luận
         issues = []

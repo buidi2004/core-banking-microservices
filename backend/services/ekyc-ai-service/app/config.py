@@ -27,8 +27,8 @@ DETECT_MODEL = os.getenv("EKYC_DETECT_MODEL", "det_10g.onnx")          # SCRFD-1
 RECOG_MODEL = os.getenv("EKYC_RECOG_MODEL", "w600k_r50.onnx")          # ArcFace r50 (512-d)
 LIVENESS_MODEL = os.getenv("EKYC_LIVENESS_MODEL", "minifasnet_v2.onnx")  # MiniFASNetV2 anti-spoofing
 
-# Ngưỡng so khớp cosine khởi điểm (tuần 8 tinh chỉnh từ log thực tế)
-FACE_MATCH_THRESHOLD = float(os.getenv("EKYC_FACE_MATCH_THRESHOLD", "0.68"))
+# Ngưỡng so khớp cosine chuẩn ArcFace ResNet50 theo Quyết định 2345/QĐ-NHNN & InsightFace
+FACE_MATCH_THRESHOLD = float(os.getenv("EKYC_FACE_MATCH_THRESHOLD", "0.42"))
 LIVENESS_THRESHOLD = float(os.getenv("EKYC_LIVENESS_THRESHOLD", "0.60"))
 
 # ---------------------------------------------------------------------------

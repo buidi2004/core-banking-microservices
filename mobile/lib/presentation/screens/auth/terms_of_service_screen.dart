@@ -8,15 +8,61 @@ import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class TermsOfServiceScreen extends StatefulWidget {
-  const TermsOfServiceScreen({super.key});
+  final bool isRegistrationGate;
+
+  const TermsOfServiceScreen({
+    super.key,
+    this.isRegistrationGate = false,
+  });
 
   @override
   State<TermsOfServiceScreen> createState() => _TermsOfServiceScreenState();
 }
 
 class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _hasReachedBottom = false;
+  double _scrollProgress = 0.0;
   bool _isAgreed = true;
   int _selectedCategoryIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Nếu là bước bắt buộc đăng ký, yêu cầu người dùng phải cuộn xuống đáy
+    _hasReachedBottom = !widget.isRegistrationGate;
+    _isAgreed = !widget.isRegistrationGate;
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final current = _scrollController.position.pixels;
+    if (maxScroll > 0) {
+      final p = (current / maxScroll).clamp(0.0, 1.0);
+      if ((p - _scrollProgress).abs() > 0.03) {
+        setState(() => _scrollProgress = p);
+      }
+    }
+    if (current >= maxScroll - 40) {
+      if (!_hasReachedBottom) {
+        setState(() {
+          _hasReachedBottom = true;
+          _isAgreed = true;
+          _scrollProgress = 1.0;
+        });
+        HapticFeedback.mediumImpact();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   final List<String> _categories = [
     'Toàn bộ điều khoản',
@@ -110,7 +156,9 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Điều Khoản Dịch Vụ'),
+        title: Text(widget.isRegistrationGate
+            ? 'Điều Khoản Mở Tài Khoản'
+            : 'Điều Khoản Dịch Vụ'),
         backgroundColor: Colors.transparent,
         flexibleSpace: const AppBarSeamFade(),
         actions: [
@@ -128,13 +176,71 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
           ),
         ],
       ),
+      bottomNavigationBar:
+          widget.isRegistrationGate ? _buildStickyBottomBar() : null,
       body: SafeArea(
         child: SingleChildScrollView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          padding: EdgeInsets.fromLTRB(
+              20, 12, 20, widget.isRegistrationGate ? 120 : 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (widget.isRegistrationGate) ...[
+                // Banner bắt buộc đọc điều khoản
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: AppColors.emeraldGreen.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.emeraldGreen.withOpacity(0.35),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: AppColors.emeraldGreen,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          CupertinoIcons.shield_lefthalf_fill,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'BƯỚC 1: XÁC NHẬN THỎA THUẬN NGÂN HÀNG SỐ',
+                              style: TextStyle(
+                                color: AppColors.emeraldGreen,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Theo Nghị định 13/2023/NĐ-CP & Thông tư 17/2024/TT-NHNN, quý khách vui lòng cuộn xuống cuối trang để chấp thuận điều khoản trước khi mở tài khoản ví.',
+                              style: AppTypography.bodySmall(
+                                color: AppColors.textSecondaryLight,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               // Header Notice Card
               Container(
                 padding: const EdgeInsets.all(16),
@@ -380,21 +486,38 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
               ElevatedButton(
                 onPressed: _isAgreed
                     ? () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: AppColors.emeraldGreen,
-                            content: Text(
-                                'Xác nhận đồng ý Điều khoản & Điều kiện thành công!'),
-                          ),
-                        );
-                        if (context.canPop()) {
-                          context.pop();
+                        if (widget.isRegistrationGate) {
+                          _proceedToRegister();
                         } else {
-                          context.go('/');
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: AppColors.emeraldGreen,
+                              content: Text(
+                                  'Xác nhận đồng ý Điều khoản & Điều kiện thành công!'),
+                            ),
+                          );
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/');
+                          }
                         }
                       }
-                    : null,
-                child: const Text('Tôi Đã Đọc Và Hoàn Toàn Đồng Ý'),
+                    : () {
+                        HapticFeedback.selectionClick();
+                        if (_scrollController.hasClients) {
+                          _scrollController.animateTo(
+                            _scrollController.position.maxScrollExtent,
+                            duration: const Duration(milliseconds: 700),
+                            curve: Curves.easeOutCubic,
+                          );
+                        }
+                      },
+                child: Text(widget.isRegistrationGate
+                    ? (_hasReachedBottom
+                        ? 'Chấp Nhận Điều Khoản & Mở Tài Khoản'
+                        : 'Cuộn xuống cuối để chấp nhận (${(_scrollProgress * 100).toInt()}%)')
+                    : 'Tôi Đã Đọc Và Hoàn Toàn Đồng Ý'),
               ),
               const SizedBox(height: 20),
 
@@ -464,6 +587,131 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _proceedToRegister() {
+    HapticFeedback.mediumImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        backgroundColor: AppColors.emeraldGreen,
+        content: Text(
+            'Đã chấp thuận Điều khoản dịch vụ! Bắt đầu đăng ký tài khoản.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    context.pushReplacement('/auth/register', extra: {'termsAccepted': true});
+  }
+
+  Widget _buildStickyBottomBar() {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+          20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceLight.withOpacity(0.96),
+        border: const Border(
+          top: BorderSide(color: AppColors.borderLight, width: 0.8),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!_hasReachedBottom) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(CupertinoIcons.arrow_down_circle_fill,
+                        size: 15, color: AppColors.accentGold),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Cuộn xuống cuối để mở khóa',
+                      style: AppTypography.bodySmall(
+                          color: AppColors.textSecondaryLight),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${(_scrollProgress * 100).toInt()}%',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: _scrollProgress,
+                minHeight: 4,
+                backgroundColor: AppColors.borderLight,
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.emeraldGreen),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: _hasReachedBottom
+                  ? _proceedToRegister
+                  : () {
+                      HapticFeedback.selectionClick();
+                      if (_scrollController.hasClients) {
+                        _scrollController.animateTo(
+                          _scrollController.position.maxScrollExtent,
+                          duration: const Duration(milliseconds: 700),
+                          curve: Curves.easeOutCubic,
+                        );
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _hasReachedBottom
+                    ? AppColors.primary
+                    : AppColors.surfaceLight,
+                foregroundColor: _hasReachedBottom
+                    ? Colors.white
+                    : AppColors.textMutedLight,
+                elevation: _hasReachedBottom ? 4 : 0,
+                side: _hasReachedBottom
+                    ? BorderSide.none
+                    : const BorderSide(color: AppColors.borderLight),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              icon: Icon(
+                _hasReachedBottom
+                    ? CupertinoIcons.checkmark_seal_fill
+                    : CupertinoIcons.arrow_down,
+                size: 18,
+              ),
+              label: Text(
+                _hasReachedBottom
+                    ? 'Tôi Đã Đọc Và Chấp Nhận Điều Khoản'
+                    : 'Cuộn xuống cuối để chấp nhận (${(_scrollProgress * 100).toInt()}%)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.5,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

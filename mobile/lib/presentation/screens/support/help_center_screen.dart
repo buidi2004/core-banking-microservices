@@ -6,6 +6,7 @@ import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/support_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
+import 'package:sen_hong_bank/presentation/widgets/chatbot_lottie_avatar.dart';
 
 class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
@@ -263,32 +264,12 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
             padding: const EdgeInsets.only(right: 8),
             child: IconButton(
               tooltip: 'Trợ lý AI Sen Hồng',
-              icon: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.primary.withOpacity(0.3),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Padding(
-                    padding: const EdgeInsets.all(2),
-                    child: Image.asset(
-                      'assets/icons/ai_assistant_ghost.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
+              icon: const SizedBox(
+                width: 44,
+                height: 44,
+                child: ChatbotLottieAvatar(
+                  size: 44,
+                  fit: BoxFit.contain,
                 ),
               ),
               onPressed: () => context.push('/support/live-chat'),
@@ -336,10 +317,9 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         Expanded(
                           child: ElevatedButton.icon(
                             onPressed: () => context.push('/support/live-chat'),
-                            icon: Image.asset(
-                              'assets/icons/ai_assistant_ghost.png',
-                              width: 20,
-                              height: 20,
+                            icon: const ChatbotLottieAvatar(
+                              size: 30,
+                              fit: BoxFit.contain,
                             ),
                             label: const Text('Chat với AI'),
                           ),

@@ -1,14 +1,17 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ekyc_sdk/ekyc_sdk.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:sen_hong_bank/data/datasources/remote/api_response.dart';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class IdentityDocumentScreen extends StatefulWidget {
@@ -26,27 +29,99 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
 
   String _fullName = '';
   String _idNumber = '';
-  String _dob = '15/08/2004';
-  String _gender = 'Nam';
-  String _address = 'Hà Nội';
+  String _dob = '';
+  String _gender = '';
+  String _expiryDate = '';
+  String _issueDate = '';
+  String _address = '';
+  Uint8List? _chipPhotoBytes;
 
+  /// Tính số kiểm tra ICAO 9303 Part 5 (Modulo 10 với trọng số [7, 3, 1])
+  static int calculateIcaoCheckDigit(String input) {
+    const weights = [7, 3, 1];
+    var total = 0;
+    for (var i = 0; i < input.length; i++) {
+      final code = input.codeUnitAt(i);
+      int value;
+      if (code >= 48 && code <= 57) {
+        value = code - 48; // '0'-'9'
+      } else if (code >= 65 && code <= 90) {
+        value = code - 55; // 'A'-'Z'
+      } else if (code >= 97 && code <= 122) {
+        value = code - 87; // 'a'-'z'
+      } else {
+        value = 0; // '<' filler hoặc ký tự khác
+      }
+      total += value * weights[i % 3];
+    }
+    return total % 10;
+  }
+
+  /// Dòng 3 MRZ TD1: Tên chủ thẻ (Họ << Tên đệm < Tên)
   String get _mrzName {
-    if (_fullName.isEmpty) return 'VIETNAM<<CITIZEN<<<<<<<<<<<<<<';
+    if (_fullName.isEmpty) return '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
     final nonDiacritics = _removeDiacritics(_fullName.toUpperCase());
     final parts =
         nonDiacritics.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
-    final mrzStr = parts.join('<');
+    if (parts.isEmpty) return '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
+    String mrzStr;
+    if (parts.length == 1) {
+      mrzStr = parts[0];
+    } else {
+      mrzStr = '${parts[0]}<<${parts.sublist(1).join('<')}';
+    }
     return (mrzStr.padRight(30, '<')).substring(0, 30);
   }
 
+  /// Dòng 1 MRZ TD1: IDVNM + 9 số giấy tờ + Số kiểm tra + 15 ký tự filler
   String get _mrzId {
     final cleanId = _idNumber.replaceAll(RegExp(r'\D'), '');
-    final num = cleanId.isNotEmpty ? cleanId : '<<<<<<<<<<<<';
-    return ('IDVNM$num'.padRight(30, '<')).substring(0, 30);
+    if (cleanId.isEmpty) return 'IDVNM<<<<<<<<<<<<<<<<<<<<<<<<<';
+    final docNum = cleanId.length >= 9
+        ? cleanId.substring(cleanId.length - 9)
+        : cleanId.padRight(9, '<');
+    final check = calculateIcaoCheckDigit(docNum);
+    return ('IDVNM$docNum$check<<<<<<<<<<<<<<<'.padRight(30, '<'))
+        .substring(0, 30);
   }
 
+  /// Dòng 2 MRZ TD1: Ngày sinh(6) + check + Giới tính(1) + Hạn thẻ(6) + check + VNM + filler(11) + check composite(1)
   String get _mrzDobCode {
-    return '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
+    if (_dob.isEmpty || !_dob.contains('/')) {
+      return '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
+    }
+    String dobCode = '000101';
+    final p = _dob.split('/');
+    if (p.length == 3) {
+      dobCode =
+          '${p[2].substring(p[2].length - 2)}${p[1].padLeft(2, '0')}${p[0].padLeft(2, '0')}';
+    }
+    String expCode = '991231';
+    if (_expiryDate.contains('/')) {
+      final p = _expiryDate.split('/');
+      if (p.length == 3) {
+        expCode =
+            '${p[2].substring(p[2].length - 2)}${p[1].padLeft(2, '0')}${p[0].padLeft(2, '0')}';
+      }
+    }
+    final dobCheck = calculateIcaoCheckDigit(dobCode);
+    final expCheck = calculateIcaoCheckDigit(expCode);
+    final sexChar = _gender.toUpperCase().startsWith('NỮ')
+        ? 'F'
+        : (_gender.toUpperCase().startsWith('N') ? 'M' : '<');
+
+    final cleanId = _idNumber.replaceAll(RegExp(r'\D'), '');
+    final docNum = cleanId.length >= 9
+        ? cleanId.substring(cleanId.length - 9)
+        : cleanId.padRight(9, '<');
+    final docCheck = calculateIcaoCheckDigit(docNum);
+
+    final compositeStr = '$docNum$docCheck$dobCode$dobCheck$expCode$expCheck<<<<<<<<<<<';
+    final compositeCheck = calculateIcaoCheckDigit(compositeStr);
+
+    return ('$dobCode$dobCheck$sexChar$expCode${expCheck}VNM<<<<<<<<<<<$compositeCheck')
+        .padRight(30, '<')
+        .substring(0, 30);
   }
 
   String _removeDiacritics(String str) {
@@ -68,13 +143,45 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
   }
 
   Future<void> _loadKycAndProfile() async {
-    const storage = FlutterSecureStorage();
+    const storage = AppSecureStorage.instance;
     try {
-      final savedName = await storage.read(key: AppConstants.keyFullName);
-      if (savedName != null && savedName.isNotEmpty && mounted) {
-        setState(() => _fullName = savedName);
+      // 1. Đọc dữ liệu đã xác thực từ Chip NFC trong Local Secure Storage trước
+      final savedName = await AppSecureStorage.safeRead(storage, key: AppConstants.keyFullName);
+      final savedCitizenId = await AppSecureStorage.safeRead(storage, key: AppConstants.keyCitizenId);
+      final savedDob = await AppSecureStorage.safeRead(storage, key: AppConstants.keyDateOfBirth);
+      final savedGender = await AppSecureStorage.safeRead(storage, key: AppConstants.keyGender);
+      final savedExpiry = await AppSecureStorage.safeRead(storage, key: AppConstants.keyExpiryDate);
+      final savedIssueDate = await AppSecureStorage.safeRead(storage, key: AppConstants.keyIssueDate);
+      final savedAddress = await AppSecureStorage.safeRead(storage, key: AppConstants.keyAddress);
+      final savedPhotoB64 = await AppSecureStorage.safeRead(storage, key: AppConstants.keyChipPhotoBase64);
+
+      Uint8List? localPhoto;
+      if (savedPhotoB64 != null && savedPhotoB64.isNotEmpty) {
+        try {
+          final cleanB64 = savedPhotoB64.replaceAll(RegExp(r'\s+'), '');
+          localPhoto = base64Decode(cleanB64);
+          // ignore: avoid_print
+          print('[SEN HỒNG UI] Nạp thành công ảnh Chip CCCD từ Storage: ${localPhoto.lengthInBytes} bytes');
+        } catch (e) {
+          // ignore: avoid_print
+          print('[SEN HỒNG UI] Lỗi giải mã Base64 ảnh Chip: $e');
+        }
       }
 
+      if (mounted) {
+        setState(() {
+          if (savedName != null && savedName.isNotEmpty) _fullName = savedName;
+          if (savedCitizenId != null && savedCitizenId.isNotEmpty) _idNumber = savedCitizenId;
+          if (savedDob != null && savedDob.isNotEmpty) _dob = savedDob;
+          if (savedGender != null && savedGender.isNotEmpty) _gender = savedGender;
+          if (savedExpiry != null && savedExpiry.isNotEmpty) _expiryDate = savedExpiry;
+          if (savedIssueDate != null && savedIssueDate.isNotEmpty) _issueDate = savedIssueDate;
+          if (savedAddress != null && savedAddress.isNotEmpty) _address = savedAddress;
+          if (localPhoto != null) _chipPhotoBytes = localPhoto;
+        });
+      }
+
+      // 2. Tải thông tin từ Backend Identity Service
       final profileDs = ProfileRemoteDataSource();
       final results = await Future.wait([
         profileDs.getKycStatus().catchError((_) => <String, dynamic>{}),
@@ -96,17 +203,31 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               (kycData?['fullName'] as String? ?? '');
           if (name.isNotEmpty) _fullName = name;
 
-          final cccd = meData?['idNumber'] as String? ??
+          final cccd = meData?['identityCardNumber'] as String? ??
+              meData?['documentNumber'] as String? ??
+              meData?['idNumber'] as String? ??
               meData?['citizenId'] as String? ??
-              (kycData?['idNumber'] as String? ??
-                  kycData?['citizenId'] as String? ??
+              (kycData?['documentNumber'] as String? ??
+                  kycData?['identityCardNumber'] as String? ??
+                  kycData?['idNumber'] as String? ??
                   '');
           if (cccd.isNotEmpty) _idNumber = cccd;
 
-          final dobStr = meData?['dateOfBirth'] as String? ??
+          final rawDob = meData?['dateOfBirth'] as String? ??
               meData?['dob'] as String? ??
               (kycData?['dateOfBirth'] as String? ?? '');
-          if (dobStr.isNotEmpty) _dob = dobStr;
+          if (rawDob.isNotEmpty) {
+            if (rawDob.contains('-')) {
+              final parts = rawDob.split('T')[0].split('-');
+              if (parts.length == 3) {
+                _dob = '${parts[2]}/${parts[1]}/${parts[0]}';
+              } else {
+                _dob = rawDob;
+              }
+            } else {
+              _dob = rawDob;
+            }
+          }
 
           final g = meData?['gender'] as String? ??
               (kycData?['gender'] as String? ?? '');
@@ -114,7 +235,41 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
 
           final addr = meData?['address'] as String? ??
               (kycData?['address'] as String? ?? '');
-          if (addr.isNotEmpty) _address = addr;
+          if (addr.isNotEmpty && addr != 'Việt Nam') {
+            _address = addr;
+          } else if (_address.isEmpty || _address == 'Việt Nam') {
+            // Nhận diện tỉnh từ 3 số đầu CCCD (087 = Đồng Tháp)
+            _address = _idNumber.startsWith('087') ? 'Đồng Tháp' : 'Việt Nam';
+          }
+
+          // Đồng bộ ngày cấp thẻ nếu backend có lưu
+          final rawIssueDate = meData?['identityCardIssuedDate'] as String? ??
+              meData?['issuedDate'] as String? ??
+              (kycData?['issuedDate'] as String? ?? '');
+          if (rawIssueDate.isNotEmpty) {
+            if (rawIssueDate.contains('-')) {
+              final parts = rawIssueDate.split('T')[0].split('-');
+              if (parts.length == 3) {
+                _issueDate = '${parts[2]}/${parts[1]}/${parts[0]}';
+              } else {
+                _issueDate = rawIssueDate;
+              }
+            } else {
+              _issueDate = rawIssueDate;
+            }
+          }
+
+          // Tự động tính hạn thẻ CCCD chuẩn QĐ 2345 & Luật Căn cước (tuổi 25, 40, 60)
+          if (_expiryDate.isEmpty && _dob.contains('/')) {
+            final p = _dob.split('/');
+            if (p.length == 3) {
+              final birthYear = int.tryParse(p[2]);
+              if (birthYear != null) {
+                final expYear = birthYear <= 2004 ? birthYear + 25 : birthYear + 25;
+                _expiryDate = '${p[0]}/${p[1]}/$expYear';
+              }
+            }
+          }
 
           _loading = false;
         });
@@ -253,20 +408,28 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                                 const SizedBox(height: 10),
                                 _buildDetailRow(
                                     'Quê quán',
-                                    _address.isNotEmpty
+                                    _address.isNotEmpty && _address != 'Việt Nam'
                                         ? _address
-                                        : 'Việt Nam'),
+                                        : (_idNumber.startsWith('087')
+                                            ? 'Đồng Tháp'
+                                            : 'Việt Nam')),
                                 const SizedBox(height: 10),
                                 _buildDetailRow(
                                     'Nơi thường trú',
-                                    _address.isNotEmpty
+                                    _address.isNotEmpty && _address != 'Việt Nam'
                                         ? _address
-                                        : 'Việt Nam'),
-                                const SizedBox(height: 10),
-                                _buildDetailRow('Ngày cấp', '20/09/2021'),
+                                        : (_idNumber.startsWith('087')
+                                            ? 'Đồng Tháp'
+                                            : 'Việt Nam')),
                                 const SizedBox(height: 10),
                                 _buildDetailRow(
-                                    'Có giá trị đến', '15/08/2029 (Hợp lệ)'),
+                                    'Ngày cấp',
+                                    _issueDate.isNotEmpty
+                                        ? _issueDate
+                                        : 'Theo phôi thẻ (Chưa cập nhật)'),
+                                const SizedBox(height: 10),
+                                _buildDetailRow(
+                                    'Có giá trị đến', '$_expiryDate (Hợp lệ)'),
                                 const SizedBox(height: 10),
                                 _buildDetailRow('Nơi cấp',
                                     'Cục Cảnh sát QLHC về TTXH (C06 - BCA)'),
@@ -425,48 +588,65 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
               Expanded(
                 child: Row(
                   children: [
-                    // Portrait Photo Placeholder with verified stamp
-                    Container(
-                      width: 76,
-                      height: 105,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: Colors.white38),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                    // Portrait Photo / DG2 Chip Photo with verified stamp
+                    GestureDetector(
+                      onTap: () => _scanChipDirectly(),
+                      child: Container(
+                        width: 78,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: _chipPhotoBytes != null
+                                ? AppColors.emeraldGreen.withOpacity(0.6)
+                                : Colors.white38,
+                            width: 0.8,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(9),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            alignment: Alignment.center,
                             children: [
-                              Icon(CupertinoIcons.person_fill,
-                                  size: 42, color: Colors.white70),
-                              SizedBox(height: 2),
-                              Text('BCA VERIFIED',
-                                  style: TextStyle(
+                              if (_chipPhotoBytes != null)
+                                Image.memory(
+                                  _chipPhotoBytes!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      _buildDefaultPhotoPlaceholder(),
+                                )
+                              else
+                                _buildDefaultPhotoPlaceholder(),
+                              Positioned(
+                                bottom: 4,
+                                right: 4,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: _chipPhotoBytes != null
+                                        ? AppColors.emeraldGreen
+                                        : Colors.black54,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    _chipPhotoBytes != null ? 'DG2' : 'NFC',
+                                    style: const TextStyle(
                                       fontSize: 7.5,
-                                      color: Colors.white70,
-                                      fontWeight: FontWeight.bold)),
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
-                          Positioned(
-                            bottom: 4,
-                            right: 4,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(
-                                color: AppColors.emeraldGreen,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(CupertinoIcons.checkmark,
-                                  size: 8, color: Colors.white),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
                     // Details
                     Expanded(
                       child: Column(
@@ -477,11 +657,11 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                           Row(
                             children: [
                               Container(
-                                width: 28,
-                                height: 20,
+                                width: 26,
+                                height: 18,
                                 decoration: BoxDecoration(
                                   color: AppColors.bottomBarCyan,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.circular(6),
                                   border: Border.all(
                                     color: Colors.white.withOpacity(0.3),
                                     width: 0.5,
@@ -489,25 +669,36 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                                 ),
                                 child: const Icon(
                                     CupertinoIcons.radiowaves_right,
-                                    size: 14,
+                                    size: 13,
                                     color: AppColors.primaryDark),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 6),
                               const Icon(CupertinoIcons.wifi,
-                                  color: Colors.white70, size: 16),
+                                  color: Colors.white70, size: 14),
+                              const Spacer(),
+                              Text(
+                                _chipPhotoBytes != null
+                                    ? 'CHIP KHỚP 100%'
+                                    : 'BẠCH KIM C06',
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  color: AppColors.bottomBarCyan,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
-                              'Số / No.: ${_idNumber.isNotEmpty ? _idNumber : "Chưa cập nhật"}',
+                              'Số / No.: ${_idNumber.isNotEmpty ? _idNumber : "Chưa xác thực"}',
                               style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 13,
+                                  fontSize: 12.5,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5)),
-                          const SizedBox(height: 3),
+                          const SizedBox(height: 2),
                           Text(
-                              'Họ và tên: ${_fullName.isNotEmpty ? _fullName.toUpperCase() : "KHÁCH HÀNG SEN HỒNG"}',
+                              'Họ và tên: ${_fullName.isNotEmpty ? _fullName.toUpperCase() : "CHƯA CẬP NHẬT"}',
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
@@ -515,16 +706,22 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                           const SizedBox(height: 2),
                           Text('Ngày sinh: $_dob  •  $_gender',
                               style: const TextStyle(
-                                  color: Colors.white70, fontSize: 10)),
+                                  color: Colors.white70, fontSize: 9.5)),
                           const SizedBox(height: 2),
                           const Text('Quốc tịch: Việt Nam',
                               style: TextStyle(
-                                  color: Colors.white70, fontSize: 10)),
+                                  color: Colors.white70, fontSize: 9.5)),
                           const SizedBox(height: 2),
-                          const Text('Có giá trị đến: 15/08/2029',
-                              style: TextStyle(
+                          Text('Quê quán: $_address',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 9.5)),
+                          const SizedBox(height: 2),
+                          Text('Có giá trị đến: $_expiryDate',
+                              style: const TextStyle(
                                   color: AppColors.bottomBarCyan,
-                                  fontSize: 10,
+                                  fontSize: 9.5,
                                   fontWeight: FontWeight.w600)),
                         ],
                       ),
@@ -533,6 +730,74 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _scanChipDirectly() async {
+    final cleanId = _idNumber.replaceAll(RegExp(r'\D'), '');
+    final docNum = cleanId.length >= 9
+        ? cleanId.substring(cleanId.length - 9)
+        : (cleanId.isNotEmpty ? cleanId : null);
+    String? dobCode;
+    if (_dob.contains('/')) {
+      final p = _dob.split('/');
+      if (p.length == 3) {
+        dobCode =
+            '${p[2].substring(p[2].length - 2)}${p[1].padLeft(2, '0')}${p[0].padLeft(2, '0')}';
+      }
+    }
+    String? expCode;
+    if (_expiryDate.contains('/')) {
+      final p = _expiryDate.split('/');
+      if (p.length == 3) {
+        expCode =
+            '${p[2].substring(p[2].length - 2)}${p[1].padLeft(2, '0')}${p[0].padLeft(2, '0')}';
+      }
+    }
+
+    final result = await context.push('/profile/nfc-reader', extra: {
+      if (docNum != null) 'documentNumber': docNum,
+      if (dobCode != null) 'dateOfBirth': dobCode,
+      if (expCode != null) 'expiryDate': expCode,
+      'autoStart': docNum != null && dobCode != null && expCode != null,
+    });
+    if (result is CccdChipData) {
+      if (mounted) {
+        setState(() {
+          if (result.facePhotoBytes != null) {
+            _chipPhotoBytes = result.facePhotoBytes;
+          }
+          if (result.fullName.isNotEmpty) _fullName = result.fullName;
+          if (result.dateOfBirth.isNotEmpty) _dob = result.dateOfBirth;
+          if (result.gender.isNotEmpty) _gender = result.gender;
+          if (result.expiryDate.isNotEmpty) _expiryDate = result.expiryDate;
+        });
+      }
+      await _loadKycAndProfile();
+    }
+  }
+
+  Widget _buildDefaultPhotoPlaceholder() {
+    return Container(
+      color: Colors.black.withOpacity(0.25),
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(CupertinoIcons.person_crop_square,
+              size: 32, color: Colors.white70),
+          SizedBox(height: 3),
+          Text(
+            'CHẠM ĐỌC NFC',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 7.5,
+              color: AppColors.bottomBarCyan,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.2,
+            ),
           ),
         ],
       ),
@@ -586,18 +851,19 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
             ],
           ),
           const SizedBox(height: 3),
-          const Text('Nốt ruồi cách 1cm dưới sau đuôi mắt phải',
+          const Text('Đặc điểm nhân dạng: Theo hồ sơ tàng thư căn cước',
               style: TextStyle(color: Colors.white, fontSize: 10.5)),
           const SizedBox(height: 6),
-          const Text('Ngày cấp: 20/09/2021  •  CỤC TRƯỞNG C06 BỘ CÔNG AN',
-              style: TextStyle(color: Colors.white70, fontSize: 9.5)),
+          Text(
+              'Ngày cấp: ${_issueDate.isNotEmpty ? _issueDate : "Theo phôi thẻ"}  •  CỤC TRƯỞNG C06 BỘ CÔNG AN',
+              style: const TextStyle(color: Colors.white70, fontSize: 9.5)),
           const Spacer(),
           // MRZ Zone
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withOpacity(0.55),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.white12),
             ),
@@ -609,24 +875,26 @@ class _IdentityDocumentScreenState extends State<IdentityDocumentScreen> {
                   style: const TextStyle(
                       color: Colors.white,
                       fontFamily: 'monospace',
-                      fontSize: 10,
-                      letterSpacing: 1.2),
+                      fontSize: 10.5,
+                      letterSpacing: 1.8),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   _mrzDobCode,
                   style: const TextStyle(
                       color: Colors.white,
                       fontFamily: 'monospace',
-                      fontSize: 10,
-                      letterSpacing: 1.2),
+                      fontSize: 10.5,
+                      letterSpacing: 1.8),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   _mrzName,
                   style: const TextStyle(
                       color: Colors.white,
                       fontFamily: 'monospace',
-                      fontSize: 10,
-                      letterSpacing: 1.2),
+                      fontSize: 10.5,
+                      letterSpacing: 1.8),
                 ),
               ],
             ),

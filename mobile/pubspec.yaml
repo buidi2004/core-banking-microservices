@@ -54,6 +54,7 @@ dependencies:
   # eKYC Biometric & NFC SDK
   ekyc_sdk:
     path: ../packages/ekyc_sdk
+  lottie: ^3.8.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

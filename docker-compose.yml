@@ -420,27 +420,40 @@ services:
     build: ./backend/services/chatbot-service
     container_name: ewallet-chatbot-service
     restart: unless-stopped
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
-    mem_limit: 1024m
+    # Production: KHÔNG dùng --reload (dev-only, watch file tốn CPU); 1 worker vì
+    # mỗi worker load riêng model embedding ~470MB.
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    # 2GB: đủ chỗ cho e5-small (~470MB) + headroom reranker nếu bật qua env
+    mem_limit: 2048m
     env_file:
       - ./backend/services/chatbot-service/.env
     expose:
       - "8000"
     ports:
-      - "8000:8000"
+      # Bind loopback-only: gateway gọi qua docker network; host chỉ truy cập được từ máy local
+      # (xác thực X-Internal-Key vẫn bắt buộc ở tầng app).
+      - "127.0.0.1:8000:8000"
     environment:
       DATABASE_URL: postgresql://chatbot_db_user:ChatbotDb#Secure2025!@postgres-chatbot:5432/ewallet_chatbot_db
-      LLM_BASE_URL: ${LLM_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
-      LLM_API_KEY: ${LLM_API_KEY:-}
-      LLM_BACKUP_API_KEY: ${LLM_BACKUP_API_KEY:-}
-      LLM_TERTIARY_API_KEY: ${LLM_TERTIARY_API_KEY:-}
-      LLM_MODEL: ${LLM_MODEL:-gemini-3.5-flash-lite}
+      # LLM_API_KEY/LLM_MODEL... KHÔNG khai báo ở đây: `${VAR:-}` nội suy từ host (rỗng)
+      # sẽ GHI ĐÈ key trong backend/services/chatbot-service/.env (env_file) làm chết luồng LLM.
+      # Các biến LLM lấy từ env_file của service.
       EMBED_MODEL: intfloat/multilingual-e5-small
       DATA_DIR: /app/data
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-senhong-internal-chatbot-key-2026}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-20}
+      # Rerank cross-encoder: đo được trên golden set 133 câu (eval/results_rerank.json):
+      # recall +0.28pp, no-info FP KHÔNG giảm (điểm rerank adversarial max 0.74 vs real min 0.00
+      # — chồng lấn hoàn toàn, không ngưỡng tách được), latency +6.7s CPU → MẶC ĐỊNH TẮT.
+      # Bật lại khi có GPU hoặc model nhanh hơn: RERANK_ENABLED=true (cần mem_limit >= 2g).
+      RERANK_ENABLED: ${RERANK_ENABLED:-false}
+      RERANK_MODEL: ${RERANK_MODEL:-BAAI/bge-reranker-base}
+      RERANK_MIN_SCORE: ${RERANK_MIN_SCORE:--5.0}
     volumes:
       - ./backend/services/chatbot-service/app:/app/app
       - ./backend/services/chatbot-service/data:/app/data
+      - ./backend/services/chatbot-service/eval:/app/eval
+      - ./backend/services/chatbot-service/tests:/app/tests
       - chatbot-cache:/root/.cache
     depends_on:
       postgres-chatbot:
@@ -461,13 +474,14 @@ services:
     environment:
       EKYC_REDIS_URL: redis://redis:6379/2
       EKYC_SESSION_TTL: "240"
-      EKYC_FACE_MATCH_THRESHOLD: "0.68"
+      EKYC_FACE_MATCH_THRESHOLD: "0.42"
       EKYC_ONNX_PROVIDERS: CUDAExecutionProvider,CPUExecutionProvider
       IDENTITY_SERVICE_URL: http://identity-service:8081
       INTERNAL_API_KEY: senhong-internal-ekyc-key-2026
       NVIDIA_VISIBLE_DEVICES: all
       NVIDIA_DRIVER_CAPABILITIES: compute,utility
     volumes:
+      - ./backend/services/ekyc-ai-service/app:/app/app
       - ./backend/services/ekyc-ai-service/certs:/app/certs:ro
     ports:
       - "8900:8900"

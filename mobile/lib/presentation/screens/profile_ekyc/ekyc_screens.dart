@@ -1,16 +1,27 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ekyc_sdk/ekyc_sdk.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
 import 'package:sen_hong_bank/core/theme/app_typography.dart';
 import 'package:sen_hong_bank/data/datasources/remote/ekyc_ai_remote_datasource.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
+import 'package:sen_hong_bank/presentation/widgets/user_avatar_widget.dart';
 
 class EKycScreen extends StatefulWidget {
-  const EKycScreen({super.key});
+  final bool isMandatoryOnboarding;
+  final String? nextRoute;
+
+  const EKycScreen({
+    super.key,
+    this.isMandatoryOnboarding = false,
+    this.nextRoute,
+  });
 
   @override
   State<EKycScreen> createState() => _EKycScreenState();
@@ -29,6 +40,8 @@ class _EKycScreenState extends State<EKycScreen> {
 
   // Dữ liệu chip NFC thật (DG1/DG2) — ảnh chân dung làm reference xác thực
   CccdChipData? _chipData;
+  MrzResult? _mrzResult;
+  FrontCccdResult? _frontCccdData;
 
   bool get _isTestEnv =>
       WidgetsBinding.instance.runtimeType.toString().contains('Test');
@@ -128,20 +141,105 @@ class _EKycScreenState extends State<EKycScreen> {
         title: 'Chụp Mặt Trước CCCD',
         hint:
             'Đặt mặt trước thẻ nằm trọn vẹn trong khung hình, rõ nét, không lóa sáng.',
-        onCaptured: (bytes) {
+        onCaptured: (bytes) async {
           _frontIdBytes = bytes;
-          setState(() => _step = 2);
+          HapticFeedback.mediumImpact();
+          setState(() => _isCapturing = true);
+
+          // Tự động quét OCR mặt trước: 12 số CCCD, ngày sinh, hạn dùng, họ tên
+          final frontData = await MrzScanner.scanFrontCard(bytes);
+          if (mounted) {
+            setState(() {
+              _isCapturing = false;
+              _frontCccdData = frontData;
+              _step = 2;
+            });
+            if (frontData?.cccdNumber != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Đã nhận diện CCCD: ${frontData!.cccdNumber}'
+                    '${frontData.fullName != null ? " (${frontData.fullName})" : ""}',
+                  ),
+                  backgroundColor: AppColors.emeraldGreen,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            }
+          }
         },
       );
     } else if (_step == 2) {
       await _openCardCamera(
         title: 'Chụp Mặt Sau CCCD (MRZ)',
         hint: 'Đặt mặt sau thẻ, rõ dải mã MRZ và chip vi mạch.',
-        onCaptured: (bytes) {
+        onCaptured: (bytes) async {
           _backIdBytes = bytes;
-          setState(() => _step = 3);
+          HapticFeedback.mediumImpact();
+          setState(() {
+            _isCapturing = true;
+          });
+
+          // Tự động phân tích chuỗi MRZ từ mặt sau thẻ để nạp thông tin số thẻ & ngày sinh,
+          // kết hợp đối soát chéo với thông tin mặt trước để đạt độ chính xác 100%.
+          final mrz = await MrzScanner.scanFromImageBytes(
+            bytes,
+            frontData: _frontCccdData,
+            knownCccd12: _frontCccdData?.cccdNumber,
+          );
+
+          if (mounted) {
+            setState(() {
+              _isCapturing = false;
+              if (mrz != null) _mrzResult = mrz;
+            });
+
+            // TỰ ĐỘNG CHUYỂN TIẾP SANG ĐỌC CHIP NFC (SILENT AUTO-PIPELINING)
+            final docNum = mrz?.documentNumber ?? _frontCccdData?.documentNumber;
+            final dob = mrz?.birthDateYYMMDD ?? _frontCccdData?.birthDateYYMMDD;
+            final expiry = mrz?.expiryDateYYMMDD ?? _frontCccdData?.expiryDateYYMMDD;
+
+            await _readNfcChip(
+              docNum: docNum,
+              dob: dob,
+              expiry: expiry,
+              autoStart: true,
+            );
+
+            // Sau khi hoàn tất (hoặc đóng) NFC, chuyển tiếp sang bước 3 (Quét mặt)
+            if (mounted) {
+              setState(() => _step = 3);
+            }
+          }
         },
       );
+    } else if (_step == 3) {
+      await _openFaceCamera();
+    }
+  }
+
+  Future<void> _openFaceCamera() async {
+    final bytes = await Navigator.of(context).push<Uint8List>(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: EkycCameraView(
+              onCompleted: (bestFrame) async {
+                final b = await bestFrame.readAsBytes();
+                if (mounted) Navigator.of(context).pop(b);
+              },
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ),
+      ),
+    );
+    if (bytes != null && mounted) {
+      HapticFeedback.lightImpact();
+      setState(() => _selfieBytes = bytes);
+      await _runVerification(bytes);
     }
   }
 
@@ -170,7 +268,19 @@ class _EKycScreenState extends State<EKycScreen> {
   Future<void> _runVerification(Uint8List selfieBytes) async {
     if (_isCapturing) return;
     setState(() => _isCapturing = true);
-    assert(_backIdBytes != null, 'Chưa chụp mặt sau CCCD');
+    if (_chipData == null && _backIdBytes == null && _frontIdBytes == null) {
+      if (mounted) {
+        setState(() => _isCapturing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Vui lòng chụp thẻ CCCD hoặc đọc chip NFC trước khi xác thực khuôn mặt'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return;
+    }
     try {
       // Ưu tiên ảnh chân dung DG2 đọc từ chip NFC (chuẩn ICAO 9303);
       // nếu chưa đọc NFC thì dùng ảnh mặt trước CCCD đã chụp.
@@ -195,6 +305,9 @@ class _EKycScreenState extends State<EKycScreen> {
           res.decision == EkycDecision.manualReview) {
         HapticFeedback.heavyImpact();
         setState(() => _step = 4);
+        if (_chipData != null) {
+          _persistChipToStorage(_chipData!);
+        }
       } else {
         // Bị từ chối — cho chụp lại selfie (giữ nguyên ảnh thẻ đã chụp)
         HapticFeedback.lightImpact();
@@ -222,7 +335,75 @@ class _EKycScreenState extends State<EKycScreen> {
   }
 
   Future<void> _readNfcChip({String? docNum, String? dob, String? expiry, bool autoStart = false}) async {
-    final chip = await showModalBottomSheet<CccdChipData>(
+    HapticFeedback.lightImpact();
+    final chip = await context.push<CccdChipData>('/profile/nfc-reader', extra: {
+      if (docNum != null) 'documentNumber': docNum,
+      if (dob != null) 'dateOfBirth': dob,
+      if (expiry != null) 'expiryDate': expiry,
+      'autoStart': autoStart || (docNum != null && dob != null && expiry != null),
+    });
+    if (chip != null && mounted) {
+      setState(() => _chipData = chip);
+      HapticFeedback.heavyImpact();
+      _persistChipToStorage(chip);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Đã đọc chip CCCD: ${chip.fullName} — ảnh DG2 C06 sẽ dùng làm chuẩn đối chiếu'),
+          backgroundColor: AppColors.emeraldGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _persistChipToStorage(CccdChipData chip) async {
+    try {
+      const storage = AppSecureStorage.instance;
+      final cccd12 = _frontCccdData?.cccdNumber ??
+          _mrzResult?.fullCccdNumber ??
+          (chip.documentNumber.length == 12 ? chip.documentNumber : null);
+      final effectiveCccd = cccd12 ?? chip.documentNumber;
+
+      await AppSecureStorage.safeWrite(storage,
+          key: AppConstants.keyCitizenId, value: effectiveCccd);
+      await AppSecureStorage.safeWrite(storage,
+          key: AppConstants.keyFullName, value: chip.fullName);
+      if (chip.dateOfBirth.isNotEmpty) {
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyDateOfBirth, value: chip.dateOfBirth);
+      }
+      if (chip.gender.isNotEmpty) {
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyGender, value: chip.gender);
+      }
+      if (chip.expiryDate.isNotEmpty) {
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyExpiryDate, value: chip.expiryDate);
+      }
+      if (_mrzResult?.issueDate != null && _mrzResult!.issueDate!.isNotEmpty) {
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyIssueDate, value: _mrzResult!.issueDate!);
+      }
+      final address = _frontCccdData?.placeOfOrigin ?? _frontCccdData?.placeOfResidence;
+      if (address != null && address.isNotEmpty) {
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyAddress, value: address);
+      }
+      await AppSecureStorage.safeWrite(storage,
+          key: AppConstants.keyKycVerified, value: 'true');
+
+      if (chip.facePhotoBytes != null && chip.facePhotoBytes!.isNotEmpty) {
+        final b64 = base64Encode(chip.facePhotoBytes!);
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyChipPhotoBase64, value: b64);
+        UserAvatarNotifier.update('data:image/jpeg;base64,$b64');
+      }
+    } catch (_) {}
+  }
+
+  void _showNfcModal() {
+    showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(
@@ -233,51 +414,33 @@ class _EKycScreenState extends State<EKycScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(CupertinoIcons.radiowaves_right,
-                color: AppColors.primaryText, size: 54),
+                color: AppColors.primary, size: 54),
             const SizedBox(height: 14),
             Text('Đọc Chip CCCD Qua Sóng NFC',
-                style: AppTypography.titleLarge(color: AppColors.primaryText)),
+                style: AppTypography.titleLarge(color: AppColors.textPrimaryLight)),
             const SizedBox(height: 8),
             const Text(
-              'Áp mặt sau của thẻ CCCD gắn chip sát vào phần lưng phía trên của điện thoại để hệ thống đối chiếu chữ ký số ICAO Bộ Công An theo QĐ 2345/QĐ-NHNN.',
+              'Áp mặt sau của thẻ CCCD gắn chip sát vào phần lưng phía trên của điện thoại để hệ thống đối chiếu chữ ký số ICAO Bộ Công An.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 12.5,
-                  color: AppColors.textSecondaryLight,
-                  height: 1.4),
+                  fontSize: 12.5, color: AppColors.textSecondaryLight, height: 1.4),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                final result =
-                    await context.push<CccdChipData>('/profile/nfc-reader', extra: {
-                  if (docNum != null) 'documentNumber': docNum,
-                  if (dob != null) 'dateOfBirth': dob,
-                  if (expiry != null) 'expiryDate': expiry,
-                  'autoStart': autoStart,
-                });
-                if (ctx.mounted && result != null) {
-                  Navigator.pop(ctx, result);
-                }
-              },
-              child: const Text('Bắt đầu quét NFC'),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _readNfcChip();
+                },
+                child: const Text('Bắt đầu quét NFC'),
+              ),
             ),
           ],
         ),
       ),
     );
-    if (chip != null && mounted) {
-      setState(() => _chipData = chip);
-      HapticFeedback.heavyImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Đã đọc chip CCCD: ${chip.fullName} — ảnh DG2 sẽ dùng làm chuẩn đối chiếu'),
-          backgroundColor: AppColors.emeraldGreen,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
   }
 
   void _showGuidanceModal() {
@@ -363,7 +526,7 @@ class _EKycScreenState extends State<EKycScreen> {
             } else if (context.canPop()) {
               context.pop();
             } else {
-              context.go('/profile');
+              context.go(widget.isMandatoryOnboarding ? '/auth/login' : '/profile');
             }
           },
         ),
@@ -372,7 +535,7 @@ class _EKycScreenState extends State<EKycScreen> {
             tooltip: 'Đọc NFC',
             icon: const Icon(CupertinoIcons.radiowaves_right,
                 color: AppColors.primaryLight),
-            onPressed: _readNfcChip,
+            onPressed: _showNfcModal,
           ),
           IconButton(
             tooltip: 'Hướng dẫn eKYC',
@@ -480,6 +643,34 @@ class _EKycScreenState extends State<EKycScreen> {
               textAlign: TextAlign.center,
               style:
                   AppTypography.bodySmall(color: AppColors.textSecondaryLight)),
+          if (_step == 2 && _frontCccdData?.cccdNumber != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.emeraldGreen.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: AppColors.emeraldGreen.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(CupertinoIcons.checkmark_circle_fill,
+                      color: AppColors.emeraldGreen, size: 14),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Mặt trước: ${_frontCccdData!.cccdNumber}'
+                    '${_frontCccdData!.fullName != null ? " — ${_frontCccdData!.fullName}" : ""}',
+                    style: const TextStyle(
+                        color: AppColors.emeraldGreen,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+          ],
           if (_step == 3) ...[
             const SizedBox(height: 10),
             if (_chipData != null)
@@ -525,12 +716,16 @@ class _EKycScreenState extends State<EKycScreen> {
                   'Đọc Chip CCCD (NFC) — Khuyến nghị QĐ 2345',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
-                onPressed: () => _readNfcChip(),
+                onPressed: () => _readNfcChip(
+                  docNum: _mrzResult?.documentNumber ?? _frontCccdData?.documentNumber,
+                  dob: _mrzResult?.birthDateYYMMDD ?? _frontCccdData?.birthDateYYMMDD,
+                  expiry: _mrzResult?.expiryDateYYMMDD ?? _frontCccdData?.expiryDateYYMMDD,
+                ),
               ),
           ],
           const SizedBox(height: 16),
 
-          // Viewfinder: bước 1-2 khung căn chỉnh thẻ; bước 3 camera + liveness THẬT
+          // Viewfinder: bước 1-2 khung căn chỉnh thẻ; bước 3 hướng dẫn quét mặt / hiển thị ảnh selfie đã chụp
           Expanded(
             child: Container(
               width: double.infinity,
@@ -542,16 +737,82 @@ class _EKycScreenState extends State<EKycScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(23),
-                child: (_step == 3 && !_isTestEnv)
-                    ? EkycCameraView(
-                        onCompleted: (bestFrame) async {
-                          final bytes = await bestFrame.readAsBytes();
-                          _selfieBytes = bytes;
-                          await _runVerification(bytes);
-                        },
-                        onCancel: () => setState(() => _step = 2),
+                child: (_step == 3 && _selfieBytes != null)
+                    ? Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.memory(_selfieBytes!, fit: BoxFit.cover),
+                          Container(
+                            color: Colors.black45,
+                            child: const Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(CupertinoIcons.checkmark_seal_fill,
+                                      color: AppColors.emeraldGreen, size: 54),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    'Đã chụp ảnh chân dung sinh trắc học',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       )
-                    : _buildIdGuideFrame(stepIcon),
+                    : (_step == 3 && _chipData?.facePhotoBytes != null)
+                        ? Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.memory(
+                                _chipData!.facePhotoBytes!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildIdGuideFrame(stepIcon),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 12, horizontal: 16),
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                      colors: [Colors.black87, Colors.transparent],
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                          CupertinoIcons.checkmark_seal_fill,
+                                          color: AppColors.emeraldGreen,
+                                          size: 18),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          'Ảnh gốc Chip CCCD: ${_chipData!.fullName}',
+                                          style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : _buildIdGuideFrame(stepIcon),
               ),
             ),
           ),
@@ -574,18 +835,26 @@ class _EKycScreenState extends State<EKycScreen> {
                 ],
               ),
             ),
-          if (_step < 3 || _isTestEnv)
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _isCapturing ? null : _nextStep,
-                icon: const Icon(CupertinoIcons.camera_fill, size: 20),
-                label: Text(_step == 3
-                    ? 'Hoàn tất quét khuôn mặt'
-                    : 'Chụp ảnh & Tiếp tục'),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: _isCapturing ? null : _nextStep,
+              icon: Icon(
+                _step == 3
+                    ? CupertinoIcons.person_crop_circle_badge_checkmark
+                    : CupertinoIcons.camera_fill,
+                size: 20,
               ),
+              label: Text(_step == 3
+                  ? (_isTestEnv
+                      ? 'Hoàn tất quét khuôn mặt'
+                      : (_selfieBytes != null
+                          ? 'Quét lại khuôn mặt'
+                          : 'Bắt đầu quét khuôn mặt'))
+                  : 'Chụp ảnh & Tiếp tục'),
             ),
+          ),
           const SizedBox(height: 8),
         ],
       ),
@@ -678,28 +947,39 @@ class _EKycScreenState extends State<EKycScreen> {
           ),
           const SizedBox(height: 20),
 
-          ElevatedButton(
-            onPressed: () {
-              if (context.canPop()) {
-                context.pop();
-              } else {
-                context.go('/profile');
-              }
-            },
-            child: const Text('Về hồ sơ cá nhân'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () => context.go('/'),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.borderLight),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              minimumSize: const Size(double.infinity, 50),
+          if (widget.isMandatoryOnboarding) ...[
+            ElevatedButton.icon(
+              onPressed: () {
+                final target = widget.nextRoute ?? '/auth/set-pin';
+                context.go(target);
+              },
+              icon: const Icon(CupertinoIcons.lock_shield_fill, size: 18),
+              label: const Text('Tiếp Tục Thiết Lập Mã PIN 6 Số'),
             ),
-            child: const Text('Về màn hình chính'),
-          ),
+          ] else ...[
+            ElevatedButton(
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/profile');
+                }
+              },
+              child: const Text('Về hồ sơ cá nhân'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => context.go('/'),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.borderLight),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              child: const Text('Về màn hình chính'),
+            ),
+          ],
           const SizedBox(height: 24),
 
           // Router Hub Card

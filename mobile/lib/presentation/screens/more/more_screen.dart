@@ -648,11 +648,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 ] else ...[
                   // User Profile Card (Apple ID Style)
                   _buildUserCard(context),
-                  const SizedBox(height: 14),
-
-                  // Loyalty Points Card
-                  _buildLoyaltyBanner(context),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
 
                   // Quick Actions Grid (8 Apple Squircles)
                   _buildQuickActionsGrid(context),
@@ -975,75 +971,6 @@ class _MoreScreenState extends State<MoreScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLoyaltyBanner(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          colors: [AppColors.cardDark, AppColors.textPrimaryLight],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: AppColors.bottomBarCyan.withOpacity(0.18),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(LucideIcons.sparkles,
-                color: AppColors.bottomBarCyan, size: 20),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '12.450 SenPoints',
-                  style: TextStyle(
-                      color: AppColors.bottomBarCyan,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Đổi voucher Grab, Shopee, Highlands',
-                  style: TextStyle(color: Colors.white70, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: AppColors.bottomBarCyan),
-              foregroundColor: AppColors.bottomBarCyan,
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              minimumSize: const Size(60, 32),
-            ),
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              context.push('/promotions');
-            },
-            child: const Text('Đổi quà',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }

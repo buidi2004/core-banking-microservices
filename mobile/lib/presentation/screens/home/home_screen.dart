@@ -16,6 +16,7 @@ import 'package:sen_hong_bank/presentation/widgets/curved_promo_banner.dart';
 import 'package:sen_hong_bank/presentation/widgets/sen_hong_smart_sliver_app_bar.dart';
 import 'package:sen_hong_bank/presentation/widgets/smart_search_modal_sheet.dart';
 import 'package:sen_hong_bank/presentation/widgets/vietnam_hero_header.dart';
+import 'package:sen_hong_bank/presentation/widgets/chatbot_lottie_avatar.dart';
 import 'package:flutter/services.dart';
 
 /// HomeScreen được tối ưu theo chuẩn:
@@ -462,7 +463,10 @@ class _HomeScreenState extends State<HomeScreen>
     _notifSub = RealtimeNotificationService().notificationStream.listen((_) {
       _refreshTimer?.cancel();
       _refreshTimer = Timer(const Duration(milliseconds: 400), () {
-        if (mounted) _loadWallet();
+        if (mounted) {
+          _loadWallet();
+          _loadUnreadNotifications();
+        }
       });
     });
   }
@@ -744,53 +748,37 @@ class _HomeScreenState extends State<HomeScreen>
                       HapticFeedback.selectionClick();
                       context.push('/support/live-chat');
                     },
-                    borderRadius: BorderRadius.circular(26),
-                    child: Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFF14B885).withOpacity(0.35),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF14B885).withOpacity(0.22),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
+                    borderRadius: BorderRadius.circular(44),
+                    child: SizedBox(
+                      width: 86,
+                      height: 86,
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          ClipOval(
-                            child: Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: Image.asset(
-                                'assets/icons/ai_assistant_ghost.png',
-                                fit: BoxFit.contain,
-                              ),
-                            ),
+                          const ChatbotLottieAvatar(
+                            size: 84,
+                            fit: BoxFit.contain,
                           ),
                           Positioned(
-                            top: 2,
-                            right: 2,
+                            top: 8,
+                            right: 12,
                             child: Container(
-                              width: 11,
-                              height: 11,
+                              width: 14,
+                              height: 14,
                               decoration: BoxDecoration(
                                 color: const Color(0xFF10B981),
                                 shape: BoxShape.circle,
-                                border:
-                                    Border.all(color: Colors.white, width: 2),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2.2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.22),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

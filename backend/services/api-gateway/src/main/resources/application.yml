@@ -29,6 +29,12 @@ spring:
       default-filters:
         # Gỡ header giả mạo từ client trước khi xác thực/route (chống spoofing X-User-*)
         - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        # Service-to-service auth (v1): gateway ký X-Internal-Key cho MỌI request forward
+        # xuống microservice — services (wallet/payment/identity) có thể bật verification
+        # theo từng endpoint khi sẵn sàng (pattern tham khảo: identity KycController).
+        # Lưu ý: shared secret tĩnh — xoay định kỳ bằng env INTERNAL_API_KEY ở gateway và
+        # service ĐỒNG THỜI (chatbot-service cũng đọc cùng biến env này).
+        - AddRequestHeader=X-Internal-Key, ${INTERNAL_API_KEY:senhong-internal-chatbot-key-2026}
 
       globalcors:
         add-to-simple-url-handler-mapping: true

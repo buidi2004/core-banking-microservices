@@ -30,5 +30,64 @@ void main() {
       expect(result.isValidChecksum, isTrue);
       expect(result.wasAutoCorrected, isTrue);
     });
+
+    test('Normalize noisy OCR symbols into < and handle surrounding lines', () {
+      final noisyLines = [
+        'CUC CANH SAT QUAN LY HANH CHINH VE TRAT TU XA HOI',
+        'NGAY CAP: 15/05/2021',
+        'I(VNMO99OOO1232<<<<<<<<<<<<<',
+        '99O1O18M3OO1O19VNM<<<<-<<___0',
+        'NGUYEN((VAN(A<<<<<<<<<<<<<<<<<<',
+      ];
+
+      final result = MrzParser.parseTd1Lines(
+        noisyLines,
+        knownCccd12: '079099000123',
+        knownDob: '990101',
+        knownExpiry: '300101',
+      );
+
+      expect(result, isNotNull);
+      expect(result!.documentNumber, '099000123');
+      expect(result.birthDateYYMMDD, '990101');
+      expect(result.expiryDateYYMMDD, '300101');
+      expect(result.fullName, 'NGUYEN VAN A');
+      expect(result.isValidChecksum, isTrue);
+      expect(result.fullCccdNumber, '079099000123');
+    });
+
+    test('FrontCccdResult hasBacKeys validation', () {
+      const valid = FrontCccdResult(
+        cccdNumber: '079099000123',
+        documentNumber: '099000123',
+        birthDateYYMMDD: '990101',
+        expiryDateYYMMDD: '390101',
+        fullName: 'NGUYEN VAN A',
+      );
+      expect(valid.hasBacKeys, isTrue);
+
+      const invalid = FrontCccdResult(
+        cccdNumber: '079099000123',
+        documentNumber: '099000123',
+        birthDateYYMMDD: null,
+        expiryDateYYMMDD: '390101',
+      );
+      expect(invalid.hasBacKeys, isFalse);
+    });
+
+    test('extract12DigitCccdFromText extracts properly with or without prefix', () {
+      expect(
+        MrzScanner.extract12DigitCccdFromText('Số / No.: 079099000123'),
+        '079099000123',
+      );
+      expect(
+        MrzScanner.extract12DigitCccdFromText('Số / No.: 079 099 000 123'),
+        '079099000123',
+      );
+      expect(
+        MrzScanner.extract12DigitCccdFromText('Thẻ căn cước số 001099123456 cấp ngày...'),
+        '001099123456',
+      );
+    });
   });
 }

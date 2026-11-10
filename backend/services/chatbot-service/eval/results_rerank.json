@@ -1,0 +1,89 @@
+[
+  {
+    "mode": "domain_on",
+    "k": 4,
+    "recall_at_k": 0.6022,
+    "hit_rate_at_k": 0.7143,
+    "mrr": 0.528,
+    "avg_latency_ms": 6804.7,
+    "p95_latency_ms": 8979.3,
+    "domain_route_accuracy": 0.7143,
+    "no_info_false_positive_rate": 1.0,
+    "empty_results": 0,
+    "threshold_rejects": 0,
+    "per_domain_hit_rate": {
+      "ACCOUNT_OPENING_DOCS": {
+        "n": 5,
+        "hit_rate": 0.6
+      },
+      "BCA_VNEID_EKYC": {
+        "n": 4,
+        "hit_rate": 0.75
+      },
+      "BILLS_TOPUP": {
+        "n": 6,
+        "hit_rate": 0.8333
+      },
+      "BIOMETRICS": {
+        "n": 3,
+        "hit_rate": 0.6667
+      },
+      "CARDS": {
+        "n": 9,
+        "hit_rate": 0.5556
+      },
+      "DISPUTE": {
+        "n": 4,
+        "hit_rate": 0.75
+      },
+      "FINANCIAL_ADVISORY": {
+        "n": 5,
+        "hit_rate": 0.2
+      },
+      "GENERAL_ACCOUNT": {
+        "n": 28,
+        "hit_rate": 0.4286
+      },
+      "INSURANCE": {
+        "n": 3,
+        "hit_rate": 0.6667
+      },
+      "LOANS": {
+        "n": 12,
+        "hit_rate": 0.25
+      },
+      "MACRO_ECONOMICS": {
+        "n": 5,
+        "hit_rate": 0.8
+      },
+      "PHI_HAN_MUC": {
+        "n": 4,
+        "hit_rate": 1.0
+      },
+      "PROMOTIONS": {
+        "n": 5,
+        "hit_rate": 0.8
+      },
+      "SAVINGS": {
+        "n": 11,
+        "hit_rate": 0.7273
+      },
+      "SECURITY": {
+        "n": 6,
+        "hit_rate": 0.8333
+      },
+      "SME_BUSINESS": {
+        "n": 2,
+        "hit_rate": 1.0
+      },
+      "TERMS_OF_SERVICE": {
+        "n": 5,
+        "hit_rate": 1.0
+      },
+      "TRANSFER": {
+        "n": 16,
+        "hit_rate": 0.875
+      }
+    }
+  }
+]

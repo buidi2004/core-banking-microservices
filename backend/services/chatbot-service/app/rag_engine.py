@@ -2,6 +2,7 @@ import os
 import re
 import time
 import json
+import hashlib
 import logging
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
@@ -12,12 +13,12 @@ from sentence_transformers import SentenceTransformer
 from openai import OpenAI
 
 from app.config import settings
+from app import rate_config
 from app.guardrails import (
-    mask_pii, 
+    mask_pii,
     tokenize_pii,
     detokenize_pii,
-    check_security_guardrails, 
-    BANKING_SYSTEM_PROMPT
+    check_security_guardrails
 )
 from app.jev_system_one import (
     jev_gatekeeper, 
@@ -27,9 +28,39 @@ from app.jev_system_one import (
 )
 from app.schemas import MessageItem, ChatResponse, IngestResponse, ActionItem
 from app.vietnamese_nlp import (
-    normalize_vietnamese_query, 
-    enrich_smart_quick_replies, 
-    strip_vietnamese_accents
+    normalize_vietnamese_query,
+    enrich_smart_quick_replies,
+    strip_vietnamese_accents,
+    detect_query_topic
+)
+from app.financial_calculator import (
+    generate_comprehensive_financial_analysis,
+    calculate_savings_compound,
+    calculate_loan_amortization,
+    format_vnd
+)
+from app.disambiguation_handler import (
+    check_ambiguous_query,
+    extract_context_from_history,
+    enrich_query_with_context
+)
+from app.output_validator import sanitize_and_validate_output
+from app.banking_agent import BankingReActAgent
+from app.long_query_handler import handle_comprehensive_long_query
+from app.deep_thinking_engine import deep_thinking_engine
+from app.app_feature_catalog import (
+    check_app_has_feature, 
+    find_feature_by_query, 
+    APP_FEATURES,
+    format_feature_howto_answer
+)
+from app.guided_flow_handler import (
+    classify_question_archetype, 
+    GuidedFlowHandler, 
+    INTENT_LEAD_ACTION, 
+    INTENT_HOW_TO_ACTION,
+    INTENT_PERSONAL_DATA,
+    INTENT_PRODUCT_INFO
 )
 
 logger = logging.getLogger("rag_engine")
@@ -63,11 +94,108 @@ DOCUMENT_TITLE_MAP = {
     "26_mang_luoi_chi_nhanh_va_diem_giao_dich.md": "Mạng lưới Chi nhánh & ATM",
     "27_huong_dan_biet_danh_tai_khoan_alias_va_vietqr_pro.md": "Biệt danh Alias & VietQR Pro",
     "28_giai_dap_tinh_huong_nghiep_vu_kho_va_tu_van_chuyen_sau.md": "Tư vấn nghiệp vụ & Tình huống chuyên sâu",
+    "29_ngu_canh_kinh_te_tai_chinh_ngan_hang_va_quan_tri_tai_san.md": "Kinh tế vĩ mô & Quản trị tài chính",
+    "30_bo_cong_an_de_an_06_vneid_va_xac_thuc_dan_cu.md": "Dữ liệu dân cư C06 & VNeID Bộ Công An",
+    "31_dieu_khoan_dich_vu_app_sen_hong_va_chinh_sach_bao_ve_du_lieu.md": "Điều khoản dịch vụ & Bảo vệ dữ liệu NĐ 13",
+    "32_cam_nang_giay_to_ho_so_mo_tai_khoan_va_vay_von.md": "Hồ sơ giấy tờ mở tài khoản & vay vốn",
+    "33_vay_the_chap_bat_dong_san_o_to_va_tham_dinh_cic.md": "Vay thế chấp BĐS, Ô tô & Thẩm định CIC",
+    "34_chung_chi_tien_gui_tiet_kiem_da_dang_va_bao_hiem_tien_gui.md": "Chứng chỉ tiền gửi CD & Bảo hiểm tiền gửi DIV",
+    "35_chuyen_tien_quoc_te_swift_kieu_hoi_va_quan_ly_ngoai_hoi.md": "Chuyển tiền quốc tế SWIFT & Kiều hối",
+    "36_the_tin_dung_cashback_tra_gop_0_phan_tram_va_xu_ly_su_co_the.md": "Thẻ tín dụng hoàn tiền & Trả góp 0%",
+    "37_nop_thue_dien_tu_etax_mobile_dich_vu_cong_va_hoa_don_so.md": "Nộp thuế điện tử eTax Mobile & Dịch vụ công",
+    "38_cam_nang_nhan_dien_15_thu_doan_lua_dao_va_xu_ly_khan_cap.md": "Nhận diện 15 thủ đoạn lừa đảo & Xử lý khẩn cấp",
+    "39_khach_hang_uu_tien_senhong_priority_va_private_wealth.md": "Khách hàng ưu tiên Sen Hong Priority & Private Banking",
+    "40_diem_giao_dich_thong_minh_smart_lounge_va_crm_247.md": "Smart Lounge 24/7 & Cây nạp rút tiền CRM",
+    "41_phan_tich_chi_tieu_sinh_hoat_va_quan_ly_tai_chinh_ca_nhan_pfm.md": "Phân tích chi tiêu sinh hoạt & Quản lý tài chính PFM",
+    "42_ca_nhan_hoa_tai_chinh_va_he_thong_nhac_nho_thong_minh.md": "Cá nhân hóa chi tiêu & Hệ thống nhắc nhở thông minh",
+    "43_cac_phuong_an_tai_chinh_toan_dien_va_ra_quyet_dinh_thong_minh.md": "Các phương án tài chính toàn diện & Ra quyết định",
+    "44_bieu_phi_han_muc_the_va_giao_dich_chi_tiet.md": "Biểu phí & Hạn mức chi tiết",
+    "45_chuong_trinh_senpoint_doi_diem_hang_thanh_vien.md": "Chương trình SenPoint & Hạng thành viên",
+    "46_bao_hiem_nhan_tho_suc_khoe_du_lich_lien_ket.md": "Bảo hiểm nhân thọ, sức khỏe & du lịch",
+    "47_ngan_hang_so_doanh_nghiep_sme_payroll_viqr_pro.md": "Ngân hàng số Doanh nghiệp SME",
+    "48_dinh_gia_tai_san_the_chap_bat_dong_san_o_to.md": "Định giá tài sản thế chấp",
+    "49_vay_ho_kinh_doanh_tieu_thuong_vi_mo.md": "Vay hộ kinh doanh tiểu thương Vimo",
+    "50_tai_khoan_nguoi_chua_thanh_nien_tk_phu_thuoc.md": "Tài khoản người chưa thành niên & TK phụ thuộc",
+    "51_su_co_app_ky_thuat_khong_phai_tra_soat.md": "Sự cố kỹ thuật ứng dụng",
+    "52_chung_chi_quy_mo_fund_mo_dau_tu.md": "Chứng chỉ quỹ & Fund mở đầu tư",
+    "53_thue_thu_nhap_ca_nhan_giam_tru_gia_canh.md": "Thuế thu nhập cá nhân & Giảm trừ gia cảnh",
+    "54_the_mat_the_hong_dong_bang_phat_hanh_lai.md": "Thẻ mất, thẻ hỏng & phát hành lại",
+    "55_quy_dinh_nap_rut_tien_mat_cdm_atm_han_muc.md": "Nạp/rút tiền mặt CDM/ATM & Hạn mức",
+    "56_tu_dien_thuat_ngu_ngan_hang_cho_nguoi_moi.md": "Từ điển thuật ngữ ngân hàng",
     "bieu_phi_dich_vu.md": "Biểu phí dịch vụ",
     "huong_dan_the_visa.md": "Hướng dẫn thẻ Visa",
     "lai_suat_tiet_kiem.md": "Biểu lãi suất tiết kiệm",
     "quy_dinh_qd2345.md": "Quy định QĐ 2345",
     "tai_khoan_va_ekyc.md": "Tài khoản & eKYC",
+}
+
+# Domain taxonomy dùng đúng bộ enum topic của detect_query_topic() (vietnamese_nlp.py)
+# để filter metadata trước khi tìm vector: WHERE domain = <topic> OR domain = 'GENERAL_ACCOUNT'
+# (GENERAL_ACCOUNT là domain "bắt ke" chứa tài liệu đa chủ đề — luôn nằm trong kết quả lọc).
+FILE_DOMAIN_MAP = {
+    "01_huong_dan_chuyen_tien.md": "TRANSFER",
+    "02_nap_va_rut_tien.md": "TRANSFER",
+    "02a_rut_tien_atm_khong_the.md": "TRANSFER",
+    "03_thanh_toan_hoa_don_tien_ich.md": "BILLS_TOPUP",
+    "04_vay_tieu_dung_quick_loan.md": "LOANS",
+    "04a_vay_tieu_dung_tin_chap_quick_loan.md": "LOANS",
+    "05_tiet_kiem_online_core_savings.md": "SAVINGS",
+    "06_quan_ly_the_va_tai_khoan.md": "CARDS",
+    "07_quy_dinh_sinh_trac_hoc_qd2345.md": "BIOMETRICS",
+    "08_tien_ich_xo_so_giai_tri.md": "BILLS_TOPUP",
+    "09_bieu_phi_va_han_muc_chi_tiet.md": "PHI_HAN_MUC",
+    "10_an_toan_bao_mat_va_canh_bao_lua_dao.md": "SECURITY",
+    "11_ho_tro_khieu_nai_va_cskh.md": "DISPUTE",
+    "12_tong_hop_cau_hoi_thuong_gap_faq.md": "GENERAL_ACCOUNT",
+    "13_ma_vietqr_va_chia_tien_split_bill.md": "TRANSFER",
+    "14_dat_lich_chuyen_tien_dinh_ky.md": "TRANSFER",
+    "15_danh_ba_thu_huong_va_danh_sach_ngan_hang_napas.md": "TRANSFER",
+    "16_tai_khoan_so_dep_va_chuyen_tien_quoc_te.md": "TRANSFER",
+    "17_chuong_trinh_gioi_thieu_va_voucher_uu_dai.md": "PROMOTIONS",
+    "18_quan_ly_thiet_bi_va_bao_mat_phien.md": "SECURITY",
+    "19_dieu_khoan_phap_ly_va_giay_phep_nhnn.md": "TERMS_OF_SERVICE",
+    "20_cam_nang_toan_dien_cac_man_hinh_va_tinh_nang_app.md": "GENERAL_ACCOUNT",
+    "21_kien_truc_he_thong_microservices_va_backend.md": "GENERAL_ACCOUNT",
+    "22_cam_nang_chuyen_sau_tinh_nang_mobile_va_tien_ich_so.md": "GENERAL_ACCOUNT",
+    "23_tong_hop_toan_bo_tinh_nang_mobile_va_backend_huong_dan_khach_hang.md": "GENERAL_ACCOUNT",
+    "24_kho_voucher_uu_dai_doi_tac_va_chuong_trinh_khuyen_mai.md": "PROMOTIONS",
+    "25_ty_gia_ngoai_te_va_kieu_hoi_quoc_te.md": "MACRO_ECONOMICS",
+    "26_mang_luoi_chi_nhanh_va_diem_giao_dich.md": "GENERAL_ACCOUNT",
+    "27_huong_dan_biet_danh_tai_khoan_alias_va_vietqr_pro.md": "TRANSFER",
+    "28_giai_dap_tinh_huong_nghiep_vu_kho_va_tu_van_chuyen_sau.md": "FINANCIAL_ADVISORY",
+    "29_ngu_canh_kinh_te_tai_chinh_ngan_hang_va_quan_tri_tai_san.md": "MACRO_ECONOMICS",
+    "30_bo_cong_an_de_an_06_vneid_va_xac_thuc_dan_cu.md": "BCA_VNEID_EKYC",
+    "31_dieu_khoan_dich_vu_app_sen_hong_va_chinh_sach_bao_ve_du_lieu.md": "TERMS_OF_SERVICE",
+    "32_cam_nang_giay_to_ho_so_mo_tai_khoan_va_vay_von.md": "ACCOUNT_OPENING_DOCS",
+    "33_vay_the_chap_bat_dong_san_o_to_va_tham_dinh_cic.md": "LOANS",
+    "34_chung_chi_tien_gui_tiet_kiem_da_dang_va_bao_hiem_tien_gui.md": "SAVINGS",
+    "35_chuyen_tien_quoc_te_swift_kieu_hoi_va_quan_ly_ngoai_hoi.md": "TRANSFER",
+    "36_the_tin_dung_cashback_tra_gop_0_phan_tram_va_xu_ly_su_co_the.md": "CARDS",
+    "37_nop_thue_dien_tu_etax_mobile_dich_vu_cong_va_hoa_don_so.md": "BILLS_TOPUP",
+    "38_cam_nang_nhan_dien_15_thu_doan_lua_dao_va_xu_ly_khan_cap.md": "SECURITY",
+    "39_khach_hang_uu_tien_senhong_priority_va_private_wealth.md": "GENERAL_ACCOUNT",
+    "40_diem_giao_dich_thong_minh_smart_lounge_va_crm_247.md": "GENERAL_ACCOUNT",
+    "41_phan_tich_chi_tieu_sinh_hoat_va_quan_ly_tai_chinh_ca_nhan_pfm.md": "FINANCIAL_ADVISORY",
+    "42_ca_nhan_hoa_tai_chinh_va_he_thong_nhac_nho_thong_minh.md": "FINANCIAL_ADVISORY",
+    "43_cac_phuong_an_tai_chinh_toan_dien_va_ra_quyet_dinh_thong_minh.md": "FINANCIAL_ADVISORY",
+    "44_bieu_phi_han_muc_the_va_giao_dich_chi_tiet.md": "PHI_HAN_MUC",
+    "45_chuong_trinh_senpoint_doi_diem_hang_thanh_vien.md": "PROMOTIONS",
+    "46_bao_hiem_nhan_tho_suc_khoe_du_lich_lien_ket.md": "INSURANCE",
+    "47_ngan_hang_so_doanh_nghiep_sme_payroll_viqr_pro.md": "SME_BUSINESS",
+    "48_dinh_gia_tai_san_the_chap_bat_dong_san_o_to.md": "LOANS",
+    "49_vay_ho_kinh_doanh_tieu_thuong_vi_mo.md": "LOANS",
+    "50_tai_khoan_nguoi_chua_thanh_nien_tk_phu_thuoc.md": "ACCOUNT_OPENING_DOCS",
+    "51_su_co_app_ky_thuat_khong_phai_tra_soat.md": "DISPUTE",
+    "52_chung_chi_quy_mo_fund_mo_dau_tu.md": "FINANCIAL_ADVISORY",
+    "53_thue_thu_nhap_ca_nhan_giam_tru_gia_canh.md": "BILLS_TOPUP",
+    "54_the_mat_the_hong_dong_bang_phat_hanh_lai.md": "CARDS",
+    "55_quy_dinh_nap_rut_tien_mat_cdm_atm_han_muc.md": "TRANSFER",
+    "56_tu_dien_thuat_ngu_ngan_hang_cho_nguoi_moi.md": "GENERAL_ACCOUNT",
+    "bieu_phi_dich_vu.md": "PHI_HAN_MUC",
+    "huong_dan_the_visa.md": "CARDS",
+    "lai_suat_tiet_kiem.md": "SAVINGS",
+    "quy_dinh_qd2345.md": "BIOMETRICS",
+    "tai_khoan_va_ekyc.md": "ACCOUNT_OPENING_DOCS",
 }
 
 def clean_source_title(filename: str) -> str:
@@ -115,9 +243,13 @@ class AdvancedRAGEngine:
         self.llm_model = settings.LLM_MODEL
         self.llm_clients: Dict[str, OpenAI] = {}
         self._conn = None
+        self._reranker = None
+        self._last_rag_context = None
         
         self._init_db_schema()
         self._init_llm_clients()
+        self.banking_agent = BankingReActAgent(self)
+        self.guided_flow = GuidedFlowHandler(self)
 
     def _get_db_connection(self):
         """Tái sử dụng kết nối autocommit persistent với cơ chế tự phục hồi kết nối (Self-Healing Socket)"""
@@ -184,8 +316,36 @@ class AdvancedRAGEngine:
                 """)
 
                 cur.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_knowledge_tsv 
+                    CREATE INDEX IF NOT EXISTS idx_knowledge_tsv
                     ON knowledge_chunks USING gin (tsv_content);
+                """)
+
+                # ===== Migration idempotent cho RAG dữ liệu lớn (CREATE TABLE IF NOT EXISTS
+                # không nâng cấp được DB cũ, nên dùng ALTER ADD COLUMN IF NOT EXISTS) =====
+                cur.execute("""
+                    ALTER TABLE parent_documents
+                    ADD COLUMN IF NOT EXISTS domain VARCHAR(50),
+                    ADD COLUMN IF NOT EXISTS content_hash VARCHAR(64);
+                """)
+                cur.execute("""
+                    ALTER TABLE knowledge_chunks
+                    ADD COLUMN IF NOT EXISTS domain VARCHAR(50);
+                """)
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS ingest_state (
+                        source_file VARCHAR(255) PRIMARY KEY,
+                        content_hash VARCHAR(64) NOT NULL,
+                        chunk_count INT NOT NULL DEFAULT 0,
+                        ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_chunks_domain
+                    ON knowledge_chunks (domain);
+                """)
+                cur.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_parents_domain
+                    ON parent_documents (domain);
                 """)
 
                 # Bảng 3: Semantic Cache trả kết quả dưới 30ms
@@ -237,6 +397,52 @@ class AdvancedRAGEngine:
             logger.info("Embedding model loaded successfully.")
         return self.embed_model
 
+    def _get_reranker(self):
+        """
+        Tải lazy CrossEncoder reranker (chỉ khi settings.RERANK_ENABLED=true).
+        Lưu ý vận hành: model ~1.1GB fp32 CPU — cần nâng mem_limit chatbot-service lên 2g.
+        """
+        if not settings.RERANK_ENABLED:
+            return None
+        if self._reranker is None:
+            from sentence_transformers import CrossEncoder
+            logger.info("Loading reranker model (%s)...", settings.RERANK_MODEL)
+            self._reranker = CrossEncoder(settings.RERANK_MODEL, max_length=512)
+            logger.info("Reranker model loaded successfully.")
+        return self._reranker
+
+    def _rerank_parent_rows(self, query: str, rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Rerank cross-encoder trên danh sách parent rows (điểm RRF chỉ là tín hiệu xếp thô).
+        - Nếu điểm cao nhất < settings.RERANK_MIN_SCORE → trả danh sách rỗng để pipeline
+          trả lời trung thực "chưa có thông tin" thay vì ép LLM suy đoán.
+        - Lỗi rerank (model/VRAM) → giữ nguyên thứ hạng RRF, không làm hỏng luồng chính.
+        """
+        reranker = self._get_reranker()
+        if reranker is None or not rows:
+            return rows
+        try:
+            start = time.time()
+            pairs = [(query, r["parent_content"]) for r in rows]
+            scores = reranker.predict(pairs)
+            scored = sorted(
+                [(row, float(score)) for row, score in zip(rows, scores)],
+                key=lambda t: t[1],
+                reverse=True
+            )
+            best_score = scored[0][1] if scored else float("-inf")
+            logger.info(
+                "Rerank %d candidates in %.0fms (best=%.3f, threshold=%.3f)",
+                len(rows), (time.time() - start) * 1000, best_score, settings.RERANK_MIN_SCORE
+            )
+            if best_score < settings.RERANK_MIN_SCORE:
+                logger.info("Rerank threshold not met -> trả rỗng để từ chối trung thực.")
+                return []
+            return [dict(row, rerank_score=score) for row, score in scored]
+        except Exception as e:
+            logger.warning("Rerank failed, giữ nguyên thứ hạng RRF: %s", e)
+            return rows
+
     def get_vector_count(self) -> int:
         """Đếm số lượng vector child chunks hiện có trong database"""
         try:
@@ -256,10 +462,14 @@ class AdvancedRAGEngine:
         - Parent: toàn bộ section (# hoặc ##) chứa đầy đủ bảng biểu & điều kiện
         - Child: chia theo các đoạn nội dung/bullets (120-150 từ)
         - Gắn bánh mì dẫn đường (Contextual Breadcrumbs) trước khi embed
+        - Gán domain (FILE_DOMAIN_MAP) để lọc metadata trước khi tìm vector
+        - Ghi ingest_state (content_hash) cho ingest tăng dần
         """
         model = self._get_embed_model()
         path_obj = Path(file_path)
         content = path_obj.read_text(encoding="utf-8")
+        content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        file_domain = FILE_DOMAIN_MAP.get(source_name, "GENERAL_ACCOUNT")
 
         # Tách tiêu đề tài liệu H1
         lines = content.split("\n")
@@ -290,10 +500,10 @@ class AdvancedRAGEngine:
 
                 clean_heading = heading_raw.lstrip('#').strip()
 
-                # 1. Lưu Parent Document
+                # 1. Lưu Parent Document (kèm domain phục vụ lọc metadata khi tìm kiếm)
                 cur.execute(
-                    "INSERT INTO parent_documents (source_file, heading, parent_content) VALUES (%s, %s, %s) RETURNING id",
-                    (source_name, clean_heading, full_parent_content)
+                    "INSERT INTO parent_documents (source_file, heading, parent_content, domain) VALUES (%s, %s, %s, %s) RETURNING id",
+                    (source_name, clean_heading, full_parent_content, file_domain)
                 )
                 parent_id = cur.fetchone()[0]
 
@@ -323,19 +533,35 @@ class AdvancedRAGEngine:
                     vector = model.encode(enriched_text, normalize_embeddings=True).tolist()
 
                     cur.execute(
-                        """INSERT INTO knowledge_chunks (parent_id, source_file, chunk_content, embedding)
-                           VALUES (%s, %s, %s, %s)""",
-                        (parent_id, source_name, chunk, vector)
+                        """INSERT INTO knowledge_chunks (parent_id, source_file, chunk_content, embedding, domain)
+                           VALUES (%s, %s, %s, %s, %s)""",
+                        (parent_id, source_name, chunk, vector, file_domain)
                     )
                     chunks_created += 1
 
                 i += 2
 
-        logger.info("Ingested '%s': created 1 parent doc and %d child chunks.", source_name, chunks_created)
+            # Ghi nhận trạng thái nạp (content_hash) để lần ingest sau bỏ qua file không đổi
+            cur.execute(
+                """INSERT INTO ingest_state (source_file, content_hash, chunk_count, ingested_at)
+                   VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                   ON CONFLICT (source_file) DO UPDATE
+                   SET content_hash = EXCLUDED.content_hash,
+                       chunk_count = EXCLUDED.chunk_count,
+                       ingested_at = CURRENT_TIMESTAMP""",
+                (source_name, content_hash, chunks_created)
+            )
+
+        logger.info("Ingested '%s' [domain=%s]: %d child chunks.", source_name, file_domain, chunks_created)
         return chunks_created
 
-    def ingest_documents(self) -> IngestResponse:
-        """Nạp toàn bộ tài liệu Markdown trong thư mục data/ vào PostgreSQL"""
+    def ingest_documents(self, force: bool = False) -> IngestResponse:
+        """
+        Nạp tài liệu Markdown trong thư mục data/ vào PostgreSQL (tăng dần).
+        - Mỗi file băm SHA-256 so với ingest_state: không đổi → bỏ qua (không re-embed)
+        - force=True → nạp lại toàn bộ bất kể hash
+        - Chỉ làm mới Semantic Cache khi có ít nhất 1 file được nạp lại
+        """
         data_dir = Path(settings.DATA_DIR)
         if not data_dir.exists():
             return IngestResponse(
@@ -354,18 +580,52 @@ class AdvancedRAGEngine:
                 details=[{"message": "No markdown files found in data directory"}]
             )
 
-        # Làm mới Semantic Cache khi nạp tài liệu mới
+        # Đọc trạng thái hash đã nạp từ lần trước
+        state_hashes: Dict[str, str] = {}
+        try:
+            conn = self._get_db_connection()
+            with conn.cursor() as cur:
+                cur.execute("SELECT source_file, content_hash FROM ingest_state")
+                state_hashes = {row[0]: row[1] for row in cur.fetchall()}
+        except Exception as e:
+            logger.warning("Could not read ingest_state, sẽ nạp lại toàn bộ: %s", e)
+
+        # Xác định file cần nạp lại (force=True → tất cả)
+        changed_files: List[Path] = []
+        skipped_files: List[str] = []
+        for f in files:
+            try:
+                f_hash = hashlib.sha256(f.read_bytes()).hexdigest()
+            except Exception as e:
+                logger.error("Error hashing %s: %s", f.name, e)
+                changed_files.append(f)
+                continue
+            if not force and state_hashes.get(f.name) == f_hash:
+                skipped_files.append(f.name)
+            else:
+                changed_files.append(f)
+
+        if not changed_files:
+            logger.info("Ingest tăng dần: cả %d file không đổi, bỏ qua re-embed.", len(files))
+            return IngestResponse(
+                status="success",
+                documents_indexed=len(files),
+                chunks_created=0,
+                details=[{"file": name, "skipped": True, "chunks": 0} for name in skipped_files]
+            )
+
+        # Làm mới Semantic Cache CHỈ khi có tài liệu thay đổi
         try:
             with self._get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute("TRUNCATE TABLE semantic_cache;")
-            logger.info("Semantic cache truncated successfully.")
+            logger.info("Semantic cache truncated (%d/%d file changed).", len(changed_files), len(files))
         except Exception as e:
             logger.warning("Could not truncate semantic_cache: %s", e)
 
         total_chunks = 0
-        details = []
-        for f in files:
+        details = [{"file": name, "skipped": True, "chunks": 0} for name in skipped_files]
+        for f in changed_files:
             try:
                 cnt = self.ingest_markdown_file(str(f), f.name)
                 total_chunks += cnt
@@ -511,26 +771,36 @@ class AdvancedRAGEngine:
         except Exception as e:
             logger.warning("Error saving to semantic_cache: %s", e)
 
-    def _hybrid_search_rrf(self, user_question: str, query_vec: List[float], top_k: int = 4) -> Tuple[str, List[str]]:
+    def _search_parent_rows(
+        self,
+        user_question: str,
+        query_vec: List[float],
+        candidate_limit: int,
+        domain: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
-        Hybrid Search (Vector + Full-Text RRF) trong 1 câu SQL duy nhất
-        - Vector search: Cosine distance lấy top 15
-        - Keyword search: Full-Text Search tsvector @@ plainto_tsquery lấy top 15
-        - RRF Score = 1/(60 + vec_rank) + 1/(60 + kw_rank)
-        - GROUP BY parent_documents để lấy toàn bộ bảng biểu và điều kiện gốc
+        Hybrid Search RRF (Vector + Full-Text) trả về danh sách parent rows có điểm.
+        - domain: lọc metadata CHÍNH XÁC TRƯỚC khi tìm (thu hẹp không gian tìm kiếm).
+          KHÔNG mồi thêm domain 'GENERAL_ACCOUNT' vào filter: file tổng hợp khổng lồ
+          (20/22/23) sẽ áp đảo kết quả trên câu hỏi đàm thoại. File đa chủ đề chỉ được
+          tìm khi câu hỏi mơ hồ (không truyền domain) hoặc qua luồng retry không lọc.
+        - Tăng hnsw.ef_search để cân bằng recall khi dữ liệu lớn.
         """
         hybrid_query = """
         WITH vector_search AS (
-            SELECT id, RANK() OVER (ORDER BY embedding <=> %s::vector) AS vec_rank
+            SELECT id, (embedding <=> %s::vector) AS vec_dist,
+                   RANK() OVER (ORDER BY embedding <=> %s::vector) AS vec_rank
             FROM knowledge_chunks
+            WHERE (%s::text IS NULL OR domain = %s)
             ORDER BY embedding <=> %s::vector
-            LIMIT 15
+            LIMIT %s
         ),
         keyword_search AS (
             SELECT id, RANK() OVER (ORDER BY ts_rank_cd(tsv_content, plainto_tsquery('simple', %s)) DESC) AS kw_rank
             FROM knowledge_chunks
             WHERE tsv_content @@ plainto_tsquery('simple', %s)
-            LIMIT 15
+              AND (%s::text IS NULL OR domain = %s)
+            LIMIT %s
         ),
         combined AS (
             SELECT COALESCE(v.id, k.id) AS chunk_id,
@@ -538,10 +808,12 @@ class AdvancedRAGEngine:
             FROM vector_search v
             FULL OUTER JOIN keyword_search k ON v.id = k.id
         )
-        SELECT pd.source_file, pd.heading, pd.parent_content, MAX(c.rrf_score) AS score
+        SELECT pd.id AS parent_id, pd.source_file, pd.heading, pd.parent_content,
+               MAX(c.rrf_score) AS score, MIN(v.vec_dist) AS best_vec_dist
         FROM combined c
         JOIN knowledge_chunks kc ON kc.id = c.chunk_id
         JOIN parent_documents pd ON pd.id = kc.parent_id
+        LEFT JOIN vector_search v ON v.id = c.chunk_id
         GROUP BY pd.id, pd.source_file, pd.heading, pd.parent_content
         ORDER BY score DESC
         LIMIT %s;
@@ -549,18 +821,103 @@ class AdvancedRAGEngine:
         try:
             conn = self._get_db_connection()
             with conn.cursor() as cur:
-                cur.execute(hybrid_query, (query_vec, query_vec, user_question, user_question, top_k))
+                cur.execute("SET hnsw.ef_search = 100;")
+                cur.execute(
+                    hybrid_query,
+                    (query_vec, query_vec, domain, domain, query_vec, candidate_limit,
+                     user_question, user_question, domain, domain, candidate_limit,
+                     candidate_limit)
+                )
                 rows = cur.fetchall()
 
+            return [
+                {
+                    "parent_id": row[0],
+                    "source_file": row[1],
+                    "heading": row[2],
+                    "parent_content": row[3],
+                    "score": float(row[4]),
+                    "best_vec_distance": float(row[5]) if row[5] is not None else None,
+                }
+                for row in rows
+            ]
+        except Exception as e:
+            logger.error("Error executing Hybrid Search SQL: %s", e)
+            return []
+
+    def _compress_parent_content(self, parent_content: str, query: str, max_chars: int = 800) -> str:
+        """
+        Nén ngữ cảnh extractive: giữ heading + câu/dòng chứa token của câu hỏi,
+        giữ nguyên dòng bảng khớp query. Mục tiêu: ít nhiễu cho LLM, rẻ token,
+        không mất dòng bảng lãi suất/phí liên quan.
+        """
+        lines = [ln for ln in parent_content.split("\n") if ln.strip()]
+        if sum(len(ln) for ln in lines) <= max_chars:
+            return parent_content
+        q_tokens = {t for t in strip_vietnamese_accents(query).split() if len(t) >= 3}
+        scored = []
+        for idx, ln in enumerate(lines):
+            ln_tokens = set(strip_vietnamese_accents(ln).split())
+            overlap = len(q_tokens & ln_tokens)
+            is_heading_or_table = idx == 0 or ln.strip().startswith("|")
+            scored.append((overlap + (1 if is_heading_or_table else 0), idx, ln))
+        kept = [t for t in scored if t[0] > 0] or scored[:6]
+        kept.sort(key=lambda t: t[1])
+        out: List[str] = []
+        size = 0
+        for _, _, ln in kept:
+            if size + len(ln) > max_chars and out:
+                break
+            out.append(ln)
+            size += len(ln)
+        return "\n".join(out)
+
+    def _hybrid_search_rrf(
+        self,
+        user_question: str,
+        query_vec: List[float],
+        top_k: int = 4,
+        domain: Optional[str] = None
+    ) -> Tuple[str, List[str]]:
+        """
+        Hybrid Search (Vector + Full-Text RRF) trong 1 câu SQL duy nhất
+        - Vector search: Cosine distance lấy top N ứng viên
+        - Keyword search: Full-Text Search tsvector @@ plainto_tsquery lấy top N ứng viên
+        - RRF Score = 1/(60 + vec_rank) + 1/(60 + kw_rank)
+        - Bật rerank cross-encoder khi settings.RERANK_ENABLED (lấy rộng, chấm lại, cắt top_k)
+        - GROUP BY parent_documents để lấy toàn bộ bảng biểu và điều kiện gốc
+        """
+        try:
+            candidate_limit = settings.RERANK_CANDIDATES if settings.RERANK_ENABLED else max(top_k * 4, 15)
+            rows = self._search_parent_rows(user_question, query_vec, candidate_limit, domain=domain)
+
+            if settings.RERANK_ENABLED and rows:
+                rows = self._rerank_parent_rows(user_question, rows)
+
+            if not rows:
+                return "Không tìm thấy tài liệu chính thống liên quan.", []
+
+            # Ngưỡng khoảng cách vector (settings.MAX_DISTANCE): nếu ứng viên tốt nhất vẫn
+            # quá xa ngữ nghĩa → trả rỗng để LLM từ chối trung thực thay vì bịa (anti-hallucination).
+            best_dist = rows[0].get("best_vec_distance")
+            if best_dist is not None and settings.MAX_DISTANCE > 0 and best_dist > settings.MAX_DISTANCE:
+                logger.info(
+                    "Vector distance floor triggered: best=%.3f > MAX_DISTANCE=%.3f -> từ chối trung thực.",
+                    best_dist, settings.MAX_DISTANCE
+                )
+                return "Không tìm thấy tài liệu chính thống liên quan.", []
+
+            rows = rows[:top_k]
             context_texts = []
             sources = []
             for row in rows:
-                source_file, heading, parent_content, _ = row
+                source_file = row["source_file"]
                 if source_file not in sources:
                     sources.append(source_file)
-                context_texts.append(f"--- Tài liệu: {source_file} ({heading}) ---\n{parent_content}")
+                compressed = self._compress_parent_content(row["parent_content"], user_question)
+                context_texts.append(f"--- Tài liệu: {source_file} ({row['heading']}) ---\n{compressed}")
 
-            combined_context = "\n\n".join(context_texts) if context_texts else "Không tìm thấy tài liệu chính thống liên quan."
+            combined_context = "\n\n".join(context_texts)
             return combined_context, sources
         except Exception as e:
             logger.error("Error executing Hybrid Search SQL: %s", e)
@@ -642,9 +999,162 @@ class AdvancedRAGEngine:
             }
         return None
 
-    def _extractive_fallback_answer(self, context: Optional[str], user_question: str) -> Dict[str, Any]:
+    def _build_loan_advisory_answer(self, analysis: Dict[str, Any], user_question: str = "") -> Dict[str, Any]:
+        """Tư vấn trực diện, chuẩn xác 100% về Khoản Vay Quick Loan & Dự tính trả góp (Vay ra vay, Lãi vay ra lãi vay)"""
+        base_amt = analysis["fmt_base_amount"]
+        l_calc = analysis["loan_calc"]
+
+        lines = [
+            f"Dạ Sen Hồng xin tư vấn chi tiết về khoản vay tiêu dùng **{base_amt}** (Kỳ hạn 12 tháng) và dự tính trả nợ theo đúng chuẩn **dư nợ giảm dần** để Quý khách chủ động kế hoạch tài chính ạ:\n",
+            f"1. 📈 **Lãi suất & Biểu phí khoản vay:**",
+            f"- **Lãi suất vay ưu đãi:** Chỉ từ **1.2% - 1.5%/tháng** (tương đương 14.4%/năm) tính trên **dư nợ giảm dần**.",
+            f"- **Nguyên tắc dư nợ giảm dần:** Tiền lãi tháng sau luôn thấp hơn tháng trước vì chỉ tính trên số dư nợ gốc thực tế còn nợ sau mỗi kỳ thanh toán.",
+            f"- **Phí tất toán trước hạn:** **0 VNĐ (Miễn phí 100%)**, Quý khách có thể thanh toán hết nợ bất kỳ lúc nào mà không bị phạt.",
+            f"- **Phí thẩm định & hồ sơ:** **0 VNĐ (Miễn phí 100%)**.\n",
+            f"2. 🧮 **Bảng dự tính trả góp chi tiết cho {base_amt} (Kỳ hạn 12 tháng):**",
+            f"- **Tiền gốc cố định hàng tháng:** **{l_calc['fmt_monthly_principal']}/tháng**.",
+            f"- **Tiền trả tháng đầu tiên (cao nhất):** **{l_calc.get('fmt_first_month_payment', '')}** (gồm tiền gốc + tiền lãi tháng đầu {l_calc.get('fmt_first_month_interest', '360.000đ')}).",
+            f"- **Tiền trả tháng cuối cùng (thấp nhất):** **{l_calc.get('fmt_last_month_payment', '')}** (gốc + tiền lãi tháng cuối {l_calc.get('fmt_last_month_interest', '30.000đ')}).",
+            f"- **Tổng tiền lãi ước tính cả kỳ 12 tháng:** **{l_calc['fmt_total_interest']}**.\n",
+            f"3. ⚡ **Thời gian xét duyệt & Thủ tục giải ngân:**",
+            f"- **Thời gian giải ngân:** Tiền vào ví chỉ trong **1 phút** sau khi phê duyệt hợp đồng điện tử bằng Smart OTP.",
+            f"- **Hồ sơ yêu cầu:** **DUY NHẤT 01 GIẤY TỜ** là Thẻ Căn cước / CCCD gắn chip chính chủ đã eKYC, **hoàn toàn không cần nộp bảng lương**, không cần sao kê giấy hay thế chấp tài sản.",
+            f"- **Độ tuổi:** Công dân Việt Nam từ đủ 18 đến 60 tuổi, không có nợ xấu CIC.\n",
+            f"👉 Quý khách có thể bấm nút **[Vay nhanh Quick Loan]** hoặc chọn nhanh các gợi ý bên dưới để xem tiếp câu trả lời chi tiết nhé ạ!"
+        ]
+
+        return {
+            "answer": "\n".join(lines),
+            "sources": ["Quy chế vay tiêu dùng tín chấp Quick Loan", "Biểu lãi suất cho vay Sen Hồng Bank"],
+            "quick_replies": ["Đăng ký vay ngay", "Bảng lịch trả nợ vay", "Hạn mức vay Quick Loan"],
+            "suggested_action": {"label": "Vay nhanh Quick Loan", "route": "/bills/quick-loan"}
+        }
+
+    def _build_savings_advisory_answer(self, analysis: Dict[str, Any], user_question: str = "") -> Dict[str, Any]:
+        """Tư vấn trực diện, chuẩn xác 100% về Gửi Tiết Kiệm & Lãi suất sinh lời (Tiết kiệm ra tiết kiệm, Lãi tiết kiệm ra lãi tiết kiệm)"""
+        base_amt = analysis["fmt_base_amount"]
+        src = analysis["amount_source"]
+        term_y = analysis["term_years"]
+        s_calc = analysis["savings_calc"]
+
+        if src == "WALLET_BALANCE":
+            intro = f"Dạ ghi nhận số dư khả dụng hiện tại trong tài khoản của Quý khách là **{base_amt}**."
+        else:
+            intro = f"Dạ với số tiền vốn **{base_amt}**, em xin gửi Quý khách bản kế hoạch gửi tiết kiệm online sinh lời tối ưu:"
+
+        t_data = s_calc["target_data"]
+        y1_data = s_calc["yearly_breakdown"][0]
+        goal_calc = analysis.get("goal_calc")
+        is_goal = analysis.get("is_goal_intent", False)
+
+        lines = [f"{intro}\n"]
+
+        if is_goal and goal_calc:
+            lines.extend([
+                f"🎯 **Kế hoạch Tích Lũy Mục Tiêu:**",
+                f"Để tích lũy được số tiền mục tiêu **{base_amt}** sau **{term_y} năm** ({goal_calc['term_months']} tháng):",
+                f"- Số tiền cần gửi tích lũy đều đặn mỗi tháng: **{goal_calc['fmt_monthly_deposit']}/tháng**.",
+                f"- Tổng số tiền gốc Quý khách thực đóng: **{goal_calc['fmt_total_deposit']}**.",
+                f"- Tiền lãi ngân hàng hỗ trợ sinh ra: **+{goal_calc['fmt_earned_interest']}** (chiếm ~{round(goal_calc['earned_interest']/goal_calc['target_amount']*100, 1)}% tổng tài sản mục tiêu)!\n"
+            ])
+
+        lines.extend([
+            f"📈 **1. Lãi suất Tiền gửi Tiết kiệm Online (Lãi kép):**",
+            f"- Mức lãi suất áp dụng: **{rate_config.SAVINGS_RATES[12]:.1f}%/năm** (Kỳ hạn 12 tháng) hoặc lên tới **{rate_config.SAVINGS_RATES[24]:.1f}%/năm** (Kỳ hạn 24 - 36 tháng).",
+            f"- Hình thức: Tiền gửi online tự động tái tục cả gốc và lãi khi đến hạn (Lãi nhập gốc sinh lời lũy kế).",
+            f"- Tiền lãi nhận sau **1 năm đầu**: **{y1_data['fmt_interest_savings']}** (Tổng tài sản: **{y1_data['fmt_total_savings']}**).",
+            f"- Tiền lãi nhận sau **{term_y} năm**: **{t_data['fmt_interest_savings']}** (Tổng tài sản tăng trưởng: **{t_data['fmt_total_savings']}**).",
+            f"- **So sánh với việc để tiền trong tài khoản thanh toán (0.2%/năm):** Sau {term_y} năm chỉ nhận được **{t_data['fmt_interest_casa']}**. Việc gửi tiết kiệm online giúp Quý khách sinh lời vượt trội hơn **+{t_data['fmt_difference']}**!\n",
+            f"📊 **Bảng tăng trưởng tài sản theo thời gian:**\n",
+            f"{s_calc['markdown_table']}\n",
+            f"💡 **2. Lời khuyên tối ưu lãi suất & Bảo toàn vốn:**",
+            f"- **Bảo toàn lãi suất theo Thông tư 04/2022/TT-NHNN:** Khi có việc đột xuất, Quý khách được quyền rút một phần tiền gốc trước hạn. Phần tiền gốc còn lại vẫn được giữ nguyên mức lãi suất có kỳ hạn ban đầu mà không bị mất toàn bộ lãi.",
+            f"- **Chiến lược bậc thang:** Quý khách có thể chia số tiền làm 2 sổ (1 sổ 6 tháng lãi suất {rate_config.SAVINGS_RATES[6]:.1f}%/năm để dự phòng chi tiêu và 1 sổ 12-24 tháng lãi suất {rate_config.SAVINGS_RATES[12]:.1f}% - {rate_config.SAVINGS_RATES[24]:.1f}%/năm để tối đa hóa lợi nhuận).",
+            f"- Quý khách có thể mở sổ tiết kiệm online 24/7 chỉ từ 1.000.000 VNĐ ngay trên ứng dụng bằng nút bên dưới ạ!\n",
+            f"👉 Quý khách có thể bấm nút **[Mở sổ tiết kiệm ngay]** hoặc chọn nhanh các gợi ý bên dưới để xem tiếp câu trả lời chi tiết nhé ạ!"
+        ])
+
+        return {
+            "answer": "\n".join(lines),
+            "sources": ["Biểu lãi suất tiết kiệm Sen Hồng", "Thông tư 04/2022/TT-NHNN"],
+            "quick_replies": ["Mở sổ tiết kiệm online", "Biểu lãi suất tiết kiệm", "Chiến lược tiết kiệm bậc thang"],
+            "suggested_action": {"label": "Mở sổ tiết kiệm ngay", "route": "/bills/savings"}
+        }
+
+    def _build_compound_comparison_answer(self, analysis: Dict[str, Any], user_question: str = "") -> Dict[str, Any]:
+        """Tư vấn so sánh 2 chiều giữa Gửi Tiết Kiệm và Vay Vốn khi khách hàng chủ động yêu cầu so sánh hoặc lập kế hoạch toàn diện"""
+        base_amt = analysis["fmt_base_amount"]
+        term_y = analysis["term_years"]
+        s_calc = analysis["savings_calc"]
+        l_calc = analysis["loan_calc"]
+        t_data = s_calc["target_data"]
+
+        lines = [
+            f"Dạ Sen Hồng xin gửi Quý khách bảng đối chiếu so sánh 2 chiều giữa Gửi Tiết Kiệm và Vay Vốn cho số tiền **{base_amt}**:\n",
+            f"📈 **1. Kế hoạch Gửi Tiết Kiệm Online Lãi Kép ({term_y} năm) (Kỳ hạn 12 tháng - {rate_config.SAVINGS_RATES[12]:.1f}%/năm):**",
+            f"- Tiền lãi sinh ra sau 1 năm: **{s_calc['yearly_breakdown'][0]['fmt_interest_savings']}**.",
+            f"- Sau {term_y} năm với lãi kép tái tục: Nhận tổng lãi **+{t_data['fmt_interest_savings']}** (Tổng tài sản: **{t_data['fmt_total_savings']}**).",
+            f"- Bảo toàn lãi suất khi rút gốc một phần theo Thông tư 04/2022/TT-NHNN.\n",
+            f"💼 **2. Đối chiếu Khoản Vay Tiêu Dùng Quick Loan (Kỳ hạn 12 tháng - Dư nợ giảm dần 1.2%/tháng):**",
+            f"- Tiền gốc trả cố định: **{l_calc['fmt_monthly_principal']}/tháng**.",
+            f"- Tiền trả tháng đầu: **{l_calc['fmt_first_month_payment']}**, tháng cuối: **{l_calc['fmt_last_month_payment']}**.",
+            f"- Tổng tiền lãi vay 12 tháng: **{l_calc['fmt_total_interest']}** (0đ phí phạt tất toán trước hạn).\n",
+            f"💡 **Lời khuyên tư vấn tài chính thông minh:** Nếu Quý khách cần vốn gấp để giải quyết công việc, gói vay Quick Loan giải ngân trong 1 phút là giải pháp linh hoạt. Nếu có nguồn tiền nhàn rỗi, gửi tiết kiệm online giúp bảo toàn vốn và sinh lời an toàn.\n",
+            f"👉 Quý khách có thể bấm chọn nhanh các gợi ý bên dưới để xem tiếp câu trả lời chi tiết cho từng phương án nhé ạ!"
+        ]
+
+        return {
+            "answer": "\n".join(lines),
+            "sources": ["Biểu lãi suất tiết kiệm Sen Hồng", "Quy định vay tiêu dùng Quick Loan"],
+            "quick_replies": ["Mở sổ tiết kiệm online", "Vay nhanh Quick Loan", "Bảng lịch trả nợ vay"],
+            "suggested_action": {"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}
+        }
+
+    def _build_financial_advisory_answer(self, analysis: Dict[str, Any], user_question: str = "") -> Dict[str, Any]:
+        """Điều hướng thông minh: Vay ra vay, Lãi ra lãi, Tiết kiệm ra tiết kiệm (Không trả lời lan man)"""
+        q = (user_question or analysis.get("user_question") or "").lower()
+        is_loan = analysis.get("is_loan_intent") or (
+            any(k in q for k in ["vay", "khoan vay", "khoản vay", "quick loan", "trả nợ vay", "tra no vay", "mượn", "dư nợ", "du no"]) and
+            not any(k in q for k in ["tiết kiệm", "tiet kiem", "gửi tiền", "gui tien"])
+        )
+        is_comp = analysis.get("is_comparison_intent") or any(k in q for k in ["so sánh", "so sanh", "hay là", "hay la", "nên vay hay", "nen vay hay", "kế hoạch tài chính toàn diện"])
+
+        if is_comp:
+            return self._build_compound_comparison_answer(analysis, user_question)
+        elif is_loan:
+            return self._build_loan_advisory_answer(analysis, user_question)
+        else:
+            return self._build_savings_advisory_answer(analysis, user_question)
+
+    def _extractive_fallback_answer(self, context: Optional[str], user_question: str, history: Optional[List[MessageItem]] = None) -> Dict[str, Any]:
         """Tự động trích xuất nội dung từ kho tài liệu chính thống khi LLM gặp sự cố mạng (Anti-Rambling Banking Fallback)"""
         q_lower = user_question.lower()
+
+        # 1. Kiểm tra xem có phải câu hỏi dài / phức tạp đa ý định hoặc chuyên đề kinh tế vĩ mô không (Ưu tiên số 1)
+        long_resp = handle_comprehensive_long_query(user_question)
+        if long_resp:
+            return long_resp
+
+        # 2. Kiểm tra câu hỏi tính toán tài chính / lãi suất / trả góp khoản vay (Vay ra vay, Lãi ra lãi)
+        fin_analysis = generate_comprehensive_financial_analysis(user_question, user_wallet=getattr(self, "_current_user_wallet", None))
+        if fin_analysis:
+            is_explicit_loan = fin_analysis.get("is_loan_intent") or (
+                any(k in q_lower for k in ["vay", "khoan vay", "khoản vay", "quick loan", "trả nợ vay", "tra no vay", "mượn", "dư nợ", "du no"]) and
+                not any(k in q_lower for k in ["tiết kiệm", "tiet kiem", "gửi tiền", "gui tien"])
+            )
+            is_explicit_savings = fin_analysis.get("is_savings_intent") or (
+                (any(k in q_lower for k in ["tiết kiệm", "tiet kiem", "gửi tiền", "gui tien", "gửi góp", "gui gop", "lãi kép", "lai kep", "tích lũy", "tich luy"]) or
+                 bool(re.search(r'\b(?:gửi|gui)\s+\d+', q_lower))) and
+                not any(k in q_lower for k in ["vay", "khoan vay", "khoản vay", "quick loan"])
+            )
+            is_comparison = fin_analysis.get("is_comparison_intent") or any(k in q_lower for k in ["so sánh", "so sanh", "hay là", "hay la", "nên vay hay", "nen vay hay", "kế hoạch tài chính toàn diện"])
+
+            if is_comparison:
+                return self._build_compound_comparison_answer(fin_analysis, user_question)
+            elif is_explicit_loan:
+                return self._build_loan_advisory_answer(fin_analysis, user_question)
+            elif is_explicit_savings or fin_analysis["term_years"] >= 2 or any(k in q_lower for k in ["tiền trong tài khoản", "tien trong tai khoan", "tự nó", "tu no", "vài năm", "vai nam", "10 năm", "10 nam", "10 namw"]):
+                return self._build_savings_advisory_answer(fin_analysis, user_question)
 
         # 1. Hướng dẫn trực diện cho các nghiệp vụ chính (Ưu tiên theo thứ tự đặc thù -> tổng quát)
         # Quên mã PIN / Lấy lại mã PIN (Phải ưu tiên số 1 để bảo vệ trải nghiệm khách hàng)
@@ -695,6 +1205,44 @@ class AdvancedRAGEngine:
                 "suggested_action": {"label": "Thẻ & Ngân hàng liên kết", "route": "/bank-cards"}
             }
 
+        # Hồ sơ & Giấy tờ Tạo tài khoản / Mở App Sen Hồng
+        is_account_opening_docs = (
+            any(k in q_lower for k in [
+                "tạo tài khoản", "tao tai khoan", "mở tài khoản", "mo tai khoan",
+                "tạo app", "tao app", "mở app", "mo app", "đăng ký tài khoản", "dang ky tai khoan", "đăng ký app"
+            ]) and any(k in q_lower for k in [
+                "giấy tờ", "giay to", "hồ sơ", "ho so", "cần gì", "can gi", "cần những gì", "can nhung gi",
+                "thủ tục", "thu tuc", "điều kiện", "dieu kien", "bao nhiêu tuổi", "bao nhieu tuoi",
+                "tuổi", "tuoi", "không có nfc", "khong co nfc", "smart lounge", "vneid"
+            ])
+        ) or any(k in q_lower for k in [
+            "giấy tờ mở tài khoản", "giay to mo tai khoan", "giấy tờ tạo app", "giay to tao app",
+            "hồ sơ tạo tài khoản", "ho so tao tai khoan", "hồ sơ mở tài khoản", "ho so mo tai khoan",
+            "bao nhiêu tuổi được mở tài khoản", "bao nhieu tuoi duoc mo tai khoan", "bao nhiêu tuổi thì mở app được",
+            "bao nhiêu tuổi được tạo app", "không có nfc có mở app được không", "khong co nfc co mo app duoc khong"
+        ])
+        if is_account_opening_docs:
+            return {
+                "answer": (
+                    "Dạ để **Tạo tài khoản / Mở ứng dụng Ngân hàng Số Sen Hồng** trực tuyến 100% qua eKYC, "
+                    "Quý khách chỉ cần chuẩn bị danh mục giấy tờ và đáp ứng điều kiện đơn giản như sau ạ:\n\n"
+                    "1. 🪪 **Giấy tờ tùy thân bắt buộc (01 loại duy nhất):**\n"
+                    "  - **Thẻ Căn cước** (theo Luật Căn cước 2023) hoặc **Thẻ CCCD gắn chip 12 số** còn thời hạn sử dụng do Bộ Công An cấp.\n"
+                    "  - *(Lưu ý: CMND 9 số cũ hoặc CCCD mã vạch không có chip đã ngừng hỗ trợ mở tài khoản ngân hàng điện tử theo quy định của NHNN & Bộ Công An).*\n\n"
+                    "2. 📱 **Điều kiện Thuê bao & Thiết bị:**\n"
+                    "  - **Số điện thoại chính chủ:** Đăng ký trùng khớp thông tin cá nhân trên mạng viễn thông.\n"
+                    "  - **Điện thoại thông minh:** Hỗ trợ camera và kết nối **NFC** để quét chip vi mạch CCCD.\n"
+                    "  - 👉 **Nếu máy không có NFC:** Quý khách mang CCCD gắn chip đến bất kỳ điểm **Sen Hồng Smart Lounge** trên toàn quốc để giao dịch viên hỗ trợ quét chip 2 phút hoàn toàn miễn phí.\n"
+                    "  - 👉 **Đã có VNeID Mức 2:** Quý khách có thể chọn mở tài khoản liên thông qua VNeID chỉ trong 30 giây.\n\n"
+                    "3. ⚖️ **Độ tuổi & Người nước ngoài:**\n"
+                    "  - Công dân Việt Nam từ **đủ 15 tuổi trở lên** có CCCD gắn chip và đầy đủ năng lực hành vi dân sự.\n"
+                    "  - Người nước ngoài: Cần Hộ chiếu (còn hạn từ 6 tháng trở lên) kèm Thị thực/Thẻ tạm trú (còn hạn từ 12 tháng trở lên) mở tại quầy Smart Lounge."
+                ),
+                "quick_replies": ["Đăng ký tài khoản ngay", "Quét chip NFC CCCD", "Mở tài khoản bằng VNeID"],
+                "suggested_action": {"label": "Đăng ký tài khoản ngay", "route": "/auth/register"},
+                "sources": ["Cẩm nang Giấy tờ Mở tài khoản Sen Hồng Bank", "Thông tư 17/2024/TT-NHNN"]
+            }
+
         # Gói vay Quick Loan theo từng mục thắc mắc riêng biệt
         is_loan_q = any(k in q_lower for k in ["vay", "khoan vay", "khoản vay", "quick loan"])
         if is_loan_q and any(k in q_lower for k in ["lãi suất", "lai suat", "lãi", "lai"]):
@@ -733,6 +1281,48 @@ class AdvancedRAGEngine:
                 ),
                 "quick_replies": ["Lãi suất vay Quick Loan", "Thời gian giải ngân", "Đăng ký vay ngay"],
                 "suggested_action": {"label": "Vay nhanh", "route": "/bills/quick-loan"}
+            }
+
+        # Điều kiện & Thủ tục vay Quick Loan / Giấy tờ vay vốn
+        if is_loan_q and any(k in q_lower for k in [
+            "điều kiện", "dieu kien", "thủ tục", "thu tuc", "cần giấy tờ gì", "can giay to gi",
+            "ai được vay", "ai duoc vay", "hồ sơ vay", "ho so vay", "yêu cầu", "yeu cau",
+            "giấy tờ", "giay to", "bảng lương", "bang luong", "sao kê", "sao ke",
+            "chứng minh thu nhập", "chung minh thu nhap", "thế chấp", "the chap"
+        ]):
+            return {
+                "answer": (
+                    "Dạ, Sen Hồng Bank xin tư vấn chi tiết về **Hồ sơ, Giấy tờ vay vốn** theo từng hạn mức để Quý khách chuẩn bị thuận tiện nhất ạ:\n\n"
+                    "1. 🚀 **GÓI VAY NHANH QUICK LOAN (Từ 5 triệu đến 50 triệu VNĐ) - 100% ONLINE:**\n"
+                    "  - **Giấy tờ yêu cầu:** **DUY NHẤT 01 GIẤY TỜ** là **Thẻ Căn cước / CCCD gắn chip chính chủ** đã định danh eKYC trên App Sen Hồng.\n"
+                    "  - **Có cần bảng lương không?** 👉 **HOÀN TOÀN KHÔNG CẦN BẢNG LƯƠNG**, không cần sao kê giấy, không cần chứng minh thu nhập hay thế chấp tài sản! Hệ thống chấm điểm tự động qua dữ liệu eKYC và CIC.\n"
+                    "  - **Điều kiện:** Công dân Việt Nam từ đủ 18 - 60 tuổi, không có nợ xấu CIC.\n"
+                    "  - **Thời gian giải ngân:** Duyệt tự động trong 30 giây, giải ngân về ví chỉ trong **1 phút**.\n\n"
+                    "2. 🏢 **GÓI VAY TIÊU DÙNG HẠN MỨC CAO (Từ 50 triệu đến 200 triệu VNĐ):**\n"
+                    "  - Thẻ Căn cước / CCCD gắn chip chính chủ.\n"
+                    "  - **Chứng minh thu nhập (Chuẩn bị 01 trong 3 loại):** Sao kê lương 3-6 tháng gần nhất, hoặc Hợp đồng lao động, hoặc ảnh chụp quá trình đóng BHXH trên ứng dụng **VssID**.\n\n"
+                    "3. 🏪 **GÓI VAY HỘ KINH DOANH / TIỂU THƯƠNG (Hạn mức đến 300 triệu VNĐ):**\n"
+                    "  - Thẻ Căn cước của chủ hộ kinh doanh + Giấy ĐKKD hoặc hợp đồng thuê sạp/mặt bằng.\n"
+                    "  - Biên lai thuế và sao kê giao dịch nhận tiền mã **VietQR Pro Sen Hồng** 3 - 6 tháng."
+                ),
+                "quick_replies": ["Vay nhanh Quick Loan", "Bảng tính trả nợ chi tiết", "Lãi suất vay Quick Loan"],
+                "suggested_action": {"label": "Vay nhanh", "route": "/bills/quick-loan"},
+                "sources": ["Cẩm nang Hồ sơ Vay vốn Sen Hồng Bank", "Thông tư 06/2023/TT-NHNN"]
+            }
+
+        # Phí tất toán khoản vay trước hạn
+        if is_loan_q and any(k in q_lower for k in [
+            "tất toán trước hạn", "tat toan truoc han", "trả trước hạn", "tra truoc han",
+            "phạt", "phat", "phí tất toán", "phi tat toan"
+        ]):
+            return {
+                "answer": (
+                    "Dạ, tại Sen Hồng Bank, gói vay tiêu dùng Quick Loan áp dụng chính sách **KHÔNG PHẠT TẤT TOÁN TRƯỚC HẠN (0 VNĐ)** ạ:\n\n"
+                    "- 🆓 **Phí phạt tất toán trước hạn:** **0 VNĐ (Miễn phí 100%)**, Quý khách có thể tất toán trả hết nợ bất kỳ lúc nào mà không bị phạt.\n"
+                    "- 📉 **Lợi ích:** Tiền lãi chỉ tính đến đúng ngày Quý khách tất toán thực tế theo dư nợ giảm dần, giúp tiết kiệm tối đa tiền lãi."
+                ),
+                "quick_replies": ["Lịch trả nợ vay", "Vay nhanh", "Lãi suất vay Quick Loan"],
+                "suggested_action": {"label": "Lịch trả nợ vay", "route": "/loan/schedule"}
             }
 
         if is_loan_q:
@@ -785,16 +1375,26 @@ class AdvancedRAGEngine:
                 "suggested_action": {"label": "Quản lý thiết bị", "route": "/settings/devices"}
             }
 
-        if any(k in q_lower for k in ["nfc", "chip cccd", "cccd", "2345", "khuon mat 3d", "khuôn mặt 3d"]):
+        if any(k in q_lower for k in [
+            "nfc", "chip cccd", "cccd", "2345", "khuon mat 3d", "khuôn mặt 3d",
+            "sinh trắc học", "sinh trac hoc", "khuôn mặt", "khuon mat", "bắt quét", "bat quet",
+            "lỗi quét", "loi quet", "đọc chip", "doc chip", "lỗi sinh trắc học", "loi sinh trac hoc"
+        ]):
             return {
                 "answer": (
-                    "Dạ, theo Quyết định 2345 của Ngân hàng Nhà nước, hướng dẫn đọc chip NFC CCCD và hạn mức như sau:\n\n"
-                    "- **Khi nào bắt buộc:** Giao dịch trên **10.000.000 VNĐ/lần** hoặc tổng giao dịch tích lũy trong ngày vượt quá **20.000.000 VNĐ/ngày** bắt buộc phải xác thực sinh trắc học khớp với dữ liệu chip CCCD.\n"
-                    "- **Cách thao tác:** Vào Hồ sơ -> Chọn **Đọc chip NFC CCCD** -> Áp sát thẻ CCCD gắn chip vào lưng điện thoại giữ nguyên 3-5 giây để đối soát dữ liệu của Bộ Công an.\n"
-                    "- **Hạn mức sau xác thực:** Nâng hạn mức giao dịch lên tới 500.000.000 VNĐ/ngày."
+                    "Dạ theo **Quyết định 2345/QĐ-NHNN** của Ngân hàng Nhà nước, hướng dẫn cài đặt và xử lý lỗi Sinh trắc học NFC CCCD như sau ạ:\n\n"
+                    "- 🛡️ **Quy định bắt buộc:** Giao dịch chuyển tiền từ **10.000.000 VNĐ/lần** hoặc tổng trên **20.000.000 VNĐ/ngày** bắt buộc phải xác thực khuôn mặt khớp với dữ liệu thẻ CCCD gắn chip của Bộ Công an.\n"
+                    "- 📱 **Mẹo quét chip NFC thành công 100% trong 3 giây:**\n"
+                    "  + **Tháo ốp lưng:** Tháo ốp lưng dày hoặc ốp có kim loại/nam châm MagSafe trước khi quét.\n"
+                    "  + **Vị trí đầu đọc NFC:**\n"
+                    "    • iPhone: Nằm ở **mép đỉnh trên cùng** mặt lưng máy (ngang cụm camera).\n"
+                    "    • Android (Samsung, Xiaomi...): Nằm ở **chính giữa mặt lưng** máy (vui lòng bật NFC trong phần Cài đặt).\n"
+                    "  + **Thao tác:** Áp sát mặt sau thẻ CCCD (phần có vi mạch chip) cố định vào vị trí đọc, giữ yên trong **3 đến 5 giây** cho đến khi app báo thành công.\n"
+                    "- 🚀 **Hạn mức sau xác thực:** Nâng hạn mức chuyển tiền lên tới **500.000.000 VNĐ/ngày**.\n\n"
+                    "Quý khách bấm nút bên dưới để mở trực tiếp màn hình quét chip CCCD ạ!"
                 ),
-                "quick_replies": ["Cấp độ eKYC", "Hạn mức chuyển tiền", "Chữ ký số Smart OTP"],
-                "suggested_action": {"label": "Đọc chip NFC CCCD", "route": "/profile/nfc-reader"}
+                "quick_replies": ["Quét chip NFC CCCD", "Hạn mức theo eKYC", "Chữ ký số Smart OTP"],
+                "suggested_action": {"label": "Quét chip NFC CCCD", "route": "/profile/nfc-reader"}
             }
 
         if any(k in q_lower for k in ["chu ky so", "chữ ký số", "smart otp"]):
@@ -861,6 +1461,257 @@ class AdvancedRAGEngine:
                 "suggested_action": {"label": "Mã QR của tôi", "route": "/my-qr"}
             }
 
+        # Tra soát giao dịch / Treo tiền chuyển khoản Napas
+        is_dispute_q = any(k in q_lower for k in [
+            "chưa nhận được", "chua nhan duoc", "trừ tiền rồi mà", "tru tien roi ma",
+            "bị trừ tiền nhưng", "bi tru tien nhung", "treo tiền", "treo tien", "tiền bị treo",
+            "lỗi chuyển tiền", "loi chuyen tien", "chuyển nhầm", "chuyen nham", "tra soát", "tra soat",
+            "khiếu nại", "khieu nai", "tiền chưa tới", "tiền chưa qua"
+        ])
+        if is_dispute_q:
+            return {
+                "answer": (
+                    "Dạ Sen Hồng xin thông tin đến Quý khách về trường hợp chuyển tiền bị chậm hoặc người nhận chưa thấy tiền ạ:\n\n"
+                    "- ⏱️ **Thời gian đối soát liên ngân hàng:** Các giao dịch Napas 24/7 thường thành công trong 1-3 giây. Tuy nhiên vào các khung giờ cao điểm, ngân hàng thụ hưởng có thể mất từ **5 đến 30 phút** để cập nhật số dư vào tài khoản người nhận.\n"
+                    "- 🧾 **Biên lai chuyển tiền:** Quý khách vào mục **Lịch sử giao dịch** -> Chọn giao dịch đó -> Bấm **Tải biên lai** (có đầy đủ Mã chuẩn chi Napas Trace No) để gửi người nhận đối soát.\n"
+                    "- 🛡️ **Bảo toàn dòng tiền (Saga & Double-Entry Ledger):** Nếu giao dịch gặp sự cố mạng Napas, hệ thống tự động hoàn tiền nguyên vẹn (Reversal) về ví Sen Hồng của Quý khách.\n"
+                    "- 📝 **Gửi yêu cầu tra soát trực tuyến:** Nếu sau 30 phút người nhận vẫn chưa thấy tiền, Quý khách bấm nút **[Lịch sử giao dịch & Tra soát]** bên dưới hoặc gọi hotline 24/7 **1900-SENHONG** (1900 736 466) để chuyên viên hỗ trợ tra soát tức thì ạ!"
+                ),
+                "quick_replies": ["Xem lịch sử giao dịch", "Gửi yêu cầu tra soát", "Hotline 1900-SENHONG"],
+                "suggested_action": {"label": "Lịch sử giao dịch & Tra soát", "route": "/history"}
+            }
+
+        # Giới thiệu bạn bè nhận thưởng
+        if any(k in q_lower for k in ["gioi thieu ban be", "giới thiệu bạn bè", "referral", "ma gioi thieu", "mã giới thiệu", "moi ban", "mời bạn"]):
+            return {
+                "answer": (
+                    "Dạ, chương trình **'Lan Tỏa Sen Hồng - Rinh Thưởng 50.000đ'** áp dụng không giới hạn số lượt:\n\n"
+                    "- 🎁 **Người giới thiệu (Quý khách):** Nhận ngay **50.000 VNĐ tiền mặt** vào ví cho mỗi bạn bè đăng ký và eKYC thành công.\n"
+                    "- 🎁 **Người được giới thiệu:** Nhận gói Voucher ưu đãi thanh toán hóa đơn & nạp điện thoại trị giá **100.000 VNĐ**.\n"
+                    "- 📲 **Cách giới thiệu:** Mở app Sen Hồng -> Chọn **Ưu đãi** -> Nhấn **Giới thiệu bạn bè** -> Sao chép Mã giới thiệu (chính là SĐT của Quý khách) hoặc chia sẻ link tải app trực tiếp qua Zalo/Facebook."
+                ),
+                "quick_replies": ["Lấy mã giới thiệu", "Kho Voucher của tôi", "Chương trình ưu đãi"],
+                "suggested_action": {"label": "Giới thiệu bạn bè", "route": "/referral"}
+            }
+
+        # Kho Voucher & Khuyến mãi
+        if any(k in q_lower for k in ["voucher", "khuyen mai", "khuyến mãi", "ma giam gia", "mã giảm giá", "uu dai", "ưu đãi"]):
+            return {
+                "answer": (
+                    "Dạ, tại **Kho Voucher & Khuyến Mãi Sen Hồng**, Quý khách có thể thu thập các ưu đãi hấp dẫn:\n\n"
+                    "- ⚡ Giảm 20.000đ - 50.000đ cho hóa đơn Điện EVN và Nước sinh hoạt.\n"
+                    "- ⚡ Chiết khấu trực tiếp tới 5% khi Nạp tiền điện thoại & Data 4G/5G.\n"
+                    "- ⚡ Giảm tới 150.000đ khi Đặt vé máy bay trực tuyến iMedia.\n"
+                    "- ⚡ Miễn 100% phí thường niên Thẻ ảo quốc tế Visa Platinum Virtual.\n\n"
+                    "Quý khách bấm nút bên dưới để vào Kho Voucher lưu mã và sử dụng ngay ạ!"
+                ),
+                "quick_replies": ["Kho Voucher & Ưu đãi", "Giới thiệu bạn bè", "Thanh toán hóa đơn"],
+                "suggested_action": {"label": "Kho Voucher", "route": "/promotions"}
+            }
+
+        # =========================================================================
+        # 1.1 HẠN MỨC GIAO DỊCH (TRANSACTION LIMITS - ƯU TIÊN TRƯỚC CÁCH LÀM)
+        # =========================================================================
+        # Hạn mức chuyển tiền
+        is_transfer_limit_q = any(k in q_lower for k in [
+            "hạn mức chuyển", "han muc chuyen", "chuyển tối đa", "chuyen toi da",
+            "chuyển được bao nhiêu", "chuyen duoc bao nhieu", "hạn mức chuyển tiền", "han muc chuyen tien",
+            "chuyển tối đa bao nhiêu", "chuyển 1 lần tối đa", "chuyển 1 ngày tối đa", "hạn mức giao dịch chuyển"
+        ]) or (
+            any(k in q_lower for k in ["hạn mức", "han muc", "tối đa bao nhiêu", "toi da bao nhieu"]) and 
+            any(t in q_lower for t in ["chuyển tiền", "chuyen tien", "chuyển khoản", "chuyen khoan", "napas"])
+        )
+        if is_transfer_limit_q:
+            return {
+                "answer": (
+                    "Dạ, hạn mức chuyển tiền trực tuyến (Napas 24/7 và Nội bộ) trên Ngân hàng Số Sen Hồng được quy định theo cấp độ định danh eKYC như sau ạ:\n\n"
+                    "- 📌 **Tài khoản eKYC Cấp 1 (Định danh chụp ảnh CCCD):**\n"
+                    "  + Hạn mức tối đa: **10.000.000 VNĐ/giao dịch**.\n"
+                    "  + Hạn mức tối đa: **20.000.000 VNĐ/ngày**.\n\n"
+                    "- 🛡️ **Tài khoản eKYC Cấp 2 (Xác thực Sinh trắc học & Đọc chip NFC CCCD theo QĐ 2345/QĐ-NHNN):**\n"
+                    "  + Hạn mức tối đa: **100.000.000 VNĐ/giao dịch**.\n"
+                    "  + Hạn mức tối đa: **500.000.000 VNĐ/ngày**.\n\n"
+                    "- ⚡ **Lưu ý Quyết định 2345:** Giao dịch trên **10.000.000 VNĐ/lần** hoặc tổng giao dịch tích lũy trong ngày vượt quá **20.000.000 VNĐ** bắt buộc phải quét khuôn mặt 3D Face ID khớp với dữ liệu thẻ CCCD gắn chip của Bộ Công an.\n\n"
+                    "Quý khách có thể nâng hạn mức lên tới 500 triệu đồng/ngày hoàn toàn miễn phí bằng cách quét chip NFC CCCD bên dưới ạ!"
+                ),
+                "quick_replies": ["Quét chip NFC CCCD", "Chuyển tiền Napas 24/7", "Biểu phí chuyển tiền"],
+                "suggested_action": {"label": "Nâng hạn mức (NFC CCCD)", "route": "/profile/nfc-reader"}
+            }
+
+        # Phí chuyển tiền
+        is_transfer_fee_q = any(k in q_lower for k in [
+            "chuyển tiền có mất phí", "chuyen tien co mat phi", "phí chuyển tiền", "phi chuyen tien",
+            "chuyển tiền mất bao nhiêu phí", "chuyển liên ngân hàng có mất phí", "chuyển tiền napas có mất phí",
+            "chuyển tiền tốn phí", "chuyển tiền miễn phí", "chuyen tien ton phi", "chuyen tien mien phi",
+            "phí chuyển khoản", "phi chuyen khoan", "chuyển khoản có mất phí", "chuyen khoan co mat phi"
+        ]) or (
+            any(f in q_lower for f in ["phí", "phi", "mất phí", "mat phi", "tốn phí", "ton phi"]) and
+            any(t in q_lower for t in ["chuyển tiền", "chuyen tien", "chuyển khoản", "chuyen khoan", "napas"])
+        )
+        if is_transfer_fee_q:
+            return {
+                "answer": (
+                    "Dạ, tại Ngân hàng Số Sen Hồng, mọi giao dịch chuyển tiền đều **HOÀN TOÀN MIỄN PHÍ 100% TRỌN ĐỜI** ạ:\n\n"
+                    "- 🆓 **Chuyển tiền nội bộ Sen Hồng:** Miễn phí 100%, tiền nhận tức thì 24/7 qua SĐT/STK/Biệt danh Alias.\n"
+                    "- 🆓 **Chuyển tiền liên ngân hàng Napas 24/7:** Miễn phí 100% tới hơn 40 ngân hàng toàn quốc (Vietcombank, MB, Techcombank, BIDV, Agribank, ACB, VPBank...).\n"
+                    "- 🆓 **Chuyển tiền qua mã VietQR:** Miễn phí 100% không giới hạn số lượt.\n"
+                    "- 🆓 **Không thu bất kỳ khoản phụ phí nào:** Không phí duy trì tài khoản, không yêu cầu số dư tối thiểu trong ví."
+                ),
+                "quick_replies": ["Chuyển tiền ngay", "Hạn mức chuyển tiền", "Mã VietQR của tôi"],
+                "suggested_action": {"label": "Chuyển tiền ngay", "route": "/transfer"}
+            }
+
+        # Hạn mức rút tiền ATM
+        is_atm_limit_q = any(k in q_lower for k in [
+            "hạn mức rút atm", "han muc rut atm", "rút atm tối đa", "rut atm toi da",
+            "hạn mức rút tiền atm", "han muc rut tien atm", "rút tiền atm tối đa bao nhiêu",
+            "rút atm được bao nhiêu", "rút tiền atm tối thiểu", "hạn mức rút tiền tại atm",
+            "hạn mức rút cây atm", "rút tối đa bao nhiêu ở atm", "rut duoc bao nhieu o atm"
+        ]) or (
+            any(l in q_lower for l in ["hạn mức", "han muc", "tối đa bao nhiêu", "toi da bao nhieu", "tối thiểu", "toi thieu"]) and
+            any(w in q_lower for w in ["rút tiền", "rut tien", "rút atm", "rut atm"]) and
+            any(a in q_lower for a in ["atm", "cây atm", "không thẻ", "khong the"])
+        )
+        if is_atm_limit_q:
+            return {
+                "answer": (
+                    "Dạ, hạn mức rút tiền mặt không cần thẻ tại cây ATM qua Sen Hồng như sau ạ:\n\n"
+                    "- 💵 **Số tiền rút tối thiểu:** **50.000 VNĐ/lần**.\n"
+                    "- 💵 **Hạn mức rút tối đa mỗi lần:** **5.000.000 VNĐ/lần**.\n"
+                    "- 💵 **Hạn mức rút tối đa mỗi ngày:** **20.000.000 VNĐ/ngày**.\n"
+                    "- 🏦 **Mạng lưới cây ATM hỗ trợ:** Miễn phí 100% tại hơn 20.000 cây ATM của toàn bộ các ngân hàng thuộc liên minh Napas trên toàn quốc (Vietcombank, BIDV, VietinBank, Agribank, MB, Techcombank, ACB...)."
+                ),
+                "quick_replies": ["Rút tiền ATM không thẻ", "Biểu phí rút tiền ATM", "Tìm cây ATM gần nhất"],
+                "suggested_action": {"label": "Rút tiền ATM không thẻ", "route": "/atm-withdrawal"}
+            }
+
+        # Phí rút tiền ATM
+        is_atm_fee_q = any(k in q_lower for k in [
+            "rút tiền atm có mất phí", "rut tien atm co mat phi", "phí rút tiền atm", "phi rut tien atm",
+            "rút atm có tốn phí", "rut atm co ton phi", "rút tiền tại cây atm có mất phí", "phí rút atm", "phi rut atm",
+            "rút tiền không thẻ có mất phí", "phí rút tiền không thẻ"
+        ]) or (
+            any(f in q_lower for f in ["phí", "phi", "mất phí", "mat phi", "tốn phí", "ton phi", "mien phi", "miễn phí"]) and
+            any(w in q_lower for w in ["rút tiền", "rut tien", "rút atm", "rut atm"]) and
+            any(a in q_lower for a in ["atm", "cây atm", "không thẻ", "khong the"])
+        )
+        if is_atm_fee_q:
+            return {
+                "answer": (
+                    "Dạ, dịch vụ rút tiền mặt không cần thẻ tại cây ATM qua ứng dụng Sen Hồng là **HOÀN TOÀN MIỄN PHÍ 100%** ạ:\n\n"
+                    "- 🆓 **Phí rút tiền mặt tại ATM:** **0 VNĐ (Miễn phí 100%)** tại tất cả cây ATM thuộc liên minh Napas trên cả nước.\n"
+                    "- 🆓 **Phí tạo mã rút tiền trên App:** Miễn phí 100%.\n"
+                    "- 💵 **Hạn mức áp dụng:** Tối thiểu 50.000đ/lần, tối đa 5.000.000đ/lần và 20.000.000đ/ngày."
+                ),
+                "quick_replies": ["Rút tiền ATM không thẻ", "Hạn mức rút tiền ATM", "Tìm cây ATM gần nhất"],
+                "suggested_action": {"label": "Rút tiền ATM không thẻ", "route": "/atm-withdrawal"}
+            }
+
+        # Số tiền gửi tiết kiệm tối thiểu
+        is_min_savings_q = any(k in q_lower for k in [
+            "tiết kiệm tối thiểu", "tiet kiem toi thieu", "mở sổ tối thiểu", "mo so toi thieu",
+            "gửi tiết kiệm từ bao nhiêu", "gui tiet kiem tu bao nhieu", "mở sổ tiết kiệm tối thiểu",
+            "mở sổ tiết kiệm online cần bao nhiêu tiền", "số tiền gửi tiết kiệm tối thiểu", "so tien gui tiet kiem toi thieu",
+            "gửi tiết kiệm ít nhất bao nhiêu", "mở sổ ít nhất", "gui tiet kiem it nhat bao nhieu"
+        ]) or (
+            any(k in q_lower for k in ["tiết kiệm", "tiet kiem", "mở sổ", "mo so"]) and
+            any(m in q_lower for m in ["tối thiểu", "toi thieu", "ít nhất", "it nhat", "thấp nhất", "thap nhat"])
+        )
+        if is_min_savings_q:
+            return {
+                "answer": (
+                    "Dạ, số tiền gửi tiết kiệm tối thiểu tại Ngân hàng Số Sen Hồng cực kỳ linh hoạt để khách hàng dễ dàng tích lũy tài chính:\n\n"
+                    "- 💎 **Tiết kiệm Online có kỳ hạn (1 - 36 tháng):** Tối thiểu chỉ từ **1.000.000 VNĐ**.\n"
+                    "- 💎 **Tiết kiệm Tích lũy Gửi góp (Goal Savings):** Tối thiểu chỉ từ **100.000 VNĐ/lần gửi**.\n"
+                    "- 💎 **Hạn mức gửi tối đa:** Không giới hạn số tiền và không giới hạn số lượng sổ tiết kiệm mở cùng lúc.\n"
+                    f"- 📈 **Lãi suất ưu đãi:** Lên tới **{rate_config.SAVINGS_RATES[12]:.1f}%/năm** (kỳ hạn 12 tháng) và **{rate_config.SAVINGS_RATES[24]:.1f}%/năm** (kỳ hạn 24 tháng), lãi suất tự động nhập gốc khi tái tục."
+                ),
+                "quick_replies": ["Mở sổ tiết kiệm ngay", "Biểu lãi suất tiết kiệm", "Tiết kiệm tích lũy mục tiêu"],
+                "suggested_action": {"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}
+            }
+
+        # Điều kiện mở sổ tiết kiệm online
+        is_savings_conditions_q = any(k in q_lower for k in ["tiết kiệm", "tiet kiem", "mở sổ", "mo so"]) and any(k in q_lower for k in [
+            "điều kiện", "dieu kien", "thủ tục", "thu tuc", "cần gì", "can gi", "giấy tờ", "giay to", "quy định", "quy dinh"
+        ]) and not any(k in q_lower for k in ["tối thiểu", "toi thieu", "lãi suất", "lai suat", "tính", "tinh"])
+        if is_savings_conditions_q:
+            return {
+                "answer": (
+                    "Dạ, điều kiện để mở sổ tiết kiệm trực tuyến tại Ngân hàng Số Sen Hồng rất thuận tiện:\n\n"
+                    "- 📋 **Điều kiện tham gia:**\n"
+                    "  + Là công dân Việt Nam có tài khoản ví Sen Hồng đã hoàn tất định danh eKYC.\n"
+                    "  + Số dư khả dụng trong ví tối thiểu từ **1.000.000 VNĐ** (đối với tiết kiệm có kỳ hạn) hoặc từ **100.000 VNĐ** (đối với tiết kiệm tích lũy).\n"
+                    "- ⚡ **Thủ tục:** Thực hiện 100% online trên ứng dụng trong 30 giây, sổ tiết kiệm điện tử có giá trị pháp lý tương đương sổ giấy mở tại quầy."
+                ),
+                "quick_replies": ["Mở sổ tiết kiệm ngay", "Biểu lãi suất tiết kiệm", "Tiết kiệm tích lũy"],
+                "suggested_action": {"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}
+            }
+
+        # Hạn mức nạp tiền vào ví
+        is_deposit_limit_q = any(k in q_lower for k in [
+            "hạn mức nạp tiền", "han muc nap tien", "nạp tối đa", "nap toi da",
+            "nạp tối thiểu", "nap toi thieu", "nạp vào ví tối đa bao nhiêu", "hạn mức nạp ví",
+            "nạp được bao nhiêu", "nap duoc bao nhieu"
+        ]) or (
+            any(l in q_lower for l in ["hạn mức", "han muc", "tối đa", "toi da", "tối thiểu", "toi thieu"]) and
+            any(d in q_lower for d in ["nạp tiền", "nap tien", "nạp ví", "nap vi"])
+        )
+        if is_deposit_limit_q:
+            return {
+                "answer": (
+                    "Dạ, hạn mức nạp tiền vào ví Sen Hồng được quy định như sau ạ:\n\n"
+                    "- 💰 **Số tiền nạp tối thiểu:** **10.000 VNĐ/giao dịch**.\n"
+                    "- 💰 **Hạn mức nạp tối đa:**\n"
+                    "  + Tài khoản eKYC Cấp 1: Tối đa **50.000.000 VNĐ/ngày**.\n"
+                    "  + Tài khoản eKYC Cấp 2 (Xác thực NFC CCCD): Tối đa **500.000.000 VNĐ/ngày**.\n"
+                    "- 🆓 **Biểu phí nạp tiền:** Hoàn toàn **miễn phí 100%** từ mọi ngân hàng liên kết hoặc nạp tiền mặt tại quầy giao dịch."
+                ),
+                "quick_replies": ["Nạp tiền vào ví ngay", "Liên kết ngân hàng", "Nâng hạn mức eKYC"],
+                "suggested_action": {"label": "Nạp tiền vào ví", "route": "/deposit"}
+            }
+
+        # Phí nạp tiền vào ví
+        is_deposit_fee_q = any(k in q_lower for k in [
+            "nạp tiền có mất phí", "nap tien co mat phi", "phí nạp tiền", "phi nap tien",
+            "nạp tiền vào ví có tốn phí", "nạp ví mất bao nhiêu", "nap tien ton phi", "nạp tiền tốn phí"
+        ]) or (
+            any(f in q_lower for f in ["phí", "phi", "mất phí", "mat phi", "tốn phí", "ton phi"]) and
+            any(d in q_lower for d in ["nạp tiền", "nap tien", "nạp ví", "nap vi"])
+        )
+        if is_deposit_fee_q:
+            return {
+                "answer": (
+                    "Dạ, nạp tiền vào ví Sen Hồng là **HOÀN TOÀN MIỄN PHÍ 100%** ạ:\n\n"
+                    "- 🆓 **Nạp online từ tài khoản ngân hàng liên kết:** Miễn phí 100%, tiền vào ví ngay trong 1 giây.\n"
+                    "- 🆓 **Nạp tiền mặt tại quầy giao dịch Sen Hồng:** Miễn phí 100%.\n"
+                    "- 💵 **Số tiền nạp:** Tối thiểu chỉ từ 10.000 VNĐ/giao dịch."
+                ),
+                "quick_replies": ["Nạp tiền vào ví ngay", "Liên kết ngân hàng", "Kiểm tra số dư ví"],
+                "suggested_action": {"label": "Nạp tiền vào ví", "route": "/deposit"}
+            }
+
+        # Phí thẻ ảo Visa Platinum Virtual
+        is_visa_fee_q = any(k in q_lower for k in [
+            "phí thẻ visa", "phi the visa", "thẻ visa có mất phí", "the visa co mat phi",
+            "phí thường niên visa", "phi thuong nien visa", "phí phát hành thẻ visa", "phi phat hanh the visa",
+            "thẻ ảo có mất phí", "the ao co mat phi", "phí duy trì thẻ visa", "phi duy tri the visa"
+        ]) or (
+            any(f in q_lower for f in ["phí", "phi", "mất phí", "mat phi", "thường niên", "thuong nien", "phát hành", "phat hanh"]) and
+            any(v in q_lower for v in ["visa", "thẻ ảo", "the ao", "platinum"])
+        )
+        if is_visa_fee_q:
+            return {
+                "answer": (
+                    "Dạ, Thẻ ảo quốc tế **Visa Platinum Virtual** tại Sen Hồng Bank áp dụng chính sách **Miễn phí 100% trọn đời** ạ:\n\n"
+                    "- 💳 **Phí phát hành thẻ online:** **0 VNĐ (Miễn phí 100%)**, kích hoạt thẻ dùng ngay trong 30 giây.\n"
+                    "- 💳 **Phí thường niên trọn đời:** **0 VNĐ (Miễn phí 100%)**, không điều kiện chi tiêu.\n"
+                    "- 💳 **Phí đổi mã CVV bảo mật:** Miễn phí 100%.\n"
+                    "- 🌍 **Thanh toán quốc tế:** Miễn phí giao dịch nội địa, phí chuyển đổi ngoại tệ cực ưu đãi chỉ 1.5% khi mua sắm tại các trang web nước ngoài."
+                ),
+                "quick_replies": ["Mở thẻ Visa Platinum ngay", "Quản lý thẻ", "Biểu phí & Hạn mức"],
+                "suggested_action": {"label": "Mở thẻ Visa Platinum", "route": "/cards"}
+            }
+
         if any(k in q_lower for k in ["chuyen tien", "chuyển tiền", "cach chuyen", "hướng dẫn chuyển"]):
             return {
                 "answer": (
@@ -917,36 +1768,156 @@ class AdvancedRAGEngine:
                 "suggested_action": {"label": "Chia tiền / Nhắc nợ", "route": "/transfer/request"}
             }
 
-        if any(k in q_lower for k in ["lai suat", "lãi suất", "lai xuat", "lãi xuất"]):
-            term_prefix = ""
-            if "1 tháng" in q_lower or "1 thang" in q_lower:
-                term_prefix = "Lãi suất tiền gửi tiết kiệm online kỳ hạn **1 tháng** hiện nay là **3.8%/năm**.\n\n"
-            elif "3 tháng" in q_lower or "3 thang" in q_lower:
-                term_prefix = "Lãi suất tiền gửi tiết kiệm online kỳ hạn **3 tháng** hiện nay là **4.2%/năm**.\n\n"
-            elif "6 tháng" in q_lower or "6 thang" in q_lower:
-                term_prefix = "Lãi suất tiền gửi tiết kiệm online kỳ hạn **6 tháng** hiện nay là **5.5%/năm**.\n\n"
-            elif "12 tháng" in q_lower or "12 thang" in q_lower:
-                term_prefix = "Lãi suất tiền gửi tiết kiệm online kỳ hạn **12 tháng** hiện nay là **6.3%/năm**.\n\n"
-            elif "24 tháng" in q_lower or "24 thang" in q_lower:
-                term_prefix = "Lãi suất tiền gửi tiết kiệm online kỳ hạn **24 tháng** hiện nay là **6.8%/năm**.\n\n"
-            elif any(k in q_lower for k in ["không kỳ hạn", "khong ky han", "rút trước hạn", "rut truoc han"]):
-                term_prefix = "Lãi suất tiền gửi **không kỳ hạn** hoặc rút trước hạn là **0.2%/năm**.\n\n"
-
+        # Bộ Công An, Đề án 06 & Định danh điện tử VNeID
+        if any(k in q_lower for k in ["bộ công an", "bo cong an", "bca", "c06", "đề án 06", "de an 06", "vneid", "dân cư quốc gia", "dan cu quoc gia", "luật căn cước"]):
             return {
                 "answer": (
-                    f"Dạ, {term_prefix}"
-                    "Biểu lãi suất tiền gửi tiết kiệm online mới nhất tại Sen Hồng Bank như sau:\n\n"
-                    "- Kỳ hạn 1 tháng: **3.8%/năm**\n"
-                    "- Kỳ hạn 3 tháng: **4.2%/năm**\n"
-                    "- Kỳ hạn 6 tháng: **5.5%/năm**\n"
-                    "- Kỳ hạn 12 tháng: **6.3%/năm**\n"
-                    "- Kỳ hạn 24 tháng: **6.8%/năm**\n"
-                    "- Tiền gửi không kỳ hạn / rút trước hạn: **0.2%/năm**.\n\n"
-                    "Quý khách có thể mở sổ tiết kiệm online 24/7 chỉ từ 1.000.000 VNĐ hoàn toàn miễn phí ạ!"
+                    "Dạ thực hiện **Đề án 06 của Chính phủ** và chỉ đạo của **Bộ Công An (C06)** phối hợp cùng Ngân hàng Nhà nước:\n\n"
+                    "1. 🏛️ **Làm sạch 100% dữ liệu tài khoản:** Toàn bộ tài khoản ngân hàng Sen Hồng được đối soát trực tiếp với **Cơ sở Dữ liệu Quốc gia về Dân cư**, triệt tiêu tài khoản rác và tài khoản mở bằng giấy tờ giả mạo, bảo đảm nguyên tắc **Một danh tính số chính chủ duy nhất**.\n"
+                    "2. 🆔 **Tích hợp Định danh VNeID Mức 2:** Khách hàng sở hữu tài khoản VNeID Mức 2 có thể mở tài khoản Sen Hồng online siêu tốc không cần chụp lại giấy tờ và được cấp ngay hạn mức giao dịch lên tới **500.000.000 VNĐ/ngày**.\n"
+                    "3. 🪪 **Luật Căn cước số 26/2023/QH15:** Sen Hồng Bank hỗ trợ đầy đủ cả Thẻ CCCD gắn chip (12 số) và **Thẻ Căn cước mẫu mới** (có hiệu lực từ 01/07/2024)."
                 ),
-                "quick_replies": ["Mở sổ tiết kiệm ngay", "Rút tiền trước hạn", "Tiết kiệm tích lũy"],
+                "quick_replies": ["Xác thực CCCD / NFC", "Định danh VNeID", "Hạn mức tài khoản"],
+                "suggested_action": {"label": "Xác thực Căn cước / VNeID", "route": "/profile/nfc-reader"}
+            }
+
+        # Điều khoản dịch vụ App & Bảo vệ dữ liệu cá nhân Nghị định 13
+        if any(k in q_lower for k in ["điều khoản", "dieu khoan", "thỏa thuận", "thoa thuan", "nghị định 13", "nghi dinh 13", "nd 13", "bảo vệ dữ liệu", "bao ve du lieu", "xóa dữ liệu"]):
+            return {
+                "answer": (
+                    "Dạ theo bản **Thỏa thuận Điều khoản & Điều kiện Sử dụng Dịch vụ Ngân hàng Số Sen Hồng** (Phiên bản 2.4) và **Nghị định 13/2023/NĐ-CP**:\n\n"
+                    "1. 📋 **Điều kiện Khách hàng:** Cá nhân từ **đủ 15 tuổi trở lên**, có đầy đủ năng lực hành vi dân sự và sở hữu Căn cước/CCCD gắn chip chính chủ.\n"
+                    "2. 🛡️ **Bảo vệ Dữ liệu Cá nhân (Nghị định 13):** Dữ liệu eKYC và sinh trắc học chỉ dùng để phục vụ giao dịch và phòng chống gian lận. Sen Hồng Bank **cam kết tuyệt đối không mua bán, không chia sẻ dữ liệu cho bên thứ ba** vì mục đích thương mại.\n"
+                    "3. ⚖️ **Quyền của Khách hàng:** Có quyền xem, chỉnh sửa tại mục Hồ sơ cá nhân; hoặc yêu cầu xóa dữ liệu bằng văn bản gửi đến email pháp chế: `legal@senhongbank.vn`."
+                ),
+                "quick_replies": ["Xem toàn bộ điều khoản", "Bảo vệ dữ liệu NĐ 13", "Cài đặt bảo mật"],
+                "suggested_action": {"label": "Xem toàn bộ Điều khoản", "route": "/auth/terms"}
+            }
+
+        # Chế tài mua bán tài khoản (Điều 291 BLHS) & Cảnh báo mạo danh Bộ Công An
+        if any(k in q_lower for k in ["bán tài khoản", "ban tai khoan", "cho thuê tài khoản", "cho thue tai khoan", "cho mượn tài khoản", "điều 291", "mạo danh công an", "công an gọi điện"]):
+            return {
+                "answer": (
+                    "Dạ Bộ Công An và Ngân hàng Số Sen Hồng đưa ra **Cảnh báo khẩn cấp và Chế tài pháp luật nghiêm khắc**:\n\n"
+                    "1. ⚖️ **Chế tài Hình sự (Điều 291 BLHS & Nghị định 88/2019/NĐ-CP):**\n"
+                    "  - Phạt tiền từ **40.000.000 VNĐ đến 100.000.000 VNĐ**; phạt tù từ **03 tháng đến 07 năm tù giam** đối với hành vi mua bán, cho thuê, cho mượn tài khoản ngân hàng.\n"
+                    "  - Tài khoản vi phạm bị phong tỏa vĩnh viễn và bị đưa vào **Danh sách đen (Blacklist) liên ngân hàng của NHNN và Bộ Công An**.\n\n"
+                    "2. 🚨 **Cảnh báo Lừa đảo Mạo danh Công an:**\n"
+                    "  - Cơ quan Công an **tuyệt đối không làm việc, không lấy lời khai, không yêu cầu chuyển tiền qua điện thoại hay Zalo/Telegram**.\n"
+                    "  - Tuyệt đối không chuyển tiền vào 'tài khoản an toàn' của bất kỳ ai và không cung cấp mã OTP/PIN cho người lạ."
+                ),
+                "quick_replies": ["Cài đặt bảo mật", "Khóa thẻ khẩn cấp", "Tổng đài 1900-SENHONG"],
+                "suggested_action": {"label": "Cài đặt bảo mật", "route": "/settings/security"}
+            }
+
+        # Lãi suất ngoại tệ USD / Đô la Mỹ theo quy định của Ngân hàng Nhà nước
+        if any(k in q_lower for k in ["usd", "đô la", "do la", "ngoại tệ", "ngoai te"]) and any(k in q_lower for k in ["lãi suất", "lai suat", "0%", "gửi tiết kiệm"]):
+            return {
+                "answer": (
+                    "Dạ theo quy định chính thức của **Ngân hàng Nhà nước Việt Nam (NHNN)** về quản lý ngoại hối và chống đô la hóa nền kinh tế:\n\n"
+                    "1. 📌 **Mức lãi suất áp dụng:** Lãi suất tiền gửi tiết kiệm bằng đồng Đô la Mỹ (**USD**) của cá nhân và tổ chức tại các ngân hàng thương mại Việt Nam áp dụng mức **0%/năm** trọn đời.\n\n"
+                    "2. 💡 **Mục tiêu điều hành từ Ngân hàng Nhà nước:**\n"
+                    "  - Ngăn chặn triệt để tình trạng găm giữ ngoại tệ (đô la hóa), chuyển hóa nguồn vốn ngoại tệ nhàn rỗi sang đồng Việt Nam (VND) để phục vụ sản xuất kinh doanh và phát triển kinh tế.\n"
+                    "  - Ổn định tỷ giá hối đoái USD/VND và nâng cao vị thế, giá trị của đồng nội tệ Việt Nam.\n\n"
+                    f"3. 🚀 **Giải pháp sinh lời tối ưu:** Thay vì cất giữ USD lãi suất 0%, Quý khách nên chuyển đổi sang **VND gửi Tiết Kiệm Online Sen Hồng** với mức lãi suất hấp dẫn lên tới **{rate_config.SAVINGS_RATES[12]:.1f}%/năm - {rate_config.SAVINGS_RATES[24]:.1f}%/năm**, mang lại lợi nhuận thực dương an toàn và bảo toàn vốn tuyệt đối ạ!"
+                ),
+                "quick_replies": ["Biểu lãi suất VND", "Bảng tỷ giá USD/VND", "Mở sổ tiết kiệm"],
+                "suggested_action": {"label": "Xem tỷ giá ngoại tệ", "route": "/international-transfer"}
+            }
+
+        # Quản trị dòng tiền & Quỹ dự phòng khẩn cấp (Emergency Fund)
+        if any(k in q_lower for k in ["dòng tiền", "dong tien", "quỹ dự phòng", "quy du phong", "vốn lưu động", "von luu dong"]):
+            return {
+                "answer": (
+                    "Dạ theo chuẩn mực quản trị tài chính ngân hàng, Sen Hồng Bank xin tư vấn nguyên tắc **Quản trị dòng tiền** "
+                    "và thiết lập **Quỹ dự phòng khẩn cấp (Emergency Fund)** như sau ạ:\n\n"
+                    "1. 🛡️ **Quy mô Quỹ Dự Phòng Khẩn Cấp:**\n"
+                    "  - Mỗi cá nhân và hộ kinh doanh cần chuẩn bị một quỹ dự phòng tương đương **3 đến 6 tháng chi tiêu cơ bản** (tiền ăn uống, nhà ở, học phí, chi phí kinh doanh thiết yếu).\n"
+                    "  - **Mục đích:** Bảo vệ bạn và gia đình trước các biến cố bất ngờ (mất việc làm, ốm đau, gián đoạn kinh doanh) mà không phải vay mượn lãi cao hay bán tháo tài sản.\n\n"
+                    "2. 💰 **Phương Thức Cất Giữ Thông Minh Tại Sen Hồng:**\n"
+                    "  - Không nên để toàn bộ ở tiền mặt hoặc tài khoản thanh toán không kỳ hạn (chỉ 0.1% - 0.2%/năm).\n"
+                    f"  - Nên chia nhỏ vào các sổ **Tiết kiệm Online kỳ hạn ngắn 1 - 3 tháng** (lãi suất **{rate_config.SAVINGS_RATES[1]:.1f}% - {rate_config.SAVINGS_RATES[3]:.1f}%/năm**).\n"
+                    "  - Nhờ tính năng tất toán trực tuyến 24/7 trên App Sen Hồng, Quý khách vừa tối ưu sinh lời cho dòng tiền nhàn rỗi, vừa có thể rút tiền khẩn cấp về ví chỉ trong 3 giây khi có sự cố phát sinh ạ!"
+                ),
+                "quick_replies": ["Mở sổ tiết kiệm online", "Chiến lược tiết kiệm bậc thang", "Tổng quan tài chính"],
                 "suggested_action": {"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}
             }
+
+        # Kim tự tháp tài chính & Phân bổ danh mục tài sản
+        if any(k in q_lower for k in ["kim tự tháp", "kim tu thap", "phân bổ tài sản", "phan bo tai san", "danh mục đầu tư"]):
+            return {
+                "answer": (
+                    "Dạ theo mô hình **Kim Tự Tháp Tài Chính Cá Nhân**, các chuyên gia tài chính Sen Hồng khuyên Quý khách "
+                    "nên phân bổ nguồn vốn theo 3 tầng tài sản vững chắc để phòng ngừa rủi ro chu kỳ kinh tế:\n\n"
+                    "1. 🏛️ **Tầng 1 - Nền tảng An toàn & Phòng thủ (Chiếm 50% - 60% tài sản):**\n"
+                    "  - Quỹ dự phòng khẩn cấp 3 - 6 tháng chi phí cố định.\n"
+                    f"  - Tiền gửi **Tiết kiệm Online Sen Hồng** kỳ hạn 6 - 24 tháng (lãi suất **{rate_config.SAVINGS_RATES[6]:.1f}% - {rate_config.SAVINGS_RATES[24]:.1f}%/năm**), tạo dòng tiền thụ động đều đặn và bảo toàn vốn 100% nhờ bảo hiểm tiền gửi.\n\n"
+                    "2. 🎯 **Tầng 2 - Tích lũy Mục tiêu & Phòng hộ Lạm phát (Chiếm 20% - 30% tài sản):**\n"
+                    "  - Tiết kiệm gửi góp tích lũy mua nhà, mua xe, học vấn.\n"
+                    "  - Vàng nhẫn / Vàng miếng 9999 để phòng ngừa rủi ro địa chính trị và lạm phát toàn cầu.\n\n"
+                    "3. 🚀 **Tầng 3 - Tăng trưởng & Cơ hội (Chiếm 10% - 15% tài sản):**\n"
+                    "  - Cổ phiếu, quỹ mở, bất động sản đầu tư. Chỉ dùng vốn nhàn rỗi dài hạn từ 3 - 5 năm trở lên, tuyệt đối không dùng tiền vay mượn ngắn hạn.\n\n"
+                    "Quý khách có thể bắt đầu xây dựng tầng móng tài chính an toàn ngay hôm nay với các gói tiết kiệm tích lũy tại Sen Hồng ạ!"
+                ),
+                "quick_replies": ["Mở sổ tiết kiệm ngay", "Kế hoạch tài chính 10 năm", "Biểu lãi suất"],
+                "suggested_action": {"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}
+            }
+
+        if any(k in q_lower for k in ["lai suat", "lãi suất", "lai xuat", "lãi xuất"]):
+            is_asking_loan = any(k in q_lower for k in ["vay", "quick loan", "khoản vay", "khoan vay"])
+            is_asking_savings = any(k in q_lower for k in ["tiết kiệm", "tiet kiem", "gửi tiền", "gui tien", "sổ", "so", "không kỳ hạn", "khong ky han", "rút trước hạn", "rut truoc han"])
+
+            # 1. Nếu hỏi riêng về LÃI SUẤT VAY (Lãi vay ra lãi vay)
+            if is_asking_loan and not is_asking_savings:
+                return {
+                    "answer": (
+                        "Dạ, gói vay tiêu dùng tín chấp Quick Loan tại Sen Hồng áp dụng mức lãi suất cực kỳ ưu đãi:\n\n"
+                        "- 📉 **Lãi suất vay:** Chỉ từ **1.2% - 1.5%/tháng** (tương đương 14.4%/năm) tính trên **dư nợ giảm dần**.\n"
+                        "- 📉 **Cách tính lãi:** Tiền lãi tháng sau luôn thấp hơn tháng trước do chỉ tính trên số dư nợ gốc thực tế còn lại.\n"
+                        "- 🆓 **Phí tất toán trước hạn:** **0 VNĐ (Miễn phí 100%)**, Quý khách có thể trả hết nợ bất kỳ lúc nào mà không bị phạt.\n"
+                        "- 🆓 **Phí thẩm định hồ sơ:** **0 VNĐ (Miễn phí 100%)** trực tuyến.\n"
+                        "- ⚡ **Hạn mức vay:** Từ 5.000.000 VNĐ đến 50.000.000 VNĐ, kỳ hạn linh hoạt 3 - 24 tháng."
+                    ),
+                    "quick_replies": ["Bảng lịch trả nợ vay", "Đăng ký vay ngay", "Hạn mức vay Quick Loan"],
+                    "suggested_action": {"label": "Vay nhanh", "route": "/bills/quick-loan"},
+                    "sources": ["Quy chế vay tiêu dùng tín chấp Quick Loan", "Biểu lãi suất cho vay Sen Hồng Bank"]
+                }
+
+            # 2. Nếu hỏi riêng về LÃI SUẤT TIẾT KIỆM (Lãi tiết kiệm ra lãi tiết kiệm) — SSOT rate_config
+            term_prefix = ""
+            if "1 tháng" in q_lower or "1 thang" in q_lower:
+                term_prefix = f"Lãi suất tiền gửi tiết kiệm online kỳ hạn **1 tháng** hiện nay là **{rate_config.SAVINGS_RATES[1]:.1f}%/năm**.\n\n"
+            elif "3 tháng" in q_lower or "3 thang" in q_lower:
+                term_prefix = f"Lãi suất tiền gửi tiết kiệm online kỳ hạn **3 tháng** hiện nay là **{rate_config.SAVINGS_RATES[3]:.1f}%/năm**.\n\n"
+            elif "6 tháng" in q_lower or "6 thang" in q_lower:
+                term_prefix = f"Lãi suất tiền gửi tiết kiệm online kỳ hạn **6 tháng** hiện nay là **{rate_config.SAVINGS_RATES[6]:.1f}%/năm**.\n\n"
+            elif "12 tháng" in q_lower or "12 thang" in q_lower:
+                term_prefix = f"Lãi suất tiền gửi tiết kiệm online kỳ hạn **12 tháng** hiện nay là **{rate_config.SAVINGS_RATES[12]:.1f}%/năm**.\n\n"
+            elif "24 tháng" in q_lower or "24 thang" in q_lower or "36 tháng" in q_lower:
+                term_prefix = f"Lãi suất tiền gửi tiết kiệm online kỳ hạn **24 - 36 tháng** hiện nay là **{rate_config.SAVINGS_RATES[24]:.1f}%/năm**.\n\n"
+            elif any(k in q_lower for k in ["không kỳ hạn", "khong ky han", "rút trước hạn", "rut truoc han"]):
+                term_prefix = f"Lãi suất tiền gửi **không kỳ hạn** hoặc rút trước hạn là **{rate_config.CASA_RATE:.1f}%/năm**.\n\n"
+
+            if is_asking_savings or term_prefix or not is_asking_loan:
+                return {
+                    "answer": (
+                        f"Dạ, {term_prefix}"
+                        "Biểu lãi suất tiền gửi tiết kiệm online mới nhất tại Ngân hàng Số Sen Hồng như sau ạ:\n\n"
+                        f"- 💎 **Kỳ hạn 1 tháng:** **{rate_config.SAVINGS_RATES[1]:.1f}%/năm**\n"
+                        f"- 💎 **Kỳ hạn 3 tháng:** **{rate_config.SAVINGS_RATES[3]:.1f}%/năm**\n"
+                        f"- 💎 **Kỳ hạn 6 tháng:** **{rate_config.SAVINGS_RATES[6]:.1f}%/năm**\n"
+                        f"- 💎 **Kỳ hạn 9 tháng:** **{rate_config.SAVINGS_RATES[9]:.1f}%/năm**\n"
+                        f"- 💎 **Kỳ hạn 12 tháng:** **{rate_config.SAVINGS_RATES[12]:.1f}%/năm**\n"
+                        f"- 💎 **Kỳ hạn 18 tháng:** **{rate_config.SAVINGS_RATES[18]:.1f}%/năm**\n"
+                        f"- 💎 **Kỳ hạn 24 - 36 tháng:** **{rate_config.SAVINGS_RATES[24]:.1f}%/năm** (mức lãi suất cao nhất)\n"
+                        f"- 💎 **Tiền gửi không kỳ hạn / rút trước hạn:** **{rate_config.CASA_RATE:.1f}%/năm**.\n\n"
+                        "🛡️ **Đặc quyền bảo toàn tiền lãi:** Theo Thông tư 04/2022/TT-NHNN, khi Quý khách rút gốc một phần trước hạn, phần tiền còn lại vẫn được bảo toàn 100% mức lãi suất có kỳ hạn ban đầu!\n\n"
+                        "Quý khách có thể mở sổ tiết kiệm online 24/7 chỉ từ **1.000.000 VNĐ** ngay trên App ạ."
+                    ),
+                    "quick_replies": ["Mở sổ tiết kiệm ngay", "Bảo toàn lãi suất TT 04", "Tiết kiệm tích lũy"],
+                    "suggested_action": {"label": "Mở sổ tiết kiệm", "route": "/bills/savings"},
+                    "sources": ["Biểu lãi suất tiết kiệm Sen Hồng", "Thông tư 04/2022/TT-NHNN"]
+                }
 
         if any(k in q_lower for k in ["rut tien", "rút tiền"]):
             if any(k in q_lower for k in ["atm", "khong the", "không thẻ"]):
@@ -1008,6 +1979,37 @@ class AdvancedRAGEngine:
                 "suggested_action": {"label": "Quản lý thẻ", "route": "/cards"}
             }
 
+        # Thẻ ảo quốc tế Visa Platinum Virtual & Biểu phí thẻ
+        if any(k in q_lower for k in ["visa", "the ao", "thẻ ảo", "platinum", "the tin dung", "thẻ tín dụng", "the visa", "thẻ visa"]):
+            return {
+                "answer": (
+                    "Dạ, thông tin về **Thẻ ảo quốc tế Visa Platinum Virtual** tại Sen Hồng Bank:\n\n"
+                    "- 💳 **Phí phát hành & Phí thường niên:** **Miễn phí 100% trọn đời**.\n"
+                    "- ⏱️ **Thời gian phát hành:** Mở thẻ trực tuyến tức thì trong **30 giây**, sẵn sàng thanh toán ngay.\n"
+                    "- 🛡️ **Bảo mật tối tân:** Mã CVV động tự động thay đổi định kỳ, bảo vệ an toàn tuyệt đối khi mua sắm online.\n"
+                    "- 🌍 **Phạm vi sử dụng:** Thanh toán toàn cầu tại mọi website, dịch vụ quốc tế (Netflix, Spotify, Apple, Google, Facebook Ads...) và hỗ trợ liên kết Apple Pay / Google Wallet.\n"
+                    "- 💰 **Hạn mức thanh toán:** Lên đến **100.000.000 VNĐ/ngày** sau khi định danh eKYC Cấp 2."
+                ),
+                "quick_replies": ["Mở thẻ Visa ngay", "Quản lý thẻ", "Biểu phí & Hạn mức"],
+                "suggested_action": {"label": "Mở thẻ Visa Platinum", "route": "/cards"}
+            }
+
+        # Biểu phí chung & Hạn mức chung
+        if any(k in q_lower for k in ["biểu phí", "bieu phi", "bảng phí", "bang phi", "phí dịch vụ", "phi dich vu", "mất phí không", "mat phi khong"]):
+            return {
+                "answer": (
+                    "Dạ, Ngân hàng Số Sen Hồng áp dụng chính sách **Miễn phí toàn diện (Zero-Fee Banking)**:\n\n"
+                    "- 🆓 **Chuyển tiền Napas 24/7:** Miễn phí 100% trọn đời cho mọi giao dịch.\n"
+                    "- 🆓 **Nạp tiền vào ví:** Miễn phí 100% từ tài khoản ngân hàng liên kết.\n"
+                    "- 🆓 **Rút tiền về ngân hàng & Rút ATM QR:** Miễn phí 100%.\n"
+                    "- 🆓 **Phát hành & Phí thường niên Thẻ ảo Visa Platinum:** Miễn phí 100%.\n"
+                    "- 🆓 **Thanh toán hóa đơn điện, nước, nạp điện thoại:** Miễn phí 100%.\n"
+                    "- 🆓 **Phí thẩm định & Tất toán khoản vay Quick Loan trước hạn:** Miễn phí 100%."
+                ),
+                "quick_replies": ["Chuyển tiền nhanh", "Mở thẻ Visa", "Vay Quick Loan"],
+                "suggested_action": {"label": "Xem biểu phí chi tiết", "route": "/settings"}
+            }
+
         if not context or "Không tìm thấy" in context:
             return {
                 "answer": "Dạ hiện tại hệ thống Trợ lý Tài chính đang đồng bộ dữ liệu. Quý khách vui lòng liên hệ hotline 1900-SENHONG (1900 736 466) để được hỗ trợ chuyên sâu 24/7 ạ.",
@@ -1015,7 +2017,7 @@ class AdvancedRAGEngine:
                 "suggested_action": None
             }
 
-        # 2. Cơ chế trích xuất thông minh theo cụm Hỏi/Đáp hoặc khối chức năng (Loại bỏ triệt để hiện tượng lan man)
+        # 2. Cơ chế trích xuất thông minh theo khối Heading hoặc cụm Hỏi/Đáp (Bảo tồn toàn vẹn ngữ cảnh)
         raw_lines = [l.strip() for l in context.splitlines() if l.strip()]
         candidate_blocks = []
         curr_block = []
@@ -1026,8 +2028,7 @@ class AdvancedRAGEngine:
             is_new_block = (
                 line.startswith("## ") or 
                 line.startswith("### ") or 
-                line.startswith("- **Hỏi:") or 
-                (line.startswith("- ") and not line.startswith("- **Đáp:") and len(curr_block) > 0)
+                line.startswith("- **Hỏi:")
             )
             if is_new_block and curr_block:
                 candidate_blocks.append("\n".join(curr_block))
@@ -1038,7 +2039,11 @@ class AdvancedRAGEngine:
             candidate_blocks.append("\n".join(curr_block))
 
         # Chấm điểm mức độ liên quan của từng khối với câu hỏi
-        stop_words = {"cho", "tôi", "làm", "sao", "thế", "nào", "như", "được", "không", "ứng", "dụng", "hướng", "dẫn", "cách", "xem"}
+        stop_words = {
+            "cho", "tôi", "làm", "sao", "thế", "nào", "như", "được", "không", "ứng", "dụng", 
+            "hướng", "dẫn", "cách", "xem", "năm", "thời", "tiết", "ngày", "ở", "có", "bao", 
+            "nhiêu", "của", "và", "là", "thì", "mà", "với", "các", "những", "này", "đó", "ạ", "dạ"
+        }
         words = [w for w in re.findall(r'\w+', q_lower) if len(w) > 2 and w not in stop_words]
         best_block = ""
         best_score = 0
@@ -1051,32 +2056,84 @@ class AdvancedRAGEngine:
                 best_score = score
                 best_block = block
 
-        if best_block and best_score > 0:
+        # Kiểm tra xem đây có phải lần fallback liên tiếp (Nguyên tắc 7: Fallback thông minh)
+        is_consecutive_fallback = False
+        if history:
+            last_bot_msg = next((h.content.lower() for h in reversed(history) if h.role in ("assistant", "bot")), "")
+            fallback_indicators = ["chưa tìm thấy thông tin", "chưa có thông tin", "mô tả chi tiết hơn", "diễn đạt rõ hơn", "tiện ích trên ứng dụng"]
+            if any(ind in last_bot_msg for ind in fallback_indicators):
+                is_consecutive_fallback = True
+
+        if best_block and best_score >= 2:
             clean_block = re.sub(r'^[#*\-\s]+', '', best_block).strip()
-            if len(clean_block) > 500:
-                clean_block = clean_block[:500].rsplit(' ', 1)[0] + "..."
+            if len(clean_block) > 1200:
+                clean_block = clean_block[:1200].rsplit(' ', 1)[0] + "..."
             answer = (
-                f"Dạ, em xin gửi thông tin chi tiết về nội dung Quý khách quan tâm:\n\n"
+                f"Dạ, Sen Hồng Bank xin cung cấp thông tin chi tiết về nội dung Quý khách quan tâm như sau ạ:\n\n"
                 f"{clean_block}\n\n"
-                f"Quý khách có thể xem thêm chi tiết trên ứng dụng hoặc liên hệ tổng đài 24/7 **1900-SENHONG** (1900 736 466) để được hỗ trợ tức thì ạ!"
+                f"👉 Quý khách có thể bấm chọn nhanh các gợi ý bên dưới để xem tiếp câu trả lời chi tiết nhé ạ!"
             )
+            
+            # Gợi ý thông minh và nút hành động theo ngữ cảnh trích xuất
+            blk_low = clean_block.lower()
+            if any(k in blk_low for k in ["cic", "nhóm nợ", "nợ xấu", "thế chấp"]):
+                quick_replies = ["Vay thế chấp BĐS", "Tra cứu CIC cá nhân", "Xóa lịch sử nợ xấu"]
+                suggested_action = {"label": "Vay thế chấp", "route": "/bills/quick-loan"}
+            elif any(k in blk_low for k in ["chứng chỉ tiền gửi", "bảo hiểm tiền gửi", "div"]):
+                quick_replies = ["Chứng chỉ tiền gửi CD", "Bảo hiểm tiền gửi DIV", "Lãi suất tiết kiệm"]
+                suggested_action = {"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}
+            elif any(k in blk_low for k in ["swift", "ngoại tệ", "du học", "kiều hối"]):
+                quick_replies = ["Mã SWIFT SENHVNVX", "Chuyển tiền du học", "Nhận kiều hối 0đ"]
+                suggested_action = {"label": "Chuyển tiền quốc tế", "route": "/international-transfer"}
+            elif any(k in blk_low for k in ["cashback", "trả góp 0%", "miễn lãi 55"]):
+                quick_replies = ["Thẻ hoàn tiền Cashback", "Trả góp 0% lãi suất", "Biểu phí & Hạn mức"]
+                suggested_action = {"label": "Quản lý thẻ", "route": "/cards"}
+            elif any(k in blk_low for k in ["etax", "thuế", "phạt nguội"]):
+                quick_replies = ["Nộp thuế eTax Mobile", "Nộp phạt nguội C08", "Hóa đơn điện nước"]
+                suggested_action = {"label": "Nộp thuế & Dịch vụ công", "route": "/bills"}
+            elif any(k in blk_low for k in ["crm", "smart lounge", "nạp tiền mặt"]):
+                quick_replies = ["Cây nạp tiền CRM 24/7", "Kiosk in thẻ Smart Lounge", "Mạng lưới ATM"]
+                suggested_action = {"label": "Điểm giao dịch CRM", "route": "/deposit"}
+            elif any(k in blk_low for k in ["priority", "loungekey", "phòng chờ"]):
+                quick_replies = ["Hội viên Sen Hong Priority", "Phòng chờ LoungeKey", "Private Banker"]
+                suggested_action = {"label": "Khách hàng ưu tiên", "route": "/profile"}
+            elif any(k in blk_low for k in ["lừa đảo", "khẩn cấp", "khóa thẻ"]):
+                quick_replies = ["Khóa thẻ khẩn cấp", "Quy định QĐ 2345", "Cảnh báo A05"]
+                suggested_action = {"label": "Khóa tài khoản khẩn cấp", "route": "/settings/security"}
+            else:
+                quick_replies = ["Xem biểu phí dịch vụ", "Lãi suất tiết kiệm", "Chuyển tiền ngay"]
+                suggested_action = None
         else:
-            answer = (
-                "Dạ, để thực hiện tính năng này, Quý khách vui lòng mở mục **Tiện ích** trên ứng dụng Sen Hồng "
-                "hoặc liên hệ tổng đài 24/7 **1900-SENHONG** (1900 736 466) để được chuyên viên hỗ trợ trực tiếp ạ!"
-            )
+            if is_consecutive_fallback:
+                # Lần 2 liên tiếp không giải quyết được -> Đề xuất chuyển sang người thật / hotline
+                answer = (
+                    "Dạ, em nhận thấy yêu cầu của Quý khách cần được hỗ trợ chuyên sâu hơn từ bộ phận nghiệp vụ. "
+                    "Quý khách vui lòng liên hệ tổng đài hỗ trợ 24/7 **1900-SENHONG** (1900 736 466) "
+                    "hoặc gửi yêu cầu tra soát trực tiếp để chuyên viên ngân hàng hỗ trợ giải quyết ngay cho Quý khách ạ!"
+                )
+                quick_replies = ["Gửi yêu cầu tra soát", "Hotline 1900-SENHONG", "Về trang chủ"]
+                suggested_action = {"label": "Hỗ trợ tra soát", "route": "/support/help-center"}
+            else:
+                # Lần 1: Không giục gọi hotline ngay, đưa 2-3 gợi ý gần nhất
+                answer = (
+                    "Dạ, em chưa tìm thấy thông tin chính xác cho yêu cầu này của Quý khách trong tài liệu hiện tại. "
+                    "Quý khách có thể diễn đạt rõ hơn giúp em, hoặc tham khảo nhanh một số dịch vụ phổ biến bên dưới ạ:"
+                )
+                quick_replies = ["Lãi suất tiết kiệm online", "Vay tiêu dùng Quick Loan", "Biểu phí & Hạn mức", "Quên mã PIN"]
+                suggested_action = None
 
         return {
             "answer": answer,
-            "quick_replies": ["Xem biểu phí dịch vụ", "Lãi suất tiết kiệm", "Chuyển tiền ngay"],
-            "suggested_action": None
+            "quick_replies": quick_replies,
+            "suggested_action": suggested_action
         }
 
     def _call_llm_with_failover(
         self, 
         messages: List[Dict[str, str]], 
         fallback_context: Optional[str] = None, 
-        user_question: str = ""
+        user_question: str = "",
+        history: Optional[List[MessageItem]] = None
     ) -> Tuple[Dict[str, Any], bool]:
         """Gọi LLM (Gemini) hỗ trợ xoay vòng tải ngẫu nhiên giữa 3 API Keys và đa tầng fallback model"""
         import random
@@ -1119,7 +2176,7 @@ class AdvancedRAGEngine:
             "All LLM clients and fallback models failed (attempts: %d, elapsed: %.2fs). Last error: %s. Engaging Extractive RAG Fallback.",
             attempts, time.time() - start_call, last_error
         )
-        return self._extractive_fallback_answer(fallback_context, user_question), True
+        return self._extractive_fallback_answer(fallback_context, user_question, history=history), True
 
     def query(self, user_question: str, history: Optional[List[MessageItem]] = None, user_id: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -1149,8 +2206,21 @@ class AdvancedRAGEngine:
                 cached_result["latency_ms"] = round(latency, 2)
                 return cached_result
 
-        # 3. Hybrid Search lấy Top Parent Documents (top_k=4 giảm nhiễu)
-        combined_context, sources = self._hybrid_search_rrf(search_query, query_vec, top_k=4)
+        # 3. Hybrid Search lấy Top Parent Documents
+        # Thu hẹp không gian tìm kiếm trước, rồi mới tìm: suy domain từ câu hỏi
+        # (hàm thuần detect_query_topic, <1ms) rồi lọc metadata trong SQL.
+        # Topic GENERAL_ACCOUNT (câu hỏi mơ hồ/đa chủ đề) → không lọc để tránh mất kết quả.
+        rag_domain = detect_query_topic(search_query)
+        effective_domain = rag_domain if rag_domain != "GENERAL_ACCOUNT" else None
+        combined_context, sources = self._hybrid_search_rrf(
+            search_query, query_vec, top_k=settings.TOP_K, domain=effective_domain
+        )
+        if not sources and effective_domain is not None:
+            # Fallback: lọc domain quá chặt với câu hỏi đa chủ đề → thử lại không lọc
+            logger.info("Domain filter '%s' returned empty, retrying without filter.", effective_domain)
+            combined_context, sources = self._hybrid_search_rrf(
+                search_query, query_vec, top_k=settings.TOP_K, domain=None
+            )
 
         # 3b. Tự động tích hợp dữ liệu Live Promotions & Vouchers từ notification-service khi khách hỏi về ưu đãi/mã giảm giá
         q_lower_check = search_query.lower()
@@ -1179,77 +2249,135 @@ class AdvancedRAGEngine:
             except Exception as e:
                 logger.warning("Could not enrich live promotions: %s", e)
 
+        # 3c. Tự động tích hợp Động cơ Tính toán Tài chính Siêu Chuẩn Xác (Robo-Advisor Financial Engine)
+        user_wallet = self._fetch_user_wallet_balance(user_id) if user_id else None
+        self._current_user_wallet = user_wallet
+        financial_analysis = generate_comprehensive_financial_analysis(search_query, user_wallet=user_wallet)
+        if financial_analysis:
+            base_amt = financial_analysis['fmt_base_amount']
+            term_y = financial_analysis['term_years']
+            s_calc = financial_analysis['savings_calc']
+            l_calc = financial_analysis['loan_calc']
+            t_data = s_calc['target_data']
+            y1_data = s_calc['yearly_breakdown'][0]
+
+            fin_lines = [
+                "=== DỮ LIỆU TÍNH TOÁN TÀI CHÍNH SIÊU CHUẨN XÁC TỪ CORE BANKING (BẮT BUỘC SỬ DỤNG CHÍNH XÁC CÁC SỐ LIỆU NÀY) ===",
+                f"- Số tiền vốn/gốc được đưa vào tính toán: {base_amt} (Nguồn: {financial_analysis['amount_source']})",
+                f"- Số dư ví khả dụng thực tế của khách hàng: {financial_analysis['fmt_wallet_balance']}",
+                f"- Gửi Tiết Kiệm Online Lãi Kép ({term_y} năm, lãi suất {s_calc['rate_annual']:.1f}%/năm tự động tái tục cả gốc và lãi):",
+                f"  * Tiền lãi sau 1 năm: {y1_data['fmt_interest_savings']} (Tổng nhận: {y1_data['fmt_total_savings']})",
+                f"  * Tiền lãi sau {term_y} năm: {t_data['fmt_interest_savings']} (Tổng nhận: {t_data['fmt_total_savings']})",
+                f"  * So sánh với để tiền trong ví không kỳ hạn ({rate_config.CASA_RATE:.1f}%/năm): Sau {term_y} năm chỉ nhận được {t_data['fmt_interest_casa']}. Gửi tiết kiệm lãi kép sinh lời vượt trội hơn: +{t_data['fmt_difference']}!",
+                f"  * Bảng tăng trưởng chi tiết theo thời gian:",
+                s_calc['markdown_table'],
+                f"- Khoản vay tiêu dùng Quick Loan tương ứng ({base_amt}, kỳ hạn 12 tháng, {rate_config.DEFAULT_LOAN_MONTHLY_RATE:.1f}%/tháng dư nợ giảm dần):",
+                f"  * Tiền gốc trả hàng tháng: {l_calc['fmt_monthly_principal']}",
+                f"  * Tiền trả tháng đầu (tháng cao nhất): {l_calc['fmt_first_month_payment']}",
+                f"  * Tiền trả tháng cuối (tháng thấp nhất): {l_calc['fmt_last_month_payment']}",
+                f"  * Tổng tiền lãi toàn kỳ 12 tháng: {l_calc['fmt_total_interest']}",
+                f"  * Quy định: Giải ngân trong 1 phút về ví, miễn phí phạt trả nợ trước hạn 100%.",
+                f"- Lời khuyên tài chính thông minh (Robo-Advisor Insight):",
+                f"  * Chiến lược tiết kiệm bậc thang: Chia nhỏ thành các sổ 6 tháng ({rate_config.SAVINGS_RATES[6]:.1f}%/năm) và 12-24 tháng ({rate_config.SAVINGS_RATES[12]:.1f}% - {rate_config.SAVINGS_RATES[24]:.1f}%/năm) để linh hoạt dòng tiền.",
+                f"  * Theo Thông tư 04/2022/TT-NHNN: Rút một phần tiền gốc trước hạn vẫn giữ nguyên lãi suất có kỳ hạn cho phần tiền còn lại.",
+                f"  * Đối chiếu vay vs tiết kiệm: Khi cần vốn ngắn hạn gấp, có thể vay Quick Loan để không phải phá sổ tiết kiệm dài hạn đang sinh lời cao.",
+                "=========================================================================================="
+            ]
+            fin_block = "\n".join(fin_lines)
+            combined_context = f"{fin_block}\n\n{combined_context}"
+            if "Động cơ Tính toán Tài chính Sen Hồng" not in sources:
+                sources.append("Động cơ Tính toán Tài chính Sen Hồng")
+
+        # Lưu ngữ cảnh cuối cùng phục vụ Grounding Check ở Layer Deep Thinking
+        self._last_rag_context = combined_context
+
         # 4. Prompt hệ thống ngân hàng chuyên nghiệp & bảo mật (Thiết kế chống lan man - Đúng trọng tâm)
         system_prompt = f"""
 Bạn là Trợ lý Tài chính AI Thông minh 24/7 của Ngân hàng Số Sen Hồng (Sen Hồng Core Banking).
-VAI TRÒ & PHONG CÁCH:
-- Xưng hô "em" và gọi khách hàng là "quý khách" lịch sự, chu đáo, ấm áp, tận tâm chuẩn dịch vụ ngân hàng số cao cấp.
-- Trả lời ĐÚNG TRỌNG TÂM, mạch lạc, có cấu trúc rõ ràng. Luôn mở đầu nhã nhặn ("Dạ Sen Hồng xin thông tin đến Quý khách:...") và kết thúc bằng câu hỗ trợ ấm áp ("Nếu Quý khách cần hỗ trợ thêm thông tin nào, cứ nhắn em nhé ạ!").
-- Luôn in đậm các số liệu quan trọng bằng cú pháp markdown `**...**` (ví dụ: `**miễn phí 100%**`, `**6.3%/năm**`, `**50.000đ**`, `**10 triệu đồng**`, `**1.2%/tháng**`, `**1 đến 3 giây**`) để ứng dụng di động tự động làm nổi bật sắc nét cho khách hàng.
-- Khi hướng dẫn thao tác, đánh số các bước mạch lạc: `1. **Bước 1:** ...`, `2. **Bước 2:** ...` để khách hàng dễ làm theo.
 
-NGHIỆP VỤ & NGUYÊN TẮC BẢO MẬT (CHỐNG LAN MAN - ĐÚNG TRỌNG TÂM):
-1. TRẢ LỜI ĐÚNG TRỌNG TÂM, TUYỆT ĐỐI KHÔNG LAN MAN:
-   - Khách hỏi tính năng/dịch vụ nào thì tập trung giải đáp chính xác tính năng/dịch vụ đó.
-   - Tuyệt đối KHÔNG giải thích hoặc liệt kê lan man sang các dịch vụ khác không liên quan cùng nằm trong tài liệu (Ví dụ: khách hỏi về "Vé máy bay" thì KHÔNG được nói về "Học phí" hay "Tiền điện").
-2. XỬ LÝ CÂU HỎI PHỨC TẠP / ĐA Ý / TƯ VẤN TÀI CHÍNH CHUYÊN SÂU:
-   - Nếu câu hỏi gồm nhiều vế hoặc điều kiện (ví dụ: lãi suất VÀ rút trước hạn; hạn mức chuyển tiền VÀ điều kiện sinh trắc học; phí thanh toán quốc tế VÀ rút tiền ATM), phải giải đáp trọn vẹn tất cả các vế, tách bạch bằng gạch đầu dòng rõ ràng.
-   - Khi tư vấn gửi tiết kiệm (ví dụ: có 50tr, 100tr nên gửi 12 tháng hay chia nhỏ): Phân tích rõ nếu gửi 12 tháng thì lãi suất cao nhất **6.3%/năm**; nếu chia nhỏ thành nhiều sổ 6 tháng (**5.5%/năm**) thì linh hoạt dòng tiền tối đa (chiến lược tiết kiệm bậc thang), khi cần tiền gấp chỉ rút 1 sổ nhỏ mà không bị mất lãi của các sổ còn lại. Rút trước hạn được nhận 100% gốc, lãi tính không kỳ hạn (0.2%/năm).
-   - Khi tư vấn vay Quick Loan: Khẳng định tính lãi theo **dư nợ giảm dần** chỉ từ **1.2%/tháng** (**14.4%/năm**), tiền lãi giảm dần đều qua các tháng, miễn phí trả nợ trước hạn 100%. Nêu rõ tiền gốc mỗi tháng và lãi tháng đầu.
-   - Khi khách gặp sự cố giao dịch (bị trừ tiền nhưng chưa nhận, giao dịch treo): Luôn trấn an trước tiên: **"Tiền của Quý khách luôn được bảo toàn 100% trong hệ thống sổ cái kép Ledger của ngân hàng và không bao giờ bị thất thoát."** Giải thích do nghẽn mạch liên ngân hàng Napas, thời gian đối soát tự động từ 15-30 phút hoặc 24-72h làm việc, hướng dẫn tạo Ticket tra soát tại `/support/help-center`.
-   - Khi khách bị khóa mã PIN sau 3 lần nhập sai hoặc khóa mật khẩu sau 5 lần: Giải thích cơ chế bảo vệ an toàn, hướng dẫn tự mở khóa và đặt mã PIN mới ngay trên App bằng eKYC khuôn mặt (Face ID) + OTP mà **KHÔNG CẦN RA QUẦY**, điều hướng tới `/auth/forgot-pin`.
-   - Về thẻ ảo Visa Platinum Virtual: Phát hành ngay 30s, miễn phí phát hành và thường niên 100%; bảo mật CVV động; thanh toán online toàn cầu; KHÔNG rút trực tiếp tại khe cắm ATM truyền thống (rút tiền mặt tại ATM bằng tính năng Rút tiền QR trên app); phí chuyển đổi ngoại tệ chỉ **1.5%**.
-3. NÊU RÕ CON SỐ & ĐIỀU KIỆN CHÍNH XÁC:
-   - Miễn phí 100%, hạn mức, lãi suất cụ thể theo tài liệu chính thức.
+VAI TRÒ & PHONG CÁCH:
+- Xưng hô "em" và gọi khách hàng là "quý khách" lịch sự, chu đáo, chuẩn mực dịch vụ ngân hàng số cao cấp.
+- NGUYÊN TẮC: CHUẨN XÁC, NGẮN GỌN, ĐÚNG TRỌNG TÂM, TUYỆT ĐỐI KHÔNG LAN MAN:
+  * Vào thẳng trọng tâm câu trả lời trong 1-2 câu đầu tiên, không chào hỏi dài dòng.
+  * Trình bày súc tích (khoảng 3-6 gạch đầu dòng ngắn gọn), đi thẳng vào giải pháp hoặc con số cốt lõi mà khách hàng cần.
+  * Luôn in đậm các số liệu quan trọng bằng cú pháp markdown `**...**` (ví dụ: `**miễn phí 100%**`, `**5.6%/năm**`, `**50.000đ**`, `**10 triệu đồng**`, `**1.2%/tháng**`, `**1 đến 3 giây**`) để ứng dụng di động tự động làm nổi bật sắc nét cho khách hàng.
+  * Khi hướng dẫn thao tác, đánh số các bước mạch lạc: `1. **Bước 1:** ...`, `2. **Bước 2:** ...` để khách hàng dễ làm theo.
+- CẦU NỐI DẪN HƯỚNG GỢI Ý (GỢI Ý SANG CÂU TRẢ LỜI TIẾP THEO):
+  * Cuối mỗi câu trả lời, luôn có câu dẫn tự nhiên hướng khách hàng bấm chọn các câu hỏi gợi ý bên dưới để xem tiếp câu trả lời chi tiết:
+    "👉 Quý khách có thể bấm chọn nhanh các gợi ý bên dưới để xem tiếp câu trả lời chi tiết nhé ạ!"
+
+NGHIỆP VỤ & NGUYÊN TẮC BẢO MẬT:
+1. QUY TẮC CỐT LÕI VỀ TÍNH CHÍNH XÁC (ANTI-HALLUCINATION):
+   - Bạn CHỈ ĐƯỢC PHÉP trả lời dựa trên NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG và DỮ LIỆU TÍNH TOÁN được cung cấp bên dưới.
+   - Tuyệt đối KHÔNG tự phỏng đoán, suy diễn hoặc bịa đặt lãi suất, biểu phí, hạn mức, hay quy chế ngân hàng.
+   - Bịa đặt lãi suất ngân hàng là vi phạm pháp luật và gây thiệt hại nghiêm trọng. Nếu tài liệu không có thông tin hoặc câu hỏi ngoài phạm vi, hãy thẳng thắn thông báo: "Dạ hiện tại Sen Hồng chưa có thông tin chính thức về [vấn đề] trong hệ sinh thái" và đưa ra các gợi ý dịch vụ tài chính có sẵn.
+
+2. QUY TẮC HỎI LẠI KHI THIẾU DỮ LIỆU (SLOT FILLING):
+   - Nếu khách hàng hỏi thiếu thông tin quan trọng (ví dụ: muốn mở sổ tiết kiệm nhưng chưa rõ số tiền hoặc kỳ hạn), hãy lịch sự hỏi lại để khách hàng làm rõ số tiền hoặc kỳ hạn dự kiến, không tự phỏng đoán số tiền hay kỳ hạn của khách.
+
+3. NGUYÊN TẮC CỐT LÕI: ĐÚNG TRỌNG TÂM - VAY RA VAY, LÃI RA LÃI (ANTI-RAMBLING PRINCIPLE):
+   - HỎI VAY -> TRẢ LỜI 100% VỀ VAY:
+     * Nếu khách hàng hỏi về VAY (Gói vay tiêu dùng Quick Loan, điều kiện vay, thủ tục vay, hạn mức 5 - 50 triệu, giải ngân 1 phút, hồ sơ vay chỉ cần CCCD chip 0đ bảng lương, tính tiền trả góp khoản vay): Tập trung trả lời 100% trực diện về Vay.
+     * TUYỆT ĐỐI KHÔNG chèn thông tin gửi tiết kiệm, KHÔNG khuyên mở sổ tiết kiệm, KHÔNG lan man sang dịch vụ khác. Nút hành động BẮT BUỘC là {{"label": "Vay nhanh", "route": "/bills/quick-loan"}} hoặc {{"label": "Lịch trả nợ vay", "route": "/loan/schedule"}}.
+   - HỎI TIẾT KIỆM -> TRẢ LỜI 100% VỀ TIẾT KIỆM:
+     * Nếu khách hàng hỏi về TIẾT KIỆM (Gửi tiết kiệm online, biểu lãi suất tiết kiệm từ {rate_config.SAVINGS_RATES[1]:.1f}% đến {rate_config.SAVINGS_RATES[24]:.1f}%/năm, tiền lãi gửi tiết kiệm, kỳ hạn 1 - 36 tháng, bảo toàn lãi khi rút một phần theo Thông tư 04/2022/TT-NHNN): Tập trung trả lời 100% trực diện về Tiết kiệm.
+     * TUYỆT ĐỐI KHÔNG chèn thông tin vay nợ, KHÔNG đối chiếu khoản vay Quick Loan. Nút hành động BẮT BUỘC là {{"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}}.
+   - HỎI LÃI SUẤT VAY -> TRẢ LỜI LÃI SUẤT VAY:
+     * Lãi suất vay Quick Loan ưu đãi từ {rate_config.LOAN_RATE_RANGE_TEXT}. 0 VNĐ phí phạt tất toán trước hạn. Giải thích rõ tiền lãi giảm dần theo thời gian. Không nói lan man sang lãi suất tiết kiệm.
+   - HỎI LÃI SUẤT TIẾT KIỆM -> TRẢ LỜI LÃI SUẤT TIẾT KIỆM:
+     * Biểu lãi suất tiết kiệm có kỳ hạn từ {rate_config.SAVINGS_RATES[1]:.1f}% đến {rate_config.SAVINGS_RATES[24]:.1f}%/năm (12 tháng: {rate_config.SAVINGS_RATES[12]:.1f}%, 24-36 tháng: {rate_config.SAVINGS_RATES[24]:.1f}%). Tiền gửi không kỳ hạn/rút trước hạn: {rate_config.CASA_RATE:.1f}%/năm. Không nói lan man sang lãi suất vay.
+   - CHỈ KHI KHÁCH HỎI SO SÁNH (ví dụ: "Nên gửi tiết kiệm hay vay?", "So sánh lãi suất vay và tiết kiệm", hoặc yêu cầu phân bổ danh mục tài chính toàn diện) thì mới trình bày song song cả hai.
+   - Khi có DỮ LIỆU TÍNH TOÁN TÀI CHÍNH, BẮT BUỘC sử dụng đúng các con số này, không làm tròn sai lệch.
+   - Khi khách gặp sự cố giao dịch (bị trừ tiền nhưng chưa nhận): Luôn trấn an trước tiên: **"Tiền của Quý khách luôn được bảo toàn 100% trong hệ thống sổ cái kép Ledger của ngân hàng và không bao giờ bị thất thoát."**
+   - Khi khách bị khóa mã PIN sau 3 lần nhập sai hoặc khóa mật khẩu sau 5 lần: Hướng dẫn tự mở khóa và đặt mã PIN mới ngay trên App bằng eKYC khuôn mặt + OTP mà **KHÔNG CẦN RA QUẦY**, điều hướng tới `/auth/forgot-pin`.
+   - Về thẻ ảo Visa Platinum Virtual: Phát hành ngay 30s, miễn phí phát hành và thường niên 100%; bảo mật CVV động; thanh toán online toàn cầu; phí ngoại tệ **1.5%**.
+
 4. TUYỆT ĐỐI BẢO MẬT:
    - Tuyệt đối không bao giờ hỏi hoặc yêu cầu khách cung cấp mã OTP, mật khẩu hay mã PIN.
-5. ĐỊNH HƯỚNG ĐIỀU HƯỚNG THÔNG MINH (suggested_action):
-   - Quên mã PIN, lấy lại mã PIN, cấp lại mã PIN -> {{"label": "Lấy lại mã PIN", "route": "/auth/forgot-pin"}}
-   - Quên mật khẩu đăng nhập, lấy lại mật khẩu -> {{"label": "Quên mật khẩu", "route": "/auth/forgot-password"}}
-   - Đổi mã PIN giao dịch -> {{"label": "Đổi mã PIN", "route": "/settings/change-pin"}}
-   - Liên kết ngân hàng, thẻ ngân hàng liên kết -> {{"label": "Thẻ & Ngân hàng liên kết", "route": "/bank-cards"}}
-   - Chuyển tiền, gửi tiền -> {{"label": "Chuyển tiền ngay", "route": "/transfer"}}
-   - Nạp tiền vào ví -> {{"label": "Nạp tiền vào ví", "route": "/deposit"}}
-   - Rút tiền về ngân hàng -> {{"label": "Rút tiền về ngân hàng", "route": "/withdraw"}}
-   - Rút tiền ATM không thẻ -> {{"label": "Rút tiền ATM không thẻ", "route": "/atm-withdrawal"}}
-   - Chia tiền nhóm, nhắc nợ, góp tiền -> {{"label": "Chia tiền / Nhắc nợ", "route": "/transfer/request"}}
-   - Mã QR của tôi, nhận tiền qua QR -> {{"label": "Mã QR của tôi", "route": "/my-qr"}}
-   - Quét mã QR chuyển tiền -> {{"label": "Quét mã VietQR", "route": "/scan-qr"}}
-   - Danh bạ thụ hưởng đã lưu -> {{"label": "Danh bạ thụ hưởng", "route": "/beneficiaries"}}
-   - Nạp tiền điện thoại, Top-up -> {{"label": "Nạp điện thoại", "route": "/bills/phone-recharge"}}
-   - Nạp Data 4G/5G -> {{"label": "Nạp Data 4G/5G", "route": "/data-topup"}}
-   - Mua thẻ game Garena/Zing -> {{"label": "Mua thẻ Game", "route": "/game-cards"}}
-   - Đặt vé máy bay -> {{"label": "Đặt vé máy bay", "route": "/flight-booking"}}
-   - Bảo hiểm xã hội VssID -> {{"label": "Bảo hiểm xã hội", "route": "/social-insurance"}}
-   - Thanh toán hóa đơn điện nước -> {{"label": "Thanh toán hóa đơn", "route": "/bills"}}
-   - Vay tiêu dùng tín chấp, vay nhanh -> {{"label": "Vay nhanh", "route": "/bills/quick-loan"}}
-   - Lịch trả nợ vay -> {{"label": "Lịch trả nợ vay", "route": "/loan/schedule"}}
-   - Tiết kiệm online, gửi góp -> {{"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}}
-   - Chi tiết sổ tiết kiệm, tất toán -> {{"label": "Chi tiết sổ tiết kiệm", "route": "/savings/detail"}}
-   - Tài khoản số đẹp, số phong thủy -> {{"label": "Chọn số tài khoản đẹp", "route": "/lucky-account"}}
-   - Chuyển tiền quốc tế, kiều hối -> {{"label": "Chuyển tiền quốc tế", "route": "/international-transfer"}}
-   - Giới thiệu bạn bè nhận 50k -> {{"label": "Giới thiệu bạn bè", "route": "/referral"}}
-   - Kho ưu đãi, voucher, khuyến mại -> {{"label": "Kho Voucher & Ưu đãi", "route": "/promotions"}}
-   - Thẻ và tài khoản, thẻ Visa -> {{"label": "Quản lý thẻ", "route": "/cards"}}
-   - Quản lý thiết bị, đăng xuất từ xa -> {{"label": "Quản lý thiết bị", "route": "/settings/devices"}}
-   - Đọc chip NFC CCCD -> {{"label": "Đọc chip NFC CCCD", "route": "/profile/nfc-reader"}}
-   - Chữ ký số Smart OTP -> {{"label": "Chữ ký số Smart OTP", "route": "/profile/digital-signature"}}
-   - Cài đặt Email sao kê -> {{"label": "Cài đặt Email", "route": "/profile/email-settings"}}
-   - Cấp độ tài khoản eKYC -> {{"label": "Cấp độ tài khoản eKYC", "route": "/profile/kyc-level"}}
-   - Cài đặt thông báo -> {{"label": "Cài đặt thông báo", "route": "/notifications/settings"}}
-   - Điều khoản pháp lý, giấy phép NHNN -> {{"label": "Điều khoản & Giấy phép", "route": "/auth/terms"}}
-   - Vietlott, xổ số, mua vé -> {{"label": "Vé số Vietlott", "route": "/bills/lottery"}}
-   - Khiếu nại, tra soát -> {{"label": "Hỗ trợ tra soát", "route": "/support/help-center"}}
-   - Khám phá dịch vụ khác -> {{"label": "Xem tất cả tiện ích", "route": "/more"}}
 
-5. ĐỊNH DẠNG ĐẦU RA: Trả về JSON thuần túy (không bọc mã markdown codeblock) gồm đúng 3 trường:
+5. VÍ DỤ MINH HỌA (FEW-SHOT EXAMPLES):
+   - Ví dụ 1 (Hỏi lại khi thiếu thông tin):
+     Khách: "Tôi muốn mở sổ tiết kiệm"
+     Trả lời: "Dạ Sen Hồng rất vui được đồng hành cùng Quý khách! Để em tính toán mức sinh lời tối ưu nhất, Quý khách dự định gửi số tiền bao nhiêu và trong kỳ hạn khoảng bao lâu ạ (ví dụ: 10 triệu, 50 triệu kỳ hạn 6 tháng hay 12 tháng)?"
+     Quick Replies: ["Gửi 10 triệu 6 tháng", "Gửi 50 triệu 12 tháng", "Biểu lãi suất tiết kiệm"]
+     Action: {{"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}}
+
+   - Ví dụ 2 (Hỏi vay - Trả lời 100% về vay, không nói lan man tiết kiệm):
+     Khách: "Tôi muốn vay 30 triệu thì mỗi tháng trả bao nhiêu?"
+     Trả lời: "Dạ với khoản vay tiêu dùng **30.000.000 VNĐ** (Kỳ hạn 12 tháng) tại Sen Hồng Bank:\n- **Lãi suất:** Từ **1.2%/tháng** tính trên **dư nợ giảm dần**.\n- **Tiền gốc cố định hàng tháng:** **2.500.000 VNĐ/tháng**.\n- **Tiền trả tháng đầu tiên (cao nhất):** **2.860.000 VNĐ** (gốc 2.500.000đ + lãi 360.000đ).\n- **Tiền trả tháng cuối cùng (thấp nhất):** **2.530.000 VNĐ**.\n- **Tổng tiền lãi cả kỳ 12 tháng:** **2.340.000 VNĐ**.\n- **Phí phạt tất toán trước hạn:** **0 VNĐ (Miễn phí 100%)**.\n- **Thủ tục:** 100% online chỉ cần CCCD gắn chip, **hoàn toàn không cần nộp bảng lương**, giải ngân vào ví sau **1 phút** ạ!"
+     Quick Replies: ["Đăng ký vay ngay", "Bảng lịch trả nợ vay", "Hạn mức vay Quick Loan"]
+     Action: {{"label": "Vay nhanh", "route": "/bills/quick-loan"}}
+
+   - Ví dụ 3 (Hỏi tiết kiệm - Trả lời 100% về tiết kiệm, không nói lan man vay nợ):
+     Khách: "Có 50 triệu gửi 10 năm được bao nhiêu tiền lãi?"
+     Trả lời: "Dạ với số tiền **50.000.000 VNĐ**, nếu Quý khách gửi tiết kiệm online kỳ hạn 12 tháng tự động tái tục cả gốc và lãi (**5.6%/năm**), sau **10 năm**:\n- Tiền lãi lũy kế sinh lời: **+36.222.053 VNĐ**.\n- Tổng tài sản Quý khách nhận về: **86.222.053 VNĐ**.\n\nSo với việc để tiền trong tài khoản thanh toán chỉ được **1.009.040 VNĐ** (0.2%/năm), gửi tiết kiệm online giúp Quý khách sinh lời vượt trội hơn **+35.213.013 VNĐ**!\n\nNếu Quý khách cần hỗ trợ thêm thông tin nào, cứ nhắn em nhé ạ!"
+     Quick Replies: ["Chiến lược tiết kiệm bậc thang", "Biểu lãi suất tiết kiệm", "Mở sổ tiết kiệm ngay"]
+     Action: {{"label": "Mở sổ tiết kiệm ngay", "route": "/bills/savings"}}
+
+6. ĐỊNH HƯỚNG ĐIỀU HƯỚNG THÔNG MINH (suggested_action):
+   - Quên mã PIN, lấy lại mã PIN -> {{"label": "Lấy lại mã PIN", "route": "/auth/forgot-pin"}}
+   - Quên mật khẩu -> {{"label": "Quên mật khẩu", "route": "/auth/forgot-password"}}
+   - Đổi mã PIN -> {{"label": "Đổi mã PIN", "route": "/settings/change-pin"}}
+   - Liên kết ngân hàng -> {{"label": "Thẻ & Ngân hàng liên kết", "route": "/bank-cards"}}
+   - Chuyển tiền -> {{"label": "Chuyển tiền ngay", "route": "/transfer"}}
+   - Nạp tiền -> {{"label": "Nạp tiền vào ví", "route": "/deposit"}}
+   - Rút tiền -> {{"label": "Rút tiền về ngân hàng", "route": "/withdraw"}}
+   - Vay nhanh -> {{"label": "Vay nhanh", "route": "/bills/quick-loan"}}
+   - Lịch trả nợ vay -> {{"label": "Lịch trả nợ vay", "route": "/loan/schedule"}}
+   - Tiết kiệm online -> {{"label": "Mở sổ tiết kiệm", "route": "/bills/savings"}}
+   - Kho ưu đãi -> {{"label": "Kho Voucher & Ưu đãi", "route": "/promotions"}}
+   - Thẻ Visa -> {{"label": "Quản lý thẻ", "route": "/cards"}}
+   - Khiếu nại, tra soát -> {{"label": "Hỗ trợ tra soát", "route": "/support/help-center"}}
+
+7. ĐỊNH DẠNG ĐẦU RA: Trả về JSON thuần túy (không bọc mã markdown codeblock) gồm đúng 3 trường:
    - "answer": Nội dung trả lời chi tiết, súc tích, lịch sự bằng tiếng Việt.
-   - "quick_replies": Mảng gồm 2-3 câu hỏi gợi ý liên quan mật thiết.
    - "quick_replies": Mảng gồm 2-3 câu hỏi gợi ý tự nhiên người dùng rất có thể muốn hỏi tiếp, viết bằng tiếng Việt chuẩn ngữ pháp, có dấu đầy đủ, súc tích (10-45 ký tự), liên quan mật thiết đến nội dung vừa giải đáp (Ví dụ: ["Lãi suất kỳ hạn 12 tháng", "Rút trước hạn có mất lãi không?", "Cách mở sổ online"]). Tuyệt đối không sinh câu hỏi cộc lốc hay lặp lại câu hỏi gốc.
    - "suggested_action": Object điều hướng như mô tả ở trên hoặc null nếu không cần thiết.
 
 NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
 {combined_context}
+
+{rate_config.rate_table_text()}
 """
         messages = [{"role": "system", "content": system_prompt}]
         if history:
@@ -1260,7 +2388,8 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         result_json, is_extractive = self._call_llm_with_failover(
             messages, 
             fallback_context=combined_context, 
-            user_question=user_question
+            user_question=user_question,
+            history=history
         )
         if not isinstance(result_json, dict):
             if isinstance(result_json, list) and len(result_json) > 0 and isinstance(result_json[0], dict):
@@ -1319,7 +2448,9 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                 "quên", "quen", "lấy lại", "lay lai", "cấp lại", "cap lai", "khôi phục", "khoi phuc", "reset"
             ]) and any(p in q_lower for p in ["mật khẩu", "mat khau", "password"])
 
-            if is_pin_rec:
+            if financial_analysis:
+                result_json["suggested_action"] = {"label": "Mở sổ tiết kiệm ngay", "route": "/bills/savings"}
+            elif is_pin_rec:
                 result_json["suggested_action"] = {"label": "Lấy lại mã PIN", "route": "/auth/forgot-pin"}
             elif is_pin_chg:
                 result_json["suggested_action"] = {"label": "Đổi mã PIN", "route": "/settings/change-pin"}
@@ -1375,6 +2506,10 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                 result_json["suggested_action"] = {"label": "Giới thiệu bạn bè", "route": "/referral"}
             elif any(k in q_lower for k in ["voucher", "khuyen mai", "khuyến mại", "khuyến mãi", "uu dai", "ưu đãi", "giam gia", "giảm giá", "senpoint", "sen point", "tich diem", "tích điểm", "doi diem", "đổi điểm", "doi qua", "đổi quà", "xinchao50", "freego", "welcome100k"]):
                 result_json["suggested_action"] = {"label": "Kho Voucher & Ưu đãi", "route": "/promotions"}
+        # 4b. Kiểm duyệt và bảo vệ đầu ra (Anti-truncated, balanced markdown, leak filtering)
+        raw_ans = result_json.get("answer", "")
+        result_json["answer"] = sanitize_and_validate_output(raw_ans, user_question)
+
         latency = (time.time() - start_time) * 1000
         result_json["latency_ms"] = round(latency, 2)
 
@@ -1385,11 +2520,24 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         return result_json
 
     # ==================== INTEGRATION CHO TOÀN BỘ ECOSYSTEM ====================
+    def _internal_headers(self, user_id: Optional[str]) -> Dict[str, str]:
+        """
+        Header chuẩn cho MỌI call service-to-service nội bộ:
+        - X-User-Id: danh tính client do API Gateway verify JWT rồi inject (đã sanitize ở main.py)
+        - X-Internal-Key: shared secret v1 — khi wallet/payment/identity bật verification
+          theo từng endpoint (pattern tham khảo: identity KycController) thì call từ
+          chatbot không bị chặn.
+        """
+        headers: Dict[str, str] = {"X-Internal-Key": settings.INTERNAL_API_KEY}
+        if user_id:
+            headers["X-User-Id"] = user_id
+        return headers
+
     def _fetch_active_promotions(self) -> List[Dict[str, Any]]:
         """Lấy danh sách mã voucher khuyến mãi đang có hiệu lực trực tiếp từ notification-service"""
         try:
             url = f"{settings.NOTIFICATION_SERVICE_URL}/api/v1/promotions"
-            resp = requests.get(url, timeout=2.5)
+            resp = requests.get(url, headers=self._internal_headers(None), timeout=2.5)
             if resp.status_code == 200:
                 body = resp.json()
                 return body.get("data", [])
@@ -1403,7 +2551,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             return []
         try:
             url = f"{settings.NOTIFICATION_SERVICE_URL}/api/v1/promotions/my-vouchers"
-            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=2.5)
+            resp = requests.get(url, headers=self._internal_headers(user_id), timeout=2.5)
             if resp.status_code == 200:
                 body = resp.json()
                 return body.get("data", [])
@@ -1417,7 +2565,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             return None
         try:
             url = f"{settings.WALLET_SERVICE_URL}/api/v1/wallets/me"
-            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            resp = requests.get(url, headers=self._internal_headers(user_id), timeout=3.0)
             if resp.status_code == 200:
                 body = resp.json()
                 return body.get("data")
@@ -1431,7 +2579,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             return []
         try:
             url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/transactions?size={limit}"
-            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            resp = requests.get(url, headers=self._internal_headers(user_id), timeout=3.0)
             if resp.status_code == 200:
                 body = resp.json()
                 return body.get("data", {}).get("content", [])
@@ -1445,7 +2593,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             return None
         try:
             url = f"{settings.IDENTITY_SERVICE_URL}/api/v1/users/me"
-            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            resp = requests.get(url, headers=self._internal_headers(user_id), timeout=3.0)
             if resp.status_code == 200:
                 return resp.json().get("data")
         except Exception as e:
@@ -1458,7 +2606,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             return []
         try:
             url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/cards"
-            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            resp = requests.get(url, headers=self._internal_headers(user_id), timeout=3.0)
             if resp.status_code == 200:
                 data = resp.json().get("data")
                 return data if isinstance(data, list) else []
@@ -1472,7 +2620,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             return []
         try:
             url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/bank-accounts"
-            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            resp = requests.get(url, headers=self._internal_headers(user_id), timeout=3.0)
             if resp.status_code == 200:
                 data = resp.json().get("data")
                 return data if isinstance(data, list) else []
@@ -1486,7 +2634,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             return []
         try:
             url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/savings/accounts"
-            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            resp = requests.get(url, headers=self._internal_headers(user_id), timeout=3.0)
             if resp.status_code == 200:
                 data = resp.json().get("data")
                 return data if isinstance(data, list) else []
@@ -1500,7 +2648,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             return []
         try:
             url = f"{settings.PAYMENT_SERVICE_URL}/api/v1/loans"
-            resp = requests.get(url, headers={"X-User-Id": user_id}, timeout=3.0)
+            resp = requests.get(url, headers=self._internal_headers(user_id), timeout=3.0)
             if resp.status_code == 200:
                 data = resp.json().get("data")
                 return data if isinstance(data, list) else []
@@ -1515,7 +2663,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         try:
             # 1. Lấy ownerId từ wallet-service
             w_url = f"{settings.WALLET_SERVICE_URL}/api/v1/wallets/{wallet_id}"
-            w_resp = requests.get(w_url, timeout=2.0)
+            w_resp = requests.get(w_url, headers=self._internal_headers(None), timeout=2.0)
             if w_resp.status_code != 200:
                 return None
             owner_id = w_resp.json().get("data", {}).get("ownerId")
@@ -1524,7 +2672,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
 
             # 2. Lấy tên và SĐT từ identity-service
             u_url = f"{settings.IDENTITY_SERVICE_URL}/api/v1/internal/users/{owner_id}"
-            u_resp = requests.get(u_url, timeout=2.0)
+            u_resp = requests.get(u_url, headers=self._internal_headers(None), timeout=2.0)
             if u_resp.status_code != 200:
                 return None
             u_data = u_resp.json()
@@ -1703,7 +2851,7 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         if not savings:
             return (
                 "Dạ Quý khách hiện chưa có sổ tiết kiệm nào đang mở tại Sen Hồng Bank ạ.\n\n"
-                "Hiện ngân hàng đang áp dụng chương trình **Tiết kiệm Phát Lộc Online** với lãi suất hấp dẫn lên đến **6.8%/năm**, "
+                f"Hiện ngân hàng đang áp dụng chương trình **Tiết kiệm Phát Lộc Online** với lãi suất hấp dẫn lên đến **{rate_config.SAVINGS_RATES[24]:.1f}%/năm**, "
                 "gửi tích lũy linh hoạt từ 1.000.000 VNĐ, kỳ hạn đa dạng từ 1 đến 36 tháng.\n\n"
                 "Quý khách có muốn em hỗ trợ mở sổ tiết kiệm online ngay bây giờ không ạ?"
             )
@@ -1857,21 +3005,148 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
         ]
         return "\n".join(lines)
 
+    def _build_personalized_reminders_response(
+        self,
+        profile: Optional[Dict[str, Any]],
+        wallet: Optional[Dict[str, Any]],
+        cards: List[Dict[str, Any]],
+        savings: List[Dict[str, Any]],
+        loans: List[Dict[str, Any]],
+        recent_txs: List[Dict[str, Any]]
+    ) -> str:
+        """Định dạng Lịch Tài Chính & Hệ Thống Nhắc Nhở Cá Nhân Hóa Toàn Diện cho Khách Hàng"""
+        full_name = profile.get("fullName", "Quý khách") if profile else "Quý khách"
+        alias = profile.get("accountAlias") if profile else None
+        alias_str = f" (@{alias})" if alias else ""
+
+        bal = float(wallet.get("balance", 0)) if wallet else 0.0
+        fmt_bal = f"{bal:,.0f} VNĐ".replace(",", ".")
+
+        active_loans = [l for l in loans if l.get("status") in ["ACTIVE", "DISBURSED"]]
+        total_loans = sum(float(l.get("remainingPrincipal", l.get("principalAmount", 0))) for l in active_loans)
+        fmt_loans = f"{total_loans:,.0f} VNĐ".replace(",", ".")
+
+        total_savings = sum(float(s.get("principal", 0)) for s in savings)
+        fmt_savings = f"{total_savings:,.0f} VNĐ".replace(",", ".")
+
+        # Đánh giá số dư phục vụ hóa đơn sinh hoạt
+        bill_assessment = (
+            f"Số dư khả dụng hiện tại (**{fmt_bal}**) hoàn toàn đủ để thanh toán các hóa đơn sinh hoạt định kỳ. Quý khách có thể bật **Auto-Debit (Trích nợ tự động)** để hệ thống gạch nợ tự động 0đ phí."
+            if bal >= 2000000 else
+            f"Số dư khả dụng hiện tại (**{fmt_bal}**) cần được nạp thêm để đảm bảo đủ số dư thanh toán các hóa đơn sinh hoạt khi đến kỳ chốt cước."
+        )
+
+        # Trạng thái thẻ tín dụng
+        card_remind = (
+            f"Quý khách đang sở hữu **{len(cards)} thẻ**. Lời nhắc: Vui lòng thanh toán toàn bộ 100% dư nợ sao kê trước ngày **15 hàng tháng** để bảo toàn trọn vẹn đặc quyền **45 - 55 ngày miễn lãi** và tránh phí phạt trễ hạn 4% - 5%."
+            if cards else
+            "Quý khách chưa kích hoạt thẻ tín dụng Sen Hồng. Gợi ý: Đăng ký Thẻ ảo **Visa Platinum Virtual** tức thì trên app để nhận hạn mức đến **100.000.000 VNĐ** và hoàn tiền mua sắm."
+        )
+
+        # Trạng thái khoản vay
+        loan_remind = (
+            f"Quý khách đang có **{len(active_loans)} khoản vay** (tổng dư nợ: **{fmt_loans}**). Lời nhắc: Duy trì đủ số dư ví trước ngày đến hạn thanh toán định kỳ hàng tháng để tránh phát sinh nợ quá hạn nhảy nhóm CIC."
+            if active_loans else
+            "Quý khách hiện không có khoản nợ vay nào. Hạn mức vay tiêu dùng **Quick Loan** giải ngân online trong 1 phút sẵn sàng hỗ trợ đến **50.000.000 VNĐ** khi cần."
+        )
+
+        # Trạng thái sổ tiết kiệm
+        savings_remind = (
+            f"Quý khách đang có **{len(savings)} sổ tiết kiệm** (tổng tiền gửi: **{fmt_savings}**). Hệ thống sẽ gửi thông báo trước 2 ngày khi sổ đáo hạn; Quý khách có thể chọn tự động tái tục cả gốc và lãi (lãi suất đến **{rate_config.SAVINGS_RATES[24]:.1f}%/năm**) hoặc rút linh hoạt theo Thông tư 04/2022/TT-NHNN."
+            if savings else
+            f"Quý khách chưa mở sổ tiết kiệm online. Gợi ý: Gửi tiết kiệm online chỉ từ **1.000.000 VNĐ** với lãi suất hấp dẫn đến **{rate_config.SAVINGS_RATES[24]:.1f}%/năm**."
+        )
+
+        lines = [
+            f"Dạ Sen Hồng Bank xin gửi Quý khách **{full_name}**{alias_str} **Bản Lời Nhắc Tài Chính & Lịch Sinh Hoạt Cá Nhân Hóa**:\n",
+            f"💵 **Số dư ví khả dụng hiện tại:** **{fmt_bal}**\n",
+            f"🔔 **1. Nhắc Lịch Thanh Toán Hóa Đơn Sinh Hoạt (Điện, Nước, Internet):**",
+            f"- Chu kỳ phát sinh: Từ ngày **10 đến 15 hàng tháng**.",
+            f"- Tình trạng: {bill_assessment}\n",
+            f"💳 **2. Nhắc Hạn Thanh Toán Thẻ Tín Dụng & Miễn Lãi:**",
+            f"- {card_remind}\n",
+            f"📑 **3. Nhắc Lịch Trả Nợ Khoản Vay Định Kỳ:**",
+            f"- {loan_remind}\n",
+            f"📈 **4. Nhắc Ngày Đáo Hạn Sổ Tiết Kiệm (Core Savings):**",
+            f"- {savings_remind}\n",
+            f"⚠️ **5. Cảnh Báo Ngưỡng Chi Tiêu Sinh Hoạt (Smart PFM):**",
+            f"- Hệ thống sẽ tự động phát cảnh báo tức thì khi tổng chi tiêu hoặc một nhóm danh mục chạm mốc **80% hạn mức ngân sách tháng**.\n",
+            f"💰 **6. Nhắc Tích Lũy Tự Động Định Kỳ (Auto-Savings):**",
+            f"- Khuyến nghị trích tự động **10% - 20%** lương vào ngày nhận lương hàng tháng chuyển thẳng vào sổ tiết kiệm tích lũy.\n",
+            f"👉 Quý khách có thể bấm chọn nhanh các gợi ý bên dưới để xem tiếp câu trả lời chi tiết nhé ạ!"
+        ]
+        return "\n".join(lines)
+
+    def _enrich_with_deep_thinking(
+        self,
+        resp: ChatResponse,
+        question: str,
+        start_time: float
+    ) -> ChatResponse:
+        """
+        Bổ sung chuỗi suy luận sâu (Extended Thinking / Chain-of-Thought) 5 bước
+        và kiểm chứng toán học độc lập vào ChatResponse.
+        """
+        if resp.thought_process is None or not resp.reasoning_steps:
+            calc_latency = resp.latency_ms if resp.latency_ms is not None else round((time.time() - start_time) * 1000, 2)
+            thought_data = deep_thinking_engine.analyze_and_reason(
+                query=question,
+                answer_text=resp.answer,
+                sources=resp.sources,
+                base_latency_ms=calc_latency,
+                retrieved_context=self._last_rag_context
+            )
+            resp.thought_process = thought_data.get("thought_process")
+            resp.reasoning_steps = thought_data.get("reasoning_steps", [])
+            resp.thinking_duration_ms = thought_data.get("thinking_duration_ms")
+            resp.confidence_score = thought_data.get("confidence_score", 0.99)
+            resp.grounding_warnings = thought_data.get("grounding_warnings", [])
+        return resp
+
     def answer_query(
         self, 
         question: str, 
         history: Optional[List[MessageItem]] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
+        client_context: Optional[Dict[str, Any]] = None
     ) -> ChatResponse:
         """
-        Điểm tiếp nhận câu hỏi tích hợp kiến trúc Dual-System (System 1 + System 2):
+        Điểm tiếp nhận câu hỏi tích hợp kiến trúc Multi-Tier:
         - Layer 1: Code cứng (Deterministic Security Guardrails: OTP/PIN/Fraud Regex)
-        - Layer 2: Jev (System One của TypeSafe AI) - Định tuyến & Gác cổng an toàn (Choice, Score, RiskScore)
+        - Layer 2: Jev (System One của TypeSafe AI) - Định tuyến & Gác cổng an toàn
         - Layer 3: System Two Generative Model (Gemini 3.5 Flash Lite + Hybrid RAG trên Postgres)
-        - Bảo mật Zero-PII Leak tuyệt đối cho thông tin tài chính cá nhân
+        - Layer 4: Deep Thinking & Mathematical Verification Engine (Chuỗi suy luận 5 bước minh bạch)
         """
         start_time = time.time()
-        q_clean = question.strip()
+        resp = self._dispatch_answer_query(
+            question=question,
+            history=history,
+            user_id=user_id,
+            client_context=client_context,
+            start_time=start_time
+        )
+        # Tối ưu hóa gợi ý câu hỏi (Quick Replies) dựa trên câu hỏi hiện tại và ngữ cảnh lịch sử trước đó
+        resp.quick_replies = enrich_smart_quick_replies(
+            query=question,
+            raw_replies=resp.quick_replies,
+            max_items=3,
+            history=history
+        )
+        return self._enrich_with_deep_thinking(resp, question, start_time)
+
+    def _dispatch_answer_query(
+        self, 
+        question: str, 
+        history: Optional[List[MessageItem]] = None,
+        user_id: Optional[str] = None,
+        client_context: Optional[Dict[str, Any]] = None,
+        start_time: Optional[float] = None
+    ) -> ChatResponse:
+        """
+        Thực thi pipeline phân luồng và xử lý truy vấn của Chatbot.
+        """
+        if start_time is None:
+            start_time = time.time()
         q_clean = normalize_vietnamese_query(question.strip())
         embed_model = self._get_embed_model()
 
@@ -1887,12 +3162,114 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             action_route = "/cards" if is_card_emergency else "/settings/security"
             action_label = "Khóa thẻ ngay" if is_card_emergency else "Cài đặt bảo mật"
             return ChatResponse(
-                answer=guardrail_msg or "Cảnh báo bảo mật từ Sen Hồng Bank.",
+                answer=sanitize_and_validate_output(guardrail_msg or "Cảnh báo bảo mật từ Sen Hồng Bank.", q_clean),
                 sources=[],
                 quick_replies=["Khóa thẻ khẩn cấp" if is_card_emergency else "Hướng dẫn bảo mật", "Liên hệ tổng đài 1900-SENHONG"],
                 suggested_action=ActionItem(type="NAVIGATE", label=action_label, route=action_route),
                 latency_ms=round((time.time() - start_time) * 1000, 2)
             )
+
+        # =========================================================================
+        # LAYER 1.5: THEO DÕI NGỮ CẢNH ĐA LƯỢT & HỎI LẠI KHI MƠ HỒ (DISAMBIGUATION)
+        # 1. Trích xuất trạng thái hội thoại trước đó (sản phẩm, số tiền $P, kỳ hạn)
+        # 2. Với các câu ngắn như 'tính lãi', 'phí', 'hạn mức': Hỏi lại nhã nhặn,
+        #    đưa 2-3 lựa chọn rõ ràng và Quick Replies để khách chọn nhanh trong 1 chạm.
+        # =========================================================================
+        history_context = extract_context_from_history(history, client_context=client_context)
+        self._history_context = history_context
+        q_enriched = enrich_query_with_context(q_clean, history_context)
+        is_continued = (q_enriched != q_clean)
+        if is_continued:
+            logger.info("Enriched multi-turn query from '%s' to '%s'", q_clean, q_enriched)
+            q_clean = q_enriched
+
+        if not is_continued:
+            ambiguous_resp = check_ambiguous_query(q_clean)
+            if ambiguous_resp:
+                logger.info("Disambiguation triggered for query '%s' -> %s", q_clean, ambiguous_resp.get("disambiguation_type"))
+                clean_ans = sanitize_and_validate_output(ambiguous_resp["answer"], q_clean)
+                action_item = None
+                if ambiguous_resp.get("suggested_action"):
+                    action_item = ActionItem(
+                        type="NAVIGATE",
+                        label=ambiguous_resp["suggested_action"]["label"],
+                        route=ambiguous_resp["suggested_action"]["route"]
+                    )
+                return ChatResponse(
+                    answer=clean_ans,
+                    sources=[],
+                    quick_replies=ambiguous_resp["quick_replies"],
+                    suggested_action=action_item,
+                    latency_ms=round((time.time() - start_time) * 1000, 2)
+                )
+
+        # =========================================================================
+        # LAYER 1.6: XỬ LÝ CÂU HỎI DÀI & ĐA Ý ĐỊNH (COMPREHENSIVE LONG QUERY ENGINE)
+        # Tự động nhận diện và phản hồi trọn vẹn, có cấu trúc các câu hỏi dài, phức tạp:
+        # - Vay Quick Loan (Điều kiện + Thủ tục + Lãi suất + Giải ngân + Dự tính trả góp)
+        # - Tiết kiệm (So sánh 12m vs 24m + Rút một phần trước hạn theo TT 04/2022)
+        # - Tra soát Napas (Bị trừ tiền nhưng chưa nhận, Bảo toàn dòng tiền Saga Ledger)
+        # - Thẻ Visa Platinum Virtual (Phí 0đ + Hạn mức 100tr + Netflix/Spotify/Apple Pay)
+        # - Sinh trắc học 2345 (Hạn mức bắt buộc + Vị trí đầu đọc NFC iPhone/Android)
+        # =========================================================================
+        long_resp = handle_comprehensive_long_query(q_clean)
+        if long_resp:
+            logger.info("Comprehensive Long Query triggered for query: '%s'", q_clean[:80])
+            action_item = None
+            if long_resp.get("suggested_action"):
+                action_item = ActionItem(
+                    type="NAVIGATE",
+                    label=long_resp["suggested_action"]["label"],
+                    route=long_resp["suggested_action"]["route"]
+                )
+            clean_ans = sanitize_and_validate_output(long_resp["answer"], q_clean)
+            return ChatResponse(
+                answer=clean_ans,
+                sources=long_resp.get("sources", ["Cẩm nang Ngân Hàng Số Sen Hồng"]),
+                quick_replies=long_resp.get("quick_replies", []),
+                suggested_action=action_item,
+                latency_ms=round((time.time() - start_time) * 1000, 2)
+            )
+
+        # =========================================================================
+        # LAYER 1.7: DANH BẠ TÍNH NĂNG & LUỒNG DẪN DẮT (APP CATALOG & GUIDED FLOW)
+        # 1. Trả lời chính xác 'App có tính năng X không?' (Có trong bảng -> có, không -> nói rõ chưa hỗ trợ)
+        # 2. Xử lý nhóm LEAD_ACTION: Dẫn dắt từng bước cho Vay và Tiết Kiệm (kèm Disclaimer)
+        # 3. Xử lý nhóm HOW_TO_ACTION: Hướng dẫn thao tác từng bước + Nút mở thẳng màn hình
+        # =========================================================================
+        # 1.7A: Kiểm tra câu hỏi tra cứu 'App có tính năng X không?'
+        has_feat, feat_obj, feat_msg = check_app_has_feature(q_clean)
+        if feat_msg:
+            action = ActionItem(type="NAVIGATE", label=f"Mở {feat_obj['ten']}", route=feat_obj["route"]) if feat_obj else ActionItem(type="NAVIGATE", label="Xem tất cả tiện ích", route="/more")
+            return ChatResponse(
+                answer=sanitize_and_validate_output(feat_msg, q_clean),
+                sources=["Danh Bạ Tính Năng Sen Hồng Bank"],
+                quick_replies=["Xem chi tiết", "Biểu phí & Hạn mức", "Quay lại trang chủ"],
+                suggested_action=action,
+                latency_ms=round((time.time() - start_time) * 1000, 2)
+            )
+
+        # 1.7B: Phân loại 4 nhóm ý định cốt lõi
+        archetype = classify_question_archetype(q_clean, history)
+
+        # Xử lý luồng dẫn dắt (LEAD_ACTION)
+        if archetype == INTENT_LEAD_ACTION:
+            guided_resp = self.guided_flow.handle_lead_action(q_clean, history, user_id)
+            if guided_resp:
+                return guided_resp
+
+        # Xử lý hướng dẫn thao tác (HOW_TO_ACTION)
+        if archetype == INTENT_HOW_TO_ACTION:
+            matched_f = find_feature_by_query(q_clean)
+            if matched_f:
+                howto_text = format_feature_howto_answer(matched_f)
+                return ChatResponse(
+                    answer=sanitize_and_validate_output(howto_text, q_clean),
+                    sources=["Danh Bạ Tính Năng Sen Hồng Bank"],
+                    quick_replies=[f"Mở {matched_f['ten']}", "Biểu phí & Hạn mức", "Cẩm nang tiện ích"],
+                    suggested_action=ActionItem(type="NAVIGATE", label=matched_f['ten'], route=matched_f['route']),
+                    latency_ms=round((time.time() - start_time) * 1000, 2)
+                )
 
         # =========================================================================
         # LAYER 2: JEV - SYSTEM ONE GATEKEEPER & ROUTER (TYPESAFE AI ARCHITECTURE)
@@ -2029,6 +3406,35 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                 latency_ms=round((time.time() - start_time) * 1000, 2)
             )
 
+        # Rẽ nhánh 2B-6: Tra cứu Lời nhắc tài chính & Lịch sinh hoạt cá nhân hóa (Zero-PII Leak)
+        if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_REMINDERS:
+            if user_id:
+                profile = self._fetch_user_profile(user_id)
+                wallet = self._fetch_user_wallet_balance(user_id)
+                cards = self._fetch_user_cards(user_id)
+                savings = self._fetch_user_savings(user_id)
+                loans = self._fetch_user_loans(user_id)
+                recent_txs = self._fetch_user_recent_transactions(user_id, limit=5)
+                answer_text = self._build_personalized_reminders_response(profile, wallet, cards, savings, loans, recent_txs)
+                return ChatResponse(
+                    answer=answer_text,
+                    sources=["senhong_smart_reminders_service"],
+                    quick_replies=["Cài đặt Auto-Debit hóa đơn", "Xem lịch trả nợ vay", "Mở sổ tiết kiệm tích lũy"],
+                    suggested_action=ActionItem(type="NAVIGATE", label="Lịch tài chính & Nhắc nhở", route="/profile"),
+                    latency_ms=round((time.time() - start_time) * 1000, 2)
+                )
+            return ChatResponse(
+                answer=(
+                    "Dạ để nhận được **Bản Lời Nhắc Tài Chính & Lịch Sinh Hoạt Cá Nhân Hóa** chính xác theo số dư và danh mục của riêng mình, "
+                    "Quý khách vui lòng đăng nhập vào ứng dụng Sen Hồng Bank ạ!\n\n"
+                    "👉 Quý khách có thể tìm hiểu thêm về Hệ thống 6 loại Nhắc nhở Thông minh của ngân hàng ở gợi ý bên dưới nhé ạ!"
+                ),
+                sources=[],
+                quick_replies=["Hệ thống nhắc nhở thông minh", "Đăng nhập", "Xem biểu phí"],
+                suggested_action=ActionItem(type="NAVIGATE", label="Đăng nhập", route="/auth/login"),
+                latency_ms=round((time.time() - start_time) * 1000, 2)
+            )
+
         # Rẽ nhánh 2B: Hỏi số dư ví cá nhân (Zero-PII Leak)
         if jev_decision.gate_action == GateAction.DIVERT_INTERNAL_WALLET:
             if user_id:
@@ -2132,9 +3538,21 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             )
 
         # =========================================================================
-        # LAYER 3: SYSTEM TWO GENERATIVE LLM (GEMINI 3.5 FLASH LITE + ADVANCED RAG)
-        # Chỉ gọi khi Jev xác nhận GateAction.ALLOW_RAG
+        # LAYER 3: FINANCIAL REACT AGENT WITH TOOLS (AUTONOMOUS FUNCTION CALLING)
+        # Agent tự suy nghĩ -> Tự gọi công cụ -> Xem kết quả -> Trả lời chính xác
         # =========================================================================
+        try:
+            agent_response = self.banking_agent.run_agent_loop(
+                user_question=q_clean,
+                history=history,
+                user_id=user_id
+            )
+            if agent_response and agent_response.answer and len(agent_response.answer) > 20:
+                logger.info("[REACT AGENT COMPLETE] Answer generated via autonomous tool loop in %.2fms", agent_response.latency_ms)
+                return agent_response
+        except Exception as e:
+            logger.warning("ReAct Agent encountered exception: %s. Falling back to single-pass RAG.", e)
+
         masked_q, token_map = tokenize_pii(q_clean)
         res_dict = self.query(masked_q, history=history, user_id=user_id)
 
@@ -2164,8 +3582,9 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
                     quick_replies.append(str(qr).strip())
         elif isinstance(raw_qr, str) and raw_qr.strip():
             quick_replies = [raw_qr.strip()]
-        quick_replies = quick_replies[:4]
-        quick_replies = enrich_smart_quick_replies(q_clean, quick_replies, max_items=3)
+        # Chỉ cắt 4 items RAW: enrichment (loại trùng lặp, thêm gợi ý chuyên sâu theo domain,
+        # chuẩn hóa ngữ pháp) chạy DUY NHẤT ở answer_query() — tránh enrich 2 lần và để
+        # semantic cache lưu dữ liệu thô (cache hit vẫn được enrich fresh theo logic mới nhất).
 
         # Ghép suggested action từ LLM hoặc fallback tối ưu từ Jev System One
         action_data = res_dict.get("suggested_action")
@@ -2287,9 +3706,10 @@ NGỮ CẢNH TÀI LIỆU CHÍNH THỐNG:
             )
 
         latency = (time.time() - start_time) * 1000
+        clean_answer = sanitize_and_validate_output(answer_final, q_clean)
 
         return ChatResponse(
-            answer=answer_final,
+            answer=clean_answer,
             sources=sources_final,
             quick_replies=quick_replies,
             suggested_action=suggested_action,

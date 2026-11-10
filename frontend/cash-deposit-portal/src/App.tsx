@@ -24,14 +24,31 @@ import { Landmark, Sun, Moon, ShieldCheck, UserCheck, LogOut, Wallet, FileText, 
 import { realtimeNotificationManager, RealtimeNotification } from './realtime';
 import './styles.css';
 
+function isJwtExpired(token?: string | null): boolean {
+  if (!token) return true;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const normalized = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(decodeURIComponent(escape(atob(normalized))));
+    if (!payload.exp) return false;
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true;
+  }
+}
+
 export default function App() {
-  // Trạng thái đăng nhập cán bộ (Khởi tạo từ localStorage nếu có token)
+  // Trạng thái đăng nhập cán bộ (Khởi tạo từ localStorage nếu có token còn hạn)
   const [currentStaff, setCurrentStaff] = useState<LoggedInStaff | null>(() => {
     try {
       const saved = localStorage.getItem('senhong_staff_session');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.token) return parsed;
+        if (parsed && parsed.token && !isJwtExpired(parsed.token)) {
+          return parsed;
+        }
+        localStorage.removeItem('senhong_staff_session');
       }
       return null;
     } catch {
@@ -61,6 +78,14 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      handleSetStaff(null);
+    };
+    window.addEventListener('auth:expired', handleAuthExpired);
+    return () => window.removeEventListener('auth:expired', handleAuthExpired);
+  }, []);
+
   const role: Role = currentStaff?.role || 'TELLER';
 
   // Lưu phiên đăng nhập cán bộ
@@ -88,10 +113,8 @@ export default function App() {
 
       // 2. Tải danh sách nạp quầy từ Backend
       const realDeposits = await ApiService.fetchDeposits(currentStaff);
-      if (realDeposits.length > 0) {
-        setDeposits(realDeposits);
-        setIsOnlineBackend(true);
-      }
+      setDeposits(realDeposits);
+      setIsOnlineBackend(true);
 
       // 3. Tải danh sách hồ sơ vay chờ duyệt
       const pendingLoans = await ApiService.fetchPendingLoans(currentStaff);
@@ -582,7 +605,7 @@ export default function App() {
             <div>
               {role === 'TELLER' ? (
                 <>
-                  <TellerForm onSubmit={handleCreateDeposit} accounts={accounts} />
+                  <TellerForm onSubmit={handleCreateDeposit} accounts={accounts} currentStaff={currentStaff} />
                   <TransferForm onTransfer={handleP2PTransfer} accounts={accounts} />
                 </>
               ) : (
@@ -606,6 +629,7 @@ export default function App() {
           <LoanManagement
             currentStaff={currentStaff}
             loans={loans}
+            accounts={accounts}
             onRefresh={loadBackendData}
             onLoanApproved={() => {
               loadBackendData();

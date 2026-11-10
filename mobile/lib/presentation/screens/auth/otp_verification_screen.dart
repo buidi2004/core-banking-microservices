@@ -120,13 +120,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
           }
           HapticFeedback.mediumImpact();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Xác thực mã OTP thành công! Tiến hành thiết lập mã PIN 6 số.'),
+            SnackBar(
+              content: Text(isRegistration
+                  ? 'Xác thực OTP thành công! Tiến hành quét thẻ CCCD qua NFC & nhận diện khuôn mặt.'
+                  : 'Xác thực mã OTP thành công! Tiến hành thiết lập mã PIN 6 số.'),
               backgroundColor: AppColors.success,
             ),
           );
-          context.go('/auth/set-pin');
+          if (isRegistration) {
+            // Theo Thông tư 17/2024/TT-NHNN & QĐ 2345/QĐ-NHNN: Bắt buộc eKYC thẻ CCCD gắn chip
+            context.go('/profile/ekyc', extra: {
+              'isMandatoryOnboarding': true,
+              'next': '/auth/set-pin',
+            });
+          } else {
+            context.go('/auth/set-pin');
+          }
         } else {
           HapticFeedback.vibrate();
           ScaffoldMessenger.of(context).showSnackBar(

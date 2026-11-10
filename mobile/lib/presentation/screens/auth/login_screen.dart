@@ -758,7 +758,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: AppTypography.bodyMedium(
                             color: AppColors.textSecondaryLight)),
                     TextButton(
-                      onPressed: () => context.push('/auth/register'),
+                      onPressed: () =>
+                          context.push('/auth/terms?forRegistration=true'),
                       child: const Text('Đăng ký ngay',
                           style: TextStyle(
                               color: AppColors.primaryDark,

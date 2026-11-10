@@ -163,8 +163,8 @@ public class CashDepositController {
                     .completedAt(Instant.now());
 
             CashDeposit deposit = depositBuilder.build();
-            boolean credited = creditWalletBalance(deposit);
-            if (!credited && walletGrpcClient != null) {
+            CreditWalletResult creditRes = creditWalletBalance(deposit);
+            if (!creditRes.success() && walletGrpcClient != null) {
                 log.error("Tự động duyệt nạp tiền thất bại do không thể cộng tiền ví: {}", deposit.getDepositCode());
                 depositBuilder.status(CashDeposit.STATUS_FAILED);
                 cashDepositRepository.save(depositBuilder.build());
@@ -178,7 +178,10 @@ public class CashDepositController {
                     deposit.getAccountNumber(),
                     deposit.getCustomerName(),
                     deposit.getAmount(),
-                    deposit.getBranchId()
+                    deposit.getBranchId(),
+                    creditRes.balanceAfter(),
+                    creditRes.targetWalletId(),
+                    creditRes.targetUserId()
             );
             return ResponseEntity.ok(ApiResponse.success("Nạp tiền thành công (Tự động duyệt do số tiền <= 50,000,000 VND)", CashDepositResponse.from(deposit)));
         }
@@ -234,8 +237,8 @@ public class CashDepositController {
         }
 
         // 6. Cộng tiền vào ví người dùng qua gRPC sang Wallet Service TRƯỚC KHI hoàn tất
-        boolean credited = creditWalletBalance(deposit);
-        if (!credited && walletGrpcClient != null) {
+        CreditWalletResult creditRes = creditWalletBalance(deposit);
+        if (!creditRes.success() && walletGrpcClient != null) {
             log.error("Cộng tiền vào ví thất bại cho lệnh nạp: {}", deposit.getDepositCode());
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                     .body(ApiResponse.error("Không thể cộng tiền vào ví người nhận. Vui lòng kiểm tra lại tài khoản ví hoặc hệ thống lõi ví."));
@@ -252,7 +255,10 @@ public class CashDepositController {
                 deposit.getAccountNumber(),
                 deposit.getCustomerName(),
                 deposit.getAmount(),
-                deposit.getBranchId()
+                deposit.getBranchId(),
+                creditRes.balanceAfter(),
+                creditRes.targetWalletId(),
+                creditRes.targetUserId()
         );
 
         log.info("Deposit approved and completed: code={} checker={}", deposit.getDepositCode(), checkerId);
@@ -458,12 +464,16 @@ public class CashDepositController {
         return null;
     }
 
-    private boolean creditWalletBalance(CashDeposit deposit) {
+    private record CreditWalletResult(boolean success, Long balanceAfter, String targetWalletId, String targetUserId) {
+        static CreditWalletResult fail() { return new CreditWalletResult(false, null, null, null); }
+    }
+
+    private CreditWalletResult creditWalletBalance(CashDeposit deposit) {
         if (walletGrpcClient == null) {
-            return true;
+            return new CreditWalletResult(true, null, deposit.getAccountNumber(), null);
         }
         if (deposit.getAccountNumber() == null || deposit.getAccountNumber().isBlank()) {
-            return false;
+            return CreditWalletResult.fail();
         }
 
         String inputAccount = deposit.getAccountNumber().trim();
@@ -516,16 +526,16 @@ public class CashDepositController {
 
                 // Ghi nhận Transaction và OutboxEvent để OutboxRelay đẩy sang Notification Service & Mobile
                 recordDepositTransactionAndOutbox(deposit, targetWalletId, targetUserId, balanceAfter);
-                return true;
+                return new CreditWalletResult(true, balanceAfter, targetWalletId, targetUserId);
             } else {
                 String err = creditRes != null ? creditRes.getErrorMessage() : "Unknown gRPC error";
                 log.error("Cộng tiền ví thất bại: walletId={} error={}", targetWalletId, err);
-                return false;
+                return CreditWalletResult.fail();
             }
         } catch (Exception e) {
             log.error("Lỗi khi gọi gRPC credit sang Wallet Service cho walletId={}: {}",
                     targetWalletId, e.getMessage(), e);
-            return false;
+            return CreditWalletResult.fail();
         }
     }
 
@@ -551,7 +561,7 @@ public class CashDepositController {
                     .amount(deposit.getAmount())
                     .fee(0L)
                     .currency(deposit.getCurrency() != null ? deposit.getCurrency() : "VND")
-                    .type("DEPOSIT")
+                    .type("CASH_DEPOSIT")
                     .status("SUCCESS")
                     .idempotencyKey(txIdemKey)
                     .note("Nạp tiền mặt tại quầy " + deposit.getBranchId() + " - " + deposit.getCustomerName())
@@ -559,11 +569,12 @@ public class CashDepositController {
                     .build();
             tx = transactionRepository.save(tx);
 
-            // Bắn OutboxEvent để OutboxRelay phát tán sang RabbitMQ (NotificationService) và Kafka
+            // Bắn OutboxEvent với transactionId = deposit.getDepositCode() để khớp hoàn toàn với Kafka event
+            // và đảm bảo deduplication ở cả Notification Service lẫn Ledger Service!
             com.fintech.wallet.domain.event.TransactionEvent completedEvent = new com.fintech.wallet.domain.event.TransactionEvent();
-            completedEvent.setEventId(UUID.randomUUID().toString());
-            completedEvent.setTransactionId(tx.getId());
-            completedEvent.setType("DEPOSIT");
+            completedEvent.setEventId("evt-" + deposit.getDepositCode());
+            completedEvent.setTransactionId(deposit.getDepositCode());
+            completedEvent.setType("CASH_DEPOSIT");
             completedEvent.setStatus("SUCCESS");
             completedEvent.setTargetWalletId(targetWalletId);
             completedEvent.setTargetUserId(targetUserId);
@@ -578,12 +589,12 @@ public class CashDepositController {
 
             OutboxEvent outbox = OutboxEvent.pending(
                     "Transaction",
-                    tx.getId(),
+                    deposit.getDepositCode(),
                     "TransactionCompletedEvent",
                     objectMapper.writeValueAsString(completedEvent)
             );
             outboxEventRepository.save(outbox);
-            log.info("Đã tạo Transaction và OutboxEvent nạp tiền thành công: txId={} outboxId={}", tx.getId(), outbox.getId());
+            log.info("Đã tạo Transaction và OutboxEvent nạp tiền thành công: code={} outboxId={}", deposit.getDepositCode(), outbox.getId());
         } catch (Exception e) {
             log.error("Lỗi khi ghi nhận Transaction/OutboxEvent cho nạp tiền tại quầy: {}", e.getMessage(), e);
         }

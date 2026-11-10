@@ -105,11 +105,11 @@ class ActiveLivenessDetector {
     final diffX = (faceCenterX - centerX).abs();
     final diffY = (faceCenterY - centerY).abs();
 
-    // Dung sai cho phép lệch tâm tối đa 18% kích thước màn hình
+    // Dung sai cho phép lệch tâm tối đa 22% kích thước khung hình
     final inCenter =
-        diffX < (previewWidth * 0.18) && diffY < (previewHeight * 0.18);
+        diffX < (previewWidth * 0.22) && diffY < (previewHeight * 0.22);
     final validSize =
-        box.width > (previewWidth * 0.35) && box.width < (previewWidth * 0.85);
+        box.width > (previewWidth * 0.28) && box.width < (previewWidth * 0.85);
 
     return inCenter && validSize;
   }

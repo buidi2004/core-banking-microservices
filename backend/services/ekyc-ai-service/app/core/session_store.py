@@ -90,6 +90,34 @@ class SessionStore:
         self._r.hset(key, mapping={"challenges": challenges})
         self._r.expire(key, SESSION_TTL_SECONDS)
 
+    def check_rate_limit(self, user_id: str, max_fails: int = 3) -> None:
+        """Giới hạn tối đa 3 lần thử thất bại liên tiếp để chống Brute-force / Hard Impostor thử lặp lại."""
+        if self._r is None or not user_id:
+            return
+        key = f"ekyc:fail_count:{user_id}"
+        fails = int(self._r.get(key) or 0)
+        if fails >= max_fails:
+            ttl = self._r.ttl(key)
+            mins = max(1, ttl // 60)
+            raise SessionError(f"Tài khoản tạm khóa do xác thực thất bại {fails} lần liên tiếp. Vui lòng thử lại sau {mins} phút.")
+
+    def record_failure(self, user_id: str, lock_seconds: int = 900) -> None:
+        """Ghi nhận lượt thử thất bại (khóa 15 phút sau 3 lần)."""
+        if self._r is None or not user_id:
+            return
+        key = f"ekyc:fail_count:{user_id}"
+        pipe = self._r.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, lock_seconds)
+        pipe.execute()
+
+    def reset_failure(self, user_id: str) -> None:
+        """Xóa bộ đếm thất bại khi xác thực thành công hoặc chuyển hậu kiểm."""
+        if self._r is None or not user_id:
+            return
+        key = f"ekyc:fail_count:{user_id}"
+        self._r.delete(key)
+
     @staticmethod
     def _key(session_id: str) -> str:
         return f"ekyc:session:{session_id}"

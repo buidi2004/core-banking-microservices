@@ -8,26 +8,35 @@
 #      Wallet, Payment, Ledger, Notification, Chatbot, eKYC-AI)
 #   3. Quản lý Cụm Hạ Tầng (Kafka, 6 Postgres DBs, Redis, RabbitMQ)
 #   4. Quản trị Mobile App (Flutter Run, Test, Build APK, Clean)
-#   5. Chạy Kiểm thử Toàn diện E2E (8 Kịch bản, eKYC AI Pipeline, Chatbot RAG, Master Suite)
-#   6. Bảng Đối soát Sổ cái kép trực tiếp (Live Ledger Balance Delta = 0.00 VND)
-#   7. Tra cứu Két quỹ quầy chi nhánh (Vault Cash Limit 500M)
-#   8. Cấp mới JWT Token cho Cán bộ quầy (Teller 1, Teller 2, Manager 1)
-#   9. Kiểm tra Sức khỏe và Độ trễ toàn hệ thống (Health Check & Latency Audit)
-#   10. Biên dịch, dọn dẹp và đóng gói hệ thống (Maven, Docker build)
+#   5. Quản trị Ngrok Public Tunnel (Mobile Real Device / External Gateway)
+#   6. Chạy Kiểm thử Toàn diện E2E (8 Kịch bản, eKYC AI Pipeline, Chatbot RAG, Master Suite)
+#   7. Bảng Đối soát Sổ cái kép trực tiếp (Live Ledger Balance Delta = 0.00 VND)
+#   8. Tra cứu Két quỹ quầy chi nhánh (Vault Cash Limit 500M)
+#   9. Cấp mới JWT Token cho Cán bộ quầy (Teller 1, Teller 2, Manager 1)
+#   10. Kiểm tra Sức khỏe và Độ trễ toàn hệ thống (Health Check & Latency Audit)
+#   11. Biên dịch, dọn dẹp và đóng gói hệ thống (Maven, Docker build)
 # ==============================================================================
 
 # Thiết lập thư mục gốc
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-# Đảm bảo /usr/bin luôn được ưu tiên trong PATH (tránh các wrapper giả lập flatpak bị thiếu)
+# Đảm bảo /usr/bin và $HOME/.local/bin luôn được ưu tiên trong PATH
 if [ -d "/usr/bin" ] && [[ "$PATH" != "/usr/bin:"* ]]; then
     export PATH="/usr/bin:$PATH"
+fi
+if [ -d "$HOME/.local/bin" ] && [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
 FE_DIR="$ROOT_DIR/frontend/cash-deposit-portal"
 FE_PID_FILE="$ROOT_DIR/.fe.pid"
 FE_LOG_FILE="$ROOT_DIR/.fe.log"
+
+# Cấu hình Ngrok Public Tunnel (chuyển tiếp tới API Gateway :8080)
+NGROK_BIN="$(command -v ngrok 2>/dev/null || echo "$HOME/.local/bin/ngrok")"
+NGROK_DOMAIN="mutation-tubby-overstock.ngrok-free.dev"
+NGROK_LOG_FILE="$ROOT_DIR/.ngrok.log"
 
 # Bảng mã màu ANSI
 BOLD='\033[1m'
@@ -309,14 +318,147 @@ EOF
     echo -e "  • Link eKYC AI Server (8900):     ${BOLD}${CYAN}${ekyc_url}${NC}"
 }
 
-# 6. Khởi động Tất cả (All-in-one)
+# 6. Quản trị Ngrok Public Tunnel (Mobile Real Device & Public Gateway)
+is_ngrok_active() {
+    if systemctl --user is-active ngrok >/dev/null 2>&1; then
+        return 0
+    fi
+    if curl -s http://127.0.0.1:4040/api/tunnels >/dev/null 2>&1; then
+        return 0
+    fi
+    if pgrep -x ngrok >/dev/null 2>&1; then
+        return 0
+    fi
+    return 1
+}
+
+start_ngrok() {
+    echo -e "\n${BLUE}🌐 [NGROK] KHỞI ĐỘNG PUBLIC TUNNEL CHO MOBILE APP & EXTERNAL CLIENTS...${NC}"
+
+    if is_ngrok_active; then
+        echo -e "  ${GREEN}✓ Ngrok tunnel đã đang hoạt động!${NC}"
+        echo -e "  🌐 Gateway Public:    ${BOLD}${CYAN}https://${NGROK_DOMAIN}${NC}"
+        echo -e "  📡 WebSocket Public:  ${BOLD}${CYAN}wss://${NGROK_DOMAIN}/ws-native${NC}"
+        echo -e "  📊 Web Inspector:     ${CYAN}http://127.0.0.1:4040${NC}"
+        return 0
+    fi
+
+    if [ ! -x "$NGROK_BIN" ]; then
+        echo -e "  ${YELLOW}⚠️ Không tìm thấy binary ngrok tại: $NGROK_BIN${NC}"
+        echo -e "  👉 Đang bỏ qua khởi động Ngrok. Cài đặt ngrok hoặc tải về ~/.local/bin/ngrok để kích hoạt."
+        return 0
+    fi
+
+    echo -e "  • Đang khởi chạy Ngrok Tunnel (chuyển tiếp tới http://localhost:8080)..."
+    if command -v systemd-run >/dev/null 2>&1; then
+        systemd-run --user --unit=ngrok "$NGROK_BIN" start --all >/dev/null 2>&1 || \
+            nohup "$NGROK_BIN" start --all > "$NGROK_LOG_FILE" 2>&1 &
+    else
+        nohup "$NGROK_BIN" start --all > "$NGROK_LOG_FILE" 2>&1 &
+    fi
+
+    local wait_n=0
+    until curl -s http://127.0.0.1:4040/api/tunnels >/dev/null 2>&1 || [ $wait_n -ge 8 ]; do
+        sleep 1
+        wait_n=$((wait_n + 1))
+        echo -ne "  • Chờ Ngrok Tunnel sẵn sàng... ($wait_n/8s)\r"
+    done
+    echo ""
+
+    if curl -s http://127.0.0.1:4040/api/tunnels >/dev/null 2>&1; then
+        echo -e "  ${GREEN}✓ Ngrok Public Tunnel đã sẵn sàng 100%!${NC}"
+        echo -e "  🌐 Gateway Public:    ${BOLD}${CYAN}https://${NGROK_DOMAIN}${NC}"
+        echo -e "  📡 WebSocket Public:  ${BOLD}${CYAN}wss://${NGROK_DOMAIN}/ws-native${NC}"
+        echo -e "  📊 Local Dashboard:   ${CYAN}http://127.0.0.1:4040${NC}"
+    else
+        echo -e "  ${YELLOW}⚠️ Ngrok đang khởi động ngầm. Kiểm tra log với: journalctl --user -u ngrok -f${NC}"
+    fi
+}
+
+stop_ngrok() {
+    echo -e "\n${YELLOW}🛑 [NGROK] ĐANG DỪNG PUBLIC TUNNEL...${NC}"
+    systemctl --user stop ngrok 2>/dev/null || true
+    pkill -x ngrok 2>/dev/null || true
+    echo -e "  ${GREEN}✓ Đã dừng toàn bộ tiến trình Ngrok Tunnel an toàn.${NC}"
+}
+
+status_ngrok() {
+    echo -e "\n${BOLD}${CYAN}🌐 [NGROK STATUS] KIỂM TRA TRẠNG THÁI PUBLIC TUNNEL...${NC}"
+    if is_ngrok_active; then
+        echo -e "  • Trạng thái Service:  ${GREEN}🟢 ĐANG CHẠY (ACTIVE)${NC}"
+        echo -e "  • Domain Thường Trực:  ${BOLD}${CYAN}https://${NGROK_DOMAIN}${NC}"
+        echo -e "  • WebSocket STOMP:     ${BOLD}${CYAN}wss://${NGROK_DOMAIN}/ws-native${NC}"
+        echo -e "  • Chuyển tiếp tới:     ${YELLOW}http://localhost:8080 (API Gateway)${NC}"
+        echo -e "  • Bảng điều khiển Web: ${CYAN}http://127.0.0.1:4040${NC}"
+
+        echo -ne "  • Kiểm tra Gateway qua Ngrok: "
+        local res
+        res=$(curl -s -o /dev/null -w "%{http_code} %{time_total}" -m 6 -H "ngrok-skip-browser-warning: true" "https://$NGROK_DOMAIN/actuator/health" 2>/dev/null || echo "000 0.0")
+        local code
+        local lat
+        code=$(echo "$res" | awk '{print $1}')
+        lat=$(echo "$res" | awk '{printf "%.1f ms", $2 * 1000}')
+        if [[ "$code" =~ ^(200|204|302|401)$ ]]; then
+            echo -e "${GREEN}🟢 SẴN SÀNG (${lat}, HTTP ${code})${NC}"
+        else
+            echo -e "${RED}🔴 KHÔNG PHẢN HỒI (HTTP ${code})${NC} (Lưu ý: API Gateway cần chạy trên port 8080)"
+        fi
+    else
+        echo -e "  • Trạng thái Service:  ${RED}🔴 ĐÃ DỪNG (INACTIVE)${NC}"
+        echo -e "  👉 Sử dụng lệnh: './run.sh ngrok start' để kích hoạt."
+    fi
+}
+
+restart_ngrok() {
+    stop_ngrok
+    sleep 1
+    start_ngrok
+}
+
+manage_ngrok() {
+    local action="${1:-menu}"
+    case "$action" in
+        start)
+            start_ngrok
+            ;;
+        stop)
+            stop_ngrok
+            ;;
+        status)
+            status_ngrok
+            ;;
+        restart)
+            restart_ngrok
+            ;;
+        menu|*)
+            echo -e "\n${BOLD}${CYAN}🌐 QUẢN TRỊ NGROK PUBLIC TUNNEL (CHO THIẾT BỊ DI ĐỘNG & TEST THẬT):${NC}"
+            echo -e "  ${GREEN}1.${NC} 🚀 Khởi động Ngrok Tunnel (https://$NGROK_DOMAIN)"
+            echo -e "  ${YELLOW}2.${NC} 🛑 Dừng Ngrok Tunnel"
+            echo -e "  ${BLUE}3.${NC} 🔄 Khởi động lại Ngrok Tunnel"
+            echo -e "  ${CYAN}4.${NC} 🔍 Kiểm tra chi tiết trạng thái & ping"
+            echo -e "  ${GRAY}0.${NC} ↩️  Quay lại menu chính"
+            read -rp "👉 Chọn thao tác [0-4]: " n_choice
+            case "$n_choice" in
+                1) start_ngrok ;;
+                2) stop_ngrok ;;
+                3) restart_ngrok ;;
+                4) status_ngrok ;;
+                0) return 0 ;;
+                *) echo -e "${RED}Lựa chọn không hợp lệ!${NC}" ;;
+            esac
+            ;;
+    esac
+}
+
+# 7. Khởi động Tất cả (All-in-one)
 start_all() {
     print_banner
-    echo -e "${GREEN}${BOLD}🚀 ĐANG KHỞI ĐỘNG TOÀN BỘ HỆ THỐNG CORE BANKING (INFRA + BE + AI + FE)...${NC}\n"
+    echo -e "${GREEN}${BOLD}🚀 ĐANG KHỞI ĐỘNG TOÀN BỘ HỆ THỐNG CORE BANKING (INFRA + BE + AI + FE + NGROK)...${NC}\n"
     start_infra
     start_be
     start_fe
     sync_codespace_endpoint
+    start_ngrok
     echo -e "\n${GREEN}${BOLD}================================================================================${NC}"
     echo -e "${GREEN}${BOLD}🎉 TOÀN BỘ HỆ THỐNG ĐÃ HOẠT ĐỘNG HOÀN TOÀN!${NC}"
     if [ -n "${CODESPACE_NAME:-}" ]; then
@@ -327,17 +469,27 @@ start_all() {
     else
         echo -e "   • Frontend React Portal:      ${BOLD}${CYAN}http://localhost:5173${NC}"
         echo -e "   • API Gateway Routing:        ${BOLD}${CYAN}http://localhost:8080${NC}"
+        echo -e "   • Mobile Public Tunnel (ngrok):${BOLD}${CYAN}https://${NGROK_DOMAIN}${NC}"
+        echo -e "   • Mobile WebSocket (STOMP):   ${BOLD}${CYAN}wss://${NGROK_DOMAIN}/ws-native${NC}"
         echo -e "   • eKYC AI Server (ONNX/GPU):  ${BOLD}${CYAN}http://localhost:8900${NC}"
         echo -e "   • Chatbot AI Assistant:       ${BOLD}${CYAN}http://localhost:8000${NC}"
         echo -e "   • Kafka Management UI:        ${BOLD}${CYAN}http://localhost:8090${NC}"
         echo -e "   • RabbitMQ Admin UI:          ${BOLD}${CYAN}http://localhost:15672${NC}"
+        echo -e "   • Ngrok Web Inspector:        ${BOLD}${CYAN}http://127.0.0.1:4040${NC}"
     fi
     echo -e "${GREEN}${BOLD}================================================================================${NC}"
 }
 
-# 7. Dừng hệ thống an toàn
+# 8. Dừng hệ thống an toàn
 stop_all() {
     echo -e "\n${YELLOW}🛑 ĐANG DỪNG CÁC TIẾN TRÌNH HỆ THỐNG...${NC}"
+
+    # Dừng Ngrok Tunnel nếu có
+    if is_ngrok_active; then
+        echo -e "  • Đang dừng Ngrok Public Tunnel..."
+        stop_ngrok >/dev/null 2>&1 || true
+        echo -e "  ${GREEN}✓ Đã dừng Ngrok Tunnel.${NC}"
+    fi
 
     # Dừng Frontend
     if [ -f "$FE_PID_FILE" ]; then
@@ -359,7 +511,7 @@ stop_all() {
     echo -e "  ${GREEN}✓ Đã dừng toàn bộ Backend & Cụm Hạ Tầng Docker an toàn.${NC}"
 }
 
-# 8. Kiểm tra Sức khỏe và Độ trễ toàn hệ thống
+# 9. Kiểm tra Sức khỏe và Độ trễ toàn hệ thống
 check_status() {
     echo -e "\n${BOLD}${CYAN}================================================================================${NC}"
     echo -e "${BOLD}${CYAN}🔍 BẢNG TRẠNG THÁI SỨC KHỎE TOÀN BỘ HỆ THỐNG (HEALTH & LATENCY AUDIT)${NC}"
@@ -399,6 +551,22 @@ check_status() {
     check_http "Chatbot AI Service (RAG)" "http://localhost:8000/health" "HTTP :8000"
     check_http "Kafka UI Management" "http://localhost:8090" "HTTP :8090"
     check_http "RabbitMQ Management UI" "http://localhost:15672" "HTTP :15672"
+
+    # Ngrok Public & Local Tunnel
+    check_http "Ngrok Local Inspector UI" "http://127.0.0.1:4040/api/tunnels" "HTTP :4040"
+    if [ -n "$NGROK_DOMAIN" ]; then
+        local ngrok_res
+        ngrok_res=$(curl -s -o /dev/null -w "%{http_code} %{time_total}" -m 6 -H "ngrok-skip-browser-warning: true" "https://$NGROK_DOMAIN/actuator/health" 2>/dev/null || echo "000 0.0")
+        local ngrok_code
+        local ngrok_latency
+        ngrok_code=$(echo "$ngrok_res" | awk '{print $1}')
+        ngrok_latency=$(echo "$ngrok_res" | awk '{printf "%.1f ms", $2 * 1000}')
+        if [[ "$ngrok_code" =~ ^(200|204|302|401)$ ]]; then
+            printf "%-32s %-16s ${GREEN}%-12s${NC} %s\n" "Ngrok Public Gateway (Mobile)" "HTTPS :443" "🟢 ONLINE" "$ngrok_latency"
+        else
+            printf "%-32s %-16s ${RED}%-12s${NC} %s\n" "Ngrok Public Gateway (Mobile)" "HTTPS :443" "🔴 OFFLINE" "-"
+        fi
+    fi
 
     # Kiểm tra CSDL Postgres (6 databases)
     echo "--------------------------------------------------------------------------------"
@@ -558,40 +726,50 @@ build_all() {
     esac
 }
 
-# 14. Xem Logs Dịch Vụ
+# 15. Xem Logs Dịch Vụ
 view_logs() {
     local target="${1:-fe}"
     if [ "$target" == "fe" ] || [ "$target" == "frontend" ]; then
         echo -e "\n${CYAN}📄 Đang mở logs Frontend React ($FE_LOG_FILE)... (Bấm Ctrl+C để thoát)${NC}"
         tail -f "$FE_LOG_FILE"
+    elif [ "$target" == "ngrok" ] || [ "$target" == "tunnel" ]; then
+        echo -e "\n${CYAN}📄 Đang mở logs Ngrok Tunnel... (Bấm Ctrl+C để thoát)${NC}"
+        if journalctl --user -u ngrok -n 20 >/dev/null 2>&1; then
+            journalctl --user -u ngrok -f
+        elif [ -f "$NGROK_LOG_FILE" ]; then
+            tail -f "$NGROK_LOG_FILE"
+        else
+            echo -e "${YELLOW}Chưa có log file cho Ngrok. Kiểm tra trạng thái bằng: ./run.sh ngrok status${NC}"
+        fi
     else
         echo -e "\n${CYAN}📄 Đang mở logs Docker service: $target... (Bấm Ctrl+C để thoát)${NC}"
         dc logs -f "$target"
     fi
 }
 
-# Menu CLI Tương Tác (Đã dọn dẹp và chuẩn hóa)
+# 16. Menu CLI Tương Tác (Đã dọn dẹp và chuẩn hóa)
 interactive_menu() {
     while true; do
         print_banner
         echo -e "  ${BOLD}VUI LÒNG CHỌN MỘT THAO TÁC:${NC}"
-        echo -e "  ${GREEN}1.${NC} 🚀 ${BOLD}Khởi Động Toàn Bộ Hệ Thống${NC} (Infra + BE + AI + FE React)"
+        echo -e "  ${GREEN}1.${NC} 🚀 ${BOLD}Khởi Động Toàn Bộ Hệ Thống${NC} (Infra + BE + AI + FE + Ngrok)"
         echo -e "  ${GREEN}2.${NC} ⚙️  ${BOLD}Khởi Động Backend Microservices & AI${NC} (8 Dịch vụ + Gateway)"
         echo -e "  ${GREEN}3.${NC} 🌐 ${BOLD}Khởi Động Frontend React Portal${NC} (Vite: http://localhost:5173)"
         echo -e "  ${GREEN}4.${NC} 🐳 ${BOLD}Khởi Động Cụm Hạ Tầng Docker${NC} (6 DBs, Kafka, Redis, RabbitMQ)"
         echo -e "  ${GREEN}5.${NC} 📱 ${BOLD}Quản Trị Mobile App E-Wallet${NC} (Flutter: Run / Test / APK)"
-        echo -e "  ${GREEN}6.${NC} 🔍 ${BOLD}Kiểm Tra Sức Khỏe & Độ Trễ Toàn Diện${NC} (Ports & Health Audit)"
-        echo -e "  ${GREEN}7.${NC} 🧪 ${BOLD}Chạy Bộ Kiểm Thử Tự Động E2E${NC} (8 Kịch bản, eKYC AI, Chatbot)"
-        echo -e "  ${GREEN}8.${NC} 📊 ${BOLD}Xem Bảng Đối Soát Sổ Cái Kép Trực Tiếp${NC} (Delta = 0.00 VND)"
-        echo -e "  ${GREEN}9.${NC} 💰 ${BOLD}Xem Tồn Quỹ Két Quầy Chi Nhánh & Hạn Mức 500M${NC}"
-        echo -e "  ${GREEN}10.${NC} 🔑 ${BOLD}Cấp Mới JWT Tokens Cán Bộ Quầy${NC} (Teller 1, Teller 2, Manager 1)"
-        echo -e "  ${GREEN}11.${NC} 📦 ${BOLD}Biên Dịch & Đóng Gói Hệ Thống${NC} (Maven / Docker Build)"
-        echo -e "  ${BLUE}12.${NC} 📄 ${BOLD}Xem Logs Dịch Vụ${NC} (Frontend React / Docker Containers)"
-        echo -e "  ${YELLOW}13.${NC} 🔄 ${BOLD}Khởi Động Lại Hệ Thống${NC} (Restart Toàn Diện)"
-        echo -e "  ${RED}14.${NC} 🛑 ${BOLD}Dừng Toàn Bộ Hệ Thống${NC} (Tắt FE, BE & Cleanup)"
+        echo -e "  ${GREEN}6.${NC} 🌐 ${BOLD}Quản Trị Ngrok Public Tunnel${NC} (Mobile Real Device / Gateway)"
+        echo -e "  ${GREEN}7.${NC} 🔍 ${BOLD}Kiểm Tra Sức Khỏe & Độ Trễ Toàn Diện${NC} (Ports & Health Audit)"
+        echo -e "  ${GREEN}8.${NC} 🧪 ${BOLD}Chạy Bộ Kiểm Thử Tự Động E2E${NC} (8 Kịch bản, eKYC AI, Chatbot)"
+        echo -e "  ${GREEN}9.${NC} 📊 ${BOLD}Xem Bảng Đối Soát Sổ Cái Kép Trực Tiếp${NC} (Delta = 0.00 VND)"
+        echo -e "  ${GREEN}10.${NC} 💰 ${BOLD}Xem Tồn Quỹ Két Quầy Chi Nhánh & Hạn Mức 500M${NC}"
+        echo -e "  ${GREEN}11.${NC} 🔑 ${BOLD}Cấp Mới JWT Tokens Cán Bộ Quầy${NC} (Teller 1, Teller 2, Manager 1)"
+        echo -e "  ${GREEN}12.${NC} 📦 ${BOLD}Biên Dịch & Đóng Gói Hệ Thống${NC} (Maven / Docker Build)"
+        echo -e "  ${BLUE}13.${NC} 📄 ${BOLD}Xem Logs Dịch Vụ${NC} (Frontend React / Docker / Ngrok)"
+        echo -e "  ${YELLOW}14.${NC} 🔄 ${BOLD}Khởi Động Lại Hệ Thống${NC} (Restart Toàn Diện)"
+        echo -e "  ${RED}15.${NC} 🛑 ${BOLD}Dừng Toàn Bộ Hệ Thống${NC} (Tắt FE, BE, Ngrok & Cleanup)"
         echo -e "  ${GRAY}0.${NC}  🚪 ${BOLD}Thoát Menu${NC}"
         echo -e " ----------------------------------------------------------------------------------------"
-        read -rp "👉 Nhập lựa chọn của bạn [0-14]: " choice
+        read -rp "👉 Nhập lựa chọn của bạn [0-15]: " choice
 
         case "$choice" in
             1) start_all; read -rp "Ấn Enter để tiếp tục..." ;;
@@ -599,15 +777,16 @@ interactive_menu() {
             3) start_fe; read -rp "Ấn Enter để tiếp tục..." ;;
             4) start_infra; read -rp "Ấn Enter để tiếp tục..." ;;
             5) run_mobile; read -rp "Ấn Enter để tiếp tục..." ;;
-            6) check_status; read -rp "Ấn Enter để tiếp tục..." ;;
-            7) run_test; read -rp "Ấn Enter để tiếp tục..." ;;
-            8) check_ledger; read -rp "Ấn Enter để tiếp tục..." ;;
-            9) check_vault; read -rp "Ấn Enter để tiếp tục..." ;;
-            10) generate_tokens; read -rp "Ấn Enter để tiếp tục..." ;;
-            11) build_all; read -rp "Ấn Enter để tiếp tục..." ;;
-            12)
-                echo -e "Chọn logs: 1) Frontend  2) Gateway  3) eKYC-AI  4) Chatbot  5) Payment  6) Wallet"
-                read -rp "Nhập [1-6] hoặc tên container: " log_choice
+            6) manage_ngrok; read -rp "Ấn Enter để tiếp tục..." ;;
+            7) check_status; read -rp "Ấn Enter để tiếp tục..." ;;
+            8) run_test; read -rp "Ấn Enter để tiếp tục..." ;;
+            9) check_ledger; read -rp "Ấn Enter để tiếp tục..." ;;
+            10) check_vault; read -rp "Ấn Enter để tiếp tục..." ;;
+            11) generate_tokens; read -rp "Ấn Enter để tiếp tục..." ;;
+            12) build_all; read -rp "Ấn Enter để tiếp tục..." ;;
+            13)
+                echo -e "Chọn logs: 1) Frontend  2) Gateway  3) eKYC-AI  4) Chatbot  5) Payment  6) Wallet  7) Ngrok"
+                read -rp "Nhập [1-7] hoặc tên container: " log_choice
                 case "$log_choice" in
                     1) view_logs fe ;;
                     2) view_logs api-gateway ;;
@@ -615,17 +794,18 @@ interactive_menu() {
                     4) view_logs chatbot-service ;;
                     5) view_logs payment-service ;;
                     6) view_logs wallet-service ;;
+                    7) view_logs ngrok ;;
                     *) view_logs "$log_choice" ;;
                 esac
                 ;;
-            13)
+            14)
                 stop_all
                 start_all
                 read -rp "Ấn Enter để tiếp tục..."
                 ;;
-            14) stop_all; read -rp "Ấn Enter để tiếp tục..." ;;
+            15) stop_all; read -rp "Ấn Enter để tiếp tục..." ;;
             0) echo -e "\n${GREEN}Tạm biệt! Chúc bạn làm việc hiệu quả.${NC}\n"; exit 0 ;;
-            *) echo -e "${RED}Lựa chọn không hợp lệ! Vui lòng chọn từ 0 đến 14.${NC}"; sleep 1 ;;
+            *) echo -e "${RED}Lựa chọn không hợp lệ! Vui lòng chọn từ 0 đến 15.${NC}"; sleep 1 ;;
         esac
     done
 }
@@ -638,6 +818,10 @@ case "$COMMAND" in
         ;;
     sync-cloud|cloud)
         sync_codespace_endpoint
+        ;;
+    ngrok|tunnel)
+        shift
+        manage_ngrok "$@"
         ;;
     fe|frontend)
         start_fe
@@ -685,9 +869,10 @@ case "$COMMAND" in
         ;;
     clean)
         echo -e "${YELLOW}🧹 Đang dọn dẹp log, pid và các file rác...${NC}"
-        rm -f "$FE_PID_FILE" "$FE_LOG_FILE"
+        rm -f "$FE_PID_FILE" "$FE_LOG_FILE" "$NGROK_LOG_FILE"
         pkill -9 -f "vite.*5173" 2>/dev/null || true
         fuser -k 5173/tcp 2>/dev/null || true
+        stop_ngrok >/dev/null 2>&1 || true
         echo -e "${GREEN}✓ Đã dọn sạch các file tạm thời!${NC}"
         ;;
     menu)
@@ -696,10 +881,11 @@ case "$COMMAND" in
     help|-h|--help)
         echo -e "${BOLD}CÁCH SỬ DỤNG BỘ ĐIỀU KHIỂN RUN.SH:${NC}"
         echo "  ./run.sh                  Mở Menu tương tác đồ họa CLI"
-        echo "  ./run.sh all              Khởi động toàn bộ (Infra + BE + AI + FE)"
+        echo "  ./run.sh all              Khởi động toàn bộ (Infra + BE + AI + FE + Ngrok)"
         echo "  ./run.sh fe               Khởi động Frontend React Portal (Port 5173)"
         echo "  ./run.sh be               Khởi động 8 Backend Microservices & AI"
         echo "  ./run.sh mobile [cmd]     Quản trị Mobile Flutter (run, test, build-apk, clean)"
+        echo "  ./run.sh ngrok [cmd]      Quản trị Ngrok Tunnel (start, stop, status, restart)"
         echo "  ./run.sh infra            Khởi động cụm Docker (6 DBs, Kafka, Redis, RabbitMQ)"
         echo "  ./run.sh test [scenario]  Chạy kiểm thử E2E (08, ekyc, ekyc-deep, chatbot, master)"
         echo "  ./run.sh status           Kiểm tra sức khỏe, độ trễ và trạng thái ports"
@@ -707,7 +893,7 @@ case "$COMMAND" in
         echo "  ./run.sh ledger           Xem bảng đối soát Sổ cái kép trực tiếp (Delta=0)"
         echo "  ./run.sh vault            Xem số dư tồn két quầy chi nhánh"
         echo "  ./run.sh tokens           Cấp mới JWT tokens cho Teller & Manager"
-        echo "  ./run.sh logs [svc]       Xem logs (fe, api-gateway, ekyc-ai-service, v.v.)"
+        echo "  ./run.sh logs [svc]       Xem logs (fe, ngrok, api-gateway, ekyc-ai-service, v.v.)"
         echo "  ./run.sh clean            Dọn dẹp pid, port và file log tạm thời"
         echo "  ./run.sh restart          Khởi động lại toàn bộ hệ thống"
         echo "  ./run.sh stop             Dừng toàn bộ hệ thống an toàn"

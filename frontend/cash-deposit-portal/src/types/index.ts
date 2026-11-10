@@ -98,6 +98,9 @@ export interface TransferResponse {
 export interface LoanApplication {
   id: string;
   userId: string;
+  contractNumber?: string;
+  customerName?: string;
+  phoneNumber?: string;
   productCode?: string;
   productName?: string;
   amount: number;

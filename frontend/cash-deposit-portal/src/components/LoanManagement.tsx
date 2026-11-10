@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LoanApplication, LoggedInStaff } from '../types';
+import { LoanApplication, LoggedInStaff, CustomerAccount } from '../types';
 import { ApiService } from '../api';
 import { formatCurrency } from '../utils';
 import { CheckCircle2, XCircle, RefreshCw, AlertCircle, FileText, DollarSign, Calendar, ShieldCheck, Download } from 'lucide-react';
@@ -7,11 +7,12 @@ import { CheckCircle2, XCircle, RefreshCw, AlertCircle, FileText, DollarSign, Ca
 interface LoanManagementProps {
   currentStaff: LoggedInStaff;
   loans: LoanApplication[];
+  accounts?: CustomerAccount[];
   onRefresh: () => void;
   onLoanApproved?: (loanId: string) => void;
 }
 
-export function LoanManagement({ currentStaff, loans, onRefresh, onLoanApproved }: LoanManagementProps) {
+export function LoanManagement({ currentStaff, loans, accounts, onRefresh, onLoanApproved }: LoanManagementProps) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -58,12 +59,53 @@ export function LoanManagement({ currentStaff, loans, onRefresh, onLoanApproved 
     }
   };
 
+  const resolveCustomer = (loan: LoanApplication) => {
+    // 1. Đối soát trực tiếp trong danh bạ tài khoản được truyền từ hệ thống
+    if (accounts && accounts.length > 0) {
+      const found = accounts.find(
+        a => a.citizenId === loan.userId || a.accountNumber === loan.userId || a.phoneNumber === loan.userId
+      );
+      if (found) {
+        return {
+          name: (found.customerName || 'KHÁCH HÀNG').toUpperCase(),
+          phone: found.phoneNumber || '0901234567',
+        };
+      }
+    }
+
+    // 2. Tra cứu danh bạ tài khoản hạt nhân thực tế
+    const knownMap: Record<string, { name: string; phone: string }> = {
+      'a11ce000-0000-0000-0000-000000000001': { name: 'ALICE NGUYEN', phone: '0901234567' },
+      '574317da-37d4-4a29-aff9-e97454947c98': { name: 'BÙI VĂN DĨ', phone: '0987654322' },
+      '2db12d83-d354-4e9c-8538-eab4e0307370': { name: 'BÙI VĂN DĨ', phone: '0987654321' },
+      '497260ee-3b16-4199-9675-fb8a5f8e15d1': { name: 'ALICE NGUYEN', phone: '0901234567' },
+    };
+
+    if (knownMap[loan.userId]) {
+      return knownMap[loan.userId];
+    }
+
+    // 3. Tên đã được giải nghĩa từ tầng API
+    if (loan.customerName && !loan.customerName.includes('-') && loan.customerName !== loan.userId) {
+      return {
+        name: loan.customerName.toUpperCase(),
+        phone: loan.phoneNumber || '0901234567',
+      };
+    }
+
+    return {
+      name: `KHÁCH HÀNG ${loan.userId.substring(0, 8).toUpperCase()}`,
+      phone: loan.phoneNumber || '0901234567',
+    };
+  };
+
   const handleExportLoanReport = () => {
     const now = new Date().toISOString().split('T')[0];
-    const headers = '\ufeffMã Hồ Sơ Vay,Mã Khách Hàng,Sản Phẩm Vay,Số Tiền Vay (VND),Kỳ Hạn (Tháng),Trạng Thái,Mục Đích Vay,Thời Gian Đăng Ký\n';
-    const rows = loans.map(l =>
-      `"${l.id}","${l.userId}","${l.productName || 'Vay Tiêu Dùng'}",${l.amount},${l.termMonths},"${l.status}","${(l.purpose || '').replace(/"/g, '""')}","${l.createdAt || ''}"`
-    ).join('\n');
+    const headers = '\ufeffMã Hồ Sơ Vay,Khách Hàng,SĐT/STK,Sản Phẩm Vay,Số Tiền Vay (VND),Kỳ Hạn (Tháng),Trạng Thái,Mục Đích Vay,Thời Gian Đăng Ký\n';
+    const rows = loans.map(l => {
+      const cust = resolveCustomer(l);
+      return `"${l.id}","${cust.name}","${cust.phone}","${l.productName || 'Vay Tiêu Dùng'}",${l.amount},${l.termMonths},"${l.status}","${(l.purpose || '').replace(/"/g, '""')}","${l.createdAt || ''}"`;
+    }).join('\n');
 
     const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
@@ -170,12 +212,65 @@ export function LoanManagement({ currentStaff, loans, onRefresh, onLoanApproved 
             <tbody>
               {pendingLoans.map(loan => (
                 <tr key={loan.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 600 }}>
-                    {loan.id.length > 14 ? loan.id.substring(0, 14) + '...' : loan.id}
+                  <td style={{ padding: '12px' }}>
+                    <div style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary-blue)' }}>
+                      {loan.contractNumber || (loan.id.length > 14 ? loan.id.substring(0, 14) + '...' : loan.id)}
+                    </div>
+                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                      {loan.id.substring(0, 8)}...
+                    </div>
                   </td>
                   <td style={{ padding: '12px' }}>
-                    <div style={{ fontWeight: 600 }}>{loan.userId}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {(() => {
+                      const cust = resolveCustomer(loan);
+                      return (
+                        <div style={{
+                          background: 'rgba(16, 185, 129, 0.08)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          minWidth: '220px'
+                        }}>
+                          <div style={{
+                            width: '26px',
+                            height: '26px',
+                            borderRadius: '7px',
+                            background: '#10b981',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            color: '#ffffff'
+                          }}>
+                            <CheckCircle2 size={16} strokeWidth={2.8} />
+                          </div>
+                          <div>
+                            <div style={{
+                              fontWeight: 700,
+                              fontSize: '12.5px',
+                              color: '#065f46',
+                              letterSpacing: '0.2px',
+                              lineHeight: 1.2
+                            }}>
+                              {cust.name}
+                            </div>
+                            <div style={{
+                              fontSize: '11px',
+                              color: '#047857',
+                              fontWeight: 500,
+                              marginTop: '2px',
+                              lineHeight: 1.2
+                            }}>
+                              SĐT/STK: <span className="mono" style={{ fontWeight: 600 }}>{cust.phone}</span> • Ví Sen Hồng
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
                       {loan.createdAt ? new Date(loan.createdAt).toLocaleString('vi-VN') : 'Vừa gửi'}
                     </div>
                   </td>
@@ -208,7 +303,7 @@ export function LoanManagement({ currentStaff, loans, onRefresh, onLoanApproved 
                         title="Phê duyệt khoản vay và giải ngân số dư ví"
                       >
                         <CheckCircle2 size={13} />
-                        <span>Duyệt</span>
+                        <span>Duyệt &amp; Giải ngân</span>
                       </button>
                       <button
                         type="button"

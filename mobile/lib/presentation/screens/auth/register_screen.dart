@@ -12,7 +12,12 @@ import 'package:sen_hong_bank/presentation/widgets/app_morph_icon.dart';
 import 'package:sen_hong_bank/presentation/widgets/app_bar_seam_fade.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final bool termsAccepted;
+
+  const RegisterScreen({
+    super.key,
+    this.termsAccepted = false,
+  });
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -24,9 +29,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
-  bool _agreeTerms = true;
+  late bool _agreeTerms;
   bool _obscurePass = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _agreeTerms = widget.termsAccepted;
+    // Bắt buộc: nếu chưa chấp nhận điều khoản ở màn hình trước thì chuyển sang đọc điều khoản
+    if (!widget.termsAccepted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.pushReplacement('/auth/terms?forRegistration=true');
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -82,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Registration Steps Tracker (3 Steps: 1 Thông tin -> 2 OTP Gmail -> 3 Tạo mã PIN)
+              // Registration Steps Tracker (4 Steps: 1 Thông tin -> 2 Quét CCCD NFC -> 3 Khuôn mặt 3D -> 4 Tạo mã PIN)
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Row(
@@ -91,10 +108,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _buildStepIndicator(1, 'Thông tin',
                         isActive: true, isDone: false),
                     _buildStepConnector(isDone: false),
-                    _buildStepIndicator(2, 'OTP Gmail',
+                    _buildStepIndicator(2, 'Quét CCCD',
                         isActive: false, isDone: false),
                     _buildStepConnector(isDone: false),
-                    _buildStepIndicator(3, 'Tạo mã PIN',
+                    _buildStepIndicator(3, 'Khuôn mặt',
+                        isActive: false, isDone: false),
+                    _buildStepConnector(isDone: false),
+                    _buildStepIndicator(4, 'Tạo mã PIN',
                         isActive: false, isDone: false),
                   ],
                 ),
@@ -320,15 +340,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   Expanded(
                     child: InkWell(
-                      onTap: () => context.push('/auth/terms'),
+                      onTap: () =>
+                          context.push('/auth/terms?forRegistration=true'),
                       child: Text.rich(
                         TextSpan(
-                          text: 'Tôi đồng ý với ',
+                          text: 'Đã chấp thuận ',
                           style: AppTypography.bodySmall(
                               color: AppColors.textSecondaryLight),
                           children: const [
                             TextSpan(
-                              text: 'Điều khoản dịch vụ & Chính sách bảo mật',
+                              text:
+                                  'Điều khoản dịch vụ & Chính sách bảo mật sinh trắc học',
                               style: TextStyle(
                                   color: AppColors.primaryLight,
                                   fontWeight: FontWeight.bold,

@@ -136,7 +136,14 @@ class FacePipeline:
     # SCRFD decode
     # ------------------------------------------------------------------
 
-    def detect(self, img_bgr: np.ndarray, score_thresh: float = 0.5) -> list[DetectedFace]:
+    def detect(self, img_bgr: np.ndarray, score_thresh: float = 0.40) -> list[DetectedFace]:
+        faces = self._detect_internal(img_bgr, score_thresh=score_thresh)
+        if not faces and score_thresh > 0.25:
+            # Fallback ngưỡng thấp 0.25 để nhận diện các ảnh thẻ CCCD in nhỏ hoặc tương phản thấp
+            faces = self._detect_internal(img_bgr, score_thresh=0.25)
+        return faces
+
+    def _detect_internal(self, img_bgr: np.ndarray, score_thresh: float) -> list[DetectedFace]:
         canvas, scale = self._letterbox(img_bgr)
         blob = cv2.dnn.blobFromImage(canvas, 1.0 / 128.0, (640, 640), (127.5, 127.5, 127.5), swapRB=True)
         with self._gpu_lock:
@@ -236,14 +243,50 @@ class FacePipeline:
         return emb / max(float(np.linalg.norm(emb)), 1e-9)
 
     @staticmethod
+    def _umeyama(src: np.ndarray, dst: np.ndarray) -> np.ndarray | None:
+        """Thuật toán Umeyama tính ma trận tương đồng 2D chuẩn InsightFace từ 5 điểm mốc."""
+        num, dim = src.shape
+        src_mean = src.mean(axis=0)
+        dst_mean = dst.mean(axis=0)
+        src_demean = src - src_mean
+        dst_demean = dst - dst_mean
+        A = np.dot(dst_demean.T, src_demean) / num
+        d = np.ones((dim,), dtype=np.double)
+        if np.linalg.det(A) < 0:
+            d[dim - 1] = -1
+        T = np.eye(dim + 1, dtype=np.double)
+        U, S, V = np.linalg.svd(A)
+        rank = np.linalg.matrix_rank(A)
+        if rank == 0:
+            return None
+        elif rank == dim - 1:
+            if np.linalg.det(U) * np.linalg.det(V) > 0:
+                T[:dim, :dim] = np.dot(U, V)
+            else:
+                s = d[dim - 1]
+                d[dim - 1] = -1
+                T[:dim, :dim] = np.dot(U, np.dot(np.diag(d), V))
+                d[dim - 1] = s
+        else:
+            T[:dim, :dim] = np.dot(U, np.dot(np.diag(d), V))
+        scale = 1.0 / (src_demean.var(axis=0).sum() + 1e-9) * np.dot(S, d)
+        T[:dim, dim] = dst_mean - scale * np.dot(T[:dim, :dim], src_mean.T)
+        T[:dim, :dim] *= scale
+        return T[:2, :]
+
+    @staticmethod
     def _align_5p(img: np.ndarray, kps: np.ndarray, size: int = 112) -> np.ndarray:
-        """Similarity transform đưa 5 điểm mốc về template chuẩn ArcFace."""
-        src = FacePipeline.ARCFACE_SRC_5P
-        dst = kps[:, :2].astype(np.float32)
-        m, _ = cv2.estimateAffinePartial2D(dst.reshape(-1, 1, 2), src.reshape(-1, 1, 2))
+        """Similarity transform đưa 5 điểm mốc về template chuẩn ArcFace 112x112."""
+        src_tmpl = FacePipeline.ARCFACE_SRC_5P
+        dst_kps = kps[:, :2].astype(np.float32)
+        m = FacePipeline._umeyama(dst_kps, src_tmpl)
+        if m is None:
+            # Fallback sang LMEDS để không bị RANSAC loại bỏ nhầm inliers
+            m, _ = cv2.estimateAffinePartial2D(dst_kps, src_tmpl, method=cv2.LMEDS)
         if m is None:
             # Fallback: crop thường nếu ước lượng ma trận lỗi
-            x1, y1, x2, y2 = int(kps[:, 0].min()), int(kps[:, 1].min()), int(kps[:, 0].max()), int(kps[:, 1].max())
+            x1, y1 = int(kps[:, 0].min()), int(kps[:, 1].min())
+            x2, y2 = int(kps[:, 0].max()), int(kps[:, 1].max())
             pad = max(x2 - x1, y2 - y1) // 2
             crop = img[max(0, y1 - pad): y2 + pad, max(0, x1 - pad): x2 + pad]
             return cv2.resize(crop, (size, size))
@@ -278,7 +321,10 @@ class FacePipeline:
                 "latency_ms": round((time.perf_counter() - t0) * 1000, 2),
             }
         crop_80 = cv2.resize(crop, (80, 80), interpolation=cv2.INTER_LINEAR)
-        blob = (crop_80.astype(np.float32) / 255.0).transpose(2, 0, 1)[None, ...]
+        # MiniFASNetV2 ONNX nhận ma trận điểm ảnh BGR chuẩn miền [0, 255] dạng float32
+        # (Không chia cho 255.0 vì model được huấn luyện trên dải 0..255; chia 255 làm ảnh thành
+        # gần như toàn màu đen khiến model phân loại nhầm thành replay_attack / màn hình giả mạo).
+        blob = crop_80.astype(np.float32).transpose(2, 0, 1)[None, ...]
         with self._gpu_lock:
             outputs = self._liv.run([self._liv_out], {self._liv_in: blob})[0][0]
         exp = np.exp(outputs - np.max(outputs))
@@ -308,12 +354,14 @@ class FacePipeline:
     def select_primary_face(faces: list[DetectedFace], img_shape: tuple) -> DetectedFace | None:
         """Chọn khuôn mặt CHÍNH: ưu tiên khung mặt LỚN NHẤT gần tâm ảnh nhất.
 
-        Không lấy faces[0] thuần (sắp theo score) — người đi ngang hậu cảnh với
-        detection score cao hơn sẽ bị nhầm. Điểm xếp hạng = diện tích × trọng số
-        khoảng cách tới tâm (diện tích là yếu tố chính).
+        Nếu chỉ có đúng 1 khuôn mặt (như ảnh thẻ CCCD hoặc ảnh selfie thông thường),
+        chọn trực tiếp khuôn mặt đó mà không khấu trừ khoảng cách tâm.
         """
         if not faces:
             return None
+        if len(faces) == 1:
+            return faces[0]
+
         h, w = img_shape[:2]
         cx, cy = w / 2.0, h * 0.42  # tâm ảnh lệch lên trên (khung chụp eKYC)
         best, best_rank = None, -1.0
@@ -359,11 +407,12 @@ class FacePipeline:
         b = ref_analysis if ref_analysis is not None else self.analyze(reference)
         self._last_ref_analysis = b
         if a.embedding is None or b.embedding is None:
+            reason = "Không phát hiện khuôn mặt trong ảnh selfie" if a.embedding is None else "Không phát hiện khuôn mặt trên thẻ CCCD hoặc chip NFC"
             return {
                 "matched": False,
                 "similarity": None,
                 "threshold": FACE_MATCH_THRESHOLD,
-                "reason": "Không phát hiện khuôn mặt trong một trong hai ảnh",
+                "reason": reason,
                 "selfie": a.face and {"bbox": a.face.bbox, "score": round(a.face.score, 4)},
                 "reference": b.face and {"bbox": b.face.bbox, "score": round(b.face.score, 4)},
                 "latency": {"detect_ms": round(a.detect_ms + b.detect_ms, 2), "embed_ms": round(a.embed_ms + b.embed_ms, 2)},

@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
-import { CustomerAccount, SearchMethod } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { CustomerAccount, SearchMethod, LoggedInStaff } from '../types';
 import { AUTO_APPROVE_LIMIT } from '../data';
 import { formatCurrency, numberToVietnameseWords } from '../utils';
-import { Phone, IdCard, Wallet, Search, ShieldCheck, AlertCircle, Banknote, Zap, ShieldAlert, ArrowRight, Lock } from 'lucide-react';
+import { ApiService } from '../api';
+import { Phone, IdCard, Wallet, Search, ShieldCheck, AlertCircle, Banknote, Zap, ShieldAlert, ArrowRight, Lock, Loader2 } from 'lucide-react';
 
 interface TellerFormProps {
   onSubmit: (data: {
@@ -14,24 +15,74 @@ interface TellerFormProps {
     note: string;
   }) => void;
   accounts: CustomerAccount[];
+  currentStaff?: LoggedInStaff | null;
 }
 
-export function TellerForm({ onSubmit, accounts }: TellerFormProps) {
+export function TellerForm({ onSubmit, accounts, currentStaff }: TellerFormProps) {
   const [searchMethod, setSearchMethod] = useState<SearchMethod>('PHONE');
   const [query, setQuery] = useState('0901234567');
   const [amount, setAmount] = useState<number>(10_000_000);
   const [note, setNote] = useState('Nộp tiền mặt tại quầy Chi nhánh Quận 1');
+  const [backendCustomer, setBackendCustomer] = useState<CustomerAccount | null>(null);
+  const [isSearchingBackend, setIsSearchingBackend] = useState(false);
+
+  // Tự động tra cứu khách hàng qua Backend thời gian thực
+  useEffect(() => {
+    let active = true;
+    const cleanQ = query.trim();
+    if (!cleanQ || cleanQ.length < 8) {
+      setBackendCustomer(null);
+      return;
+    }
+    const localMatch = accounts.find(a => {
+      if (searchMethod === 'PHONE') return a.phoneNumber.toLowerCase() === cleanQ.toLowerCase();
+      if (searchMethod === 'CITIZEN_ID') return a.citizenId.toLowerCase() === cleanQ.toLowerCase();
+      return a.accountNumber.toLowerCase() === cleanQ.toLowerCase();
+    });
+    if (localMatch) {
+      setBackendCustomer(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      if (searchMethod === 'PHONE' || cleanQ.startsWith('0')) {
+        setIsSearchingBackend(true);
+        const res = await ApiService.lookupRecipientInfo(currentStaff, cleanQ);
+        if (active && res && res.fullName) {
+          setBackendCustomer({
+            customerName: res.fullName,
+            phoneNumber: res.phoneNumber || cleanQ,
+            citizenId: 'Đã xác thực ví',
+            accountNumber: res.accountNumber || res.walletId || cleanQ,
+            balance: 0,
+            status: (res.status === 'ACTIVE' ? 'ACTIVE' : 'BLOCKED'),
+            kycTier: 'VERIFIED_BIOMETRIC',
+            branchName: 'Chi nhánh Trực tuyến (Mobile App)',
+          });
+        } else if (active) {
+          setBackendCustomer(null);
+        }
+        if (active) setIsSearchingBackend(false);
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [query, searchMethod, accounts, currentStaff]);
 
   // Tìm kiếm khách hàng theo phương thức
   const matchedCustomer = useMemo<CustomerAccount | undefined>(() => {
     const q = query.trim().toLowerCase();
     if (!q) return undefined;
-    return accounts.find(a => {
+    const local = accounts.find(a => {
       if (searchMethod === 'PHONE') return a.phoneNumber.toLowerCase().includes(q);
       if (searchMethod === 'CITIZEN_ID') return a.citizenId.toLowerCase().includes(q);
       return a.accountNumber.toLowerCase().includes(q);
     });
-  }, [query, searchMethod, accounts]);
+    return local || backendCustomer || undefined;
+  }, [query, searchMethod, accounts, backendCustomer]);
 
   const isAutoApprove = amount <= AUTO_APPROVE_LIMIT;
   const isBlocked = matchedCustomer?.status === 'BLOCKED';

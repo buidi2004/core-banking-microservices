@@ -79,19 +79,37 @@ public class PaymentKafkaProducer {
      * Gửi sự kiện nạp tiền mặt tại quầy đã hoàn tất sang Kafka (cho Ledger Service & Notification Service).
      */
     public void sendCashDepositCompleted(String depositCode, String accountNumber, String customerName, Long amount, String branchId) {
+        sendCashDepositCompleted(depositCode, accountNumber, customerName, amount, branchId, null, null, null);
+    }
+
+    public void sendCashDepositCompleted(String depositCode, String accountNumber, String customerName, Long amount, String branchId,
+                                         Long balanceAfter, String targetWalletId, String targetUserId) {
         try {
             java.util.Map<String, Object> payload = new java.util.HashMap<>();
             payload.put("eventType", "DepositCompletedEvent");
             payload.put("depositCode", depositCode);
+            payload.put("transactionId", depositCode);
             payload.put("accountNumber", accountNumber);
+            payload.put("customerPhone", accountNumber);
             payload.put("customerName", customerName);
             payload.put("amount", amount);
             payload.put("branchId", branchId);
+            if (balanceAfter != null) {
+                payload.put("balanceAfter", balanceAfter);
+                payload.put("targetBalanceAfter", balanceAfter);
+            }
+            if (targetWalletId != null && !targetWalletId.isBlank()) {
+                payload.put("targetWalletId", targetWalletId);
+            }
+            if (targetUserId != null && !targetUserId.isBlank()) {
+                payload.put("targetUserId", targetUserId);
+            }
             payload.put("timestamp", System.currentTimeMillis());
 
             kafkaTemplate.send(TOPIC_CASH_DEPOSIT_COMPLETED, accountNumber, payload);
             publishAudit(depositCode, "CASH_DEPOSIT_COMPLETED");
-            log.info("Kafka cash deposit completed event sent: topic={} depositCode={}", TOPIC_CASH_DEPOSIT_COMPLETED, depositCode);
+            log.info("Kafka cash deposit completed event sent: topic={} depositCode={} balanceAfter={}",
+                    TOPIC_CASH_DEPOSIT_COMPLETED, depositCode, balanceAfter);
         } catch (Exception e) {
             log.warn("Kafka cash deposit event send failed for depositCode={}: {}", depositCode, e.getMessage());
         }

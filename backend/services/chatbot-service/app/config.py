@@ -48,7 +48,19 @@ try:
             str(Path(__file__).resolve().parent.parent / "data")
         )
         TOP_K: int = int(os.getenv("TOP_K", "4"))
-        MAX_DISTANCE: float = float(os.getenv("MAX_DISTANCE", "0.38"))
+        # Ngưỡng từ chối theo khoảng cách vector: ĐO THỰC TẾ trên golden set — khoảng cách
+        # câu adversarial (max 0.148) VÀ câu có nguồn (max 0.173) chồng lấn hoàn toàn,
+        # không ngưỡng nào tách được → mặc định TẮT (0 = disabled), giữ env knob để thử nghiệm.
+        MAX_DISTANCE: float = float(os.getenv("MAX_DISTANCE", "0.0"))
+        # ===== RAG dữ liệu lớn: lọc domain + rerank cross-encoder =====
+        # Bật rerank production: RERANK_ENABLED=true và nâng mem_limit chatbot-service
+        # lên 2g trong docker-compose.yml (model bge-reranker-base ~1.1GB fp32 CPU).
+        RERANK_ENABLED: bool = os.getenv("RERANK_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+        RERANK_MODEL: str = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-base")
+        RERANK_CANDIDATES: int = int(os.getenv("RERANK_CANDIDATES", "20"))
+        RERANK_MIN_SCORE: float = float(os.getenv("RERANK_MIN_SCORE", "-5.0"))
+        # Production hardening: giới hạn tần suất chat theo user/IP (sliding window 60s)
+        RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "20"))
         INTERNAL_API_KEY: str = os.getenv(
             "INTERNAL_API_KEY", 
             "senhong-internal-chatbot-key-2026"
@@ -110,7 +122,19 @@ except ImportError:
             str(Path(__file__).resolve().parent.parent / "data")
         )
         TOP_K: int = int(os.getenv("TOP_K", "4"))
-        MAX_DISTANCE: float = float(os.getenv("MAX_DISTANCE", "0.38"))
+        # Ngưỡng từ chối theo khoảng cách vector: ĐO THỰC TẾ trên golden set — khoảng cách
+        # câu adversarial (max 0.148) VÀ câu có nguồn (max 0.173) chồng lấn hoàn toàn,
+        # không ngưỡng nào tách được → mặc định TẮT (0 = disabled), giữ env knob để thử nghiệm.
+        MAX_DISTANCE: float = float(os.getenv("MAX_DISTANCE", "0.0"))
+        # ===== RAG dữ liệu lớn: lọc domain + rerank cross-encoder =====
+        # Bật rerank production: RERANK_ENABLED=true và nâng mem_limit chatbot-service
+        # lên 2g trong docker-compose.yml (model bge-reranker-base ~1.1GB fp32 CPU).
+        RERANK_ENABLED: bool = os.getenv("RERANK_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+        RERANK_MODEL: str = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-base")
+        RERANK_CANDIDATES: int = int(os.getenv("RERANK_CANDIDATES", "20"))
+        RERANK_MIN_SCORE: float = float(os.getenv("RERANK_MIN_SCORE", "-5.0"))
+        # Production hardening: giới hạn tần suất chat theo user/IP (sliding window 60s)
+        RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "20"))
         INTERNAL_API_KEY: str = os.getenv(
             "INTERNAL_API_KEY", 
             "senhong-internal-chatbot-key-2026"

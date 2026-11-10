@@ -99,6 +99,7 @@ def verify(body: HybridPayload):
     t_start = time.perf_counter()
     try:
         user_id = session_store.validate_and_consume(body.sessionId, body.nonce)
+        session_store.check_rate_limit(user_id)
     except SessionError as exc:
         raise HTTPException(status_code=401, detail=str(exc)) from exc
 
@@ -195,11 +196,21 @@ def verify(body: HybridPayload):
         error_code = "EKYC_EXPIRED_DOCUMENT"
         error_message = "Thẻ Căn cước công dân của bạn đã hết hạn sử dụng theo quy định của pháp luật."
         retry_step = "NONE"
-    elif not liveness.get("is_live") and (liveness.get("score") or 0) <= 0.4:
+    elif not liveness.get("is_live") and (liveness.get("score") or 0) <= 0.40:
         decision = "REJECTED"
         error_code = "EKYC_SPOOF_DETECTED"
         error_message = "Cảnh báo bảo mật: Phát hiện dấu hiệu giả mạo màn hình hoặc ảnh in."
         retry_step = "SELFIE"
+    elif result.get("similarity") is None:
+        decision = "REJECTED"
+        if result.get("reference") is None:
+            error_code = "EKYC_DOCUMENT_NO_FACE"
+            error_message = "Không tìm thấy ảnh chân dung trên thẻ CCCD hoặc chip. Vui lòng chụp rõ nét mặt trước thẻ hoặc đọc chip NFC."
+            retry_step = "CARD_FRONT"
+        else:
+            error_code = "EKYC_NO_FACE"
+            error_message = "Không tìm thấy khuôn mặt trong ảnh selfie. Vui lòng nhìn thẳng và giữ đủ sáng."
+            retry_step = "SELFIE"
     elif not result.get("matched"):
         decision = "REJECTED"
         # Phân biệt: khung phụ lệch (nghi đánh tráo) vs khớp chính lệch thường
@@ -210,16 +221,30 @@ def verify(body: HybridPayload):
         else:
             error_code = "EKYC_FACE_MISMATCH"
             sim = result.get("similarity", 0)
-            error_message = f"Khuôn mặt selfie không trùng khớp với ảnh chip CCCD (Độ tương đồng: {sim:.2f})."
+            error_message = f"Khuôn mặt selfie không trùng khớp với ảnh CCCD (Độ tương đồng: {sim:.2f})."
         retry_step = "SELFIE"
-    elif result.get("matched") and liveness.get("is_live") and (result.get("similarity", 0) >= 0.70):
+    elif result.get("matched") and liveness.get("is_live") and (result.get("similarity", 0) >= 0.52):
         decision = "APPROVED"
-    else:
-        # Ngưỡng 3 vùng: 0.60 <= similarity < 0.70 chuyển sang hậu kiểm nhân viên
+    elif result.get("matched") and (result.get("similarity", 0) >= 0.40):
+        # Biện pháp bảo vệ an toàn: Toàn bộ vùng ranh giới 0.40 <= similarity < 0.52
+        # (vùng có rủi ro trùng với Hard Impostors như anh em ruột/cha con)
+        # BẮT BUỘC 100% chuyển sang MANUAL_REVIEW (kiểm soát viên hậu kiểm), KHÔNG auto-approve
         decision = "MANUAL_REVIEW"
         error_code = "EKYC_MANUAL_REVIEW"
         error_message = "Hồ sơ chuyển sang chuyên viên hậu kiểm do tín hiệu sinh trắc ở mức ranh giới."
         retry_step = "NONE"
+    else:
+        decision = "REJECTED"
+        error_code = "EKYC_FACE_MISMATCH"
+        sim = result.get("similarity", 0)
+        error_message = f"Khuôn mặt selfie không trùng khớp với ảnh CCCD (Độ tương đồng: {sim:.2f})."
+        retry_step = "SELFIE"
+
+    # Cập nhật bộ đếm thử sai (Rate Limiting chống Brute-Force lặp lại)
+    if decision == "REJECTED":
+        session_store.record_failure(user_id)
+    else:
+        session_store.reset_failure(user_id)
 
     # 4. Giai đoạn 4: Tự động kích hoạt KYC tại identity-service khi đạt chuẩn
     auto_approved = False

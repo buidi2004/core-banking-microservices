@@ -64,7 +64,7 @@ void main() {
       );
     });
 
-    testWidgets('pre-fills initialDocumentNumber, initialDateOfBirth, initialExpiryDate and displays auto badge', (tester) async {
+    testWidgets('pre-fills initialDocumentNumber, initialDateOfBirth, initialExpiryDate in zero-input mode and expands form', (tester) async {
       tester.view.physicalSize = const Size(1080, 2400);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -82,10 +82,16 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
+      // Trong Zero-Input mode: Form nhập liệu được ẩn, hiển thị nút tùy chọn thủ công
+      expect(find.text('Không quét được tự động? Nhập thủ công'), findsOneWidget);
+
+      // Chạm để mở rộng form nhập thủ công
+      await tester.tap(find.text('Không quét được tự động? Nhập thủ công'));
+      await tester.pump(const Duration(milliseconds: 100));
+
       expect(find.text('079099000123'), findsOneWidget);
       expect(find.text('990101'), findsOneWidget);
       expect(find.text('300101'), findsOneWidget);
-      expect(find.text('Tự động điền'), findsOneWidget);
     });
   });
 }

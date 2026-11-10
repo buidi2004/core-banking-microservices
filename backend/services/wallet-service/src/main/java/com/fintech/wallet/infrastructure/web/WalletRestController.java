@@ -4,8 +4,11 @@ import com.fintech.wallet.domain.model.Money;
 import com.fintech.wallet.domain.model.Wallet;
 import com.fintech.wallet.domain.model.WalletStatus;
 import com.fintech.wallet.domain.port.out.WalletPersistencePort;
+import com.fintech.wallet.infrastructure.kafka.WalletBalanceChangedKafkaProducer;
+import com.fintech.wallet.kafka.WalletBalanceChangedPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,11 +41,14 @@ public class WalletRestController {
 
     private final WalletPersistencePort walletPersistencePort;
     private final RestClient identityClient;
+    private final WalletBalanceChangedKafkaProducer walletKafkaProducer;
 
     public WalletRestController(WalletPersistencePort walletPersistencePort,
-                                @Value("${identity.service.url:http://localhost:8081}") String identityServiceUrl) {
+                                @Value("${identity.service.url:http://localhost:8081}") String identityServiceUrl,
+                                @Autowired(required = false) WalletBalanceChangedKafkaProducer walletKafkaProducer) {
         this.walletPersistencePort = walletPersistencePort;
         this.identityClient = RestClient.builder().baseUrl(identityServiceUrl).build();
+        this.walletKafkaProducer = walletKafkaProducer;
     }
 
     @GetMapping("/me")
@@ -301,11 +307,32 @@ public class WalletRestController {
         wallet.setOverdraftLimit(limit);
         walletPersistencePort.saveWallet(wallet);
 
+        java.math.BigDecimal newAvailable = wallet.getBalance().getAmount().add(java.math.BigDecimal.valueOf(limit));
+        if (walletKafkaProducer != null) {
+            try {
+                String txId = "ODL-" + System.currentTimeMillis();
+                WalletBalanceChangedPayload payload = new WalletBalanceChangedPayload(
+                        wallet.getId(),
+                        wallet.getBalance().getAmount(),
+                        java.math.BigDecimal.valueOf(limit),
+                        newAvailable,
+                        wallet.getBalance().getCurrency(),
+                        txId,
+                        "OVERDRAFT_LIMIT"
+                );
+                walletKafkaProducer.publishBalanceChanged(payload);
+                log.info("Published OVERDRAFT_LIMIT event to Kafka for walletId={}, limit={}, available={}",
+                        walletId, limit, newAvailable);
+            } catch (Exception e) {
+                log.error("Failed to publish OVERDRAFT_LIMIT event to Kafka for walletId={}", walletId, e);
+            }
+        }
+
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("walletId", wallet.getId());
         data.put("ownerId", wallet.getOwnerId());
         data.put("overdraftLimit", limit);
-        data.put("availableBalance", wallet.getBalance().getAmount().add(java.math.BigDecimal.valueOf(limit)));
+        data.put("availableBalance", newAvailable);
         data.put("updatedAt", wallet.getUpdatedAt().toString());
 
         log.info("Admin set overdraft limit {} VND for wallet {}", limit, walletId);

@@ -261,10 +261,10 @@ void main() {
 
       // 7.3 Giao dịch viên (Teller) phê duyệt khoản vay qua token của Teller
       final tellerDio = Dio(BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
+        baseUrl: dio.options.baseUrl,
         headers: {'Authorization': 'Bearer $tellerToken'},
       ));
-      final approveRes = await tellerDio.post('/loans/$loanId/approve');
+      final approveRes = await tellerDio.post('${dio.options.baseUrl}/loans/$loanId/approve');
       expect(approveRes.statusCode, 200);
       expect(approveRes.data['data']['status'], 'DISBURSED');
       print('✔ Cán bộ tín dụng (Teller) duyệt khoản vay: Trạng thái DISBURSED (Đã giải ngân +10.000.000đ vào ví)');

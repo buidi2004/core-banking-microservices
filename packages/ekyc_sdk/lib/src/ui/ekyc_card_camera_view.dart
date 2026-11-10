@@ -5,9 +5,7 @@ import 'package:flutter/services.dart';
 
 /// Camera chụp ảnh thẻ CCCD (mặt trước/sau) — khung chữ nhật căn chỉnh,
 /// nút chụp thủ công, trả về bytes ảnh JPEG qua callback.
-///
-/// Khác [EkycCameraView] (chụp khuôn mặt + active liveness), view này
-/// dùng cho bước thu nhận giấy tờ: không liveness, chỉ căn khung + chụp.
+/// Hỗ trợ chạm để lấy nét (tap-to-focus) và bật/tắt đèn pin (torch).
 class EkycCardCameraView extends StatefulWidget {
   final String title;
   final String hint;
@@ -30,6 +28,7 @@ class _EkycCardCameraViewState extends State<EkycCardCameraView> {
   CameraController? _cameraController;
   bool _isInitializing = true;
   bool _isCapturing = false;
+  bool _isTorchOn = false;
   String? _errorMessage;
 
   @override
@@ -64,6 +63,9 @@ class _EkycCardCameraViewState extends State<EkycCardCameraView> {
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
       await controller.initialize();
+      try {
+        await controller.setFocusMode(FocusMode.auto);
+      } catch (_) {}
       if (!mounted) {
         await controller.dispose();
         return;
@@ -79,6 +81,18 @@ class _EkycCardCameraViewState extends State<EkycCardCameraView> {
         _errorMessage = 'Không thể khởi động camera: $e';
       });
     }
+  }
+
+  Future<void> _toggleTorch() async {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) return;
+    try {
+      _isTorchOn = !_isTorchOn;
+      await _cameraController!.setFlashMode(
+        _isTorchOn ? FlashMode.torch : FlashMode.off,
+      );
+      setState(() {});
+      HapticFeedback.selectionClick();
+    } catch (_) {}
   }
 
   Future<void> _capture() async {
@@ -134,7 +148,15 @@ class _EkycCardCameraViewState extends State<EkycCardCameraView> {
                           fontWeight: FontWeight.w600),
                     ),
                   ),
-                  const SizedBox(width: 48),
+                  IconButton(
+                    icon: Icon(
+                      _isTorchOn ? CupertinoIcons.bolt_fill : CupertinoIcons.bolt_slash,
+                      color: _isTorchOn ? Colors.amberAccent : Colors.white70,
+                      size: 22,
+                    ),
+                    onPressed: _toggleTorch,
+                    tooltip: 'Bật/tắt đèn flash',
+                  ),
                 ],
               ),
             ),
@@ -217,15 +239,38 @@ class _EkycCardCameraViewState extends State<EkycCardCameraView> {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            CameraPreview(_cameraController!),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (details) async {
+                if (_cameraController != null &&
+                    _cameraController!.value.isInitialized) {
+                  final renderBox = context.findRenderObject() as RenderBox?;
+                  if (renderBox != null) {
+                    final size = renderBox.size;
+                    final point = Offset(
+                      (details.localPosition.dx / size.width).clamp(0.0, 1.0),
+                      (details.localPosition.dy / size.height).clamp(0.0, 1.0),
+                    );
+                    try {
+                      await _cameraController!.setFocusPoint(point);
+                      await _cameraController!.setExposurePoint(point);
+                      HapticFeedback.selectionClick();
+                    } catch (_) {}
+                  }
+                }
+              },
+              child: CameraPreview(_cameraController!),
+            ),
             // Khung căn chỉnh thẻ (tỷ lệ ID-2 ≈ 85.6×54mm)
-            Center(
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.82,
-                height: MediaQuery.of(context).size.width * 0.82 * 54.0 / 85.6,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFF00E5FF), width: 2),
-                  borderRadius: BorderRadius.circular(14),
+            IgnorePointer(
+              child: Center(
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 0.82,
+                  height: MediaQuery.of(context).size.width * 0.82 * 54.0 / 85.6,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFF00E5FF), width: 2),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ),

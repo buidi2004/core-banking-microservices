@@ -294,7 +294,9 @@ export function TransactionHistory({ deposits, onReceipt, staff }: TransactionHi
             <thead>
               <tr>
                 <th>Mã GD</th>
+                <th>Khách Hàng</th>
                 <th>Số Tiền</th>
+                <th>Thời Gian</th>
                 <th>Trạng Thái</th>
                 <th>Chứng Từ</th>
               </tr>
@@ -302,15 +304,26 @@ export function TransactionHistory({ deposits, onReceipt, staff }: TransactionHi
             <tbody>
               {filteredDeposits.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '12.5px' }}>
-                    Không tìm thấy giao dịch nào phù hợp
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    Không tìm thấy giao dịch nạp quầy nào phù hợp
                   </td>
                 </tr>
               ) : (
                 filteredDeposits.map(d => (
                   <tr key={d.id}>
-                    <td className="mono" style={{ fontWeight: 700, color: 'var(--primary-blue)' }}>{d.code}</td>
-                    <td className="mono" style={{ fontWeight: 800 }}>{formatCurrency(d.amount)}</td>
+                    <td className="mono" style={{ fontWeight: 700, color: 'var(--primary-blue)', fontSize: '12px' }}>{d.code}</td>
+                    <td>
+                      <b style={{ color: 'var(--primary-navy)', fontSize: '12.5px' }}>{d.customerName}</b>
+                      <div className="mono" style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
+                        {d.phoneNumber || d.accountNumber}
+                      </div>
+                    </td>
+                    <td className="mono" style={{ fontWeight: 800, fontSize: '13px', color: 'var(--success-green)' }}>
+                      +{formatCurrency(d.amount)}
+                    </td>
+                    <td style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                      {d.timestamp ? new Date(d.timestamp).toLocaleString('vi-VN') : '—'}
+                    </td>
                     <td>
                       <span className={`badge ${d.status === 'COMPLETED' ? 'badge-emerald' : d.status === 'PENDING_APPROVAL' ? 'badge-amber' : 'badge-rose'}`}>
                         {d.status === 'COMPLETED' && <CheckCircle2 size={11} />}
@@ -331,7 +344,7 @@ export function TransactionHistory({ deposits, onReceipt, staff }: TransactionHi
                           <span>In Phiếu</span>
                         </button>
                       ) : d.status === 'PENDING_APPROVAL' ? (
-                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Đang chờ</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Đang chờ duyệt</span>
                       ) : (
                         <span style={{ color: 'var(--danger-red)', fontSize: '12px' }}>Từ chối</span>
                       )}

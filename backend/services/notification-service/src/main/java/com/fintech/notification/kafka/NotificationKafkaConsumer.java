@@ -117,6 +117,18 @@ public class NotificationKafkaConsumer {
         tx.setFeeAmount(BigDecimal.ZERO);
         tx.setCurrency(node.path("currency").asText("VND"));
 
+        if (node.hasNonNull("targetWalletId")) {
+            tx.setTargetWalletId(node.get("targetWalletId").asText());
+        }
+        if (node.hasNonNull("targetUserId")) {
+            tx.setTargetUserId(node.get("targetUserId").asText());
+        }
+        if (node.hasNonNull("balanceAfter")) {
+            tx.setTargetBalanceAfter(BigDecimal.valueOf(node.get("balanceAfter").asLong()));
+        } else if (node.hasNonNull("targetBalanceAfter")) {
+            tx.setTargetBalanceAfter(BigDecimal.valueOf(node.get("targetBalanceAfter").asLong()));
+        }
+
         String branchId = node.path("branchId").asText("");
         String customerName = node.path("customerName").asText("");
         String note = "Nạp tiền mặt tại quầy " + branchId + (!customerName.isBlank() ? " - " + customerName : "");

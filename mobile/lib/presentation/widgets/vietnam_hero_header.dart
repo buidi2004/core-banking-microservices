@@ -53,8 +53,9 @@ class VietnamHeroHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final totalAvailable = balance + overdraftLimit;
     final displayAmount =
-        isHidden ? '••••••••' : _currencyFormatter.format(balance);
+        isHidden ? '••••••••' : _currencyFormatter.format(overdraftLimit > 0 ? totalAvailable : balance);
     final bannerHeight = 300.0 + topPadding;
 
     return Container(
@@ -559,7 +560,7 @@ class VietnamHeroHeader extends StatelessWidget {
                         Text(
                           balance < 0
                               ? 'Dư nợ thấu chi ${_currencyFormatter.format(-balance)} VND — khả dụng ${_currencyFormatter.format(balance + overdraftLimit)} VND'
-                              : 'Hạn mức thấu chi: ${_currencyFormatter.format(overdraftLimit)} VND',
+                              : 'Tiền ví: ${_currencyFormatter.format(balance)} VND • Thấu chi: ${_currencyFormatter.format(overdraftLimit)} VND',
                           style: GoogleFonts.inter(
                             color: Colors.white.withOpacity(0.88),
                             fontSize: 10.5,

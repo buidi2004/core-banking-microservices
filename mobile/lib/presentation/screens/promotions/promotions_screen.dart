@@ -26,7 +26,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   int _selectedCategoryIndex = 0;
   String _searchQuery = '';
   Timer? _bannerTimer;
-  List<Map<String, dynamic>> _apiVouchers = [];
+  final List<Map<String, dynamic>> _apiVouchers = [];
   bool _isApplyingVoucher = false;
   bool _bannerAutoScrollEnabled = true;
   bool _loadingContent = true;
@@ -77,8 +77,71 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   // ===========================================================================
   // 1. MEGA HERO BANNERS (HỆ THỐNG BANNER CHÍNH - HÌNH ẢNH THỰC TẾ & ĐIỆN ẢNH)
   // ===========================================================================
-  // Nội dung được tải động từ Backend (notification-service) — KHÔNG dùng dữ liệu cứng
-  final List<Map<String, dynamic>> _heroBanners = [];
+  static final List<Map<String, dynamic>> _defaultHeroBanners = [
+    {
+      'title': 'Chào Bạn Mới — Nạp Tiền Đầu Tiên',
+      'subtitle':
+          'Nạp tiền lần đầu từ 500.000 VND nhận ngay ưu đãi 50.000 VND vào ví',
+      'tag': 'CHÀO BẠN MỚI',
+      'tagIcon': CupertinoIcons.sparkles,
+      'accentColor': const Color(0xFF38BDF8),
+      'gradient': const [Color(0xFF0A192F), Color(0xFF0284C7)],
+      'route': '/deposit',
+      'imagePath': 'assets/images/banners/banner_smartphone_tech.jpg',
+      'cardImagePath': 'assets/images/banners/clean_visa_banner.png',
+    },
+    {
+      'title': 'Gói Vay Mua Xe — Lãi Suất 5.9%/Năm',
+      'subtitle':
+          'Sở hữu ô tô mơ ước dễ dàng, phê duyệt hồ sơ online nhanh chóng trong 15 phút',
+      'tag': 'VAY MUA XE',
+      'tagIcon': CupertinoIcons.car_detailed,
+      'accentColor': const Color(0xFF34D399),
+      'gradient': const [Color(0xFF064E3B), Color(0xFF047857)],
+      'route': '/cards',
+      'imagePath': 'assets/images/banners/banner_luxury_car.jpg',
+      'cardImagePath': 'assets/images/banners/clean_stellar_banner.png',
+    },
+    {
+      'title': 'Du Lịch Hè Rực Rỡ — Hoàn Tiền 15%',
+      'subtitle':
+          'Đặt vé máy bay & resort Phú Quốc, Đà Nẵng, Thái Lan hoàn tới 500.000 VND',
+      'tag': 'DU LỊCH 2026',
+      'tagIcon': CupertinoIcons.airplane,
+      'accentColor': const Color(0xFFFBBF24),
+      'gradient': const [Color(0xFF1E1B4B), Color(0xFF4338CA)],
+      'route': '/lifestyle/travel',
+      'imagePath': 'assets/images/banners/banner_tropical_travel.jpg',
+      'cardImagePath': 'assets/images/banners/clean_thailand_banner.png',
+    },
+    {
+      'title': 'Cà Phê Sáng 0Đ & Ưu Đãi Đời Sống',
+      'subtitle':
+          'Thanh toán hóa đơn điện nước tặng ngay voucher Highlands Coffee thơm ngon',
+      'tag': 'ĐỜI SỐNG HẰNG NGÀY',
+      'tagIcon': CupertinoIcons.gift_fill,
+      'accentColor': const Color(0xFFA78BFA),
+      'gradient': const [Color(0xFF311042), Color(0xFF7E22CE)],
+      'route': '/bills',
+      'imagePath': 'assets/images/banners/highlands_drip.webp',
+      'cardImagePath': 'assets/images/banners/clean_jcb_banner.png',
+    },
+    {
+      'title': 'Giới Thiệu Bạn Bè — Nhận 100K Cả Hai',
+      'subtitle':
+          'Mời bạn bè mở ví Sen Hồng thành công, rinh ngay 100.000 VND tiền mặt',
+      'tag': 'MỜI BẠN NHẬN QUÀ',
+      'tagIcon': CupertinoIcons.person_2_fill,
+      'accentColor': const Color(0xFF2DD4BF),
+      'gradient': const [Color(0xFF0F2027), Color(0xFF203A43)],
+      'route': '/referral',
+      'imagePath': 'assets/images/banners/banner_car_loan_couple.png',
+      'cardImagePath': 'assets/images/banners/clean_stellar_banner.png',
+    },
+  ];
+
+  final List<Map<String, dynamic>> _heroBanners =
+      List.from(_defaultHeroBanners);
 
   // ===========================================================================
   // 2. GÓI VAY & TRẢ GÓP XE, NHÀ, ĐIỆN MÁY ĐẶC QUYỀN
@@ -127,7 +190,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       ]);
       if (!mounted) return;
       setState(() {
-        _heroBanners.addAll(results[0].map(_campaignToBanner));
+        final apiBanners = results[0].map(_campaignToBanner).toList();
+        if (apiBanners.isNotEmpty) {
+          _heroBanners.clear();
+          _heroBanners.addAll(apiBanners);
+        } else if (_heroBanners.isEmpty) {
+          _heroBanners.addAll(_defaultHeroBanners);
+        }
         _events.addAll(results[0].map(_campaignToEvent));
         final catalog = results[1];
         _allPromotions.addAll(
@@ -152,34 +221,60 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
   static const Map<String, Map<String, Object>> _campaignVisuals = {
     'deposit': {
-      'icon': CupertinoIcons.money_dollar_circle_fill,
+      'icon': CupertinoIcons.sparkles,
       'accent': Color(0xFF38BDF8),
-      'gradient': [AppColors.brandBlue, AppColors.bottomBarOcean],
+      'gradient': [Color(0xFF0A192F), Color(0xFF0284C7)],
+      'image': 'assets/images/banners/banner_smartphone_tech.jpg',
+      'card': 'assets/images/banners/clean_visa_banner.png',
     },
     'referral': {
       'icon': CupertinoIcons.person_2_fill,
-      'accent': Color(0xFF2DD4BF),
-      'gradient': [AppColors.royalBlue, AppColors.oceanCyan],
+      'accent': Color(0xFF34D399),
+      'gradient': [Color(0xFF0F2027), Color(0xFF203A43)],
+      'image': 'assets/images/banners/banner_car_loan_couple.png',
+      'card': 'assets/images/banners/clean_stellar_banner.png',
     },
     'savings': {
       'icon': CupertinoIcons.gift_fill,
-      'accent': Color(0xFFF59E0B),
-      'gradient': [AppColors.brandNavy, AppColors.tealNavy],
+      'accent': Color(0xFFFBBF24),
+      'gradient': [Color(0xFF1E1B4B), Color(0xFF4338CA)],
+      'image': 'assets/images/banners/banner_tropical_travel.jpg',
+      'card': 'assets/images/banners/clean_thailand_banner.png',
     },
     'bills': {
       'icon': CupertinoIcons.doc_text_fill,
-      'accent': Color(0xFF60A5FA),
-      'gradient': [AppColors.brandNavy, AppColors.bottomBarOcean],
+      'accent': Color(0xFFA78BFA),
+      'gradient': [Color(0xFF311042), Color(0xFF7E22CE)],
+      'image': 'assets/images/banners/highlands_drip.webp',
+      'card': 'assets/images/banners/clean_jcb_banner.png',
     },
     'p2p': {
       'icon': CupertinoIcons.paperplane_fill,
-      'accent': Color(0xFFA78BFA),
-      'gradient': [AppColors.brandBlue, AppColors.oceanCyan],
+      'accent': Color(0xFF60A5FA),
+      'gradient': [Color(0xFF111827), Color(0xFF1D4ED8)],
+      'image': 'assets/images/banners/da_nang_golden_bridge.webp',
+      'card': 'assets/images/banners/clean_visa_banner.png',
+    },
+    'car': {
+      'icon': CupertinoIcons.car_detailed,
+      'accent': Color(0xFF34D399),
+      'gradient': [Color(0xFF064E3B), Color(0xFF047857)],
+      'image': 'assets/images/banners/banner_luxury_car.jpg',
+      'card': 'assets/images/banners/clean_stellar_banner.png',
+    },
+    'travel': {
+      'icon': CupertinoIcons.airplane,
+      'accent': Color(0xFF38BDF8),
+      'gradient': [Color(0xFF0C4A6E), Color(0xFF0284C7)],
+      'image': 'assets/images/banners/banner_tropical_travel.jpg',
+      'card': 'assets/images/banners/clean_thailand_banner.png',
     },
     'default': {
-      'icon': CupertinoIcons.rosette,
-      'accent': AppColors.primary,
-      'gradient': [AppColors.brandNavy, AppColors.brandBlue],
+      'icon': CupertinoIcons.sparkles,
+      'accent': Color(0xFF38BDF8),
+      'gradient': [Color(0xFF0A192F), Color(0xFF0284C7)],
+      'image': 'assets/images/banners/banner_smartphone_tech.jpg',
+      'card': 'assets/images/banners/clean_visa_banner.png',
     },
   };
 
@@ -199,6 +294,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
       'accentColor': visual['accent'] as Color,
       'gradient': visual['gradient'] as List<Color>,
       'route': (rules['route'] as String?) ?? '/promotions',
+      'imagePath':
+          (rules['imagePath'] as String?) ?? (visual['image'] as String?),
+      'cardImagePath':
+          (rules['cardImagePath'] as String?) ?? (visual['card'] as String?),
     };
   }
 
@@ -1120,8 +1219,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
             itemCount: _heroBanners.length,
             itemBuilder: (context, index) {
               final banner = _heroBanners[index];
-              final String? imagePath = banner['image'] as String?;
-              final String? cardImagePath = banner['cardImage'] as String?;
+              final String? imagePath =
+                  (banner['imagePath'] ?? banner['image']) as String?;
+              final String? cardImagePath =
+                  (banner['cardImagePath'] ?? banner['cardImage'] ?? banner['card'])
+                      as String?;
+              final List<Color> gradient = (banner['gradient'] as List<Color>?) ??
+                  const [Color(0xFF0C2340), Color(0xFF0369A1)];
               final Color accentColor =
                   (banner['accentColor'] as Color?) ?? AppColors.brandBlue;
               final IconData? tagIcon = banner['tagIcon'] as IconData?;
@@ -1146,67 +1250,91 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     child: Container(
                       height: 202,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF07101E),
                         borderRadius: BorderRadius.circular(22),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: gradient,
+                        ),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.18),
-                          width: 0.8,
+                          color: accentColor.withOpacity(0.40),
+                          width: 1.0,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF040A14).withOpacity(0.28),
-                            blurRadius: 18,
+                            color: gradient.first.withOpacity(0.40),
+                            blurRadius: 20,
                             offset: const Offset(0, 8),
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.25),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
                       child: Stack(
                         children: [
-                          // 1. Ảnh chân thật người thật / phong cảnh thật chuyên sâu
+                          // 1. Ảnh chân thật người thật / phong cảnh / xe cộ / điện thoại
                           if (imagePath != null)
-                            Positioned.fill(
-                              child: Image.asset(
-                                imagePath,
-                                fit: BoxFit.cover,
-                                alignment: Alignment.centerRight,
-                                errorBuilder: (_, __, ___) =>
-                                    const SizedBox.shrink(),
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              bottom: 0,
+                              width: MediaQuery.of(context).size.width * 0.58,
+                              child: ShaderMask(
+                                shaderCallback: (rect) {
+                                  return const LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    stops: [0.0, 0.40, 1.0],
+                                    colors: [
+                                      Colors.transparent,
+                                      Colors.white70,
+                                      Colors.white,
+                                    ],
+                                  ).createShader(rect);
+                                },
+                                blendMode: BlendMode.dstIn,
+                                child: Image.asset(
+                                  imagePath,
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment.center,
+                                  errorBuilder: (_, __, ___) =>
+                                      const SizedBox.shrink(),
+                                ),
                               ),
                             ),
 
-                          // 2. Lớp phủ chuyển sắc điện ảnh ngang (Cinematic scrim: obsidian bên trái để nổi bật văn bản)
+                          // 2. Lớp phủ chuyển sắc mềm mại bên trái để nổi bật văn bản
                           Positioned.fill(
                             child: DecoratedBox(
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.centerLeft,
                                   end: Alignment.centerRight,
-                                  stops: const [0.0, 0.44, 0.72, 1.0],
+                                  stops: const [0.0, 0.45, 0.78, 1.0],
                                   colors: [
-                                    const Color(0xF8050E1C),
-                                    const Color(0xEB071324),
-                                    const Color(0x66081426),
-                                    const Color(0x10081426),
+                                    gradient.first.withOpacity(0.96),
+                                    gradient.first.withOpacity(0.85),
+                                    gradient.last.withOpacity(0.20),
+                                    Colors.transparent,
                                   ],
                                 ),
                               ),
                             ),
                           ),
 
-                          // 3. Lớp phủ chuyển sắc dọc đáy (Bottom vertical scrim gia tăng độ sâu cho button)
-                          Positioned.fill(
-                            child: DecoratedBox(
+                          // 3. Hiệu ứng Ambient Glow góc phải trên
+                          Positioned(
+                            top: -30,
+                            right: -20,
+                            child: Container(
+                              width: 120,
+                              height: 120,
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  stops: const [0.0, 0.60, 1.0],
-                                  colors: const [
-                                    Colors.transparent,
-                                    Color(0x18000000),
-                                    Color(0x75030810),
-                                  ],
-                                ),
+                                shape: BoxShape.circle,
+                                color: accentColor.withOpacity(0.20),
                               ),
                             ),
                           ),
@@ -1214,10 +1342,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                           // 4. Thẻ ngân hàng thực tế dập nổi (Realistic Card Overlay nếu có)
                           if (cardImagePath != null)
                             Positioned(
-                              right: -8,
-                              bottom: 12,
+                              right: -4,
+                              bottom: 10,
                               child: Transform.rotate(
-                                angle: -0.09, // Góc nghiêng tự nhiên thanh lịch
+                                angle: -0.09,
                                 child: Container(
                                   decoration: BoxDecoration(
                                     boxShadow: [
@@ -1230,7 +1358,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                   ),
                                   child: Image.asset(
                                     cardImagePath,
-                                    height: 108,
+                                    height: 100,
                                     fit: BoxFit.contain,
                                     errorBuilder: (_, __, ___) =>
                                         const SizedBox.shrink(),
@@ -1246,16 +1374,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                // Tag Badge (Kính mờ Liquid Glass)
+                                // Tag Badge
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 4.5),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xB3050F1E),
+                                    color: Colors.black.withOpacity(0.40),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.24),
-                                      width: 0.6,
+                                      color: accentColor.withOpacity(0.45),
+                                      width: 0.8,
                                     ),
                                   ),
                                   child: Row(
@@ -1268,11 +1396,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                       ],
                                       Text(
                                         tag,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: accentColor,
                                           fontSize: 10.5,
                                           fontWeight: FontWeight.w800,
-                                          letterSpacing: 0.3,
+                                          letterSpacing: 0.5,
                                         ),
                                       ),
                                     ],
@@ -1282,10 +1410,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                 // Title, Subtitle và CTA Button
                                 ConstrainedBox(
                                   constraints: BoxConstraints(
-                                    maxWidth: cardImagePath != null
-                                        ? 225
-                                        : MediaQuery.of(context).size.width *
-                                            0.68,
+                                    maxWidth:
+                                        MediaQuery.of(context).size.width *
+                                            0.56,
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
@@ -1296,9 +1423,9 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                         title,
                                         style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 16,
+                                          fontSize: 16.5,
                                           fontWeight: FontWeight.w800,
-                                          height: 1.22,
+                                          height: 1.25,
                                           letterSpacing: -0.2,
                                           shadows: [
                                             Shadow(
@@ -1332,11 +1459,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                       const SizedBox(height: 10),
                                       Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 14, vertical: 6.5),
+                                            horizontal: 14, vertical: 7.5),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
                                           borderRadius:
-                                              BorderRadius.circular(10),
+                                              BorderRadius.circular(11),
                                           boxShadow: [
                                             BoxShadow(
                                               color:
@@ -1346,22 +1473,22 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                             ),
                                           ],
                                         ),
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
                                               'Khám phá ngay',
                                               style: TextStyle(
-                                                color: Color(0xFF0A1628),
+                                                color: gradient.first,
                                                 fontSize: 11.5,
                                                 fontWeight: FontWeight.w800,
                                               ),
                                             ),
-                                            SizedBox(width: 4),
+                                            const SizedBox(width: 4),
                                             Icon(
                                               CupertinoIcons.arrow_right,
                                               size: 11.5,
-                                              color: Color(0xFF0A1628),
+                                              color: gradient.first,
                                             ),
                                           ],
                                         ),
@@ -2018,14 +2145,14 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     ),
 
                   // Scrim điện ảnh đa lớp
-                  Positioned.fill(
+                  const Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
-                          stops: const [0.0, 0.52, 1.0],
-                          colors: const [
+                          stops: [0.0, 0.52, 1.0],
+                          colors: [
                             Color(0xF5050F1E),
                             Color(0xDD08162B),
                             Color(0x5508162B),

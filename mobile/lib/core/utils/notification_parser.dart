@@ -30,7 +30,8 @@ class NotificationParser {
 
     final isCredit = isReversal ||
         normType == 'TRANSFER_IN' ||
-        normType == 'DEPOSIT';
+        normType == 'DEPOSIT' ||
+        normType == 'CASH_DEPOSIT';
 
     // 1. Kiểm tra metadata transactionAmount / amount
     final rawAmount = metadata?['transactionAmount'] ?? metadata?['amount'];
@@ -91,7 +92,12 @@ class NotificationParser {
     }
     final raw = metadata?['newBalance'] ?? metadata?['balanceAfter'] ?? metadata?['endingBalance'];
     if (raw != null) {
-      return raw.toString().replaceAll('.', '').replaceAll(',', '').trim();
+      final str = raw.toString().trim();
+      if (str.toUpperCase().contains('E')) {
+        final d = double.tryParse(str);
+        if (d != null) return d.toStringAsFixed(0);
+      }
+      return str.replaceAll('.', '').replaceAll(',', '');
     }
     return null;
   }

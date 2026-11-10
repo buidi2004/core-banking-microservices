@@ -66,6 +66,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           key: AppConstants.keyPhoneNumber);
       final savedName = await AppSecureStorage.safeRead(storage,
           key: AppConstants.keyFullName);
+      final savedDob = await AppSecureStorage.safeRead(storage,
+          key: AppConstants.keyDateOfBirth);
+      final savedCccd = await AppSecureStorage.safeRead(storage,
+          key: AppConstants.keyCitizenId);
       final vatComp =
           await AppSecureStorage.safeRead(storage, key: 'profile_vat_company');
       final vatTax =
@@ -83,6 +87,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         }
         if (savedName != null && savedName.isNotEmpty) {
           _nameCtrl.text = savedName;
+        }
+        if (savedDob != null && savedDob.isNotEmpty) {
+          _dobCtrl.text = savedDob;
+        }
+        if (savedCccd != null && savedCccd.isNotEmpty) {
+          _cid = savedCccd;
         }
         if (vatComp != null && vatComp.isNotEmpty) {
           _companyNameCtrl.text = vatComp;
@@ -111,19 +121,45 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
       setState(() {
         final fName = profile['fullName'] as String? ?? '';
-        if (fName.isNotEmpty) _nameCtrl.text = fName;
+        if (fName.isNotEmpty) {
+          _nameCtrl.text = fName;
+        } else if (savedName != null && savedName.isNotEmpty && _nameCtrl.text.isEmpty) {
+          _nameCtrl.text = savedName;
+        }
+
         final pEmail = profile['email'] as String? ?? '';
         if (pEmail.isNotEmpty) _emailCtrl.text = pEmail;
-        final pDob = profile['dob'] as String? ??
+
+        String pDob = profile['dob'] as String? ??
             profile['dateOfBirth'] as String? ??
             '';
-        if (pDob.isNotEmpty) _dobCtrl.text = pDob;
+        if (pDob.contains('-')) {
+          final parts = pDob.split('T')[0].split('-');
+          if (parts.length == 3) {
+            pDob = '${parts[2]}/${parts[1]}/${parts[0]}';
+          }
+        }
+        if (pDob.isNotEmpty) {
+          _dobCtrl.text = pDob;
+        } else if (savedDob != null && savedDob.isNotEmpty && _dobCtrl.text.isEmpty) {
+          _dobCtrl.text = savedDob;
+        }
+
         final pPhone = profile['phoneNumber'] as String? ?? '';
         if (pPhone.isNotEmpty) _phoneCtrl.text = pPhone;
         final pAlias = profile['accountAlias'] as String? ?? '';
         if (pAlias.isNotEmpty) _aliasCtrl.text = pAlias;
 
-        _cid = (profile['id'] ?? profile['userId'] ?? '').toString();
+        final idCard = profile['identityCardNumber'] as String? ??
+            profile['idNumber'] as String? ??
+            profile['documentNumber'] as String?;
+        if (idCard != null && idCard.isNotEmpty) {
+          _cid = idCard;
+        } else if (savedCccd != null && savedCccd.isNotEmpty) {
+          _cid = savedCccd;
+        } else {
+          _cid = (profile['id'] ?? profile['userId'] ?? '').toString();
+        }
         final rawCreated = (profile['createdAt'] ?? '').toString();
         if (rawCreated.isNotEmpty) {
           try {

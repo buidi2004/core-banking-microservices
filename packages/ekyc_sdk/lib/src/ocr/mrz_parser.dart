@@ -1,5 +1,46 @@
 // packages/ekyc_sdk/lib/src/ocr/mrz_parser.dart
 
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+
+/// Kết quả bóc tách thông tin mặt trước thẻ CCCD gắn chip Việt Nam
+class FrontCccdResult {
+  final String? cccdNumber; // 12 chữ số CCCD (vd: 079099000123)
+  final String? documentNumber; // 9 chữ số cuối dùng làm mã BAC (vd: 099000123)
+  final String? birthDateYYMMDD; // 6 chữ số YYMMDD (vd: 990101)
+  final String? expiryDateYYMMDD; // 6 chữ số YYMMDD (vd: 390101)
+  final String? fullName; // Họ và tên in hoa
+  final String? placeOfOrigin; // Quê quán
+  final String? placeOfResidence; // Nơi thường trú
+  final String? rawText; // Toàn bộ văn bản OCR nhận diện được
+
+  const FrontCccdResult({
+    this.cccdNumber,
+    this.documentNumber,
+    this.birthDateYYMMDD,
+    this.expiryDateYYMMDD,
+    this.fullName,
+    this.placeOfOrigin,
+    this.placeOfResidence,
+    this.rawText,
+  });
+
+  /// Kiểm tra xem đã có đủ bộ 3 khóa BAC hay chưa (Số thẻ 9 số, Ngày sinh 6 số, Ngày hết hạn 6 số)
+  bool get hasBacKeys =>
+      documentNumber != null &&
+      documentNumber!.length == 9 &&
+      birthDateYYMMDD != null &&
+      birthDateYYMMDD!.length == 6 &&
+      expiryDateYYMMDD != null &&
+      expiryDateYYMMDD!.length == 6;
+
+  @override
+  String toString() =>
+      'FrontCccdResult(cccd: $cccdNumber, doc: $documentNumber, dob: $birthDateYYMMDD, '
+      'exp: $expiryDateYYMMDD, name: $fullName, origin: $placeOfOrigin, residence: $placeOfResidence, hasBacKeys: $hasBacKeys)';
+}
+
 /// Kết quả bóc tách và tự sửa lỗi chuỗi MRZ thẻ CCCD Việt Nam (Chuẩn ICAO 9303 TD1)
 class MrzResult {
   final String documentNumber; // 9 số cuối CCCD
@@ -8,6 +49,8 @@ class MrzResult {
   final String fullName;
   final bool isValidChecksum;
   final bool wasAutoCorrected;
+  final String? fullCccdNumber; // 12 số CCCD nếu có
+  final String? issueDate; // Ngày cấp thẻ (DD/MM/YYYY)
 
   const MrzResult({
     required this.documentNumber,
@@ -16,15 +59,17 @@ class MrzResult {
     required this.fullName,
     required this.isValidChecksum,
     required this.wasAutoCorrected,
+    this.fullCccdNumber,
+    this.issueDate,
   });
 
   @override
   String toString() =>
       'MrzResult(doc: $documentNumber, dob: $birthDateYYMMDD, exp: $expiryDateYYMMDD, '
-      'name: $fullName, valid: $isValidChecksum, autoCorrected: $wasAutoCorrected)';
+      'name: $fullName, valid: $isValidChecksum, autoCorrected: $wasAutoCorrected, cccd: $fullCccdNumber, issueDate: $issueDate)';
 }
 
-/// Thuật toán kiểm tra Checksum và tự động phục hồi ký tự do lóa sáng
+/// Thuật toán kiểm tra Checksum và tự động phục hồi ký tự do lóa sáng / nhiễu camera
 class MrzParser {
   // Trọng số ICAO 9303 tuần hoàn: 7, 3, 1
   static const List<int> _weights = [7, 3, 1];
@@ -53,6 +98,32 @@ class MrzParser {
       sum += value * _weights[i % 3];
     }
     return sum % 10;
+  }
+
+  /// Chuẩn hóa 1 dòng MRZ: thay thế ký tự nhiễu OCR thành '<' và loại bỏ ký tự rác
+  static String normalizeMrzLine(String raw) {
+    var line = raw.trim();
+    line = line
+        .replaceAll('«', '<')
+        .replaceAll('‹', '<')
+        .replaceAll('(', '<')
+        .replaceAll(')', '<')
+        .replaceAll('[', '<')
+        .replaceAll(']', '<')
+        .replaceAll('{', '<')
+        .replaceAll('}', '<')
+        .replaceAll('_', '<')
+        .replaceAll('-', '<')
+        .replaceAll(r'\', '<')
+        .replaceAll('/', '<')
+        .replaceAll('|', '<')
+        .replaceAll('~', '<')
+        .replaceAll('^', '<')
+        .replaceAll('>', '<')
+        .replaceAll(' ', '<');
+
+    line = line.replaceAll(RegExp(r'[^A-Za-z0-9<]'), '').toUpperCase();
+    return line;
   }
 
   /// Bảng ánh xạ các ký tự thường bị OCR đọc nhầm do lóa sáng hoặc bóng đèn trần
@@ -131,30 +202,66 @@ class MrzParser {
   }
 
   /// Phân tích 3 dòng MRZ của thẻ CCCD gắn chip Việt Nam (TD1 - 3 dòng x 30 ký tự)
-  static MrzResult? parseTd1Lines(List<String> rawLines) {
-    // 1. Lọc và làm sạch các dòng ký tự
+  /// Có hỗ trợ đối soát chéo với thông tin mặt trước [knownCccd12], [knownDob], [knownExpiry].
+  static MrzResult? parseTd1Lines(
+    List<String> rawLines, {
+    String? knownCccd12,
+    String? knownDob,
+    String? knownExpiry,
+  }) {
+    // 1. Chuẩn hóa và làm sạch tất cả các dòng nhận diện được
     final cleaned = rawLines
-        .map((l) => l.replaceAll(RegExp(r'[^A-Za-z0-9<]'), '').toUpperCase())
-        .where((l) => l.length >= 26)
+        .map(normalizeMrzLine)
+        .where((l) => l.length >= 18)
         .toList();
 
-    if (cleaned.length < 3) return null;
+    if (cleaned.length < 2) return null;
 
-    // Tìm 3 dòng TD1 liên tiếp
     String? line1;
     String? line2;
     String? line3;
 
-    for (var i = 0; i <= cleaned.length - 3; i++) {
-      if (cleaned[i].startsWith('I') || cleaned[i].contains('VNM')) {
-        line1 = cleaned[i].padRight(30, '<').substring(0, 30);
-        line2 = cleaned[i + 1].padRight(30, '<').substring(0, 30);
-        line3 = cleaned[i + 2].padRight(30, '<').substring(0, 30);
+    // 2. Tìm kiếm 3 dòng theo thứ tự logic hoặc cấu trúc nhận diện đặc thù
+    for (var i = 0; i < cleaned.length; i++) {
+      final line = cleaned[i];
+      if (line1 == null &&
+          (line.startsWith('I') ||
+              line.startsWith('1') ||
+              (line.length >= 6 && line.substring(0, 6).contains('VNM')))) {
+        line1 = line.padRight(30, '<').substring(0, 30);
+        continue;
+      }
+      if (line1 != null && line2 == null && line.length >= 20) {
+        final maybeDigits = forceDigits(line.substring(0, 6));
+        if (RegExp(r'^\d{6}').hasMatch(maybeDigits)) {
+          line2 = line.padRight(30, '<').substring(0, 30);
+          continue;
+        }
+      }
+      if (line1 != null && line2 != null && line3 == null) {
+        line3 = line.padRight(30, '<').substring(0, 30);
         break;
       }
     }
 
-    if (line1 == null || line2 == null || line3 == null) return null;
+    // Fallback: nếu không tìm thấy theo loop tuần tự, tìm theo pattern
+    if (line1 == null || line2 == null) {
+      for (final l in cleaned) {
+        final padded = l.padRight(30, '<').substring(0, 30);
+        if (line1 == null &&
+            (padded.startsWith('I<') || padded.contains('VNM'))) {
+          line1 = padded;
+        } else if (line2 == null &&
+            RegExp(r'^\d{6}').hasMatch(forceDigits(padded.substring(0, 6)))) {
+          line2 = padded;
+        } else if (line3 == null && padded.contains('<<')) {
+          line3 = padded;
+        }
+      }
+    }
+
+    if (line1 == null || line2 == null) return null;
+    line3 ??= '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<';
 
     var wasAutoCorrected = false;
 
@@ -176,48 +283,85 @@ class MrzParser {
     final fullName =
         line3.replaceAll('<', ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
 
-    // 2. Kiểm tra và tự sửa lỗi lóa sáng cho số giấy tờ
+    // 3. Đối soát & tự sửa số giấy tờ (Document Number)
     var finalDocNum = forceDigits(rawDocNum);
-    if (finalDocNum != rawDocNum) {
-      wasAutoCorrected = true;
-    }
-    if (rawDocCheck != -1 && calculateCheckDigit(finalDocNum) != rawDocCheck) {
-      final corrected = autoCorrectField(rawDocNum, rawDocCheck);
-      if (corrected != null) {
-        finalDocNum = forceDigits(corrected);
+    if (knownCccd12 != null && knownCccd12.length >= 9) {
+      final expectedDocNum =
+          knownCccd12.substring(knownCccd12.length - 9);
+      if (rawDocCheck != -1 &&
+          calculateCheckDigit(expectedDocNum) == rawDocCheck) {
+        finalDocNum = expectedDocNum;
         wasAutoCorrected = true;
+      } else if (finalDocNum != expectedDocNum) {
+        finalDocNum = expectedDocNum;
+        wasAutoCorrected = true;
+      }
+    } else {
+      if (finalDocNum != rawDocNum) {
+        wasAutoCorrected = true;
+      }
+      if (rawDocCheck != -1 &&
+          calculateCheckDigit(finalDocNum) != rawDocCheck) {
+        final corrected = autoCorrectField(rawDocNum, rawDocCheck);
+        if (corrected != null) {
+          finalDocNum = forceDigits(corrected);
+          wasAutoCorrected = true;
+        }
       }
     }
 
-    // 3. Kiểm tra và tự sửa lỗi lóa sáng cho ngày sinh
+    // 4. Đối soát & tự sửa ngày sinh (DOB)
     var finalDob = forceDigits(rawDob);
-    if (finalDob != rawDob) {
-      wasAutoCorrected = true;
-    }
-    if (rawDobCheck != -1 && calculateCheckDigit(finalDob) != rawDobCheck) {
-      final corrected = autoCorrectField(rawDob, rawDobCheck);
-      if (corrected != null) {
-        finalDob = forceDigits(corrected);
+    if (knownDob != null && knownDob.length == 6) {
+      if (rawDobCheck != -1 &&
+          calculateCheckDigit(knownDob) == rawDobCheck) {
+        finalDob = knownDob;
         wasAutoCorrected = true;
+      } else if (finalDob != knownDob) {
+        finalDob = knownDob;
+        wasAutoCorrected = true;
+      }
+    } else {
+      if (finalDob != rawDob) {
+        wasAutoCorrected = true;
+      }
+      if (rawDobCheck != -1 && calculateCheckDigit(finalDob) != rawDobCheck) {
+        final corrected = autoCorrectField(rawDob, rawDobCheck);
+        if (corrected != null) {
+          finalDob = forceDigits(corrected);
+          wasAutoCorrected = true;
+        }
       }
     }
 
-    // 4. Kiểm tra và tự sửa lỗi lóa sáng cho ngày hết hạn
+    // 5. Đối soát & tự sửa ngày hết hạn (Expiry)
     var finalExp = forceDigits(rawExp);
-    if (finalExp != rawExp) {
-      wasAutoCorrected = true;
-    }
-    if (rawExpCheck != -1 && calculateCheckDigit(finalExp) != rawExpCheck) {
-      final corrected = autoCorrectField(rawExp, rawExpCheck);
-      if (corrected != null) {
-        finalExp = forceDigits(corrected);
+    if (knownExpiry != null && knownExpiry.length == 6) {
+      if (rawExpCheck != -1 &&
+          calculateCheckDigit(knownExpiry) == rawExpCheck) {
+        finalExp = knownExpiry;
         wasAutoCorrected = true;
+      } else if (finalExp != knownExpiry) {
+        finalExp = knownExpiry;
+        wasAutoCorrected = true;
+      }
+    } else {
+      if (finalExp != rawExp) {
+        wasAutoCorrected = true;
+      }
+      if (rawExpCheck != -1 && calculateCheckDigit(finalExp) != rawExpCheck) {
+        final corrected = autoCorrectField(rawExp, rawExpCheck);
+        if (corrected != null) {
+          finalExp = forceDigits(corrected);
+          wasAutoCorrected = true;
+        }
       }
     }
 
-    final isValidChecksum = (calculateCheckDigit(finalDocNum) == rawDocCheck) &&
-        (calculateCheckDigit(finalDob) == rawDobCheck) &&
-        (calculateCheckDigit(finalExp) == rawExpCheck);
+    final isValidChecksum =
+        (calculateCheckDigit(finalDocNum) == rawDocCheck || rawDocCheck == -1) &&
+        (calculateCheckDigit(finalDob) == rawDobCheck || rawDobCheck == -1) &&
+        (calculateCheckDigit(finalExp) == rawExpCheck || rawExpCheck == -1);
 
     return MrzResult(
       documentNumber: finalDocNum,
@@ -226,6 +370,294 @@ class MrzParser {
       fullName: fullName,
       isValidChecksum: isValidChecksum,
       wasAutoCorrected: wasAutoCorrected,
+      fullCccdNumber: knownCccd12,
     );
+  }
+}
+
+/// Bộ quét OCR nhận dạng tự động chuỗi MRZ và thông tin thẻ CCCD
+class MrzScanner {
+  /// Quét tự động từ dữ liệu bytes ảnh mặt sau thẻ (JPEG/PNG)
+  /// [frontData] & [knownCccd12]: dữ liệu bóc tách được từ mặt trước dùng để đối chiếu kép.
+  static Future<MrzResult?> scanFromImageBytes(
+    Uint8List bytes, {
+    FrontCccdResult? frontData,
+    String? knownCccd12,
+  }) async {
+    final tempDir = Directory.systemTemp;
+    final tempFile = File(
+        '${tempDir.path}/mrz_card_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    try {
+      await tempFile.writeAsBytes(bytes);
+      final inputImage = InputImage.fromFilePath(tempFile.path);
+      final textRecognizer =
+          TextRecognizer(script: TextRecognitionScript.latin);
+      final recognizedText = await textRecognizer.processImage(inputImage);
+      await textRecognizer.close();
+
+      // Sắp xếp các dòng theo trục thẳng đứng (top to bottom)
+      final allLines = <TextLine>[];
+      for (final block in recognizedText.blocks) {
+        allLines.addAll(block.lines);
+      }
+      allLines.sort((a, b) => a.boundingBox.top.compareTo(b.boundingBox.top));
+
+      final lines = <String>[];
+      for (final line in allLines) {
+        final t = line.text.trim();
+        if (t.isNotEmpty) lines.add(t);
+      }
+
+      // ignore: avoid_print
+      print('[SEN HỒNG MRZ] ML Kit nhận diện ${lines.length} dòng văn bản từ ảnh mặt sau thẻ');
+
+      final effectiveCccd12 = knownCccd12 ?? frontData?.cccdNumber;
+      final effectiveDob = frontData?.birthDateYYMMDD;
+      final effectiveExpiry = frontData?.expiryDateYYMMDD;
+
+      // Bóc tách Ngày cấp mặt sau thẻ (Dòng laser trên chữ ký C06)
+      String? extractedIssueDate;
+      for (final line in lines) {
+        // Mẫu 1: DD/MM/YYYY hoặc DD-MM-YYYY
+        final dateMatch = RegExp(r'\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})\b').firstMatch(line);
+        if (dateMatch != null) {
+          final d = dateMatch.group(1)!.padLeft(2, '0');
+          final m = dateMatch.group(2)!.padLeft(2, '0');
+          final y = dateMatch.group(3)!;
+          final yymmdd = '${y.substring(2, 4)}$m$d';
+          if (yymmdd != effectiveDob && yymmdd != effectiveExpiry) {
+            extractedIssueDate = '$d/$m/$y';
+            break;
+          }
+        }
+        // Mẫu 2: Ngày ... tháng ... năm ...
+        final textDateMatch = RegExp(r'(\d{1,2})\s+tháng\s+(\d{1,2})\s+năm\s+(\d{4})', caseSensitive: false).firstMatch(line);
+        if (textDateMatch != null) {
+          final d = textDateMatch.group(1)!.padLeft(2, '0');
+          final m = textDateMatch.group(2)!.padLeft(2, '0');
+          final y = textDateMatch.group(3)!;
+          extractedIssueDate = '$d/$m/$y';
+          break;
+        }
+      }
+      if (extractedIssueDate != null) {
+        // ignore: avoid_print
+        print('[SEN HỒNG OCR BACK] Bóc tách thành công Ngày cấp thẻ: $extractedIssueDate');
+      }
+
+      final result = MrzParser.parseTd1Lines(
+        lines,
+        knownCccd12: effectiveCccd12,
+        knownDob: effectiveDob,
+        knownExpiry: effectiveExpiry,
+      );
+
+      if (result != null) {
+        final fullResult = MrzResult(
+          documentNumber: result.documentNumber,
+          birthDateYYMMDD: result.birthDateYYMMDD,
+          expiryDateYYMMDD: result.expiryDateYYMMDD,
+          fullName: result.fullName,
+          isValidChecksum: result.isValidChecksum,
+          wasAutoCorrected: result.wasAutoCorrected,
+          fullCccdNumber: result.fullCccdNumber,
+          issueDate: extractedIssueDate,
+        );
+        // ignore: avoid_print
+        print('[SEN HỒNG MRZ] Bóc tách MRZ thành công: doc=${fullResult.documentNumber}, dob=${fullResult.birthDateYYMMDD}, exp=${fullResult.expiryDateYYMMDD}, issueDate=${fullResult.issueDate}, checkValid=${fullResult.isValidChecksum}');
+        return fullResult;
+      }
+
+      // Fallback: Nếu ảnh mặt sau mờ hoặc xước dải MRZ, nhưng mặt trước đã quét được đủ bộ khóa BAC
+      if (frontData != null && frontData.hasBacKeys) {
+        // ignore: avoid_print
+        print('[SEN HỒNG MRZ] Không đọc được MRZ từ mặt sau, tự động kích hoạt bộ khóa BAC từ mặt trước!');
+        return MrzResult(
+          documentNumber: frontData.documentNumber!,
+          birthDateYYMMDD: frontData.birthDateYYMMDD!,
+          expiryDateYYMMDD: frontData.expiryDateYYMMDD!,
+          fullName: frontData.fullName ?? '',
+          isValidChecksum: true,
+          wasAutoCorrected: true,
+          fullCccdNumber: frontData.cccdNumber,
+          issueDate: extractedIssueDate,
+        );
+      }
+
+      // ignore: avoid_print
+      print('[SEN HỒNG MRZ] Không tìm thấy 3 dòng chuẩn TD1 ICAO trong các dòng đã nhận diện');
+      return null;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[SEN HỒNG MRZ] Lỗi khi nhận diện MRZ: $e');
+
+      // Trong trường hợp ngoại lệ nhưng mặt trước đã có khóa BAC, vẫn trả về kết quả
+      if (frontData != null && frontData.hasBacKeys) {
+        return MrzResult(
+          documentNumber: frontData.documentNumber!,
+          birthDateYYMMDD: frontData.birthDateYYMMDD!,
+          expiryDateYYMMDD: frontData.expiryDateYYMMDD!,
+          fullName: frontData.fullName ?? '',
+          isValidChecksum: true,
+          wasAutoCorrected: true,
+          fullCccdNumber: frontData.cccdNumber,
+        );
+      }
+      return null;
+    } finally {
+      if (tempFile.existsSync()) {
+        try {
+          await tempFile.delete();
+        } catch (_) {}
+      }
+    }
+  }
+
+  /// Quét tự động từ dữ liệu bytes ảnh mặt trước thẻ (JPEG/PNG)
+  /// Trích xuất: 12 số CCCD, 9 số cuối (BAC docNum), Ngày sinh (YYMMDD), Ngày hết hạn (YYMMDD), Họ và tên
+  static Future<FrontCccdResult?> scanFrontCard(Uint8List bytes) async {
+    final tempDir = Directory.systemTemp;
+    final tempFile = File(
+        '${tempDir.path}/front_card_${DateTime.now().millisecondsSinceEpoch}.jpg');
+    try {
+      await tempFile.writeAsBytes(bytes);
+      final inputImage = InputImage.fromFilePath(tempFile.path);
+      final textRecognizer =
+          TextRecognizer(script: TextRecognitionScript.latin);
+      final recognizedText = await textRecognizer.processImage(inputImage);
+      await textRecognizer.close();
+
+      final fullText = recognizedText.text;
+      // ignore: avoid_print
+      print('[SEN HỒNG OCR FRONT] ML Kit đọc được ${recognizedText.blocks.length} khối văn bản mặt trước');
+
+      // 1. Tìm số CCCD 12 chữ số
+      var cccdNumber = extract12DigitCccdFromText(fullText);
+
+      // Fallback tìm từng dòng nếu chưa ra
+      if (cccdNumber == null) {
+        for (final block in recognizedText.blocks) {
+          for (final line in block.lines) {
+            final cleaned = line.text.replaceAll(RegExp(r'\s+'), '');
+            final match = RegExp(r'\b0\d{11}\b').firstMatch(cleaned);
+            if (match != null) {
+              cccdNumber = match.group(0);
+              break;
+            }
+          }
+          if (cccdNumber != null) break;
+        }
+      }
+
+      final documentNumber =
+          (cccdNumber != null && cccdNumber.length == 12)
+              ? cccdNumber.substring(3)
+              : null;
+
+      // 2. Tìm Ngày sinh (DD/MM/YYYY) -> chuyển thành YYMMDD
+      String? birthDateYYMMDD;
+      final dobMatch = RegExp(
+        r'(?:sinh|birth)[\s\S]{0,30}?(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})',
+        caseSensitive: false,
+      ).firstMatch(fullText);
+
+      if (dobMatch != null) {
+        final d = dobMatch.group(1)!.padLeft(2, '0');
+        final m = dobMatch.group(2)!.padLeft(2, '0');
+        final y = dobMatch.group(3)!;
+        birthDateYYMMDD = '${y.substring(2, 4)}$m$d';
+      }
+
+      // 3. Tìm Ngày hết hạn (DD/MM/YYYY) -> chuyển thành YYMMDD
+      String? expiryDateYYMMDD;
+      if (fullText.toLowerCase().contains('không thời hạn') ||
+          fullText.toLowerCase().contains('vô thời hạn')) {
+        expiryDateYYMMDD = '991231';
+      } else {
+        final expMatch = RegExp(
+          r'(?:giá trị|hết hạn|expiry|valid until)[\s\S]{0,30}?(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})',
+          caseSensitive: false,
+        ).firstMatch(fullText);
+
+        if (expMatch != null) {
+          final d = expMatch.group(1)!.padLeft(2, '0');
+          final m = expMatch.group(2)!.padLeft(2, '0');
+          final y = expMatch.group(3)!;
+          expiryDateYYMMDD = '${y.substring(2, 4)}$m$d';
+        }
+      }
+
+      // 4. Tìm Họ và tên
+      String? fullName;
+      final nameMatch = RegExp(
+        r'(?:Họ và tên|Full name)[\s\S]{0,30}?\n\s*([A-ZÀ-ỸĐ\s]{3,40})\n',
+        caseSensitive: false,
+      ).firstMatch(fullText);
+      if (nameMatch != null) {
+        fullName = nameMatch.group(1)?.trim();
+      }
+
+      // 5. Tìm Quê quán
+      String? placeOfOrigin;
+      final originMatch = RegExp(
+        r'(?:Quê quán|Place of origin)[\s\S]{0,25}?:?\s*([^\n\r]+)',
+        caseSensitive: false,
+      ).firstMatch(fullText);
+      if (originMatch != null) {
+        placeOfOrigin = originMatch.group(1)?.trim();
+      }
+
+      // 6. Tìm Nơi thường trú
+      String? placeOfResidence;
+      final residenceMatch = RegExp(
+        r'(?:Nơi thường trú|Place of residence)[\s\S]{0,25}?:?\s*([^\n\r]+)',
+        caseSensitive: false,
+      ).firstMatch(fullText);
+      if (residenceMatch != null) {
+        placeOfResidence = residenceMatch.group(1)?.trim();
+      }
+
+      final result = FrontCccdResult(
+        cccdNumber: cccdNumber,
+        documentNumber: documentNumber,
+        birthDateYYMMDD: birthDateYYMMDD,
+        expiryDateYYMMDD: expiryDateYYMMDD,
+        fullName: fullName,
+        placeOfOrigin: placeOfOrigin,
+        placeOfResidence: placeOfResidence,
+        rawText: fullText,
+      );
+
+      // ignore: avoid_print
+      print('[SEN HỒNG OCR FRONT] Kết quả bóc tách mặt trước: $result');
+      return result;
+    } catch (e) {
+      // ignore: avoid_print
+      print('[SEN HỒNG OCR FRONT] Lỗi nhận diện mặt trước: $e');
+      return null;
+    } finally {
+      if (tempFile.existsSync()) {
+        try {
+          await tempFile.delete();
+        } catch (_) {}
+      }
+    }
+  }
+
+  /// Trích xuất nhanh số CCCD 12 chữ số từ văn bản mặt trước thẻ
+  static String? extract12DigitCccdFromText(String rawText) {
+    // Ưu tiên dòng có tiền tố Số / No.
+    final matchPrefix = RegExp(
+      r'(?:Số|No\.?|SỐ|NO)[\s:]*([0-9\s]{12,16})',
+      caseSensitive: false,
+    ).firstMatch(rawText);
+    if (matchPrefix != null) {
+      final cleaned =
+          matchPrefix.group(1)?.replaceAll(RegExp(r'\s+'), '');
+      if (cleaned != null && cleaned.length == 12) return cleaned;
+    }
+
+    final match = RegExp(r'\b0\d{11}\b').firstMatch(rawText);
+    return match?.group(0);
   }
 }

@@ -131,25 +131,31 @@ public class NotificationConsumer {
             recipient = walletId;
         }
 
-        String title = "Biến động số dư: " + operation;
+        boolean isOverdraftLimit = "OVERDRAFT_LIMIT".equalsIgnoreCase(event.getType());
+        String title = isOverdraftLimit ? "Hạn mức thấu chi: Cấp thành công" : ("Biến động số dư: " + operation);
         String sign = isDeduct ? "-" : "+";
         String resultLabel = reversal ? "GD hoàn tiền" : "GD thành công";
         StringBuilder body = new StringBuilder();
-        body.append(String.format("TK %s %s. PS: %s%s %s. SD: %s %s",
-                recipient, resultLabel, sign, amount, currency, balance, currency));
+        if (isOverdraftLimit) {
+            body.append(String.format("TK %s được cấp hạn mức tín dụng thấu chi: +%s %s. Tổng khả dụng mới: %s %s.",
+                    recipient, amount, currency, balance, currency));
+        } else {
+            body.append(String.format("TK %s %s. PS: %s%s %s. SD: %s %s",
+                    recipient, resultLabel, sign, amount, currency, balance, currency));
 
-        String resolvedCounterpartyUserId = hasText(counterpartyUserId) ? counterpartyUserId
-                : (hasText(counterpartyWalletId) ? userPhoneResolver.resolveUserIdByWalletId(counterpartyWalletId) : null);
-        String counterparty = hasText(counterpartyPhone) ? counterpartyPhone
-                : userPhoneResolver.resolve(resolvedCounterpartyUserId);
-        if (!hasText(counterparty) && hasText(counterpartyWalletId)) {
-            counterparty = userPhoneResolver.resolvePhoneByWalletId(counterpartyWalletId);
-        }
-        if (!hasText(counterparty)) {
-            counterparty = counterpartyWalletId;
-        }
-        if (hasText(counterparty)) {
-            body.append(isDeduct ? " - Đến: " : " - Từ: ").append(counterparty);
+            String resolvedCounterpartyUserId = hasText(counterpartyUserId) ? counterpartyUserId
+                    : (hasText(counterpartyWalletId) ? userPhoneResolver.resolveUserIdByWalletId(counterpartyWalletId) : null);
+            String counterparty = hasText(counterpartyPhone) ? counterpartyPhone
+                    : userPhoneResolver.resolve(resolvedCounterpartyUserId);
+            if (!hasText(counterparty) && hasText(counterpartyWalletId)) {
+                counterparty = userPhoneResolver.resolvePhoneByWalletId(counterpartyWalletId);
+            }
+            if (!hasText(counterparty)) {
+                counterparty = counterpartyWalletId;
+            }
+            if (hasText(counterparty)) {
+                body.append(isDeduct ? " - Đến: " : " - Từ: ").append(counterparty);
+            }
         }
         if (hasText(event.getNote())) {
             body.append(" - ND: ").append(event.getNote());
@@ -199,7 +205,8 @@ public class NotificationConsumer {
         if (existingOpt.isPresent()) {
             com.fintech.notification.entity.Notification existing = existingOpt.get();
             boolean isRicher = (hasText(event.getNote()) && (existing.getBody() == null || !existing.getBody().contains(event.getNote())))
-                    || ("TRANSFER".equalsIgnoreCase(event.getType()) && (existing.getTitle() != null && !existing.getTitle().toLowerCase().contains("chuyển tiền")));
+                    || ("TRANSFER".equalsIgnoreCase(event.getType()) && (existing.getTitle() != null && !existing.getTitle().toLowerCase().contains("chuyển tiền")))
+                    || (event.getTargetBalanceAfter() != null && (existing.getBody() == null || existing.getBody().contains("SD: 0 VND")));
             if (isRicher) {
                 existing.setTitle(title);
                 existing.setBody(bodyText);
@@ -257,11 +264,11 @@ public class NotificationConsumer {
         data.put("type", payloadType);
         data.put("status", hasText(event.getStatus()) ? event.getStatus().toUpperCase() : "SUCCESS");
         data.put("walletId", nullSafe(walletId));
-        data.put("transactionAmount", String.valueOf(displayAmount));
-        data.put("amount", String.valueOf(displayAmount));
+        data.put("transactionAmount", displayAmount != null ? displayAmount.toPlainString() : "0");
+        data.put("amount", displayAmount != null ? displayAmount.toPlainString() : "0");
         data.put("currency", currency);
         data.put("transactionCurrency", currency);
-        data.put("newBalance", String.valueOf(balanceValue));
+        data.put("newBalance", balanceValue != null ? balanceValue.toPlainString() : "0");
         data.put("timestamp", (event.getOccurredAt() != null ? event.getOccurredAt() : Instant.now()).toString());
         data.put("note", nullSafe(event.getNote()));
         data.put("title", title);
@@ -292,6 +299,7 @@ public class NotificationConsumer {
             case "WITHDRAWAL":
                 return "Rút tiền";
             case "DEPOSIT":
+            case "CASH_DEPOSIT":
                 return "Nạp tiền";
             case "REVERSAL":
                 return "Hoàn tiền";
@@ -299,6 +307,8 @@ public class NotificationConsumer {
                 return "Thanh toán hoá đơn";
             case "TOPUP":
                 return "Nạp tiền điện thoại";
+            case "OVERDRAFT_LIMIT":
+                return "Cấp hạn mức thấu chi";
             default:
                 return "Giao dịch";
         }
@@ -307,6 +317,9 @@ public class NotificationConsumer {
     private String payloadType(String type, boolean isDeduct) {
         if ("TRANSFER".equalsIgnoreCase(type)) {
             return isDeduct ? "TRANSFER_OUT" : "TRANSFER_IN";
+        }
+        if ("OVERDRAFT_LIMIT".equalsIgnoreCase(type)) {
+            return "OVERDRAFT_LIMIT";
         }
         return type != null ? type.toUpperCase() : "TRANSACTION";
     }

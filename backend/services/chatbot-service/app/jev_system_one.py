@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Dict, Any, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
-from app.vietnamese_nlp import normalize_vietnamese_query, strip_vietnamese_accents
+from app.vietnamese_nlp import normalize_vietnamese_query, strip_vietnamese_accents, detect_query_topic
 
 logger = logging.getLogger("jev_system_one")
 
@@ -27,6 +27,7 @@ class IntentChoice(str, Enum):
     CARDS_INQUIRY = "CARDS_INQUIRY"             # Tra cứu thẻ Visa, thẻ ngân hàng cá nhân
     SAVINGS_INQUIRY = "SAVINGS_INQUIRY"         # Tra cứu sổ tiết kiệm cá nhân đang gửi
     LOANS_INQUIRY = "LOANS_INQUIRY"             # Tra cứu khoản vay cá nhân và lịch trả nợ
+    REMINDERS_INQUIRY = "REMINDERS_INQUIRY"     # Tra cứu lịch tài chính, nhắc nhở định kỳ cá nhân
     FINANCIAL_OVERVIEW = "FINANCIAL_OVERVIEW"   # Tổng quan tài chính 360 độ cá nhân
     POLICY_RAG = "POLICY_RAG"                   # Tra cứu biểu phí, lãi suất, quy định QĐ 2345
     ACTION_NAVIGATION = "ACTION_NAVIGATION"     # Yêu cầu thực hiện hành động (chuyển tiền, mở thẻ, gửi tiết kiệm)
@@ -43,6 +44,7 @@ class GateAction(str, Enum):
     DIVERT_INTERNAL_CARDS = "DIVERT_INTERNAL_CARDS"     # Rẽ nhánh sang microservice thẻ cá nhân
     DIVERT_INTERNAL_SAVINGS = "DIVERT_INTERNAL_SAVINGS" # Rẽ nhánh sang microservice sổ tiết kiệm cá nhân
     DIVERT_INTERNAL_LOANS = "DIVERT_INTERNAL_LOANS"     # Rẽ nhánh sang microservice khoản vay cá nhân
+    DIVERT_INTERNAL_REMINDERS = "DIVERT_INTERNAL_REMINDERS" # Rẽ nhánh sang hệ thống nhắc nhở tài chính cá nhân hóa
     DIVERT_INTERNAL_OVERVIEW = "DIVERT_INTERNAL_OVERVIEW" # Rẽ nhánh tổng quan tài chính 360 độ
     INTERCEPT_EMERGENCY = "INTERCEPT_EMERGENCY"         # Kích hoạt quy trình khóa tài khoản khẩn cấp
     BLOCK_CREDENTIAL_THEFT = "BLOCK_CREDENTIAL_THEFT"   # Chặn câu hỏi đòi/cung cấp thông tin nhạy cảm
@@ -60,6 +62,7 @@ class JevDecision(BaseModel):
     score: float = Field(..., ge=0.0, le=1.0, description="Độ tin cậy của lựa chọn (Calibrated Score)")
     risk_score: float = Field(..., ge=0.0, le=1.0, description="Xác suất rủi ro bảo mật (Risk Assessment)")
     gate_action: GateAction = Field(..., description="Hành động gác cổng phần mềm được kích hoạt")
+    domain: Optional[str] = Field(None, description="Chủ đề nghiệp vụ từ detect_query_topic (LOANS, SAVINGS, PHI_HAN_MUC...) để tái sử dụng cho domain filter RAG")
     suggested_route: Optional[str] = Field(None, description="Đường dẫn điều hướng trên App (nếu có)")
     suggested_label: Optional[str] = Field(None, description="Nhãn nút bấm gợi ý")
     execution_time_ms: float = Field(..., description="Thời gian thực thi của System One (< 15ms)")
@@ -143,6 +146,50 @@ class JevSystemOneGatekeeper:
                 "bạn là ai",
                 "bạn tên gì",
                 "chúc một ngày tốt lành"
+            ],
+            IntentChoice.REMINDERS_INQUIRY: [
+                "nhắc nhở tài chính của tôi",
+                "các lời nhắc thanh toán của tôi",
+                "tôi có hóa đơn nào sắp tới không",
+                "lịch thanh toán tiền điện nước của tôi",
+                "nhắc nhở hạn trả nợ và thẻ của tôi"
+            ],
+            # Bổ sung prototype cho 5 intent trước đây không có vector mẫu (chỉ dựa heuristic)
+            IntentChoice.PROFILE_INQUIRY: [
+                "hồ sơ cá nhân của tôi có gì",
+                "xem thông tin tài khoản và eKYC của tôi",
+                "số điện thoại đăng ký của tôi là gì",
+                "trình trạng định danh danh tính của tôi",
+                "tôi đã xác thực eKYC chưa",
+                "cấp độ tài khoản của tôi là gì"
+            ],
+            IntentChoice.CARDS_INQUIRY: [
+                "danh sách thẻ của tôi có những thẻ nào",
+                "thẻ visa của tôi đang hoạt động không",
+                "xem các thẻ ngân hàng liên kết của tôi",
+                "thẻ ảo của tôi hạn mức bao nhiêu",
+                "thẻ của tôi còn hiệu lực đến khi nào"
+            ],
+            IntentChoice.SAVINGS_INQUIRY: [
+                "các sổ tiết kiệm của tôi đang gửi",
+                "sổ tiết kiệm của tôi đáo hạn khi nào",
+                "tôi đang gửi bao nhiêu sổ tiết kiệm",
+                "tiền gửi tiết kiệm của tôi sinh lời bao nhiêu",
+                "xem danh mục tiền gửi của tôi"
+            ],
+            IntentChoice.LOANS_INQUIRY: [
+                "khoản vay của tôi còn bao nhiêu",
+                "lịch trả nợ khoản vay của tôi",
+                "tôi đang vay bao nhiêu tiền",
+                "hợp đồng vay của tôi thế nào",
+                "kỳ trả góp tiếp theo của tôi là ngày nào"
+            ],
+            IntentChoice.FINANCIAL_OVERVIEW: [
+                "tổng quan tài chính của tôi",
+                "tôi có tổng bao nhiêu tài sản ở sen hồng",
+                "báo cáo tài chính cá nhân của tôi",
+                "toàn bộ ví thẻ tiết kiệm và khoản vay của tôi",
+                "tình hình tài chính hiện tại của tôi thế nào"
             ]
         }
         self.prototype_embeddings: Dict[IntentChoice, List[List[float]]] = {}
@@ -276,13 +323,19 @@ class JevSystemOneGatekeeper:
             "smart otp", "chữ ký số", "chu ky so", "soft otp", "cách đăng ký smart otp", "nâng hạn mức", "nang han muc"
         ]) and not any(w in q_lower for w in ["của tôi là", "của em là", "cho xin", "gửi mã", "xin mã"])
 
-        # Phân biệt câu hỏi về cơ chế kỹ thuật chống mất tiền/Saga với sự cố khách hàng bị mất tiền thật
+        # Phân biệt câu hỏi về cơ chế kỹ thuật chống mất tiền/Saga hoặc hỏi về mất tiền lãi khi rút trước hạn với sự cố khách hàng bị mất tiền thật
+        is_safe_loss_inquiry = any(w in q_lower or w in q_no_accent for w in [
+            "tiền lãi", "tien lai", "mất hết tiền lãi", "mat het tien lai", "mất tiền lãi", "mất lãi", "mat lai",
+            "có bị mất tiền không", "co bi mat tien khong", "có mất tiền không", "co mat tien khong",
+            "tiền có bị mất không", "tien co bi mat khong", "liệu có bị mất tiền", "lieu co bi mat tien"
+        ])
+
         is_anti_loss_or_architecture = any(w in q_lower or w in q_no_accent for w in [
             "chống mất tiền", "chong mat tien", "ngăn mất tiền", "ngan mat tien", "tránh mất tiền", "tranh mat tien",
             "saga", "kiến trúc", "kien truc", "microservice", "outbox", "ledger", "sổ cái kép", "so cai kep"
         ])
 
-        if not is_device_support and not is_pin_change_or_reset and not is_smart_otp_or_policy and not is_anti_loss_or_architecture:
+        if not is_device_support and not is_pin_change_or_reset and not is_smart_otp_or_policy and not is_anti_loss_or_architecture and not is_safe_loss_inquiry:
             if any(w in q_lower or w in q_no_accent for w in ["otp", "mã pin", "pin", "mật khẩu", "password", "cvv", "cvc"]):
                 risk_score += 0.70
             if any(w in q_lower or w in q_no_accent for w in ["lừa đảo", "lua dao", "bị hack", "tôi bị mất tiền", "vừa bị mất tiền", "mất hết tiền", "chiếm quyền"]):
@@ -337,19 +390,31 @@ class JevSystemOneGatekeeper:
             "toi dang", "tôi đang", "hien tai cua toi", "hiện tại của tôi", "cua ban than", "của bản thân"
         ])
 
+        # Nhận diện thắc mắc về Chuyển tiền hoặc Tra soát treo tiền (để không bị nhầm sang tra cứu thẻ)
+        is_transfer_or_dispute_context = any(k in q_lower or k in q_no_accent for k in [
+            "chuyển khoản", "chuyen khoan", "chuyển tiền", "chuyen tien",
+            "chưa nhận được", "chua nhan duoc", "bị trừ tiền", "bi tru tien",
+            "treo tiền", "treo tien", "tiền bị treo", "tra soát", "tra soat",
+            "khiếu nại", "khieu nai", "tiền chưa tới", "chuyển nhầm"
+        ])
+
         q_no_spaced = f" {q_no_accent} "
         is_card_word = (
-            any(w in q_lower for w in ["thẻ", "visa", "ecard", "mastercard", "napas"]) or
+            (any(w in q_lower for w in ["thẻ", "visa", "ecard", "mastercard"]) or
+             ("napas" in q_lower and not is_transfer_or_dispute_context)) or
             (any(w in q_no_spaced for w in [" the ", " the-", " visa ", " ecard "]) and not any(e in q_no_accent for e in ["the nao", "co the", "thay the"]))
         )
 
         is_advisory_or_simulation = any(w in q_lower or w in q_no_accent for w in [
             "neu toi", "nếu tôi", "gia su", "giả sử",
-            "nen gui", "nên gửi", "tu van", "tư vấn", "loi khuyen", "lời khuyên", "khuyen toi", "khuyên tôi",
+            "nen gui", "nên gửi", "nen vay", "nên vay", "tu van", "tư vấn", "loi khuyen", "lời khuyên", "khuyen toi", "khuyên tôi",
             "hay chia", "chia nho", "chia nhỏ", "chia ra", "linh hoat", "linh hoạt",
-            "so sanh", "so sánh", "khac gi", "khác gì", "tot hon", "tốt hơn", "loi hon", "lợi hơn",
+            "so sanh", "so sánh", "khac gi", "khác gì", "tot hon", "tốt hơn", "loi hon", "lợi hơn", "hay la", "hay là",
+            "thau chi", "thấu chi", "tat toan", "tất toán", "dao han", "đáo hạn", "ket tien", "kẹt tiền",
             "may thang", "mấy tháng", "ky han nao", "kỳ hạn nào", "lai cao nhat", "lãi cao nhất",
             "cach tinh", "cách tính", "tinh lai", "tính lãi", "cong thuc", "công thức",
+            "tu no", "tự nó", "tu nso", "10 nam", "10 năm", "vai nam", "vài năm", "lai kep", "lãi kép",
+            "lai suat vay", "lãi suất vay", "tien trong tai khoan", "tiền trong tài khoản",
             "muon gui", "muốn gửi", "dinh gui", "định gửi", "du dinh", "dự định",
             "muon vay", "muốn vay", "dinh vay", "định vay", "du dinh vay", "dự định vay",
             "dieu kien", "điều kiện", "thu tuc", "thủ tục", "moi thang tra bao nhieu", "mỗi tháng trả bao nhiêu",
@@ -365,7 +430,7 @@ class JevSystemOneGatekeeper:
             "alias của tôi", "biệt danh của tôi", "biet danh cua toi", "hạn mức giao dịch của tôi", "hồ sơ cá nhân", "ho so ca nhan"
         ])
 
-        is_personal_cards = (not is_advisory_or_simulation) and ((any(k in q_no_accent for k in [
+        is_personal_cards = (not is_advisory_or_simulation) and (not is_transfer_or_dispute_context) and ((any(k in q_no_accent for k in [
             "the cua toi", "the cua minh", "the cua em", "the dang dung", "the dang mo", "the dang hoat dong",
             "the lien ket", "ngan hang lien ket", "danh sach the"
         ]) or (has_self_ref and is_card_word and any(k in q_no_accent for k in ["co", "nao", "gi", "xem", "danh sach", "bao nhieu"]))) and not any(k in q_lower for k in ["hướng dẫn mở", "phí phát hành", "cách mở thẻ", "làm thẻ mới", "khóa thẻ"]))
@@ -379,6 +444,20 @@ class JevSystemOneGatekeeper:
             "khoan vay cua toi", "khoan vay hien tai", "du no cua toi", "hop dong vay cua toi",
             "lich tra no cua toi", "no cua toi", "vay cua toi", "tien no cua toi", "tien vay cua toi", "du no hien tai"
         ]) or (has_self_ref and any(k in q_no_accent for k in ["khoan vay", "vay", "du no", "tien no", "hop dong vay", "no"]) and any(k in q_no_accent for k in ["co", "nao", "gi", "xem", "the nao", "bao nhieu", "hien tai"]))) and not any(k in q_lower for k in ["điều kiện vay", "hướng dẫn vay", "lãi suất vay"]))
+
+        is_options_query = any(k in q_lower or k in q_no_accent for k in ["phuong an", "phương án", "giai phap", "giải pháp"])
+        is_personal_reminders = (not is_advisory_or_simulation) and (not is_options_query) and (
+            any(k in q_lower or k in q_no_accent for k in [
+                "nhac nho cua toi", "nhắc nhở của tôi", "loi nhac cua toi", "lời nhắc của tôi",
+                "lich tai chinh cua toi", "lịch tài chính của tôi", "lich thanh toan cua toi", "lịch thanh toán của tôi",
+                "hoa don cua toi", "hóa đơn của tôi", "cac loi nhac", "các lời nhắc",
+                "nhac nho toi", "nhắc nhở tôi", "nhac toi", "nhắc tôi"
+            ]) or (
+                has_self_ref and any(k in q_lower or k in q_no_accent for k in [
+                    "nhac nho", "nhắc nhở", "loi nhac", "lời nhắc", "lich thanh toan", "lịch thanh toán", "hoa don", "hóa đơn"
+                ])
+            )
+        )
 
         is_personal_overview = any(k in q_lower or k in q_no_accent for k in [
             "tổng quan tài chính", "tong quan tai chinh", "tóm tắt tài khoản", "tom tat tai khoan",
@@ -410,6 +489,10 @@ class JevSystemOneGatekeeper:
             risk_score = 0.0
         elif is_personal_loans:
             best_choice = IntentChoice.LOANS_INQUIRY
+            confidence = 0.99
+            risk_score = 0.0
+        elif is_personal_reminders:
+            best_choice = IntentChoice.REMINDERS_INQUIRY
             confidence = 0.99
             risk_score = 0.0
         elif is_loan_keyword:
@@ -481,6 +564,32 @@ class JevSystemOneGatekeeper:
             best_choice = IntentChoice.SECURITY_EMERGENCY
             confidence = 0.98
 
+        # Phòng vệ vector path: intent tra cứu dữ liệu cá nhân chỉ được giữ khi câu hỏi
+        # thực sự có tín hiệu sở hữu cá nhân (của tôi/xem/danh sách...) HOẶC điểm vector đủ cao.
+        # Tránh trường hợp câu hỏi chính sách ("hạn mức rút tiền ATM") bị prototype mới
+        # kéo về nhánh tra cứu thẻ với confidence rất thấp (~0.1).
+        personal_inquiry_intents = {
+            IntentChoice.PROFILE_INQUIRY,
+            IntentChoice.CARDS_INQUIRY,
+            IntentChoice.SAVINGS_INQUIRY,
+            IntentChoice.LOANS_INQUIRY,
+            IntentChoice.FINANCIAL_OVERVIEW,
+            IntentChoice.REMINDERS_INQUIRY,
+        }
+        if (
+            best_choice in personal_inquiry_intents
+            and confidence < 0.35
+            and not is_personal_overview
+            and not is_personal_profile
+            and not is_personal_cards
+            and not is_personal_savings
+            and not is_personal_loans
+            and not is_personal_reminders
+            and not has_self_ref
+        ):
+            best_choice = IntentChoice.POLICY_RAG
+            confidence = 0.85
+
         # 3. Quyết định hành động gác cổng (GateAction)
         gate_action = GateAction.ALLOW_RAG
         suggested_route = None
@@ -520,6 +629,12 @@ class JevSystemOneGatekeeper:
             gate_action = GateAction.DIVERT_INTERNAL_LOANS
             suggested_route = "/bills/quick-loan"
             suggested_label = "Khoản vay của tôi"
+
+        elif best_choice == IntentChoice.REMINDERS_INQUIRY or is_personal_reminders:
+            # Gác cổng Zero-PII Leak: Lời nhắc tài chính cá nhân hóa & lịch chi tiêu sinh hoạt
+            gate_action = GateAction.DIVERT_INTERNAL_REMINDERS
+            suggested_route = "/profile"
+            suggested_label = "Lịch tài chính & Nhắc nhở"
 
         elif best_choice == IntentChoice.TRANSACTION_HISTORY and is_transaction_keyword:
             # Gác cổng Zero-PII Leak: Lấy trực tiếp từ payment-service & identity-service
@@ -671,11 +786,15 @@ class JevSystemOneGatekeeper:
 
         elapsed_ms = (time.time() - start) * 1000
 
+        # Gắn kèm domain nghiệp vụ (hàm thuần) để dispatcher tái sử dụng cho domain filter RAG
+        rag_domain = detect_query_topic(q_clean)
+
         decision = JevDecision(
             choice=best_choice,
             score=round(confidence, 4),
             risk_score=round(risk_score, 4),
             gate_action=gate_action,
+            domain=rag_domain,
             suggested_route=suggested_route,
             suggested_label=suggested_label,
             execution_time_ms=round(elapsed_ms, 2)

@@ -81,9 +81,9 @@ export function AccountManagement({ staff }: AccountManagementProps) {
       return;
     }
     const bom = '\ufeff';
-    const header = 'STT,Họ và Tên,Số Điện Thoại,Số Tài Khoản,Mã Ví (WalletId),Số Dư (VND),Hạn Mức Thấu Chi (VND),Trạng Thái,Cấp Độ eKYC,Thời Gian Mở\n';
+    const header = 'STT,Họ và Tên,Số Điện Thoại,Số Tài Khoản,Mã Ví,Số Dư Thực Tế (VND),Hạn Mức Thấu Chi (VND),Tổng Khả Dụng (VND),Trạng Thái,Cấp Độ eKYC,Thời Gian Mở\n';
     const rows = accounts.map((acc, idx) =>
-      `${idx + 1},"${acc.customerName}","${acc.phoneNumber}","${acc.accountNumber}","${acc.walletId}",${acc.balance},${acc.overdraftLimit || 0},"${acc.status}","${acc.kycTier}","${acc.createdAt || ''}"`
+      `${idx + 1},"${acc.customerName}","${acc.phoneNumber}","${acc.accountNumber}","${acc.walletId}",${acc.balance || 0},${acc.overdraftLimit || 0},${(acc.balance || 0) + (acc.overdraftLimit || 0)},"${acc.status}","${acc.kycTier}","${acc.createdAt || ''}"`
     ).join('\n');
     const blob = new Blob([bom + header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
@@ -99,9 +99,12 @@ export function AccountManagement({ staff }: AccountManagementProps) {
   // Tính năng 4.1: Cấp / thu hồi hạn mức thấu chi cho ví khách hàng (0 - 200 triệu VND)
   const handleSetOverdraftLimit = async (account: AdminAccount) => {
     const input = window.prompt(
-      `Cấp hạn mức thấu chi cho ví của ${account.customerName} (${account.phoneNumber}).\n` +
-      `Số dư khả dụng = Số dư + Hạn mức thấu chi. Nhập 0 để thu hồi hạn mức (hiện tại: ${(account.overdraftLimit || 0).toLocaleString('vi-VN')} VND):`,
-      String(account.overdraftLimit || 20000000)
+      `Cấp/điều chỉnh hạn mức tín dụng thấu chi cho ví của ${account.customerName} (${account.phoneNumber}).\n\n` +
+      `LƯU Ý: Hạn mức thấu chi là khoản cấp tín dụng cho phép chi tiêu vượt số dư, KHÔNG PHẢI nạp tiền mặt vào ví.\n` +
+      `Số dư thực tế hiện tại: ${(account.balance || 0).toLocaleString('vi-VN')} VND\n` +
+      `Hạn mức thấu chi hiện tại: ${(account.overdraftLimit || 0).toLocaleString('vi-VN')} VND\n\n` +
+      `Nhập hạn mức thấu chi mới (Nhập 0 để thu hồi):`,
+      String(account.overdraftLimit || 0)
     );
     if (input === null) return;
     const limit = Number(input);
@@ -138,6 +141,47 @@ export function AccountManagement({ staff }: AccountManagementProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderKycBadge = (tier?: string) => {
+    const t = (tier || '').toUpperCase();
+    if (t === 'VERIFIED_BIOMETRIC' || t === 'TIER_2' || t === 'BIOMETRIC') {
+      return (
+        <span className="badge badge-emerald" style={{ fontSize: '11px', padding: '3px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <CheckCircle2 size={11} />
+          <span>NFC / Sinh trắc</span>
+        </span>
+      );
+    }
+    if (t === 'VERIFIED') {
+      return (
+        <span className="badge badge-emerald" style={{ fontSize: '11px', padding: '3px 8px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+          <CheckCircle2 size={11} />
+          <span>Đã xác thực</span>
+        </span>
+      );
+    }
+    if (t === 'TIER_1') {
+      return (
+        <span className="badge badge-cyan" style={{ fontSize: '11px', padding: '3px 8px' }}>
+          Cấp 1 (Căn cước)
+        </span>
+      );
+    }
+    return (
+      <span style={{
+        fontSize: '11px',
+        padding: '3px 8px',
+        borderRadius: '999px',
+        fontWeight: 600,
+        background: '#fef3c7',
+        color: '#92400e',
+        border: '1px solid #fcd34d',
+        display: 'inline-block'
+      }}>
+        Chưa định danh
+      </span>
+    );
   };
 
   return (
@@ -374,20 +418,21 @@ export function AccountManagement({ staff }: AccountManagementProps) {
         <table className="table" style={{ margin: 0, width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'var(--bg-card-subtle)', textAlign: 'left', borderBottom: '1px solid var(--border-color)' }}>
-              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700 }}>KHÁCH HÀNG</th>
-              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700 }}>SỐ ĐIỆN THOẠI</th>
-              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700 }}>MÃ TÀI KHOẢN VÍ</th>
-              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>SỐ DƯ KHẢ DỤNG</th>
-              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>THẤU CHI</th>
-              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>TIÊU CHUẨN KYC</th>
-              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>TRẠNG THÁI</th>
-              <th style={{ padding: '12px 16px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>THAO TÁC</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700 }}>KHÁCH HÀNG</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700 }}>SỐ ĐIỆN THOẠI</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700 }}>MÃ VÍ / SỐ TK</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>SỐ DƯ THỰC TẾ (VÍ)</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>HẠN MỨC THẤU CHI</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>TỔNG KHẢ DỤNG</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>TIÊU CHUẨN KYC</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>TRẠNG THÁI</th>
+              <th style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 700, textAlign: 'center' }}>THAO TÁC</th>
             </tr>
           </thead>
           <tbody>
             {accounts.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: 'var(--text-muted)', fontSize: '14px' }}>
                   Không tìm thấy tài khoản nào phù hợp với bộ lọc hiện tại.
                 </td>
               </tr>
@@ -395,41 +440,86 @@ export function AccountManagement({ staff }: AccountManagementProps) {
               accounts.map(acc => {
                 const isBlocked = acc.status === 'BLOCKED';
                 const isOverdrawn = (acc.balance || 0) < 0;
+                const availableTotal = (acc.balance || 0) + (acc.overdraftLimit || 0);
+
                 return (
                   <tr key={acc.walletId} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--primary-navy)' }}>{acc.customerName}</div>
-                      <div className="mono" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>UID: {acc.userId}</div>
+                    {/* 1. KHÁCH HÀNG */}
+                    <td style={{ padding: '12px 14px' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--primary-navy)', fontSize: '13px' }}>
+                        {acc.customerName}
+                      </div>
+                      <div className="mono" style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                        Mã: {acc.userId ? (acc.userId.length > 12 ? acc.userId.substring(0, 8) + '...' : acc.userId) : '—'}
+                      </div>
                     </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span className="mono" style={{ fontWeight: 600 }}>{acc.phoneNumber}</span>
-                    </td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span className="mono" style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {acc.accountNumber || acc.walletId}
+
+                    {/* 2. SỐ ĐIỆN THOẠI */}
+                    <td style={{ padding: '12px 14px' }}>
+                      <span className="mono" style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '12.5px' }}>
+                        {acc.phoneNumber || '—'}
                       </span>
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <span className="mono" style={{ fontWeight: 800, fontSize: '14px', color: isOverdrawn ? 'var(--danger-red)' : 'var(--primary-navy)' }}>
-                        {formatCurrency((acc.balance || 0) + (acc.overdraftLimit || 0))}
+
+                    {/* 3. MÃ VÍ / SỐ TK */}
+                    <td style={{ padding: '12px 14px' }}>
+                      <span className="mono" style={{ fontSize: '11.5px', color: 'var(--text-muted)' }} title={acc.walletId}>
+                        {acc.accountNumber && !acc.accountNumber.includes('-')
+                          ? acc.accountNumber
+                          : `...${acc.walletId.slice(-8)}`}
+                      </span>
+                    </td>
+
+                    {/* 4. SỐ DƯ THỰC TẾ (VÍ) */}
+                    <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                      <span className="mono" style={{
+                        fontWeight: 800,
+                        fontSize: '13.5px',
+                        color: isOverdrawn ? 'var(--danger-red)' : 'var(--primary-navy)'
+                      }}>
+                        {formatCurrency(acc.balance || 0)}
                       </span>
                       {isOverdrawn && (
-                        <div className="mono" style={{ fontSize: '10.5px', color: 'var(--danger-red)', marginTop: '2px' }}>
-                          Số dư: {formatCurrency(acc.balance)}
+                        <div style={{ fontSize: '10px', color: 'var(--danger-red)', fontWeight: 600, marginTop: '2px' }}>
+                          Dư nợ âm
                         </div>
                       )}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <span className={`mono badge ${(acc.overdraftLimit || 0) > 0 ? 'badge-emerald' : ''}`} style={{ fontSize: '11px', padding: '3px 8px', color: (acc.overdraftLimit || 0) > 0 ? 'var(--success-green)' : 'var(--text-muted)' }}>
-                        {(acc.overdraftLimit || 0) > 0 ? formatCurrency(acc.overdraftLimit) : 'Không cấp'}
-                      </span>
+
+                    {/* 5. HẠN MỨC THẤU CHI */}
+                    <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                      {(acc.overdraftLimit || 0) > 0 ? (
+                        <span className="mono badge badge-emerald" style={{ fontSize: '11px', padding: '3px 8px' }}>
+                          {formatCurrency(acc.overdraftLimit)}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>0 đ</span>
+                      )}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                      <span className="badge badge-emerald" style={{ fontSize: '11px', padding: '3px 8px' }}>
-                        {acc.kycTier || 'VERIFIED'}
+
+                    {/* 6. TỔNG KHẢ DỤNG */}
+                    <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                      <span className="mono" style={{
+                        fontWeight: 800,
+                        fontSize: '13.5px',
+                        color: 'var(--success-green)'
+                      }}>
+                        {formatCurrency(availableTotal)}
                       </span>
+                      {(acc.overdraftLimit || 0) > 0 && (
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Gốc: {formatCurrency(acc.balance || 0)} + TC
+                        </div>
+                      )}
                     </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+
+                    {/* 7. TIÊU CHUẨN KYC */}
+                    <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                      {renderKycBadge(acc.kycTier)}
+                    </td>
+
+                    {/* 8. TRẠNG THÁI */}
+                    <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                       <span className={`badge ${isBlocked ? 'badge-rose' : 'badge-emerald'}`} style={{ padding: '4px 10px', fontSize: '11px' }}>
                         {isBlocked ? 'ĐÃ KHÓA' : 'HOẠT ĐỘNG'}
                       </span>

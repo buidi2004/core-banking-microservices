@@ -1,0 +1,150 @@
+[
+  {
+    "mode": "domain_on",
+    "k": 4,
+    "recall_at_k": 0.6319,
+    "hit_rate_at_k": 0.7292,
+    "mrr": 0.5703,
+    "avg_latency_ms": 5.6,
+    "p95_latency_ms": 8.2,
+    "domain_route_accuracy": 0.7429,
+    "no_info_false_positive_rate": 1.0,
+    "empty_results": 0,
+    "per_domain_hit_rate": {
+      "ACCOUNT_OPENING_DOCS": {
+        "n": 4,
+        "hit_rate": 0.5
+      },
+      "BCA_VNEID_EKYC": {
+        "n": 4,
+        "hit_rate": 1.0
+      },
+      "BILLS_TOPUP": {
+        "n": 6,
+        "hit_rate": 0.6667
+      },
+      "BIOMETRICS": {
+        "n": 3,
+        "hit_rate": 1.0
+      },
+      "CARDS": {
+        "n": 7,
+        "hit_rate": 0.7143
+      },
+      "DISPUTE": {
+        "n": 4,
+        "hit_rate": 0.75
+      },
+      "FINANCIAL_ADVISORY": {
+        "n": 5,
+        "hit_rate": 0.2
+      },
+      "GENERAL_ACCOUNT": {
+        "n": 17,
+        "hit_rate": 0.3529
+      },
+      "LOANS": {
+        "n": 10,
+        "hit_rate": 0.3
+      },
+      "MACRO_ECONOMICS": {
+        "n": 5,
+        "hit_rate": 1.0
+      },
+      "PROMOTIONS": {
+        "n": 5,
+        "hit_rate": 1.0
+      },
+      "SAVINGS": {
+        "n": 10,
+        "hit_rate": 0.7
+      },
+      "SECURITY": {
+        "n": 6,
+        "hit_rate": 0.8333
+      },
+      "TERMS_OF_SERVICE": {
+        "n": 4,
+        "hit_rate": 1.0
+      },
+      "TRANSFER": {
+        "n": 15,
+        "hit_rate": 0.8667
+      }
+    }
+  },
+  {
+    "mode": "domain_off",
+    "k": 4,
+    "recall_at_k": 0.6632,
+    "hit_rate_at_k": 0.7708,
+    "mrr": 0.6007,
+    "avg_latency_ms": 7.9,
+    "p95_latency_ms": 9.2,
+    "domain_route_accuracy": 0.7429,
+    "no_info_false_positive_rate": 1.0,
+    "empty_results": 0,
+    "per_domain_hit_rate": {
+      "ACCOUNT_OPENING_DOCS": {
+        "n": 4,
+        "hit_rate": 1.0
+      },
+      "BCA_VNEID_EKYC": {
+        "n": 4,
+        "hit_rate": 1.0
+      },
+      "BILLS_TOPUP": {
+        "n": 6,
+        "hit_rate": 0.6667
+      },
+      "BIOMETRICS": {
+        "n": 3,
+        "hit_rate": 0.6667
+      },
+      "CARDS": {
+        "n": 7,
+        "hit_rate": 0.7143
+      },
+      "DISPUTE": {
+        "n": 4,
+        "hit_rate": 0.5
+      },
+      "FINANCIAL_ADVISORY": {
+        "n": 5,
+        "hit_rate": 0.6
+      },
+      "GENERAL_ACCOUNT": {
+        "n": 17,
+        "hit_rate": 0.3529
+      },
+      "LOANS": {
+        "n": 10,
+        "hit_rate": 0.5
+      },
+      "MACRO_ECONOMICS": {
+        "n": 5,
+        "hit_rate": 1.0
+      },
+      "PROMOTIONS": {
+        "n": 5,
+        "hit_rate": 0.8
+      },
+      "SAVINGS": {
+        "n": 10,
+        "hit_rate": 0.8
+      },
+      "SECURITY": {
+        "n": 6,
+        "hit_rate": 0.8333
+      },
+      "TERMS_OF_SERVICE": {
+        "n": 4,
+        "hit_rate": 1.0
+      },
+      "TRANSFER": {
+        "n": 15,
+        "hit_rate": 0.8667
+      }
+    }
+  }
+]

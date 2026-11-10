@@ -286,7 +286,12 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/auth/register',
       name: 'register',
-      builder: (context, state) => const RegisterScreen(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final termsAccepted = extra?['termsAccepted'] == true ||
+            state.uri.queryParameters['termsAccepted'] == 'true';
+        return RegisterScreen(termsAccepted: termsAccepted);
+      },
     ),
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
@@ -332,7 +337,10 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/auth/terms',
       name: 'terms',
-      builder: (context, state) => const TermsOfServiceScreen(),
+      builder: (context, state) {
+        final forReg = state.uri.queryParameters['forRegistration'] == 'true';
+        return TermsOfServiceScreen(isRegistrationGate: forReg);
+      },
     ),
 
     // ==========================================
@@ -789,7 +797,15 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/profile/ekyc',
       name: 'profile-ekyc',
-      builder: (context, state) => const EKycScreen(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final isMandatory = extra?['isMandatoryOnboarding'] == true;
+        final next = extra?['next'] as String?;
+        return EKycScreen(
+          isMandatoryOnboarding: isMandatory,
+          nextRoute: next,
+        );
+      },
     ),
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
@@ -900,13 +916,21 @@ final GoRouter appRouter = GoRouter(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/support/live-chat',
       name: 'live-chat',
-      builder: (context, state) => const LiveChatScreen(),
+      builder: (context, state) {
+        final extra = state.extra is Map<String, dynamic> ? state.extra as Map<String, dynamic> : null;
+        final origin = extra?['originScreen'] as String?;
+        return LiveChatScreen(originScreen: origin);
+      },
     ),
     GoRoute(
       parentNavigatorKey: _rootNavigatorKey,
       path: '/live-chat',
       name: 'live-chat-alias',
-      builder: (context, state) => const LiveChatScreen(),
+      builder: (context, state) {
+        final extra = state.extra is Map<String, dynamic> ? state.extra as Map<String, dynamic> : null;
+        final origin = extra?['originScreen'] as String?;
+        return LiveChatScreen(originScreen: origin);
+      },
     ),
   ],
 );

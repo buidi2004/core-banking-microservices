@@ -116,16 +116,24 @@ class ChipReaderService {
     );
 
     try {
+      // ignore: avoid_print
+      print('[SEN HỒNG NFC] Khởi tạo CccdReader, chuẩn bị kết nối transport...');
       await reader.connect();
+      // ignore: avoid_print
+      print('[SEN HỒNG NFC] Đã kết nối thẻ vật lý! Bắt đầu xác thực credential...');
       onProgress?.call(
           0.25, 'Đã nhận thẻ — thiết lập kênh bảo mật BAC/PACE...');
 
       final data = await reader.read(credential,
           onProgress: (completed, total, stage) {
         final ratio = total > 0 ? completed / total : 0.0;
+        // ignore: avoid_print
+        print('[SEN HỒNG NFC] Đang đọc giai đoạn: $stage ($completed/$total, ${(ratio * 100).toStringAsFixed(1)}%)');
         onProgress?.call(0.3 + 0.6 * ratio, _stageLabel(stage));
       });
 
+      // ignore: avoid_print
+      print('[SEN HỒNG NFC] Đọc chip hoàn tất! Chủ thẻ: ${data.fullName}, Ảnh DG2: ${data.portrait?.length ?? 0} bytes');
       onProgress?.call(0.95, 'Đối chiếu chữ ký số SOD & hoàn tất...');
 
       final portrait = data.portrait;
@@ -144,6 +152,14 @@ class ChipReaderService {
         sodSignatureValid: true,
       );
     } on CccdAuthenticationException catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (credential is CccdCan || msg.contains('p1-p2') || msg.contains('incorrect parameters')) {
+        throw ChipReadException(
+          ChipReadErrorCode.unsupportedCard,
+          'Thẻ CCCD mẫu 2021-2023 không hỗ trợ 6 số CAN (PACE). Thẻ yêu cầu giải mã bằng BAC (Số CCCD, Ngày sinh, Hạn thẻ hoặc Quét MRZ)',
+          detail: e.toString(),
+        );
+      }
       throw ChipReadException(
         ChipReadErrorCode.paceRequired,
         'Thẻ yêu cầu xác thực PACE — cần nhập số CAN in trên mặt sau thẻ',
@@ -162,6 +178,13 @@ class ChipReaderService {
         detail: e.toString(),
       );
     } on CccdUnsupportedCardException catch (e) {
+      if (credential is CccdCan) {
+        throw ChipReadException(
+          ChipReadErrorCode.unsupportedCard,
+          'Thẻ CCCD không hỗ trợ chuẩn CAN/PACE. Vui lòng chuyển sang đọc bằng BAC (Số CCCD, Ngày sinh, Hạn thẻ hoặc Quét MRZ)',
+          detail: e.toString(),
+        );
+      }
       throw ChipReadException(
         ChipReadErrorCode.unsupportedCard,
         'Loại thẻ/chip không được hỗ trợ',

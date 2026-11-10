@@ -41,8 +41,12 @@ Future<void> main() async {
   print('[2] session   : ${sess['status']} id=${sessionId.substring(0, 8)}…');
 
   // [3] Verify — Dart mã hóa, Python giải mã + AI
-  final selfie = base64Encode(File('/tmp/ekyc_face_a.jpg').readAsBytesSync());
-  final chip = base64Encode(File('/tmp/ekyc_face_a.jpg').readAsBytesSync());
+  final faceFile = File('../../backend/services/ekyc-ai-service/models/face_a.jpg');
+  final faceBytes = faceFile.existsSync()
+      ? faceFile.readAsBytesSync()
+      : File('/tmp/ekyc_face_a.jpg').readAsBytesSync();
+  final selfie = base64Encode(faceBytes);
+  final chip = base64Encode(faceBytes);
   final envelope = client.encryptPayload(
     sessionId: sessionId,
     nonce: nonce,

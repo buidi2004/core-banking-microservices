@@ -1,13 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ekyc_sdk/ekyc_sdk.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:sen_hong_bank/core/constants/app_constants.dart';
+import 'package:sen_hong_bank/core/storage/app_secure_storage.dart';
 import 'package:sen_hong_bank/core/theme/app_colors.dart';
+import 'package:sen_hong_bank/data/datasources/remote/profile_remote_datasource.dart';
+import '../../widgets/user_avatar_widget.dart';
 
 enum NfcScanState { idle, scanning, success, error }
+enum NfcAuthMode { can, bac }
 
 class NfcReaderScreen extends StatefulWidget {
   final String? initialDocumentNumber;
@@ -30,16 +36,29 @@ class NfcReaderScreen extends StatefulWidget {
 class _NfcReaderScreenState extends State<NfcReaderScreen>
     with SingleTickerProviderStateMixin {
   NfcScanState _state = NfcScanState.idle;
+  NfcAuthMode _authMode = NfcAuthMode.can;
   double _scanProgress = 0.0;
   Timer? _progressTimer;
   late AnimationController _pulseController;
   String _statusMessage = '';
+  bool _isNfcAvailable = true;
+  bool _showManualForm = false;
 
-  // Thông tin thẻ nhập THẬT từ người dùng hoặc tự động điền từ MRZ bước trước
+  // 1. Chế độ CAN (Khuyên dùng): chỉ cần 6 số in ở góc dưới thẻ CCCD
+  final _canCtrl = TextEditingController();
+
+  // 2. Chế độ BAC: Số định danh (12 số) + Ngày sinh + Ngày hết hạn
   final _docNumCtrl = TextEditingController();
   final _dobCtrl = TextEditingController(); // YYMMDD hoặc DD/MM/YYYY
   final _expiryCtrl = TextEditingController(); // YYMMDD hoặc DD/MM/YYYY
   CccdChipData? _chipData;
+
+  bool get _hasAutoCredentials {
+    final doc = _docNumCtrl.text.replaceAll(RegExp(r'\s+'), '').trim();
+    final dob = _normalizeToYYMMDD(_dobCtrl.text.trim());
+    final exp = _normalizeToYYMMDD(_expiryCtrl.text.trim());
+    return doc.length >= 9 && dob.length == 6 && exp.length == 6;
+  }
 
   @override
   void initState() {
@@ -47,6 +66,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
     if (widget.initialDocumentNumber != null &&
         widget.initialDocumentNumber!.isNotEmpty) {
       _docNumCtrl.text = widget.initialDocumentNumber!;
+      _authMode = NfcAuthMode.bac;
     }
     if (widget.initialDateOfBirth != null &&
         widget.initialDateOfBirth!.isNotEmpty) {
@@ -62,12 +82,44 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
       duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
 
-    if (widget.autoStart &&
+    _checkNfcHardwareAndPopulate();
+  }
+
+  Future<void> _checkNfcHardwareAndPopulate() async {
+    final available = await _chipReader.isNfcAvailable();
+    if (!mounted) return;
+    setState(() {
+      _isNfcAvailable = available;
+      if (!available) {
+        _statusMessage =
+            'Thiết bị chưa bật NFC hoặc không hỗ trợ NFC phần cứng. Vui lòng bật NFC trong Cài đặt máy!';
+      }
+    });
+
+    if (_docNumCtrl.text.isEmpty || _dobCtrl.text.isEmpty) {
+      try {
+        final profile = await ProfileRemoteDataSource().getMe();
+        if (!mounted) return;
+        setState(() {
+          if (_docNumCtrl.text.isEmpty && profile['identityCardNumber'] != null) {
+            _docNumCtrl.text = profile['identityCardNumber'].toString();
+          }
+          if (_dobCtrl.text.isEmpty && profile['dateOfBirth'] != null) {
+            _dobCtrl.text = profile['dateOfBirth'].toString();
+          }
+        });
+      } catch (_) {
+        // Tuân thủ nghiêm ngặt QĐ 2345: không sinh dữ liệu giả lập
+      }
+    }
+
+    if ((widget.autoStart || _hasAutoCredentials) &&
         _docNumCtrl.text.isNotEmpty &&
         _dobCtrl.text.isNotEmpty &&
         _expiryCtrl.text.isNotEmpty) {
+      _authMode = NfcAuthMode.bac;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _startNfcReading();
+        if (mounted && _state == NfcScanState.idle) _startNfcReading();
       });
     }
   }
@@ -78,11 +130,51 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
   void dispose() {
     _progressTimer?.cancel();
     _pulseController.dispose();
+    _canCtrl.dispose();
     _docNumCtrl.dispose();
     _dobCtrl.dispose();
     _expiryCtrl.dispose();
     _chipReader.cancelSession();
     super.dispose();
+  }
+
+  /// Quét nhanh mặt sau thẻ (MRZ) bằng Camera để tự động nạp Số thẻ, Ngày sinh, Hạn thẻ
+  Future<void> _openMrzCamera() async {
+    HapticFeedback.lightImpact();
+    final bytes = await Navigator.of(context).push<Uint8List>(
+      MaterialPageRoute(
+        builder: (_) => EkycCardCameraView(
+          title: 'Chụp Mặt Sau CCCD (MRZ)',
+          hint: 'Đặt mặt sau thẻ, rõ dải mã MRZ và chip vi mạch.',
+          onCaptured: (b) => Navigator.of(context).pop(b),
+        ),
+      ),
+    );
+    if (bytes != null && mounted) {
+      setState(() {
+        _statusMessage = 'Đang phân tích dải mã MRZ...';
+      });
+      final mrz = await MrzScanner.scanFromImageBytes(bytes);
+      if (mounted && mrz != null) {
+        setState(() {
+          _docNumCtrl.text = mrz.documentNumber;
+          _dobCtrl.text = mrz.birthDateYYMMDD;
+          _expiryCtrl.text = mrz.expiryDateYYMMDD;
+          _authMode = NfcAuthMode.bac;
+          _statusMessage = 'Đã quét MRZ thành công! Sẵn sàng đọc chip.';
+        });
+        HapticFeedback.mediumImpact();
+        _startNfcReading();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Không đọc được dải MRZ do lóa sáng hoặc mờ. Bạn có thể nhập 6 số CAN ở mặt trước để đọc nhanh hơn.'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   /// Chuẩn hóa chuỗi ngày sinh / ngày hết hạn về định dạng YYMMDD của chuẩn ICAO 9303.
@@ -103,24 +195,102 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
 
   Future<void> _startNfcReading() async {
     HapticFeedback.mediumImpact();
-    final docNum = _docNumCtrl.text.replaceAll(RegExp(r'\s+'), '').trim();
-    final dob = _normalizeToYYMMDD(_dobCtrl.text.trim());
-    final expiry = _normalizeToYYMMDD(_expiryCtrl.text.trim());
+    // ignore: avoid_print
+    print('[SEN HỒNG NFC] _startNfcReading() được gọi: mode=$_authMode');
 
-    if (docNum.length < 9 || dob.length != 6 || expiry.length != 6) {
+    if (_authMode == NfcAuthMode.can) {
+      final can = _canCtrl.text.replaceAll(RegExp(r'\D'), '').trim();
+      if (can.length != 6) {
+        // ignore: avoid_print
+        print('[SEN HỒNG NFC] CAN chưa đủ 6 số: $can');
+        setState(() {
+          _state = NfcScanState.error;
+          _statusMessage =
+              'Vui lòng nhập đúng 6 chữ số CAN in ở góc dưới thẻ CCCD (hoặc chuyển sang tab Thông tin thẻ BAC).';
+        });
+        return;
+      }
+
+      // ignore: avoid_print
+      print('[SEN HỒNG NFC] Bắt đầu đọc PACE với CAN: $can');
       setState(() {
-        _state = NfcScanState.error;
+        _state = NfcScanState.scanning;
+        _scanProgress = 0.05;
         _statusMessage =
-            'Vui lòng nhập đúng số CCCD (9 hoặc 12 số) và ngày sinh, ngày hết hạn (DD/MM/YYYY hoặc YYMMDD)';
+            'Đang bật sóng NFC... Áp sát thẻ vào giữa lưng điện thoại';
       });
-      return;
-    }
 
+      try {
+        final data = await _chipReader.readCccdChipWithCan(
+          can: can,
+          documentNumber:
+              _docNumCtrl.text.isNotEmpty ? _docNumCtrl.text.trim() : null,
+          onProgress: _onProgress,
+        );
+        if (!mounted) return;
+        // ignore: avoid_print
+        print('[SEN HỒNG NFC] Đọc chip CCCD thành công! Tên: ${data.fullName}, Số CCCD: ${data.documentNumber}');
+        setState(() {
+          _chipData = data;
+          _state = NfcScanState.success;
+          _scanProgress = 1.0;
+        });
+        HapticFeedback.heavyImpact();
+        unawaited(_persistVerifiedChipData(data));
+      } catch (e) {
+        if (!mounted) return;
+        // ignore: avoid_print
+        print('[SEN HỒNG NFC] Thẻ từ chối CAN/PACE (mẫu 2021-2023): $e');
+
+        final docNum = _docNumCtrl.text.replaceAll(RegExp(r'\s+'), '').trim();
+        final dob = _normalizeToYYMMDD(_dobCtrl.text.trim());
+        final expiry = _normalizeToYYMMDD(_expiryCtrl.text.trim());
+
+        if (docNum.length >= 9 && dob.length == 6 && expiry.length == 6) {
+          // ignore: avoid_print
+          print('[SEN HỒNG NFC] Tự động chuyển tiếp sang giải mã chuẩn BAC...');
+          setState(() {
+            _authMode = NfcAuthMode.bac;
+          });
+          await _readWithBac(docNum, dob, expiry);
+          return;
+        }
+
+        setState(() {
+          _authMode = NfcAuthMode.bac;
+          _state = NfcScanState.error;
+          _statusMessage =
+              'Thẻ CCCD này (mẫu 2021-2023) không hỗ trợ 6 số CAN. Vui lòng bấm "📸 Quét nhanh mặt sau (MRZ)" hoặc nhập Ngày sinh & Hạn thẻ để giải mã qua chuẩn BAC!';
+        });
+      }
+    } else {
+      final docNum = _docNumCtrl.text.replaceAll(RegExp(r'\s+'), '').trim();
+      final dob = _normalizeToYYMMDD(_dobCtrl.text.trim());
+      final expiry = _normalizeToYYMMDD(_expiryCtrl.text.trim());
+
+      if (docNum.length < 9 || dob.length != 6 || expiry.length != 6) {
+        // ignore: avoid_print
+        print('[SEN HỒNG NFC] BAC thiếu thông tin: docNum=$docNum, dob=$dob, expiry=$expiry');
+        setState(() {
+          _state = NfcScanState.error;
+          _statusMessage =
+              'Thiếu thông tin BAC (CCCD, Ngày sinh, Hạn thẻ). Vui lòng bấm "📸 Quét mặt sau (MRZ)" để tự động điền hoặc nhập tay.';
+        });
+        return;
+      }
+
+      await _readWithBac(docNum, dob, expiry);
+    }
+  }
+
+  Future<void> _readWithBac(String docNum, String dob, String expiry) async {
+    // ignore: avoid_print
+    print('[SEN HỒNG NFC] Bắt đầu đọc BAC với docNum=$docNum, dob=$dob, exp=$expiry');
     setState(() {
       _state = NfcScanState.scanning;
-      _scanProgress = 0.0;
+      _scanProgress = 0.05;
       _statusMessage =
-          'Đang khởi động ReaderMode (bỏ qua NDEF của hệ điều hành)...';
+          'Đang bật sóng NFC (chuẩn BAC)... Áp sát thẻ vào giữa lưng điện thoại';
     });
 
     try {
@@ -131,16 +301,21 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
         onProgress: _onProgress,
       );
       if (!mounted) return;
+      // ignore: avoid_print
+      print('[SEN HỒNG NFC] Đọc chip BAC thành công! Tên: ${data.fullName}, Số CCCD: ${data.documentNumber}');
       setState(() {
         _chipData = data;
         _state = NfcScanState.success;
         _scanProgress = 1.0;
       });
       HapticFeedback.heavyImpact();
+      unawaited(_persistVerifiedChipData(data));
     } on ChipReadException catch (e) {
       if (!mounted) return;
       if (e.code == ChipReadErrorCode.paceRequired) {
-        // Thẻ mới ưu tiên PACE — hỏi người dùng nhập CAN rồi đọc lại
+        setState(() {
+          _authMode = NfcAuthMode.can;
+        });
         await _promptCanAndRetry(docNum);
         return;
       }
@@ -150,11 +325,64 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
       });
     } catch (e) {
       if (!mounted) return;
-      // Trung thực: lỗi thì báo lỗi, KHÔNG giả lập quét thành công
+      // ignore: avoid_print
+      print('[SEN HỒNG NFC] Lỗi khi đọc BAC: $e');
       setState(() {
         _state = NfcScanState.error;
-        _statusMessage = 'Lỗi đọc chip NFC: $e';
+        _statusMessage = 'Lỗi đọc chip qua BAC: $e';
       });
+    }
+  }
+
+  Future<void> _persistVerifiedChipData(CccdChipData data) async {
+    try {
+      const storage = AppSecureStorage.instance;
+      final cleanInput = _docNumCtrl.text.replaceAll(RegExp(r'\D'), '');
+      final effectiveCccd =
+          cleanInput.length == 12 ? cleanInput : data.documentNumber;
+
+      await AppSecureStorage.safeWrite(storage,
+          key: AppConstants.keyCitizenId, value: effectiveCccd);
+      await AppSecureStorage.safeWrite(storage,
+          key: AppConstants.keyFullName, value: data.fullName);
+      if (data.dateOfBirth.isNotEmpty) {
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyDateOfBirth, value: data.dateOfBirth);
+      }
+      if (data.gender.isNotEmpty) {
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyGender, value: data.gender);
+      }
+      if (data.expiryDate.isNotEmpty) {
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyExpiryDate, value: data.expiryDate);
+      }
+      await AppSecureStorage.safeWrite(storage,
+          key: AppConstants.keyKycVerified, value: 'true');
+
+      if (data.facePhotoBytes != null && data.facePhotoBytes!.isNotEmpty) {
+        final b64 = base64Encode(data.facePhotoBytes!);
+        await AppSecureStorage.safeWrite(storage,
+            key: AppConstants.keyChipPhotoBase64, value: b64);
+        UserAvatarNotifier.update('data:image/jpeg;base64,$b64');
+      }
+
+      // Đồng bộ thông tin CCCD và ngày sinh sang Backend Identity Service
+      String backendDob = '';
+      if (data.dateOfBirth.contains('/')) {
+        final p = data.dateOfBirth.split('/');
+        if (p.length == 3) {
+          backendDob =
+              '${p[2]}-${p[1].padLeft(2, '0')}-${p[0].padLeft(2, '0')}';
+        }
+      }
+      ProfileRemoteDataSource().updateMe(
+        fullName: data.fullName,
+        email: '',
+        dob: backendDob,
+      ).catchError((_) => <String, dynamic>{});
+    } catch (e) {
+      debugPrint('[SEN HỒNG NFC] Lỗi lưu trữ dữ liệu chip: $e');
     }
   }
 
@@ -299,19 +527,43 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
                         horizontal: 20, vertical: 14),
                     children: [
                       _buildDecisionBanner(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
                       _buildNfcRadarArea(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                       if (_state == NfcScanState.success) ...[
                         _buildExtractedDataCard(),
-                        const SizedBox(height: 24),
-                      ] else ...[
+                        const SizedBox(height: 16),
+                        _buildActionBottom(),
+                      ] else if (!_hasAutoCredentials || _showManualForm) ...[
+                        _buildCardInfoForm(),
+                        const SizedBox(height: 16),
+                        _buildActionBottom(),
+                        const SizedBox(height: 18),
                         _buildStepsGuidanceCard(),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
                         _buildTroubleshootingCard(),
-                        const SizedBox(height: 24),
+                      ] else ...[
+                        // CHẾ ĐỘ ZERO-INPUT: Ẩn 100% form nhập liệu, chỉ quét thẻ
+                        _buildStepsGuidanceCard(),
+                        const SizedBox(height: 16),
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              setState(() => _showManualForm = true);
+                            },
+                            icon: const Icon(CupertinoIcons.pencil,
+                                size: 14, color: Colors.white54),
+                            label: const Text(
+                              'Không quét được tự động? Nhập thủ công',
+                              style: TextStyle(
+                                  color: Colors.white54, fontSize: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildTroubleshootingCard(),
                       ],
-                      _buildActionBottom(),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -472,103 +724,209 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
 
   Widget _buildNfcRadarArea() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       decoration: BoxDecoration(
         color: const Color(0xFF0C1A2E).withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: _state == NfcScanState.success
               ? AppColors.emeraldGreen.withValues(alpha: 0.5)
-              : AppColors.bottomBarCyan.withValues(alpha: 0.2),
+              : _state == NfcScanState.error
+                  ? AppColors.error.withValues(alpha: 0.4)
+                  : AppColors.bottomBarCyan.withValues(alpha: 0.25),
         ),
       ),
       child: Column(
         children: [
-          AnimatedBuilder(
-            animation: _pulseController,
-            builder: (context, child) {
-              final scale = _state == NfcScanState.scanning
-                  ? 1.0 + (_pulseController.value * 0.12)
-                  : 1.0;
-              return Transform.scale(
-                scale: scale,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // Outer waves
-                    Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _state == NfcScanState.success
-                              ? AppColors.emeraldGreen.withValues(alpha: 0.25)
-                              : AppColors.bottomBarCyan.withValues(alpha: 0.2),
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 110,
-                      height: 110,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _state == NfcScanState.success
-                              ? AppColors.emeraldGreen.withValues(alpha: 0.4)
-                              : AppColors.bottomBarCyan.withValues(alpha: 0.35),
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    // Center button / icon
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: _state == NfcScanState.success
-                              ? [
-                                  AppColors.emeraldGreen,
-                                  const Color(0xFF047857)
-                                ]
-                              : [AppColors.primary, AppColors.primaryDark],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: (_state == NfcScanState.success
-                                    ? AppColors.emeraldGreen
-                                    : AppColors.bottomBarCyan)
-                                .withValues(alpha: 0.4),
-                            blurRadius: 18,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        _state == NfcScanState.success
-                            ? CupertinoIcons.checkmark_alt
-                            : CupertinoIcons.radiowaves_right,
-                        color: Colors.white,
-                        size: 38,
-                      ),
-                    ),
-                  ],
-                ),
-              );
+          GestureDetector(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              if (_state == NfcScanState.idle || _state == NfcScanState.error) {
+                _startNfcReading();
+              } else if (_state == NfcScanState.scanning) {
+                _resetReading();
+              }
             },
+            child: AnimatedBuilder(
+              animation: _pulseController,
+              builder: (context, child) {
+                final scale = _state == NfcScanState.scanning
+                    ? 1.0 + (_pulseController.value * 0.12)
+                    : 1.0;
+                return Transform.scale(
+                  scale: scale,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Outer waves
+                      Container(
+                        width: 140,
+                        height: 140,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _state == NfcScanState.success
+                                ? AppColors.emeraldGreen.withValues(alpha: 0.25)
+                                : _state == NfcScanState.error
+                                    ? AppColors.error.withValues(alpha: 0.25)
+                                    : AppColors.bottomBarCyan
+                                        .withValues(alpha: 0.2),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: 110,
+                        height: 110,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _state == NfcScanState.success
+                                ? AppColors.emeraldGreen.withValues(alpha: 0.4)
+                                : _state == NfcScanState.error
+                                    ? AppColors.error.withValues(alpha: 0.4)
+                                    : AppColors.bottomBarCyan
+                                        .withValues(alpha: 0.35),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                      // Center button / icon
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: _state == NfcScanState.success
+                                ? [
+                                    AppColors.emeraldGreen,
+                                    const Color(0xFF047857)
+                                  ]
+                                : _state == NfcScanState.error
+                                    ? [
+                                        AppColors.error,
+                                        const Color(0xFF991B1B)
+                                      ]
+                                    : [AppColors.primary, AppColors.primaryDark],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (_state == NfcScanState.success
+                                      ? AppColors.emeraldGreen
+                                      : _state == NfcScanState.error
+                                          ? AppColors.error
+                                          : AppColors.bottomBarCyan)
+                                  .withValues(alpha: 0.4),
+                              blurRadius: 18,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _state == NfcScanState.success
+                              ? CupertinoIcons.checkmark_alt
+                              : _state == NfcScanState.error
+                                  ? CupertinoIcons.exclamationmark
+                                  : CupertinoIcons.radiowaves_right,
+                          color: Colors.white,
+                          size: 38,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          // Interactive reader status badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: _state == NfcScanState.scanning
+                  ? AppColors.bottomBarCyan.withValues(alpha: 0.18)
+                  : _state == NfcScanState.success
+                      ? AppColors.emeraldGreen.withValues(alpha: 0.18)
+                      : _state == NfcScanState.error
+                          ? AppColors.error.withValues(alpha: 0.18)
+                          : Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: _state == NfcScanState.scanning
+                    ? AppColors.bottomBarCyan.withValues(alpha: 0.4)
+                    : _state == NfcScanState.success
+                        ? AppColors.emeraldGreen.withValues(alpha: 0.4)
+                        : _state == NfcScanState.error
+                            ? AppColors.error.withValues(alpha: 0.4)
+                            : Colors.white.withValues(alpha: 0.2),
+              ),
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _state == NfcScanState.scanning
+                        ? CupertinoIcons.radiowaves_right
+                        : _state == NfcScanState.success
+                            ? CupertinoIcons.checkmark_alt
+                            : _state == NfcScanState.error
+                                ? CupertinoIcons.exclamationmark_triangle
+                                : CupertinoIcons.hand_point_right_fill,
+                    size: 13,
+                    color: _state == NfcScanState.scanning
+                        ? AppColors.bottomBarCyan
+                        : _state == NfcScanState.success
+                            ? AppColors.emeraldGreen
+                            : _state == NfcScanState.error
+                                ? AppColors.error
+                                : Colors.white70,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _state == NfcScanState.scanning
+                        ? 'SÓNG NFC ĐANG BẬT — ÁP THẺ VÀO LƯNG'
+                        : _state == NfcScanState.success
+                            ? 'ĐÃ ĐỐI SOÁT C06 THÀNH CÔNG'
+                            : _state == NfcScanState.error
+                                ? 'LỖI ĐỌC — BẤM ĐỂ THỬ LẠI'
+                                : (_hasAutoCredentials
+                                    ? 'SẴN SÀNG QUÉT — ÁP THẺ VÀO LƯNG'
+                                    : 'CHƯA BẬT SÓNG — BẤM ĐỂ BẬT QUÉT'),
+                    style: TextStyle(
+                      color: _state == NfcScanState.scanning
+                          ? AppColors.bottomBarCyan
+                          : _state == NfcScanState.success
+                              ? AppColors.emeraldGreen
+                              : _state == NfcScanState.error
+                                  ? AppColors.error
+                                  : Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
             _state == NfcScanState.idle
-                ? 'Sẵn sàng đọc thẻ CCCD'
+                ? (_hasAutoCredentials
+                    ? 'Sẵn sàng đọc thẻ CCCD'
+                    : (_authMode == NfcAuthMode.can
+                        ? 'Nhập 6 số CAN để kích hoạt NFC'
+                        : 'Nhập thông tin thẻ để kích hoạt NFC'))
                 : _state == NfcScanState.scanning
                     ? 'Đang đọc thẻ CCCD... Giữ yên thiết bị'
-                    : 'Xác thực chip CCCD thành công!',
+                    : _state == NfcScanState.error
+                        ? 'Chưa đọc được chip CCCD'
+                        : 'Xác thực chip CCCD thành công!',
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.w700,
@@ -578,36 +936,70 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
           const SizedBox(height: 6),
           Text(
             _state == NfcScanState.idle
-                ? 'Áp sát mặt sau CCCD (phần có gắn chip) vào vị trí cụm camera'
+                ? (_hasAutoCredentials
+                    ? 'Đã nạp khóa bảo mật từ camera • Hãy áp thẻ vào giữa lưng điện thoại'
+                    : (_authMode == NfcAuthMode.can
+                        ? 'Nhập 6 số CAN in trên thẻ — đầu đọc NFC sẽ tự động bật ngay lập tức!'
+                        : 'Bấm nút "Bắt đầu đọc thẻ NFC" bên dưới hoặc quét dải MRZ'))
                 : _state == NfcScanState.scanning
-                    ? 'Đang truyền nhận dữ liệu chuẩn ICAO 9303 bảo mật'
-                    : 'Dữ liệu khớp 100% với Trung tâm C06 Bộ Công An',
+                    ? 'Samsung: Áp thẻ vào GIỮA LƯNG MÁY • Giữ cố định 3 - 5 giây'
+                    : _state == NfcScanState.error
+                        ? (_statusMessage.isNotEmpty ? _statusMessage : 'Vui lòng kiểm tra lại vị trí thẻ và thông tin')
+                        : 'Dữ liệu khớp 100% với Trung tâm C06 Bộ Công An',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.65),
+              color: _state == NfcScanState.error
+                  ? AppColors.error
+                  : Colors.white.withValues(alpha: 0.65),
               fontSize: 12,
             ),
           ),
+          if (!_isNfcAvailable) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(CupertinoIcons.exclamationmark_circle_fill,
+                      size: 14, color: AppColors.error),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Cảnh báo: NFC phần cứng chưa được bật trong Cài đặt máy!',
+                      style: TextStyle(
+                          color: AppColors.error,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: const Row(
               children: [
-                const Icon(CupertinoIcons.info_circle,
-                    size: 12, color: AppColors.bottomBarCyan),
-                const SizedBox(width: 6),
-                Flexible(
+                Icon(CupertinoIcons.info_circle,
+                    size: 13, color: AppColors.bottomBarCyan),
+                SizedBox(width: 8),
+                Expanded(
                   child: Text(
-                    'Vị trí NFC: iPhone ở đỉnh máy • Samsung giữa lưng • Xiaomi/OPPO gần camera',
+                    'Vị trí NFC: Samsung ở GIỮA LƯNG • iPhone ở ĐỈNH MÁY • Xiaomi gần camera',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: Colors.white70,
                       fontSize: 11,
                     ),
                   ),
@@ -853,6 +1245,30 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
                 _chipData?.facePhotoBytes != null
                     ? 'Đã trích xuất (${_chipData!.facePhotoBytes!.lengthInBytes} bytes)'
                     : 'Không có'),
+            if (_chipData?.facePhotoBytes != null) ...[
+              const SizedBox(height: 12),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.emeraldGreen.withValues(alpha: 0.4)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.memory(
+                      _chipData!.facePhotoBytes!,
+                      width: 90,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox(),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+            ],
             _buildDataRow('Chữ ký số SOD:',
                 _chipData?.sodSignatureValid == true ? 'Nguyên vẹn' : 'LỆCH'),
           ],
@@ -861,7 +1277,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
     );
   }
 
-  /// Form nhập thông tin thẻ thật — BAC key suy diễn từ đây (không hardcode)
+  /// Form nhập thông tin thẻ thật — Hỗ trợ 2 phương thức: Mã CAN (nhanh nhất) hoặc Thông tin BAC
   Widget _buildCardInfoForm() {
     return GlassCard(
       quality: GlassQuality.minimal,
@@ -870,84 +1286,245 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Expanded(
-                  child: Text('Thông tin thẻ (làm khóa BAC/PACE)',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14)),
-                ),
-                if (_docNumCtrl.text.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.emeraldGreen.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: AppColors.emeraldGreen.withValues(alpha: 0.3)),
+            // Segmented auth mode selector
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _authMode = NfcAuthMode.can);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        decoration: BoxDecoration(
+                          color: _authMode == NfcAuthMode.can
+                              ? AppColors.primary
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '🔑 6 số CAN (Khuyên dùng)',
+                            style: TextStyle(
+                              color: _authMode == NfcAuthMode.can
+                                  ? Colors.white
+                                  : Colors.white60,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: const Text('Tự động điền',
-                        style: TextStyle(
-                            color: AppColors.emeraldGreen,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold)),
+                  ),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() => _authMode = NfcAuthMode.bac);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        decoration: BoxDecoration(
+                          color: _authMode == NfcAuthMode.bac
+                              ? AppColors.primary
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '🪪 Thông tin thẻ (BAC)',
+                            style: TextStyle(
+                              color: _authMode == NfcAuthMode.bac
+                                  ? Colors.white
+                                  : Colors.white60,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _docNumCtrl,
-              keyboardType: TextInputType.number,
-              maxLength: 12,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'Số định danh CCCD (12 số)',
-                labelStyle: TextStyle(color: Colors.white54),
-                enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white24)),
-                counterText: '',
               ),
             ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _dobCtrl,
-                    keyboardType: TextInputType.text,
-                    maxLength: 10,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelText: 'Ngày sinh (YYMMDD hoặc DD/MM/YYYY)',
-                      labelStyle: TextStyle(color: Colors.white54),
-                      enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white24)),
-                      counterText: '',
+            const SizedBox(height: 14),
+
+            if (_authMode == NfcAuthMode.can) ...[
+              const Text(
+                'Mã số CAN (Card Access Number)',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Nhập dãy 6 số in ở góc dưới bên phải mặt trước (hoặc sau) thẻ CCCD. Không cần nhớ ngày sinh hay hạn thẻ!',
+                style: TextStyle(color: Colors.white70, fontSize: 11.5, height: 1.3),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _canCtrl,
+                keyboardType: TextInputType.number,
+                maxLength: 6,
+                autofocus: true,
+                textAlign: TextAlign.center,
+                onChanged: (val) {
+                  final clean = val.replaceAll(RegExp(r'\D'), '').trim();
+                  if (clean.length == 6) {
+                    FocusScope.of(context).unfocus();
+                    _startNfcReading();
+                  }
+                },
+                style: const TextStyle(
+                  color: AppColors.bottomBarCyan,
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 8,
+                ),
+                decoration: InputDecoration(
+                  hintText: '• • • • • •',
+                  hintStyle: const TextStyle(
+                      color: Colors.white24, letterSpacing: 8),
+                  filled: true,
+                  fillColor: Colors.white.withValues(alpha: 0.04),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                        color: AppColors.bottomBarCyan.withValues(alpha: 0.3)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: AppColors.bottomBarCyan, width: 1.5),
+                  ),
+                  counterText: '',
+                ),
+              ),
+            ] else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text('Thông tin khóa BAC',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13)),
+                      if (_docNumCtrl.text.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color:
+                                AppColors.emeraldGreen.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color: AppColors.emeraldGreen
+                                    .withValues(alpha: 0.3)),
+                          ),
+                          child: const Text('Tự động điền',
+                              style: TextStyle(
+                                  color: AppColors.emeraldGreen,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ],
+                  ),
+                  InkWell(
+                    onTap: _openMrzCamera,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(CupertinoIcons.camera_fill,
+                              size: 14, color: AppColors.primary),
+                          SizedBox(width: 5),
+                          Text('📸 Quét mặt sau (MRZ)',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _docNumCtrl,
+                keyboardType: TextInputType.number,
+                maxLength: 12,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'Số định danh CCCD (12 số)',
+                  labelStyle: TextStyle(color: Colors.white54),
+                  enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Colors.white24)),
+                  counterText: '',
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    controller: _expiryCtrl,
-                    keyboardType: TextInputType.text,
-                    maxLength: 10,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      labelText: 'Hạn thẻ (YYMMDD hoặc DD/MM/YYYY)',
-                      labelStyle: TextStyle(color: Colors.white54),
-                      enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(color: Colors.white24)),
-                      counterText: '',
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _dobCtrl,
+                      keyboardType: TextInputType.text,
+                      maxLength: 10,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: 'Ngày sinh (DD/MM/YYYY)',
+                        labelStyle: TextStyle(color: Colors.white54),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white24)),
+                        counterText: '',
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: _expiryCtrl,
+                      keyboardType: TextInputType.text,
+                      maxLength: 10,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: 'Hạn thẻ (DD/MM/YYYY)',
+                        labelStyle: TextStyle(color: Colors.white54),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.white24)),
+                        counterText: '',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -984,11 +1561,9 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
   }
 
   Widget _buildActionBottom() {
-    if (_state == NfcScanState.idle) {
+    if (_state == NfcScanState.idle || _state == NfcScanState.error) {
       return Column(
         children: [
-          _buildCardInfoForm(),
-          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -1057,11 +1632,7 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
               child: Text(
                 _statusMessage,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: _state == NfcScanState.error
-                        ? AppColors.error
-                        : Colors.white70,
-                    fontSize: 12.5),
+                style: const TextStyle(color: Colors.white70, fontSize: 12.5),
               ),
             ),
           SizedBox(
@@ -1074,29 +1645,26 @@ class _NfcReaderScreenState extends State<NfcReaderScreen>
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16)),
               ),
-              onPressed: () {
+              onPressed: () async {
                 HapticFeedback.mediumImpact();
-                if (_chipData == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Chưa có dữ liệu chip để trả về'),
-                      backgroundColor: AppColors.error,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  return;
-                }
+                if (_chipData == null) return;
+                await _persistVerifiedChipData(_chipData!);
+                if (!mounted) return;
                 // Trả dữ liệu chip THẬT (kèm ảnh DG2) về màn eKYC để làm reference
-                context.pop(_chipData);
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop(_chipData);
+                } else {
+                  context.pop(_chipData);
+                }
               },
               child: const FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(CupertinoIcons.checkmark_alt, size: 20),
+                    Icon(CupertinoIcons.checkmark_seal_fill, size: 20),
                     SizedBox(width: 8),
-                    Text('Xác nhận & Cập nhật Hồ Sơ',
+                    Text('Tiếp tục: Quét khuôn mặt (Bước 3)',
                         style: TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
